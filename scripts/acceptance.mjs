@@ -12,7 +12,11 @@
  * passes for a real client too.
  */
 
+import { readFileSync } from 'node:fs';
+import sharp from 'sharp';
+
 const API = process.env.LOCZ_API ?? 'http://127.0.0.1:4000/api/v1';
+const TEST_PHOTO = process.env.LOCZ_TEST_PHOTO ?? 'C:/Users/USER/locz-stack/test-photo.jpg';
 
 let passed = 0;
 let failed = 0;
@@ -33,15 +37,29 @@ function step(title) {
   console.log(`\n${title}`);
 }
 
-async function call(path, { method = 'GET', body, token, expect } = {}) {
+async function call(path, { method = 'GET', body, token, expect, retries = 6 } = {}) {
   const headers = { 'Content-Type': 'application/json' };
   if (token) headers.Authorization = `Bearer ${token}`;
 
-  const response = await fetch(`${API}${path}`, {
+  let response = await fetch(`${API}${path}`, {
     method,
     headers,
     ...(body !== undefined ? { body: JSON.stringify(body) } : {}),
   });
+
+  // A 429 here is the rate limiter working, not a failure — repeated runs of this suite
+  // legitimately trip the per-IP OTP limit. Back off and retry rather than relaxing the
+  // limit, which is a real protection.
+  let attempt = 0;
+  while (response.status === 429 && attempt < retries) {
+    await new Promise((resolve) => setTimeout(resolve, 11_000));
+    attempt += 1;
+    response = await fetch(`${API}${path}`, {
+      method,
+      headers,
+      ...(body !== undefined ? { body: JSON.stringify(body) } : {}),
+    });
+  }
 
   const text = await response.text();
   const payload = text ? JSON.parse(text) : null;
@@ -95,13 +113,23 @@ async function main() {
 
   // ---------------------------------------------------------------- 1. sign in
   step('1. Mock OTP sign-in');
-  const seller = await signIn('+919000000004', 'acceptance-seller');
-  check('seller signed in', Boolean(seller.tokens.accessToken), seller.user.displayName);
-  check('roles resolved', seller.user.roles.includes('INDIVIDUAL_SELLER'), seller.user.roles.join(','));
+  // A fresh number each run, so the suite exercises the path a real new user takes —
+  // account created on first verify, no pre-assigned roles — and so repeated runs do not
+  // trip the per-account daily posting cap.
+  const sellerPhone = `+9198${String(Math.floor(10_000_000 + Math.random() * 89_999_999))}`;
+  const seller = await signIn(sellerPhone, 'acceptance-seller');
+  check('account created on first verify', seller.user.isNewUser === true, sellerPhone);
+  check('registered-user role granted', seller.user.roles.includes('REGISTERED_USER'), seller.user.roles.join(','));
+  // The bug this catches: listing:create used to live only on INDIVIDUAL_SELLER, which is
+  // granted inside the create handler — after the guard. No new account could ever post.
+  check(
+    'a brand-new account may post',
+    seller.user.permissions.includes('listing:create'),
+  );
   const sellerToken = seller.tokens.accessToken;
 
   const me = await call('/users/me', { token: sellerToken });
-  check('authenticated request works', me.phone === '+919000000004');
+  check('authenticated request works', me.phone === sellerPhone);
 
   // ---------------------------------------------------------------- 2. location
   step('2. Location');
@@ -143,12 +171,61 @@ async function main() {
   });
 
   check('listing created', Boolean(listing.id), listing.slug);
-  // The seeded seller has no published listings, so the first one must go to review.
+  // A new account has no published listings, so the first one must go to review.
   check(
     'routed to review, not auto-published',
     listing.status === 'PENDING_REVIEW',
     listing.status,
   );
+
+  // ---------------------------------------------------------------- 3b. media
+  step('3b. Image upload (direct to object storage)');
+  const photo = readFileSync(TEST_PHOTO);
+  const sourceMeta = await sharp(photo).metadata();
+  check('test photo carries EXIF to begin with', Boolean(sourceMeta.exif));
+
+  const upload = await call(`/listings/${listing.id}/media/upload-url`, {
+    method: 'POST',
+    token: sellerToken,
+    body: { mimeType: 'image/jpeg', sizeBytes: photo.length },
+  });
+  check('signed upload URL issued', Boolean(upload.uploadUrl), upload.storageKey);
+
+  // Straight to object storage — the bytes never pass through the API.
+  const put = await fetch(upload.uploadUrl, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'image/jpeg' },
+    body: photo,
+  });
+  check('bytes accepted by object storage', put.ok, `HTTP ${put.status}`);
+
+  const media = await call(`/media/${upload.mediaId}/confirm`, {
+    method: 'POST',
+    token: sellerToken,
+  });
+  check('processing succeeded', media.status === 'READY', media.status || media.failureReason);
+  check('thumb rendition generated', Boolean(media.thumbUrl));
+  check('card rendition generated', Boolean(media.cardUrl));
+  check('full rendition generated', Boolean(media.fullUrl));
+
+  // The renditions are public; the original is not.
+  const rendition = await fetch(media.fullUrl);
+  check('rendition publicly readable', rendition.ok, `HTTP ${rendition.status}`);
+
+  const renditionBytes = Buffer.from(await rendition.arrayBuffer());
+  const renditionMeta = await sharp(renditionBytes).metadata();
+  check('rendition is WebP', renditionMeta.format === 'webp', renditionMeta.format);
+  // A seller's home GPS must not ride along in a listing photo.
+  check('EXIF stripped from the public rendition', !renditionMeta.exif);
+  check(
+    'resized to the full-size cap',
+    renditionMeta.width !== undefined && renditionMeta.width <= 1600,
+    `${renditionMeta.width}×${renditionMeta.height}`,
+  );
+
+  const gallery = await call(`/listings/${listing.id}/media`);
+  check('image attached to the listing', gallery.length === 1);
+  check('first image becomes the cover', gallery[0]?.isPrimary === true);
 
   // ---------------------------------------------------------------- 4. spam is blocked
   step('4. Moderation blocks an obvious scam');
@@ -224,7 +301,8 @@ async function main() {
 
   // ---------------------------------------------------------------- 9. save
   step('9. Another user saves it');
-  const buyer = await signIn('+919000000005', 'acceptance-buyer');
+  const buyerPhone = `+9197${String(Math.floor(10_000_000 + Math.random() * 89_999_999))}`;
+  const buyer = await signIn(buyerPhone, 'acceptance-buyer');
   const buyerToken = buyer.tokens.accessToken;
 
   const saved = await call(`/listings/${listing.id}/save`, { method: 'POST', token: buyerToken });

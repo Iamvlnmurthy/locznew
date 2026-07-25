@@ -45,11 +45,22 @@ const ROLES: Array<{ name: RoleName; description: string; permissions: string[] 
   },
   {
     name: RoleName.REGISTERED_USER,
-    description: 'Signed-in user',
+    description: 'Signed-in user — may post, because posting is free and universal',
+    // Posting is the core promise of the platform, so every signed-in user can do it.
+    // The specialised roles below are classification (granted on first use) and gate
+    // genuinely privileged things — running a business, managing staff, moderating.
+    //
+    // These permissions were previously only on INDIVIDUAL_SELLER, which the create
+    // handler grants *after* the guard has already run: a brand-new account could never
+    // post its first listing.
     permissions: [
       'listing:read',
       'listing:save',
       'listing:report',
+      'listing:create',
+      'listing:update:own',
+      'listing:delete:own',
+      'media:upload',
       'conversation:create',
       'conversation:read',
       'profile:update',

@@ -5,6 +5,9 @@ import { ApiError, SITE_URL, api, apiSafe } from '@/lib/api';
 import { getTranslator } from '@/i18n';
 import { getCurrentUser, getLocale } from '@/lib/session';
 import { formatPrice } from '@/components/listing-card';
+import { ListingCard } from '@/components/listing-card';
+import { Icon } from '@/components/icons';
+import type { ListingSummary } from '@locz/shared-types';
 import { SaveButton } from './save-button';
 import { ContactPanel } from './contact-panel';
 
@@ -128,7 +131,7 @@ export default async function ListingPage({ params }: { params: Promise<{ slug: 
   const isOwner = user?.id === listing.owner.id;
   const cover = listing.media.find((media) => media.fullUrl) ?? listing.media[0];
 
-  const similar = await apiSafe<{ items: Array<{ id: string; slug: string; title: string }> }>(
+  const similar = await apiSafe<{ items: ListingSummary[] }>(
     `/search?categoryId=${listing.categoryId}&limit=6`,
     { revalidate: 300 },
   );
@@ -248,30 +251,64 @@ export default async function ListingPage({ params }: { params: Promise<{ slug: 
                 )}
               </div>
             ) : null}
+
+            {listing.media.length > 0 ? (
+              <span className="detail__photo-count">
+                <Icon name="box" /> {listing.media.length} photo
+                {listing.media.length === 1 ? '' : 's'}
+              </span>
+            ) : null}
           </div>
 
-          <section className="panel" style={{ marginTop: 16 }}>
-            <h2 style={{ marginTop: 0, fontSize: '1.0625rem' }}>{t('listing.description')}</h2>
+          <section className="panel detail__section">
+            <span className="section-kicker">About this listing</span>
+            <h2>{t('listing.description')}</h2>
             <p className="detail__description">{listing.description}</p>
           </section>
 
-          {Object.keys(listing.attributes).length > 0 ? (
-            <section className="panel">
-              <h2 style={{ marginTop: 0, fontSize: '1.0625rem' }}>{t('listing.details')}</h2>
+          {Object.keys({ ...listing.marketplace, ...listing.attributes }).length > 0 ? (
+            <section className="panel detail__section">
+              <span className="section-kicker">At a glance</span>
+              <h2>{t('listing.details')}</h2>
               <dl className="attr-list">
-                {Object.entries(listing.attributes).map(([key, value]) => (
-                  <div key={key}>
-                    <dt>{key.replace(/_/g, ' ')}</dt>
-                    <dd>{String(value)}</dd>
-                  </div>
-                ))}
+                {Object.entries({ ...listing.marketplace, ...listing.attributes })
+                  .filter(([, value]) => value !== null && value !== false && value !== '')
+                  .slice(0, 10)
+                  .map(([key, value]) => (
+                    <div key={key}>
+                      <dt>{humaniseKey(key)}</dt>
+                      <dd>{humaniseValue(value)}</dd>
+                    </div>
+                  ))}
               </dl>
             </section>
           ) : null}
+
+          <section className="detail__trust-strip" aria-label="LocZ safety">
+            <div>
+              <Icon name="location" />
+              <span>
+                <strong>Meet locally</strong>Choose a public place
+              </span>
+            </div>
+            <div>
+              <Icon name="shield" />
+              <span>
+                <strong>Stay protected</strong>Keep chat inside LocZ
+              </span>
+            </div>
+            <div>
+              <Icon name="heart" />
+              <span>
+                <strong>Trust your instinct</strong>Never pay in advance
+              </span>
+            </div>
+          </section>
         </div>
 
-        <aside>
-          <div className="panel">
+        <aside className="detail__aside">
+          <div className="panel detail__summary">
+            <span className="detail__type">{humaniseKey(listing.type)}</span>
             <p className="detail__price">
               {listing.price === 0
                 ? t('listing.free')
@@ -302,6 +339,15 @@ export default async function ListingPage({ params }: { params: Promise<{ slug: 
                 : ''}
             </p>
             <p className="detail__meta">{t('listing.views', { count: listing.viewCount })}</p>
+
+            <div className="detail__signals">
+              <span>
+                <Icon name="heart" /> {listing.saveCount} saved
+              </span>
+              <span>
+                <Icon name="shield" /> Moderated
+              </span>
+            </div>
 
             {!isOwner ? (
               <div style={{ marginTop: 20, display: 'grid', gap: 8 }}>
@@ -334,17 +380,22 @@ export default async function ListingPage({ params }: { params: Promise<{ slug: 
             )}
           </div>
 
-          <div className="panel">
-            <h2 style={{ marginTop: 0, fontSize: '0.9375rem' }}>{t('listing.seller')}</h2>
-            <p style={{ margin: '0 0 4px', fontWeight: 600 }}>{listing.owner.displayName}</p>
-            <p className="detail__meta" style={{ margin: 0 }}>
-              {t('listing.memberSince', {
-                date: new Date(listing.owner.memberSince).toLocaleDateString('en-IN', {
-                  month: 'long',
-                  year: 'numeric',
-                }),
-              })}
-            </p>
+          <div className="panel detail__seller">
+            <span className="detail__avatar" aria-hidden="true">
+              {listing.owner.displayName.slice(0, 1).toUpperCase()}
+            </span>
+            <div>
+              <span className="detail__seller-label">{t('listing.seller')}</span>
+              <p>{listing.owner.displayName}</p>
+              <p className="detail__meta">
+                {t('listing.memberSince', {
+                  date: new Date(listing.owner.memberSince).toLocaleDateString('en-IN', {
+                    month: 'long',
+                    year: 'numeric',
+                  }),
+                })}
+              </p>
+            </div>
             <p style={{ marginTop: 16, marginBottom: 0 }}>
               <Link
                 href={`/report?listing=${listing.id}`}
@@ -360,22 +411,38 @@ export default async function ListingPage({ params }: { params: Promise<{ slug: 
       {similar && similar.items.length > 1 ? (
         <section className="section">
           <div className="section__head">
-            <h2>{t('listing.similar')}</h2>
+            <div>
+              <span className="section-kicker">Keep exploring</span>
+              <h2>{t('listing.similar')}</h2>
+            </div>
           </div>
-          <ul style={{ listStyle: 'none', padding: 0, display: 'grid', gap: 8 }}>
+          <div className="card-rail">
             {similar.items
               .filter((item) => item.id !== listing.id)
               .slice(0, 5)
               .map((item) => (
-                <li key={item.id}>
-                  <Link href={`/ad/${item.slug}`} style={{ color: 'var(--locz-primary)' }}>
-                    {item.title}
-                  </Link>
-                </li>
+                <ListingCard key={item.id} listing={item} t={t} />
               ))}
-          </ul>
+          </div>
         </section>
       ) : null}
     </div>
   );
+}
+
+function humaniseKey(value: string): string {
+  return value
+    .replace(/([a-z])([A-Z])/g, '$1 $2')
+    .replace(/_/g, ' ')
+    .toLowerCase()
+    .replace(/^\w/, (letter) => letter.toUpperCase());
+}
+
+function humaniseValue(value: unknown): string {
+  if (typeof value === 'boolean') return value ? 'Yes' : 'No';
+  if (Array.isArray(value)) return value.join(', ');
+  return String(value)
+    .replace(/_/g, ' ')
+    .toLowerCase()
+    .replace(/^\w/, (letter) => letter.toUpperCase());
 }
