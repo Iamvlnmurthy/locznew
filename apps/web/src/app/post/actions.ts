@@ -1,6 +1,7 @@
 'use server';
 
 import { revalidatePath } from 'next/cache';
+import type { ListingType } from '@locz/shared-types';
 import { createListingSchema, marketplaceDetailsSchema, toFieldErrors } from '@locz/validation';
 import { api } from '@/lib/api';
 
@@ -12,46 +13,165 @@ export interface PostAdState {
   outcome?: { slug: string; status: string; id: string };
 }
 
+const text = (formData: FormData, name: string): string | undefined => {
+  const value = String(formData.get(name) ?? '').trim();
+  return value === '' ? undefined : value;
+};
+
+const number = (formData: FormData, name: string): number | undefined => {
+  const value = text(formData, name);
+  return value === undefined ? undefined : Number(value);
+};
+
+const checked = (formData: FormData, name: string): boolean => formData.get(name) === 'on';
+
+/** A date input gives `YYYY-MM-DD`; the API expects an ISO datetime. */
+const isoDate = (formData: FormData, name: string): string | undefined => {
+  const value = text(formData, name);
+  return value === undefined ? undefined : new Date(value).toISOString();
+};
+
 /**
- * Creates a listing.
+ * Builds the type-specific half of the payload.
  *
- * Validated with the shared Zod schemas so the browser and the API apply exactly the
- * same rules — where they disagree the API still wins, but the user finds out before a
- * round trip rather than after it.
+ * Only the block matching the chosen type is sent — the API rejects unknown properties,
+ * so posting a sofa with a salary field is refused rather than silently ignored.
+ */
+function buildTypeDetails(type: ListingType, formData: FormData): Record<string, unknown> {
+  switch (type) {
+    case 'JOB':
+      return {
+        job: {
+          companyName: text(formData, 'companyName'),
+          employmentType: text(formData, 'employmentType'),
+          workplaceType: text(formData, 'workplaceType'),
+          salaryMin: number(formData, 'salaryMin'),
+          salaryMax: number(formData, 'salaryMax'),
+          isSalaryVisible: checked(formData, 'isSalaryVisible'),
+          openings: number(formData, 'openings') ?? 1,
+          applyMethod: text(formData, 'applyMethod') ?? 'IN_APP',
+          externalApplyUrl: text(formData, 'externalApplyUrl'),
+          walkInDetails: text(formData, 'walkInDetails'),
+        },
+      };
+
+    case 'OFFER':
+      return {
+        offer: {
+          originalPrice: number(formData, 'originalPrice'),
+          offerPrice: number(formData, 'offerPrice'),
+          couponCode: text(formData, 'couponCode'),
+          startsAt: isoDate(formData, 'startsAt') ?? new Date().toISOString(),
+          endsAt: isoDate(formData, 'endsAt'),
+          redemptionInstructions: text(formData, 'redemptionInstructions'),
+        },
+      };
+
+    case 'SERVICE':
+      return {
+        service: {
+          serviceType: text(formData, 'serviceType'),
+          priceFrom: number(formData, 'priceFrom'),
+          priceTo: number(formData, 'priceTo'),
+          pricingUnit: text(formData, 'pricingUnit'),
+          experienceYears: number(formData, 'experienceYears'),
+          availability: text(formData, 'availability'),
+          servesAtHome: checked(formData, 'servesAtHome'),
+        },
+      };
+
+    case 'RENTAL':
+      return {
+        rental: {
+          propertyType: text(formData, 'propertyType'),
+          rentAmount: number(formData, 'rentAmount'),
+          depositAmount: number(formData, 'depositAmount'),
+          bedrooms: number(formData, 'bedrooms'),
+          bathrooms: number(formData, 'bathrooms'),
+          areaSqft: number(formData, 'areaSqft'),
+          furnishing: text(formData, 'furnishing'),
+          preferredTenant: text(formData, 'preferredTenant'),
+        },
+      };
+
+    case 'EVENT':
+      return {
+        event: {
+          startsAt: text(formData, 'startsAt')
+            ? new Date(text(formData, 'startsAt')!).toISOString()
+            : undefined,
+          endsAt: text(formData, 'endsAt')
+            ? new Date(text(formData, 'endsAt')!).toISOString()
+            : undefined,
+          venueName: text(formData, 'venueName'),
+          isFreeEntry: checked(formData, 'isFreeEntry'),
+          ticketPrice: number(formData, 'ticketPrice'),
+          organiser: text(formData, 'organiser'),
+        },
+      };
+
+    case 'BUYER_REQUIREMENT':
+      return {
+        buyerRequirement: {
+          budgetMin: number(formData, 'budgetMin'),
+          budgetMax: number(formData, 'budgetMax'),
+          requiredBy: isoDate(formData, 'requiredBy'),
+          preferredCondition: text(formData, 'preferredCondition'),
+        },
+      };
+
+    default:
+      return {};
+  }
+}
+
+/**
+ * Creates a listing of any type.
  *
- * The API decides whether the listing publishes immediately or goes to review, so the
- * outcome screen reports what actually happened rather than promising "published".
+ * The shared half is validated with the Zod schemas from `@locz/validation`, so the
+ * browser applies exactly the rules the API will. Type-specific rules (a salary range
+ * that runs backwards, an offer that has already expired) are enforced by the API's
+ * `ListingDetailsBuilder` and surfaced here as a message — duplicating them in the
+ * browser would mean two places to keep in step.
  */
 export async function createListingAction(
   _prev: PostAdState,
   formData: FormData,
 ): Promise<PostAdState> {
-  const isFree = formData.get('isFree') === 'on';
-  const priceRaw = String(formData.get('price') ?? '').trim();
+  const type = (text(formData, 'type') ?? 'PRODUCT') as ListingType;
   const saveAsDraft = formData.get('saveAsDraft') === 'true';
+  const isMarketplace = type === 'PRODUCT' || type === 'CLASSIFIED';
 
-  const marketplace = marketplaceDetailsSchema.safeParse({
-    price: isFree ? 0 : priceRaw === '' ? undefined : Number(priceRaw),
-    isFree,
-    isNegotiable: formData.get('isNegotiable') === 'on',
-    condition: String(formData.get('condition') ?? 'GOOD'),
-    brand: String(formData.get('brand') ?? '') || undefined,
-    model: String(formData.get('model') ?? '') || undefined,
-  });
+  let marketplace: Record<string, unknown> | undefined;
 
-  if (!marketplace.success) {
-    return { fieldErrors: toFieldErrors(marketplace.error) };
+  if (isMarketplace) {
+    const isFree = checked(formData, 'isFree');
+    const price = number(formData, 'price');
+
+    const parsedMarketplace = marketplaceDetailsSchema.safeParse({
+      price: isFree ? 0 : price,
+      isFree,
+      isNegotiable: checked(formData, 'isNegotiable'),
+      condition: text(formData, 'condition') ?? 'GOOD',
+      brand: text(formData, 'brand'),
+      model: text(formData, 'model'),
+    });
+
+    if (!parsedMarketplace.success) {
+      return { fieldErrors: toFieldErrors(parsedMarketplace.error) };
+    }
+    marketplace = parsedMarketplace.data;
   }
 
   const parsed = createListingSchema.safeParse({
-    type: 'PRODUCT',
+    type,
     title: formData.get('title'),
     description: formData.get('description'),
     categoryId: formData.get('categoryId'),
     cityId: formData.get('cityId'),
-    localityId: String(formData.get('localityId') ?? '') || undefined,
-    contactPreference: String(formData.get('contactPreference') ?? 'IN_APP_ONLY'),
-    marketplace: marketplace.data,
+    localityId: text(formData, 'localityId'),
+    contactPreference: text(formData, 'contactPreference') ?? 'IN_APP_ONLY',
+    ...(marketplace ? { marketplace } : {}),
   });
 
   if (!parsed.success) {
@@ -64,6 +184,8 @@ export async function createListingAction(
       auth: true,
       body: {
         ...parsed.data,
+        ...buildTypeDetails(type, formData),
+        ...(text(formData, 'businessId') ? { businessId: text(formData, 'businessId') } : {}),
         showPhonePublicly: parsed.data.contactPreference !== 'IN_APP_ONLY',
         saveAsDraft,
       },

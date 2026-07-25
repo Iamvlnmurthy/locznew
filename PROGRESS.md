@@ -235,6 +235,25 @@ Work found missing on review of the Phase 1 brief against what was actually buil
 Both shared packages existed but nothing imported them — a package that compiles and is
 never used is dead code that looks like coverage. They are now on the real path.
 
+## M13 — Client flows for the remaining Phase 1 modules (2026-07-26)
+
+The API accepted all nine listing types, but the web posting flow only created
+`PRODUCT` and business registration had no interface at all — so three Phase 1 modules
+(local offers, job postings, business registration) were reachable only by curl.
+
+| Item                                                                                               | Status |
+| -------------------------------------------------------------------------------------------------- | ------ |
+| Posting flow accepts 7 types — type chosen first, category list and fields follow from it          | ✅     |
+| `listing-type-fields.tsx` — job, offer, service, rental, event and buyer-requirement blocks        | ✅     |
+| `?type=JOB` deep-links straight to the right form                                                  | ✅     |
+| Business registration (`/business/new`) — four required fields, live immediately                   | ✅     |
+| Public business profile (`/b/[slug]`) with `LocalBusiness` structured data and opening hours       | ✅     |
+| `businessId` search filter added end to end — the profile page would otherwise have listed nothing | ✅     |
+| Listing-type labels in English, Telugu and Hindi                                                   | ✅     |
+| Business registration linked from the footer and the sitemap                                       | ✅     |
+
+Web is now **20 routes**.
+
 ## Final verification run (2026-07-26)
 
 | Check                            | Result                               |

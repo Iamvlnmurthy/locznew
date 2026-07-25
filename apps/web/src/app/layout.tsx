@@ -48,6 +48,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         <footer className="footer">
           <div className="container">
             <nav className="footer__links" aria-label="Footer">
+              <Link href="/business/new">{t('nav.listBusiness')}</Link>
               <Link href="/about">{t('footer.about')}</Link>
               <Link href="/help">{t('footer.help')}</Link>
               <Link href="/safety">{t('footer.safety')}</Link>

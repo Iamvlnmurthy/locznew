@@ -1,10 +1,11 @@
 'use client';
 
 import Link from 'next/link';
-import { useActionState, useState } from 'react';
+import { useActionState, useMemo, useState } from 'react';
 import { useFormStatus } from 'react-dom';
-import type { Category, City } from '@locz/shared-types';
+import type { Category, City, ListingType } from '@locz/shared-types';
 import { createListingAction, type PostAdState } from './actions';
+import { ListingTypeFields } from './listing-type-fields';
 import { PhotoUploader } from './photo-uploader';
 
 interface Labels {
@@ -14,9 +15,6 @@ interface Labels {
   titleHint: string;
   fieldDescription: string;
   descriptionHint: string;
-  fieldPrice: string;
-  priceFree: string;
-  negotiable: string;
   fieldCity: string;
   fieldCategory: string;
   contactPreference: string;
@@ -28,8 +26,22 @@ interface Labels {
   successPublished: string;
   successPending: string;
   contactOptions: Record<string, string>;
-  conditionLabel: string;
+  types: Record<string, string>;
 }
+
+/** What a person can post from the web flow. Business profiles go through /business. */
+const POSTABLE_TYPES: ListingType[] = [
+  'PRODUCT',
+  'JOB',
+  'OFFER',
+  'SERVICE',
+  'RENTAL',
+  'BUYER_REQUIREMENT',
+  'EVENT',
+];
+
+/** Photos are the whole listing for some types and merely helpful for others. */
+const PHOTOS_ESSENTIAL: ListingType[] = ['PRODUCT', 'RENTAL'];
 
 function PublishButton({ idle, busy }: { idle: string; busy: string }) {
   const { pending } = useFormStatus();
@@ -41,40 +53,47 @@ function PublishButton({ idle, busy }: { idle: string; busy: string }) {
 }
 
 /**
- * Single-screen posting form.
+ * One posting form for every listing type.
  *
- * The brief describes a ten-step wizard; this collapses it to one scrollable screen for
- * the marketplace flow. On a phone, a wizard multiplies taps and abandonment for a form
- * this short — the steps remain as visual grouping rather than as separate pages.
- * Photos are uploaded after creation because the API scopes upload URLs to a listing id.
+ * The brief describes a ten-step wizard; this is a single scrollable screen with the
+ * type chosen first. On a phone a wizard multiplies taps and abandonment for a form this
+ * short — the steps survive as visual grouping. Photos are uploaded after creation
+ * because the API scopes upload URLs to a listing id, which also means a dropped
+ * connection mid-upload loses photos, never the ad itself.
  */
 export function PostForm({
   categories,
   cities,
   defaultCityId,
+  defaultType,
   labels,
 }: {
   categories: Category[];
   cities: City[];
   defaultCityId?: string;
+  defaultType?: ListingType;
   labels: Labels;
 }) {
   const [state, action] = useActionState<PostAdState, FormData>(createListingAction, {});
-  const [isFree, setIsFree] = useState(false);
+  const [type, setType] = useState<ListingType>(defaultType ?? 'PRODUCT');
 
-  // Only leaf categories are offered — posting into "Electronics" instead of
-  // "Mobile Phones" is the most common miscategorisation.
-  const options = categories.flatMap((category) =>
-    category.children && category.children.length > 0
-      ? category.children.map((child) => ({
-          id: child.id,
-          label: `${category.name} › ${child.name}`,
-        }))
-      : [{ id: category.id, label: category.name }],
-  );
+  // Only categories configured for the chosen type, and only leaves — posting into
+  // "Electronics" instead of "Mobile Phones" is the commonest miscategorisation.
+  const categoryOptions = useMemo(() => {
+    const usable = categories.filter((category) => category.listingTypes.includes(type));
+
+    return usable.flatMap((category) =>
+      category.children && category.children.length > 0
+        ? category.children
+            .filter((child) => child.listingTypes.includes(type))
+            .map((child) => ({ id: child.id, label: `${category.name} › ${child.name}` }))
+        : [{ id: category.id, label: category.name }],
+    );
+  }, [categories, type]);
 
   if (state.outcome) {
     const published = state.outcome.status === 'PUBLISHED';
+
     return (
       <div className="form-card">
         <div className={`alert ${published ? 'alert--success' : 'alert--info'}`}>
@@ -90,11 +109,11 @@ export function PostForm({
         <div style={{ display: 'grid', gap: 8, marginTop: 24 }}>
           {published ? (
             <Link href={`/ad/${state.outcome.slug}`} className="btn btn--primary btn--block">
-              {labels.title}
+              View your ad
             </Link>
           ) : null}
           <Link href="/dashboard" className="btn btn--outline btn--block">
-            {labels.saveDraft}
+            My ads
           </Link>
         </div>
       </div>
@@ -114,35 +133,55 @@ export function PostForm({
         </div>
       ) : null}
 
+      {/* Type first: it determines the category list and every field below it, so asking
+          anything else first would mean re-asking. */}
       <div className="field">
-        <label htmlFor="title">{labels.fieldTitle}</label>
-        <input
-          id="title"
-          name="title"
-          type="text"
-          required
-          minLength={5}
-          maxLength={160}
-          autoFocus
-        />
-        <p className="field__hint">{labels.titleHint}</p>
-      </div>
-
-      <div className="field">
-        <label htmlFor="categoryId">{labels.fieldCategory}</label>
-        <select id="categoryId" name="categoryId" required defaultValue="">
-          <option value="" disabled>
-            —
-          </option>
-          {options.map((option) => (
-            <option key={option.id} value={option.id}>
-              {option.label}
+        <label htmlFor="type">What are you posting?</label>
+        <select
+          id="type"
+          name="type"
+          value={type}
+          onChange={(event) => setType(event.target.value as ListingType)}
+        >
+          {POSTABLE_TYPES.map((option) => (
+            <option key={option} value={option}>
+              {labels.types[option] ?? option}
             </option>
           ))}
         </select>
       </div>
 
-      <div className="field">
+      <div className={`field${state.fieldErrors?.title ? ' field--error' : ''}`}>
+        <label htmlFor="title">{labels.fieldTitle}</label>
+        <input id="title" name="title" type="text" required minLength={5} maxLength={160} />
+        {state.fieldErrors?.title ? (
+          <p className="field__error">{state.fieldErrors.title}</p>
+        ) : (
+          <p className="field__hint">{labels.titleHint}</p>
+        )}
+      </div>
+
+      <div className={`field${state.fieldErrors?.categoryId ? ' field--error' : ''}`}>
+        <label htmlFor="categoryId">{labels.fieldCategory}</label>
+        <select id="categoryId" name="categoryId" required defaultValue="">
+          <option value="" disabled>
+            —
+          </option>
+          {categoryOptions.map((option) => (
+            <option key={option.id} value={option.id}>
+              {option.label}
+            </option>
+          ))}
+        </select>
+        {categoryOptions.length === 0 ? (
+          <p className="field__hint">No categories are configured for this type yet.</p>
+        ) : null}
+        {state.fieldErrors?.categoryId ? (
+          <p className="field__error">{state.fieldErrors.categoryId}</p>
+        ) : null}
+      </div>
+
+      <div className={`field${state.fieldErrors?.description ? ' field--error' : ''}`}>
         <label htmlFor="description">{labels.fieldDescription}</label>
         <textarea
           id="description"
@@ -152,50 +191,16 @@ export function PostForm({
           minLength={10}
           maxLength={5000}
         />
-        <p className="field__hint">{labels.descriptionHint}</p>
+        {state.fieldErrors?.description ? (
+          <p className="field__error">{state.fieldErrors.description}</p>
+        ) : (
+          <p className="field__hint">{labels.descriptionHint}</p>
+        )}
       </div>
 
-      <div className={`field${state.fieldErrors?.price ? ' field--error' : ''}`}>
-        <label htmlFor="price">{labels.fieldPrice}</label>
-        <input
-          id="price"
-          name="price"
-          type="number"
-          min="0"
-          inputMode="numeric"
-          disabled={isFree}
-          placeholder="0"
-        />
-        {state.fieldErrors?.price ? (
-          <p className="field__error">{state.fieldErrors.price}</p>
-        ) : null}
-        <label style={{ display: 'flex', gap: 8, alignItems: 'center', fontWeight: 400 }}>
-          <input
-            type="checkbox"
-            name="isFree"
-            style={{ width: 'auto', minHeight: 'auto' }}
-            onChange={(event) => setIsFree(event.target.checked)}
-          />
-          {labels.priceFree}
-        </label>
-        <label style={{ display: 'flex', gap: 8, alignItems: 'center', fontWeight: 400 }}>
-          <input type="checkbox" name="isNegotiable" style={{ width: 'auto', minHeight: 'auto' }} />
-          {labels.negotiable}
-        </label>
-      </div>
+      <ListingTypeFields type={type} errors={state.fieldErrors} />
 
-      <div className="field">
-        <label htmlFor="condition">{labels.conditionLabel}</label>
-        <select id="condition" name="condition" defaultValue="GOOD">
-          <option value="NEW">New</option>
-          <option value="LIKE_NEW">Like new</option>
-          <option value="GOOD">Good</option>
-          <option value="FAIR">Fair</option>
-          <option value="FOR_PARTS">For parts</option>
-        </select>
-      </div>
-
-      <div className="field">
+      <div className={`field${state.fieldErrors?.cityId ? ' field--error' : ''}`}>
         <label htmlFor="cityId">{labels.fieldCity}</label>
         <select id="cityId" name="cityId" required defaultValue={defaultCityId ?? ''}>
           <option value="" disabled>
@@ -207,6 +212,9 @@ export function PostForm({
             </option>
           ))}
         </select>
+        {state.fieldErrors?.cityId ? (
+          <p className="field__error">{state.fieldErrors.cityId}</p>
+        ) : null}
       </div>
 
       <div className="field">
@@ -218,7 +226,14 @@ export function PostForm({
             </option>
           ))}
         </select>
+        <p className="field__hint">Your number stays hidden unless you choose to show it.</p>
       </div>
+
+      <p className="field__hint" style={{ marginBottom: 16 }}>
+        {PHOTOS_ESSENTIAL.includes(type)
+          ? 'Add photos on the next screen — listings with photos get far more replies.'
+          : 'You can add photos on the next screen.'}
+      </p>
 
       <PublishButton idle={labels.publish} busy={labels.publishing} />
 

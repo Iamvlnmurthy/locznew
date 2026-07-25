@@ -284,6 +284,11 @@ export class ListingSearchQueryDto extends PaginationQueryDto {
   @ApiPropertyOptional() @IsOptional() @IsUUID() cityId?: string;
   @ApiPropertyOptional() @IsOptional() @IsUUID() localityId?: string;
 
+  @ApiPropertyOptional({ description: 'Only listings posted by this business' })
+  @IsOptional()
+  @IsUUID()
+  businessId?: string;
+
   @ApiPropertyOptional({
     example: 17.4483,
     description: 'With longitude and radiusKm, enables nearby search',

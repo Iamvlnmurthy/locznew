@@ -14,7 +14,8 @@
     "account": "Account",
     "signIn": "Sign in",
     "signOut": "Sign out",
-    "language": "Language"
+    "language": "Language",
+    "listBusiness": "List your business"
   },
   "location": {
     "label": "Location",

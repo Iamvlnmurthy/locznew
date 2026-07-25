@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import { redirect } from 'next/navigation';
-import type { Category, City } from '@locz/shared-types';
+import type { Category, City, ListingType } from '@locz/shared-types';
 import { getTranslator } from '@/i18n';
 import { apiSafe } from '@/lib/api';
 import { getCurrentUser, getLocale, getSelectedCity } from '@/lib/session';
@@ -11,8 +11,27 @@ export const metadata: Metadata = {
   robots: { index: false, follow: true },
 };
 
-export default async function PostPage() {
-  const [locale, user, city] = await Promise.all([
+const VALID_TYPES: ListingType[] = [
+  'PRODUCT',
+  'JOB',
+  'OFFER',
+  'SERVICE',
+  'RENTAL',
+  'BUYER_REQUIREMENT',
+  'EVENT',
+];
+
+/**
+ * `?type=JOB` preselects the listing type, so a "Post a job" link anywhere on the site
+ * lands on the right form rather than making the user find it in a dropdown.
+ */
+export default async function PostPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ type?: string }>;
+}) {
+  const [params, locale, user, city] = await Promise.all([
+    searchParams,
     getLocale(),
     getCurrentUser(),
     getSelectedCity(),
@@ -23,8 +42,13 @@ export default async function PostPage() {
 
   const t = getTranslator(locale);
 
+  const requested = params.type?.toUpperCase() as ListingType | undefined;
+  const defaultType = requested && VALID_TYPES.includes(requested) ? requested : 'PRODUCT';
+
+  // The whole tree, unfiltered — the form narrows it as the user switches type, which
+  // avoids a round trip on every change.
   const [categories, cities] = await Promise.all([
-    apiSafe<Category[]>('/categories?listingType=PRODUCT', { revalidate: 3600 }),
+    apiSafe<Category[]>('/categories', { revalidate: 3600 }),
     apiSafe<City[]>('/locations/cities?launchedOnly=true&limit=50', { revalidate: 3600 }),
   ]);
 
@@ -34,6 +58,7 @@ export default async function PostPage() {
         categories={categories ?? []}
         cities={cities ?? []}
         defaultCityId={city?.id}
+        defaultType={defaultType}
         labels={{
           title: t('post.title'),
           subtitle: t('post.subtitle'),
@@ -41,9 +66,6 @@ export default async function PostPage() {
           titleHint: t('post.field.titleHint'),
           fieldDescription: t('post.field.description'),
           descriptionHint: t('post.field.descriptionHint'),
-          fieldPrice: t('post.field.price'),
-          priceFree: t('post.field.priceFree'),
-          negotiable: t('post.field.negotiable'),
           fieldCity: t('post.field.city'),
           fieldCategory: t('post.steps.category'),
           contactPreference: t('post.field.contactPreference'),
@@ -54,12 +76,20 @@ export default async function PostPage() {
           saveDraft: t('post.saveDraft'),
           successPublished: t('post.successPublished'),
           successPending: t('post.successPending'),
-          conditionLabel: t('listing.condition'),
           contactOptions: {
             IN_APP_ONLY: t('post.contact.IN_APP_ONLY'),
             PHONE_AND_IN_APP: t('post.contact.PHONE_AND_IN_APP'),
             PHONE: t('post.contact.PHONE'),
             WHATSAPP: t('post.contact.WHATSAPP'),
+          },
+          types: {
+            PRODUCT: t('post.type.PRODUCT'),
+            JOB: t('post.type.JOB'),
+            OFFER: t('post.type.OFFER'),
+            SERVICE: t('post.type.SERVICE'),
+            RENTAL: t('post.type.RENTAL'),
+            BUYER_REQUIREMENT: t('post.type.BUYER_REQUIREMENT'),
+            EVENT: t('post.type.EVENT'),
           },
         }}
       />

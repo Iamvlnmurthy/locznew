@@ -74,6 +74,15 @@
       "price": "ధర (₹)",
       "photos": "ఫోటోలు",
       "city": "నగరం"
+    },
+    "type": {
+      "PRODUCT": "అమ్మకానికి",
+      "JOB": "ఉద్యోగం",
+      "OFFER": "ఆఫర్",
+      "SERVICE": "సేవ",
+      "RENTAL": "అద్దెకు",
+      "BUYER_REQUIREMENT": "కావాలి",
+      "EVENT": "ఈవెంట్"
     }
   },
   "auth": {

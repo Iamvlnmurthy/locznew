@@ -326,6 +326,7 @@ export class ListingsService {
       ...(query.type ? { type: query.type } : {}),
       ...(query.cityId ? { cityId: query.cityId } : {}),
       ...(query.localityId ? { localityId: query.localityId } : {}),
+      ...(query.businessId ? { businessId: query.businessId } : {}),
       ...(query.categoryId
         ? { OR: [{ categoryId: query.categoryId }, { subcategoryId: query.categoryId }] }
         : {}),

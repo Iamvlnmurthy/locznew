@@ -1452,6 +1452,15 @@
             }
           },
           {
+            "name": "businessId",
+            "required": false,
+            "in": "query",
+            "description": "Only listings posted by this business",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
             "name": "latitude",
             "required": false,
             "in": "query",
@@ -2062,6 +2071,15 @@
             "name": "localityId",
             "required": false,
             "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "businessId",
+            "required": false,
+            "in": "query",
+            "description": "Only listings posted by this business",
             "schema": {
               "type": "string"
             }

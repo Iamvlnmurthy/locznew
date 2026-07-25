@@ -36,6 +36,11 @@ export class SearchQueryDto extends PaginationQueryDto {
   @ApiPropertyOptional() @IsOptional() @IsUUID() cityId?: string;
   @ApiPropertyOptional() @IsOptional() @IsUUID() localityId?: string;
 
+  @ApiPropertyOptional({ description: 'Only listings posted by this business' })
+  @IsOptional()
+  @IsUUID()
+  businessId?: string;
+
   @ApiPropertyOptional() @IsOptional() @Type(() => Number) @IsNumber() @Min(0) priceMin?: number;
   @ApiPropertyOptional() @IsOptional() @Type(() => Number) @IsNumber() @Min(0) priceMax?: number;
 

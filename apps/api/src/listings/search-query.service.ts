@@ -101,6 +101,7 @@ export class SearchQueryService {
     if (query.type) filters.push(`type = "${query.type}"`);
     if (query.cityId) filters.push(`cityId = "${query.cityId}"`);
     if (query.localityId) filters.push(`localityId = "${query.localityId}"`);
+    if (query.businessId) filters.push(`businessId = "${query.businessId}"`);
     if (query.categoryId) {
       filters.push(`(categoryId = "${query.categoryId}" OR subcategoryId = "${query.categoryId}")`);
     }
@@ -145,6 +146,7 @@ export class SearchQueryService {
       categoryId: query.categoryId,
       cityId: query.cityId,
       localityId: query.localityId,
+      businessId: query.businessId,
       latitude: query.latitude,
       longitude: query.longitude,
       radiusKm: query.radiusKm,

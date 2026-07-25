@@ -74,6 +74,15 @@
       "price": "कीमत (₹)",
       "photos": "तस्वीरें",
       "city": "शहर"
+    },
+    "type": {
+      "PRODUCT": "बेचने के लिए",
+      "JOB": "नौकरी",
+      "OFFER": "ऑफ़र",
+      "SERVICE": "सेवा",
+      "RENTAL": "किराए पर",
+      "BUYER_REQUIREMENT": "ज़रूरत है",
+      "EVENT": "कार्यक्रम"
     }
   },
   "auth": {
