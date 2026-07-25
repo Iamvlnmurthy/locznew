@@ -51,6 +51,11 @@ export default async function SearchPage({
   const cityId = params.cityId ?? city?.id;
   if (cityId) query.set('cityId', cityId);
 
+  // The API resolves the pincode to its centroid and searches outward from there, so a
+  // pincode narrows results the same way a radius does — no special case here.
+  const pincode = params.pincode ?? city?.pincode;
+  if (pincode) query.set('pincode', pincode);
+
   if (params.radiusKm && city?.latitude && city?.longitude) {
     query.set('radiusKm', params.radiusKm);
     query.set('latitude', String(city.latitude));

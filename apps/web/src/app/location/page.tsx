@@ -33,6 +33,10 @@ export default async function LocationPage() {
           detecting: t('location.detecting'),
           permissionDenied: t('location.permissionDenied'),
           outsideLaunchArea: t('location.outsideLaunchArea'),
+          pincodeLabel: t('location.pincodeLabel'),
+          pincodePlaceholder: t('location.pincodePlaceholder'),
+          pincodeApply: t('location.pincodeApply'),
+          pincodeUnknown: t('location.pincodeUnknown'),
         }}
       />
     </div>

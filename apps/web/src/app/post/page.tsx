@@ -58,6 +58,7 @@ export default async function PostPage({
         categories={categories ?? []}
         cities={cities ?? []}
         defaultCityId={city?.id}
+        defaultPincode={city?.pincode}
         defaultType={defaultType}
         labels={{
           title: t('post.title'),
@@ -67,6 +68,8 @@ export default async function PostPage({
           fieldDescription: t('post.field.description'),
           descriptionHint: t('post.field.descriptionHint'),
           fieldCity: t('post.field.city'),
+          fieldPincode: t('post.field.pincode'),
+          fieldPincodeHint: t('post.field.pincodeHint'),
           fieldCategory: t('post.steps.category'),
           contactPreference: t('post.field.contactPreference'),
           photos: t('post.field.photos'),

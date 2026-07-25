@@ -170,6 +170,7 @@ export async function createListingAction(
     categoryId: formData.get('categoryId'),
     cityId: formData.get('cityId'),
     localityId: text(formData, 'localityId'),
+    pincodeCode: text(formData, 'pincodeCode'),
     contactPreference: text(formData, 'contactPreference') ?? 'IN_APP_ONLY',
     ...(marketplace ? { marketplace } : {}),
   });

@@ -4,7 +4,7 @@ import { useRouter } from 'next/navigation';
 import { useMemo, useState, useTransition } from 'react';
 import type { City } from '@locz/shared-types';
 import { selectCityAction } from '@/app/actions';
-import { resolveCoordinatesAction } from './actions';
+import { resolveCoordinatesAction, resolvePincodeAction } from './actions';
 
 /**
  * City chooser.
@@ -26,10 +26,16 @@ export function LocationPicker({
     detecting: string;
     permissionDenied: string;
     outsideLaunchArea: string;
+    pincodeLabel: string;
+    pincodePlaceholder: string;
+    pincodeApply: string;
+    pincodeUnknown: string;
   };
 }) {
   const router = useRouter();
   const [query, setQuery] = useState('');
+  const [pincode, setPincode] = useState('');
+  const [pincodeError, setPincodeError] = useState<string | null>(null);
   const [status, setStatus] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
 
@@ -55,6 +61,37 @@ export function LocationPicker({
         slug: city.slug,
         latitude: city.latitude,
         longitude: city.longitude,
+      });
+      router.push('/');
+    });
+  }
+
+  /**
+   * A pincode is the location most people can state without hesitating, and it costs no
+   * browser permission. The code resolves to its centroid, and the area around that point
+   * — not the code's own boundary — is what gets browsed.
+   */
+  function applyPincode() {
+    const code = pincode.trim();
+
+    startTransition(async () => {
+      const resolved = await resolvePincodeAction(code);
+
+      if (!resolved) {
+        setPincodeError(labels.pincodeUnknown);
+        return;
+      }
+
+      setPincodeError(null);
+      await selectCityAction({
+        // A pincode outside every launched city still browses fine by radius, so the city
+        // fields stay empty rather than snapping to somewhere hundreds of kilometres away.
+        id: resolved.cityId ?? '',
+        name: resolved.cityName ?? `${resolved.name}, ${resolved.districtName}`,
+        slug: '',
+        latitude: resolved.latitude,
+        longitude: resolved.longitude,
+        pincode: resolved.code,
       });
       router.push('/');
     });
@@ -112,6 +149,44 @@ export function LocationPicker({
           {status}
         </p>
       ) : null}
+
+      <div className="field" style={{ marginTop: 20 }}>
+        <label htmlFor="pincode">{labels.pincodeLabel}</label>
+        <div style={{ display: 'flex', gap: 8 }}>
+          <input
+            id="pincode"
+            type="text"
+            inputMode="numeric"
+            autoComplete="postal-code"
+            maxLength={6}
+            placeholder={labels.pincodePlaceholder}
+            value={pincode}
+            // Digits only: a numeric keypad still allows paste, and a stray letter would
+            // fail server-side for no reason the user can see.
+            onChange={(event) => {
+              setPincode(event.target.value.replace(/\D/g, '').slice(0, 6));
+              setPincodeError(null);
+            }}
+            onKeyDown={(event) => {
+              if (event.key === 'Enter' && pincode.length === 6) applyPincode();
+            }}
+            style={{ flex: 1 }}
+          />
+          <button
+            type="button"
+            className="btn btn--secondary"
+            onClick={applyPincode}
+            disabled={isPending || pincode.length !== 6}
+          >
+            {labels.pincodeApply}
+          </button>
+        </div>
+        {pincodeError ? (
+          <p className="field__error" role="alert">
+            {pincodeError}
+          </p>
+        ) : null}
+      </div>
 
       <div className="field" style={{ marginTop: 24 }}>
         <label htmlFor="city-search">{labels.searchCity}</label>

@@ -30,6 +30,8 @@ export default async function HomePage() {
 
   const query = new URLSearchParams({ limit: '12' });
   if (city?.id) query.set('cityId', city.id);
+  // A visitor who stated a pincode gets the area around it, launched city or not.
+  if (city?.pincode) query.set('pincode', city.pincode);
   if (city?.latitude && city?.longitude) {
     query.set('latitude', String(city.latitude));
     query.set('longitude', String(city.longitude));

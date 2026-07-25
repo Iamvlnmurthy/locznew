@@ -133,6 +133,12 @@ export const createListingSchema = z.object({
   categoryId: uuid,
   cityId: uuid,
   localityId: uuid.optional(),
+  // Optional, but the field posters actually fill: the API places the listing at the
+  // pincode centroid, which is closer than the city centre and costs no GPS prompt.
+  pincodeCode: z
+    .string()
+    .regex(/^\d{6}$/, 'A pincode is exactly six digits')
+    .optional(),
   contactPreference: z
     .enum(['IN_APP_ONLY', 'PHONE', 'WHATSAPP', 'EMAIL', 'PHONE_AND_IN_APP'])
     .default('IN_APP_ONLY'),

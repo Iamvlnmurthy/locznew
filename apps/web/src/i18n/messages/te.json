@@ -40,7 +40,12 @@
     "within": "{distance} కి.మీ లోపల",
     "entireCity": "నగరం మొత్తం",
     "entireDistrict": "జిల్లా మొత్తం",
-    "entireState": "రాష్ట్రం మొత్తం"
+    "entireState": "రాష్ట్రం మొత్తం",
+    "pincodeLabel": "లేదా మీ పిన్‌కోడ్ ఇవ్వండి",
+    "pincodePlaceholder": "ఉదా. 500081",
+    "pincodeApply": "ఈ పిన్‌కోడ్ చుట్టుపక్కల ప్రకటనలు",
+    "pincodeUnknown": "ఈ పిన్‌కోడ్ సరైనది కాదు. ఆరు అంకెలు సరిచూడండి.",
+    "pincodeArea": "{name}, {district} — దగ్గరలో {count} ప్రకటనలు"
   },
   "search": {
     "placeholder": "ఏదైనా వెతకండి — ఫోన్లు, ఉద్యోగాలు, గదులు",
@@ -87,7 +92,9 @@
       "description": "వివరణ",
       "price": "ధర (₹)",
       "photos": "ఫోటోలు",
-      "city": "నగరం"
+      "city": "నగరం",
+      "pincode": "పిన్‌కోడ్",
+      "pincodeHint": "కొనేవారు పిన్‌కోడ్‌తో వెతుకుతారు — మీ ఖచ్చితమైన చిరునామా ఇవ్వకుండానే ప్రకటన ప్రాంతం తెలుస్తుంది."
     },
     "type": {
       "PRODUCT": "అమ్మకానికి",

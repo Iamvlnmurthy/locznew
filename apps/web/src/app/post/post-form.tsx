@@ -17,6 +17,8 @@ interface Labels {
   fieldDescription: string;
   descriptionHint: string;
   fieldCity: string;
+  fieldPincode: string;
+  fieldPincodeHint: string;
   fieldCategory: string;
   contactPreference: string;
   photos: string;
@@ -76,12 +78,14 @@ export function PostForm({
   categories,
   cities,
   defaultCityId,
+  defaultPincode,
   defaultType,
   labels,
 }: {
   categories: Category[];
   cities: City[];
   defaultCityId?: string;
+  defaultPincode?: string;
   defaultType?: ListingType;
   labels: Labels;
 }) {
@@ -240,6 +244,25 @@ export function PostForm({
         </select>
         {state.fieldErrors?.cityId ? (
           <p className="field__error">{state.fieldErrors.cityId}</p>
+        ) : null}
+      </div>
+
+      <div className={`field${state.fieldErrors?.pincodeCode ? ' field--error' : ''}`}>
+        <label htmlFor="pincodeCode">{labels.fieldPincode}</label>
+        <input
+          id="pincodeCode"
+          name="pincodeCode"
+          type="text"
+          inputMode="numeric"
+          autoComplete="postal-code"
+          maxLength={6}
+          pattern="\d{6}"
+          placeholder="500081"
+          defaultValue={defaultPincode ?? ''}
+        />
+        <p className="field__hint">{labels.fieldPincodeHint}</p>
+        {state.fieldErrors?.pincodeCode ? (
+          <p className="field__error">{state.fieldErrors.pincodeCode}</p>
         ) : null}
       </div>
 

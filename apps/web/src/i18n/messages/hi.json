@@ -40,7 +40,12 @@
     "within": "{distance} किमी के भीतर",
     "entireCity": "पूरा शहर",
     "entireDistrict": "पूरा ज़िला",
-    "entireState": "पूरा राज्य"
+    "entireState": "पूरा राज्य",
+    "pincodeLabel": "या अपना पिनकोड डालें",
+    "pincodePlaceholder": "जैसे 500081",
+    "pincodeApply": "इस पिनकोड के आसपास के विज्ञापन दिखाएँ",
+    "pincodeUnknown": "यह पिनकोड सही नहीं लगता। छह अंक जाँच लें।",
+    "pincodeArea": "{name}, {district} — आसपास {count} विज्ञापन"
   },
   "search": {
     "placeholder": "कुछ भी खोजें — फ़ोन, नौकरी, कमरा",
@@ -87,7 +92,9 @@
       "description": "विवरण",
       "price": "कीमत (₹)",
       "photos": "तस्वीरें",
-      "city": "शहर"
+      "city": "शहर",
+      "pincode": "पिनकोड",
+      "pincodeHint": "खरीदार पिनकोड से खोजते हैं — इससे आपका पता बताए बिना विज्ञापन सही इलाके में दिखता है।"
     },
     "type": {
       "PRODUCT": "बेचने के लिए",

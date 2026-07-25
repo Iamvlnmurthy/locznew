@@ -408,3 +408,15 @@ dropped the getter and would have broken pagination on every pincode search. It 
 onto the instance instead.
 
 Acceptance suite: **61 assertions, 0 failures** — 12 of them new and covering pincodes.
+
+### Web
+
+The location picker takes a pincode alongside "use my current location" and the city
+list, the posting form takes one for the ad, and the header chip shows the pincode back
+to whoever typed it. A pincode outside every launched city still browses fine — the city
+fields stay empty and the radius does the work, rather than snapping the visitor to a
+city hundreds of kilometres away.
+
+Verified against the running stack rather than assumed: with `500081` selected the
+Hyderabad listing appears; with `110001` selected it does not. Strings are translated in
+English, Telugu and Hindi.

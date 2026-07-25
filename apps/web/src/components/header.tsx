@@ -29,7 +29,11 @@ export async function Header({ locale }: { locale: Locale }) {
           </picture>
         </Link>
 
-        <LocationChip cityName={city?.name ?? null} changeLabel={t('location.change')} />
+        {/* The pincode is what the visitor typed, so it is what the chip shows back. */}
+        <LocationChip
+          cityName={city?.pincode ?? city?.name ?? null}
+          changeLabel={t('location.change')}
+        />
 
         <form className="searchbar" action="/search" method="get" role="search">
           <label htmlFor="site-search" className="sr-only">

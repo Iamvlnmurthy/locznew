@@ -19,3 +19,27 @@ export async function resolveCoordinatesAction(
 
   return { city: result?.city ?? null };
 }
+
+export interface ResolvedPincode {
+  code: string;
+  name: string;
+  districtName: string;
+  stateName: string;
+  latitude: number;
+  longitude: number;
+  cityId: string | null;
+  cityName: string | null;
+  listingCount: number;
+}
+
+/**
+ * Looks up a pincode. Returns null for anything the dataset does not know, which the
+ * picker reports as a typo rather than an outage — every real Indian pincode is present.
+ */
+export async function resolvePincodeAction(code: string): Promise<ResolvedPincode | null> {
+  if (!/^\d{6}$/.test(code)) return null;
+
+  return (
+    (await apiSafe<ResolvedPincode>(`/locations/pincodes/${code}`, { revalidate: 3600 })) ?? null
+  );
+}

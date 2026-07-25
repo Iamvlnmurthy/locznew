@@ -45,7 +45,12 @@
     "entireState": "Entire state",
     "outsideLaunchArea": "LocZ is not live in your area yet. Pick a city to browse.",
     "detecting": "Finding your location…",
-    "permissionDenied": "Location permission was declined. Pick a city instead."
+    "permissionDenied": "Location permission was declined. Pick a city instead.",
+    "pincodeLabel": "Or enter your pincode",
+    "pincodePlaceholder": "e.g. 500081",
+    "pincodeApply": "Show ads near this pincode",
+    "pincodeUnknown": "That pincode does not look right. Check the six digits.",
+    "pincodeArea": "{name}, {district} — {count} ads nearby"
   },
   "search": {
     "placeholder": "Search for anything — phones, jobs, rooms, plumbers",
@@ -158,7 +163,9 @@
       "photosHint": "Up to 12. The first one becomes the cover.",
       "city": "City",
       "locality": "Locality",
-      "contactPreference": "Contact preference"
+      "contactPreference": "Contact preference",
+      "pincode": "Pincode",
+      "pincodeHint": "Buyers search by pincode — this places your ad on the map without sharing your exact address."
     },
     "contact": {
       "IN_APP_ONLY": "Messages on LocZ only",

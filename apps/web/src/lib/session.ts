@@ -14,12 +14,15 @@ export interface WebUser {
 }
 
 export interface SelectedCity {
+  /** Empty when the visitor chose a pincode outside every launched city. */
   id: string;
   name: string;
   slug: string;
   latitude?: number;
   longitude?: number;
   radiusKm?: number;
+  /** Set when the visitor stated their location as a pincode rather than a city. */
+  pincode?: string;
 }
 
 export async function storeSession(session: AuthSession): Promise<void> {
