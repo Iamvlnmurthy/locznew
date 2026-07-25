@@ -47,9 +47,12 @@ CREATE INDEX IF NOT EXISTS "sessions_active_idx"
   WHERE "revokedAt" IS NULL;
 
 -- Offers that are valid right now — the local-offers feed section.
+--
+-- Deliberately NOT a partial index on `"endsAt" > NOW()`: an index predicate must be
+-- IMMUTABLE, and NOW() is STABLE, so PostgreSQL rejects it (42P17). A plain B-tree on
+-- the range answers the same query; the planner uses it for both bounds.
 CREATE INDEX IF NOT EXISTS "offer_details_active_idx"
-  ON "offer_details" ("endsAt")
-  WHERE "endsAt" > NOW();
+  ON "offer_details" ("endsAt", "startsAt");
 
 -- ---------------------------------------------------------------------
 -- Business rule: a user may have many saved locations but exactly one default.

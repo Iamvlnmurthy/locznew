@@ -221,8 +221,9 @@ export const reportSchema = z.object({
 });
 
 export const imageUploadSchema = z.object({
+  // Zod 4 replaced the `errorMap` callback with a plain `error` message or function.
   mimeType: z.enum(ALLOWED_IMAGE_MIME, {
-    errorMap: () => ({ message: 'Upload a JPEG, PNG, WebP or HEIC image' }),
+    error: 'Upload a JPEG, PNG, WebP or HEIC image',
   }),
   sizeBytes: z
     .number()

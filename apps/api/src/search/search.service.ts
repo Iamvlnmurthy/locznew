@@ -1,6 +1,6 @@
 import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { ListingStatus } from '@prisma/client';
-import { MeiliSearch, Index } from 'meilisearch';
+import { Index, Meilisearch } from 'meilisearch';
 import { AppConfig } from '../config/config.module';
 import { PrismaService } from '../prisma/prisma.service';
 import { StorageService } from '../media/storage.service';
@@ -43,7 +43,7 @@ export interface ListingDocument {
 @Injectable()
 export class SearchService implements OnModuleInit {
   private readonly logger = new Logger(SearchService.name);
-  private readonly client: MeiliSearch;
+  private readonly client: Meilisearch;
   private readonly indexName: string;
 
   constructor(
@@ -52,7 +52,7 @@ export class SearchService implements OnModuleInit {
     private readonly storage: StorageService,
   ) {
     this.indexName = config.get('MEILI_LISTINGS_INDEX');
-    this.client = new MeiliSearch({
+    this.client = new Meilisearch({
       host: config.get('MEILI_HOST'),
       apiKey: config.get('MEILI_MASTER_KEY') || undefined,
     });

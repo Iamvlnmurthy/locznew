@@ -2,12 +2,12 @@
 
 ## Prerequisites
 
-| Tool           | Version                 | Needed for                            |
-| -------------- | ----------------------- | ------------------------------------- |
-| Node.js        | 20.11+ (22 recommended) | API, web, admin                       |
-| npm            | 10+                     | workspaces                            |
-| Docker Desktop | 4.30+                   | PostgreSQL, Redis, Meilisearch, MinIO |
-| Flutter        | 3.24+                   | mobile only                           |
+| Tool           | Version              | Needed for                            |
+| -------------- | -------------------- | ------------------------------------- |
+| Node.js        | 22+ (24 recommended) | API, web, admin                       |
+| npm            | 10+                  | workspaces                            |
+| Docker Desktop | 4.30+                | PostgreSQL, Redis, Meilisearch, MinIO |
+| Flutter        | 3.35+                | mobile only                           |
 
 Check with `node -v && npm -v && docker -v`.
 
@@ -51,11 +51,15 @@ npm rebuild argon2 sharp
 
 ## 3. Start the infrastructure
 
+> **Running Postgres natively instead of in Docker?** See
+> [Local PostgreSQL](#local-postgresql-without-docker) at the end of this document. The
+> rest of the stack (Redis, Meilisearch, MinIO) still comes from Compose.
+
 ```bash
 npm run docker:up
 ```
 
-This brings up PostgreSQL 16 + PostGIS 3.4, Redis 7, Meilisearch v1.11, and MinIO with
+This brings up PostgreSQL 18 + PostGIS 3.6, Redis 8, Meilisearch v1.24, and MinIO with
 the media bucket created. Wait for health:
 
 ```bash
@@ -76,7 +80,7 @@ npm run db:migrate    # applies both migrations
 npm run db:seed       # roles, geography, categories, test accounts
 ```
 
-The first migration creates 45 tables and enables PostGIS. The second adds what Prisma's
+The first migration creates the 52 application tables and enables PostGIS. The second adds what Prisma's
 schema language cannot express: GiST spatial indexes, partial indexes for the background
 sweepers, trigram indexes, the one-default-location constraint, and the triggers that
 derive the `geo` column from latitude/longitude.
@@ -203,3 +207,58 @@ Behind a transaction pooler (PgBouncer, Neon, Supabase) add `?pgbouncer=true` to
 `DATABASE_URL` and set `DIRECT_DATABASE_URL` to the unpooled endpoint — DDL cannot run
 through a transaction pooler, so migrations use the direct connection while application
 traffic keeps the pool.
+
+---
+
+## Local PostgreSQL without Docker
+
+The project is developed against a natively installed PostgreSQL 18.4 with PostGIS 3.6.2.
+No administrator rights are needed — these are the portable binaries, which live entirely
+in a user directory and are removed by deleting it.
+
+```powershell
+# PostgreSQL binaries (no installer, no service, no admin)
+Invoke-WebRequest `
+  -Uri "https://get.enterprisedb.com/postgresql/postgresql-18.4-1-windows-x64-binaries.zip" `
+  -OutFile "$HOME\locz-pg\downloads\pg.zip"
+Expand-Archive "$HOME\locz-pg\downloads\pg.zip" -DestinationPath "$HOME\locz-pg"
+
+# PostGIS bundle, extracted over the PostgreSQL tree
+Invoke-WebRequest `
+  -Uri "https://download.osgeo.org/postgis/windows/pg18/postgis-bundle-pg18-3.6.2x64.zip" `
+  -OutFile "$HOME\locz-pg\downloads\postgis.zip"
+```
+
+Initialise with ICU collation — the libc provider on Windows does not order Telugu or
+Devanagari correctly:
+
+```powershell
+& "$HOME\locz-pg\pgsqlin\initdb.exe" --pgdata="$HOME\locz-pg\data" `
+  --username=postgres --pwfile=<file> --encoding=UTF8 `
+  --locale-provider=icu --icu-locale=en-IN
+```
+
+Start and stop it with `pg_ctl`:
+
+```powershell
+& "$HOME\locz-pg\pgsqlin\pg_ctl.exe" -D "$HOME\locz-pg\data" -l "$HOME\locz-pg\logs\postgresql.log" start
+& "$HOME\locz-pg\pgsqlin\pg_ctl.exe" -D "$HOME\locz-pg\data" stop
+```
+
+Then create the role, the databases and the extensions:
+
+```sql
+CREATE ROLE locz WITH LOGIN PASSWORD '...' NOSUPERUSER NOCREATEDB NOCREATEROLE;
+CREATE DATABASE locz WITH OWNER = locz ENCODING = 'UTF8'
+  LOCALE_PROVIDER = 'icu' ICU_LOCALE = 'en-IN' TEMPLATE = template0;
+CREATE DATABASE locz_test WITH OWNER = locz ENCODING = 'UTF8'
+  LOCALE_PROVIDER = 'icu' ICU_LOCALE = 'en-IN' TEMPLATE = template0;
+
+-- In each database, as superuser:
+CREATE EXTENSION postgis; CREATE EXTENSION pg_trgm; CREATE EXTENSION unaccent;
+CREATE EXTENSION citext;  CREATE EXTENSION "uuid-ossp"; CREATE EXTENSION pg_stat_statements;
+ALTER SCHEMA public OWNER TO locz;
+```
+
+The application role is deliberately `NOSUPERUSER NOCREATEDB` — it needs DML and DDL
+inside its own database and nothing beyond it.

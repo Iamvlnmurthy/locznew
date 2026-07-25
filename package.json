@@ -2,7 +2,7 @@
   "name": "locz",
   "private": true,
   "version": "0.1.0",
-  "description": "LocZ — location-first local discovery platform",
+  "description": "LocZ \u2014 location-first local discovery platform",
   "workspaces": [
     "apps/api",
     "apps/web",
@@ -31,9 +31,9 @@
   },
   "devDependencies": {
     "husky": "^9.1.7",
-    "lint-staged": "^15.5.2",
-    "prettier": "^3.5.3",
-    "typescript": "^5.8.3"
+    "lint-staged": "^17.2.0",
+    "prettier": "^3.9.6",
+    "typescript": "^6.0.3"
   },
   "lint-staged": {
     "apps/api/**/*.ts": [
@@ -61,6 +61,7 @@
     "argon2": true,
     "msgpackr-extract": true,
     "prisma": true,
-    "sharp": true
+    "sharp": true,
+    "unrs-resolver": true
   }
 }

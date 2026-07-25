@@ -29,6 +29,7 @@ class Strings {
 
   static const Map<AppLocaleOption, Map<String, String>> _catalogue = {
     AppLocaleOption.en: {
+      'brand.tagline': 'Find it here.. Deal it near..',
       'nav.home': 'Home',
       'nav.search': 'Search',
       'nav.post': 'Post',
@@ -120,6 +121,7 @@ class Strings {
       'common.away': '{distance} away',
     },
     AppLocaleOption.te: {
+      'brand.tagline': 'ఇక్కడ వెతకండి.. దగ్గరలో డీల్ చేయండి..',
       'nav.home': 'హోమ్',
       'nav.search': 'వెతకండి',
       'nav.post': 'ప్రకటన',
@@ -171,6 +173,7 @@ class Strings {
       'common.km': 'కి.మీ',
     },
     AppLocaleOption.hi: {
+      'brand.tagline': 'यहाँ खोजें.. पास में सौदा करें..',
       'nav.home': 'होम',
       'nav.search': 'खोजें',
       'nav.post': 'विज्ञापन',

@@ -2,7 +2,7 @@
   "name": "@locz/ui-tokens",
   "version": "0.1.0",
   "private": true,
-  "description": "LocZ design tokens — one visual system for web, admin and mobile",
+  "description": "LocZ design tokens \u2014 one visual system for web, admin and mobile",
   "main": "src/index.ts",
   "types": "src/index.ts",
   "exports": {
@@ -14,6 +14,6 @@
     "typecheck": "tsc --noEmit"
   },
   "devDependencies": {
-    "typescript": "^5.8.3"
+    "typescript": "^6.0.3"
   }
 }

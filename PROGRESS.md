@@ -2,10 +2,11 @@
 
 Legend: ✅ done & verified · 🟡 authored, not yet verified · ⬜ not started
 
-> **Verification note.** The workstation this repository was scaffolded on has Node 20+/npm
-> but **no Docker, no Flutter SDK and no pnpm**. Anything that requires those to prove it works
-> is marked 🟡 until it has been run on a machine that has them. Nothing is marked ✅ on the
-> strength of "it looks right".
+> **Verification note.** PostgreSQL 18.4 + PostGIS 3.6.2 now runs natively on this
+> workstation, so the database, migrations, seed, backup and restore are all **executed and
+> verified**. Still absent: Docker (Redis, Meilisearch and MinIO are unrun) and the Flutter
+> SDK (the mobile app has never been compiled). Nothing is marked ✅ on the strength of
+> "it looks right".
 
 ## M0 — Repository foundation
 
@@ -27,7 +28,7 @@ Legend: ✅ done & verified · 🟡 authored, not yet verified · ⬜ not starte
 
 | Item                                                                                                                                                                | Status                                                          |
 | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------- |
-| Prisma schema — 45 models across identity, geo, catalog, listings, trust, comms, ops                                                                                | ✅ passes `prisma validate`                                     |
+| Prisma schema — 52 models across identity, geo, catalog, listings, trust, comms, ops                                                                                | ✅ passes `prisma validate`                                     |
 | `apps/api/package.json` (dependency set)                                                                                                                            | ✅                                                              |
 | Baseline migration `20260725000000_init` (generated offline via `prisma migrate diff`)                                                                              | 🟡 authored — needs a live PostGIS to apply                     |
 | Migration `20260725000100_spatial_and_partial_indexes` — GiST, partial, trigram indexes, geo-sync triggers                                                          | 🟡 same                                                         |
@@ -223,7 +224,7 @@ Work found missing on review of the Phase 1 brief against what was actually buil
 
 | Item                                                                                                                                                              | Status                       |
 | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------- |
-| `scripts/verify-db.sh` — 18 post-migration checks: extensions, 45 tables, GiST and partial indexes, geo triggers, coordinate-order sanity                         | ✅ authored, `bash -n` clean |
+| `scripts/verify-db.sh` — 18 post-migration checks: extensions, 53 tables, GiST and partial indexes, geo triggers, coordinate-order sanity                         | ✅ authored, `bash -n` clean |
 | `scripts/backup.sh` — `pg_dump -Fc`, verifies the dump with `pg_restore --list`, refuses to rotate on an implausible table count, optional off-box upload         | ✅ same                      |
 | `scripts/restore.sh` — restore into a throwaway database with row counts and a spatial-integrity check; typing the database name required to overwrite production | ✅ same                      |
 | Connection pooling — explicit `connection_limit`, plus `directUrl` for migrations behind a transaction pooler                                                     | ✅ schema validates          |
@@ -253,6 +254,59 @@ The API accepted all nine listing types, but the web posting flow only created
 | Business registration linked from the footer and the sitemap                                       | ✅     |
 
 Web is now **20 routes**.
+
+## M14 — Live database, latest dependencies, brand slogan (2026-07-26)
+
+### Database — now real, not authored
+
+| Item                                                                                                                                                 | Status     |
+| ---------------------------------------------------------------------------------------------------------------------------------------------------- | ---------- |
+| PostgreSQL **18.4** + PostGIS **3.6.2** installed natively (portable binaries, no admin rights)                                                      | ✅ running |
+| Cluster initialised with ICU `en-IN` collation — libc on Windows does not order Telugu or Devanagari correctly                                       | ✅         |
+| Tuned `postgresql.conf`: `random_page_cost=1.1` so the planner will actually pick the GiST index, `auto_explain`, IST timezone, 200ms slow-query log | ✅         |
+| `pg_hba.conf` on scram-sha-256 — the initdb default of `trust` would let anything on the machine connect as superuser                                | ✅         |
+| Roles and databases: `locz` (NOSUPERUSER NOCREATEDB), `locz` + `locz_test` databases                                                                 | ✅         |
+| Both migrations applied · seed executed (9 roles, 8 cities, 28 categories, 7 accounts)                                                               | ✅         |
+| `verify-db.sh` — **all 18 checks pass**, including Hyderabad measuring 0.0 km from itself                                                            | ✅         |
+| `backup.sh` — real dump taken and verified                                                                                                           | ✅         |
+| `restore.sh` — real drill into a throwaway database, 7 users restored, GiST indexes intact                                                           | ✅         |
+
+**Four real bugs the live database caught**, all invisible to a type-checker:
+
+1. `CREATE INDEX ... WHERE "endsAt" > NOW()` — index predicates must be IMMUTABLE and
+   `NOW()` is STABLE. PostgreSQL rejected the migration (42P17).
+2. Prisma treats an **empty** `directUrl` as a validation error, not as unset — my
+   `.env.example` comment said the opposite.
+3. `DATABASE_URL` contains `&`, so `source .env` in a shell script split the value and
+   spawned background jobs. It broke my own `backup.sh`. Values are now quoted.
+4. `restore.sh` could not create a database because the application role is
+   `NOCREATEDB` — correct security, broken script. It now takes a separate admin role.
+
+Also corrected: the schema has **52 models (53 tables)**, not the 45 I had written in
+five different documents.
+
+### Dependencies — upgraded to latest
+
+Every package moved to its newest release, then the fallout fixed:
+
+| Change                                    | Consequence                                                                                                                                                  |
+| ----------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Prisma 6 → **7**                          | URLs moved to `prisma.config.ts`; the client now connects via the `@prisma/adapter-pg` driver adapter                                                        |
+| TypeScript 5.8 → **6.0.3**                | 7.0.2 is newer but its native compiler exposes no JS API, so **Next 16 and Jest transformers cannot consume it** — 6.0.3 is the newest the toolchain accepts |
+| `moduleResolution: node` → `nodenext`     | TS 6+ removed the legacy node10 resolver                                                                                                                     |
+| Next 15 → **16**, React 19.2              | both apps build                                                                                                                                              |
+| Jest 29 → **30**, ts-jest → **@swc/jest** | ts-jest cannot drive TS 7; SWC is also ~2× faster (9s → 4s)                                                                                                  |
+| Zod 3 → **4**                             | `errorMap` replaced by `error`                                                                                                                               |
+| uuid 11 → **14** (ESM-only)               | Node 24 `require()`s it fine; Jest needed a transform allowance                                                                                              |
+| meilisearch 0.49 → **0.60**               | `MeiliSearch` export renamed to `Meilisearch`                                                                                                                |
+| Images                                    | PostGIS 18-3.6, Redis 8, Meilisearch v1.24, Node 24, nginx 1.29                                                                                              |
+
+### Brand
+
+Slogan **"Find it here.. Deal it near.."** applied across web (page title, meta
+description, Open Graph, home hero `<h1>`, footer, about page, city landing pages),
+admin sign-in, the mobile string catalogue and README — translated into Telugu and Hindi
+rather than transliterated.
 
 ## Final verification run (2026-07-26)
 

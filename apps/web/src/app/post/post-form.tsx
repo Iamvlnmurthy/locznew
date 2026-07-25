@@ -7,6 +7,7 @@ import type { Category, City, ListingType } from '@locz/shared-types';
 import { createListingAction, type PostAdState } from './actions';
 import { ListingTypeFields } from './listing-type-fields';
 import { PhotoUploader } from './photo-uploader';
+import { Icon } from '@/components/icons';
 
 interface Labels {
   title: string;
@@ -42,6 +43,16 @@ const POSTABLE_TYPES: ListingType[] = [
 
 /** Photos are the whole listing for some types and merely helpful for others. */
 const PHOTOS_ESSENTIAL: ListingType[] = ['PRODUCT', 'RENTAL'];
+
+const TYPE_ICONS: Record<string, string> = {
+  PRODUCT: 'box',
+  JOB: 'briefcase',
+  OFFER: 'tag',
+  SERVICE: 'tools',
+  RENTAL: 'homeCategory',
+  BUYER_REQUIREMENT: 'search',
+  EVENT: 'calendar',
+};
 
 function PublishButton({ idle, busy }: { idle: string; busy: string }) {
   const { pending } = useFormStatus();
@@ -121,11 +132,20 @@ export function PostForm({
   }
 
   return (
-    <form className="form-card" action={action}>
-      <h1 style={{ marginTop: 0, fontSize: '1.375rem' }}>{labels.title}</h1>
-      <p className="field__hint" style={{ marginBottom: 24 }}>
-        {labels.subtitle}
-      </p>
+    <form className="form-card post-form" action={action}>
+      <div className="post-form__intro">
+        <span className="post-form__free">
+          <Icon name="plus" /> Free to post
+        </span>
+        <h1>{labels.title}</h1>
+        <p>{labels.subtitle}</p>
+      </div>
+
+      <div className="post-progress" aria-hidden="true">
+        <span className="post-progress__active" />
+        <span />
+        <span />
+      </div>
 
       {state.error ? (
         <div className="alert alert--error" role="alert">
@@ -135,21 +155,27 @@ export function PostForm({
 
       {/* Type first: it determines the category list and every field below it, so asking
           anything else first would mean re-asking. */}
-      <div className="field">
-        <label htmlFor="type">What are you posting?</label>
-        <select
-          id="type"
-          name="type"
-          value={type}
-          onChange={(event) => setType(event.target.value as ListingType)}
-        >
+      <fieldset className="post-type">
+        <legend>What are you posting?</legend>
+        <div className="post-type__grid">
           {POSTABLE_TYPES.map((option) => (
-            <option key={option} value={option}>
-              {labels.types[option] ?? option}
-            </option>
+            <label key={option} className="post-type__option">
+              <input
+                type="radio"
+                name="type"
+                value={option}
+                checked={type === option}
+                onChange={(event) => setType(event.target.value as ListingType)}
+              />
+              <span className="post-type__icon">
+                <Icon name={TYPE_ICONS[option] ?? 'box'} />
+              </span>
+              <span>{labels.types[option] ?? option}</span>
+              <i aria-hidden="true" />
+            </label>
           ))}
-        </select>
-      </div>
+        </div>
+      </fieldset>
 
       <div className={`field${state.fieldErrors?.title ? ' field--error' : ''}`}>
         <label htmlFor="title">{labels.fieldTitle}</label>

@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import type { ListingSummary } from '@locz/shared-types';
 import type { Translator } from '@/i18n';
+import { Icon } from './icons';
 
 /** Indian digit grouping: ₹1,20,000 rather than ₹120,000. */
 export function formatPrice(price: number): string {
@@ -47,6 +48,9 @@ export function ListingCard({ listing, t }: { listing: ListingSummary; t: Transl
             {t('dashboard.status.SOLD')}
           </span>
         ) : null}
+        <span className="listing-card__save" aria-hidden="true">
+          <Icon name="heart" width="17" height="17" />
+        </span>
       </div>
 
       <div className="listing-card__body">
@@ -69,7 +73,10 @@ export function ListingCard({ listing, t }: { listing: ListingSummary; t: Transl
         <p className="listing-card__title">{listing.title}</p>
 
         <div className="listing-card__meta">
-          <span>{listing.localityName ?? listing.cityName}</span>
+          <span className="listing-card__place">
+            <Icon name="location" width="12" height="12" />
+            {listing.localityName ?? listing.cityName}
+          </span>
           {listing.distanceMeters !== undefined ? (
             <span>{formatDistance(listing.distanceMeters, t)}</span>
           ) : null}

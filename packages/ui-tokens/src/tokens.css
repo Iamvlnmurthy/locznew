@@ -10,21 +10,25 @@
     sans-serif;
   --locz-font-mono: 'JetBrains Mono', ui-monospace, monospace;
 
-  --locz-primary: #0f9e8c;
-  --locz-primary-hover: #0b7f72;
-  --locz-primary-soft: #eafaf7;
-  --locz-accent: #f28c00;
-  --locz-accent-soft: #fff6e6;
+  --locz-primary: #125b4c;
+  --locz-primary-hover: #0c483c;
+  --locz-primary-soft: #e8f3ef;
+  --locz-accent: #f1a63a;
+  --locz-accent-soft: #fff3dc;
+  --locz-coral: #ef684e;
+  --locz-coral-soft: #ffebe6;
+  --locz-lilac-soft: #eeeafd;
+  --locz-blue-soft: #e5f1f7;
 
-  --locz-bg: #f8fafa;
+  --locz-bg: #f7f4ed;
   --locz-surface: #ffffff;
-  --locz-surface-muted: #f1f4f4;
-  --locz-border: #e3e8e8;
-  --locz-border-strong: #cbd3d3;
+  --locz-surface-muted: #f0ede6;
+  --locz-border: #e7e1d6;
+  --locz-border-strong: #d2cabd;
 
-  --locz-text: #141a1a;
-  --locz-text-secondary: #4d5757;
-  --locz-text-muted: #6b7676;
+  --locz-text: #18241f;
+  --locz-text-secondary: #4c5b54;
+  --locz-text-muted: #718078;
   --locz-text-inverse: #ffffff;
 
   --locz-success: #12855c;
@@ -45,16 +49,16 @@
   --locz-space-8: 2rem;
   --locz-space-12: 3rem;
 
-  --locz-radius-sm: 6px;
-  --locz-radius-md: 10px;
-  --locz-radius-lg: 14px;
-  --locz-radius-xl: 20px;
+  --locz-radius-sm: 8px;
+  --locz-radius-md: 12px;
+  --locz-radius-lg: 18px;
+  --locz-radius-xl: 28px;
   --locz-radius-full: 9999px;
 
-  --locz-shadow-sm: 0 1px 2px rgba(20, 26, 26, 0.06);
-  --locz-shadow-md: 0 2px 8px rgba(20, 26, 26, 0.08);
-  --locz-shadow-lg: 0 8px 24px rgba(20, 26, 26, 0.1);
-  --locz-shadow-focus: 0 0 0 3px #94e4d7;
+  --locz-shadow-sm: 0 1px 2px rgba(24, 36, 31, 0.06);
+  --locz-shadow-md: 0 8px 24px rgba(24, 36, 31, 0.08);
+  --locz-shadow-lg: 0 22px 60px rgba(24, 36, 31, 0.13);
+  --locz-shadow-focus: 0 0 0 4px rgba(18, 91, 76, 0.18);
 
   /* Line heights sized for Telugu and Devanagari, which are taller than Latin. */
   --locz-leading-tight: 1.3;

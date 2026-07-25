@@ -3,6 +3,7 @@ import { getTranslator, type Locale } from '@/i18n';
 import { getCurrentUser, getSelectedCity } from '@/lib/session';
 import { LocationChip } from './location-chip';
 import { LocaleSwitcher } from './locale-switcher';
+import { Icon } from './icons';
 
 /**
  * Site header. Search and location are the two controls that matter on a location-first
@@ -16,7 +17,13 @@ export async function Header({ locale }: { locale: Locale }) {
     <header className="header">
       <div className="container header__row">
         <Link href="/" className="header__brand" aria-label={t('brand.name')}>
-          Loc<span>Z</span>
+          <img
+            src="/brand/locz-logo.webp"
+            alt=""
+            width="214"
+            height="102"
+            className="header__logo"
+          />
         </Link>
 
         <LocationChip cityName={city?.name ?? null} changeLabel={t('location.change')} />
@@ -25,6 +32,7 @@ export async function Header({ locale }: { locale: Locale }) {
           <label htmlFor="site-search" className="sr-only">
             {t('search.submit')}
           </label>
+          <Icon name="search" className="searchbar__icon" width="19" height="19" />
           <input
             id="site-search"
             name="q"
@@ -32,7 +40,10 @@ export async function Header({ locale }: { locale: Locale }) {
             placeholder={t('search.placeholder')}
             autoComplete="off"
           />
-          <button type="submit">{t('search.submit')}</button>
+          <button type="submit">
+            <span>{t('search.submit')}</span>
+            <Icon name="arrow" width="17" height="17" />
+          </button>
         </form>
 
         <div className="header__actions">
@@ -49,10 +60,35 @@ export async function Header({ locale }: { locale: Locale }) {
           )}
 
           <Link href="/post" className="btn btn--primary">
-            + {t('nav.post')}
+            <Icon name="plus" width="18" height="18" /> {t('nav.post')}
           </Link>
         </div>
       </div>
+
+      <nav className="mobile-dock" aria-label="Primary navigation">
+        <Link href="/">
+          <Icon name="home" />
+          <span>{t('nav.home')}</span>
+        </Link>
+        <Link href="/search">
+          <Icon name="search" />
+          <span>{t('nav.search')}</span>
+        </Link>
+        <Link href="/post" className="mobile-dock__post">
+          <span className="mobile-dock__plus">
+            <Icon name="plus" />
+          </span>
+          <span>{t('nav.post')}</span>
+        </Link>
+        <Link href="/dashboard?tab=saved">
+          <Icon name="heart" />
+          <span>{t('nav.saved')}</span>
+        </Link>
+        <Link href={user ? '/dashboard' : '/signin'}>
+          <Icon name="user" />
+          <span>{user ? t('nav.account') : t('nav.signIn')}</span>
+        </Link>
+      </nav>
     </header>
   );
 }

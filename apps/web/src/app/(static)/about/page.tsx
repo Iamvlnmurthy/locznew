@@ -3,7 +3,7 @@ import type { Metadata } from 'next';
 export const metadata: Metadata = {
   title: 'About LocZ',
   description:
-    'LocZ is a location-first local discovery platform for India — free classifieds, jobs, offers and services near you.',
+    'Find it here.. Deal it near.. LocZ is a location-first local discovery platform for India — free classifieds, jobs, offers and services near you.',
   alternates: { canonical: '/about' },
 };
 
@@ -11,6 +11,9 @@ export default function AboutPage() {
   return (
     <>
       <h1 className="page-title">About LocZ</h1>
+      <p className="page-subtitle" style={{ fontWeight: 600, color: 'var(--locz-text)' }}>
+        Find it here.. Deal it near..
+      </p>
 
       <p>
         LocZ is a location-first place to buy, sell and find things near you — used goods, local

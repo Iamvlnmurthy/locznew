@@ -13,15 +13,15 @@
   "dependencies": {
     "@locz/shared-types": "*",
     "@locz/ui-tokens": "*",
-    "next": "^15.2.4",
-    "react": "^19.1.0",
-    "react-dom": "^19.1.0",
-    "@locz/validation": "*"
+    "@locz/validation": "*",
+    "next": "^16.2.11",
+    "react": "^19.2.8",
+    "react-dom": "^19.2.8"
   },
   "devDependencies": {
-    "@types/node": "^22.13.14",
-    "@types/react": "^19.1.0",
-    "@types/react-dom": "^19.1.0",
-    "typescript": "^5.8.3"
+    "@types/node": "^26.1.1",
+    "@types/react": "^19.2.17",
+    "@types/react-dom": "^19.2.3",
+    "typescript": "^6.0.3"
   }
 }

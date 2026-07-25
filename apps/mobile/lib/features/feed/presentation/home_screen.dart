@@ -67,6 +67,7 @@ class HomeScreen extends ConsumerWidget {
           data: (data) {
             if (data.sections.isEmpty) {
               return _EmptyFeed(
+                slogan: strings('brand.tagline'),
                 message: strings('feed.empty'),
                 actionLabel: strings('nav.post'),
                 onAction: () => context.push('/post'),
@@ -178,6 +179,8 @@ class _EmptyFeed extends StatelessWidget {
       padding: const EdgeInsets.all(LoczSpacing.x8),
       children: [
         const SizedBox(height: 80),
+        Text(slogan, textAlign: TextAlign.center, style: Theme.of(context).textTheme.headlineSmall),
+        const SizedBox(height: LoczSpacing.x3),
         Text(message, textAlign: TextAlign.center),
         const SizedBox(height: LoczSpacing.x4),
         FilledButton(onPressed: onAction, child: Text(actionLabel)),

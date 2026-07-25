@@ -3,8 +3,11 @@
   "compilerOptions": {
     "target": "ES2023",
     "lib": ["ES2023"],
-    "module": "commonjs",
-    "moduleResolution": "node",
+    // TypeScript 7 removed the legacy node10 resolver that "node" mapped to. nodenext
+    // emits CommonJS here because no package declares "type": "module", which is what
+    // NestJS's decorator-based DI needs.
+    "module": "nodenext",
+    "moduleResolution": "nodenext",
     "strict": true,
     "noImplicitOverride": true,
     "noUncheckedIndexedAccess": true,

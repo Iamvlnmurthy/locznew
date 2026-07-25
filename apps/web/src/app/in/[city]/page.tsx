@@ -28,8 +28,8 @@ export async function generateMetadata({
   const city = await loadCity(slug).catch(() => null);
   if (!city) return { title: 'City not found', robots: { index: false, follow: false } };
 
-  const title = `Free classifieds, jobs and offers in ${city.name}`;
-  const description = `Buy, sell and find local services, jobs and offers in ${city.name}, ${city.stateName}. Posting on LocZ is always free.`;
+  const title = `${city.name} — Find it here.. Deal it near..`;
+  const description = `Find it here.. Deal it near.. Buy, sell and find local services, jobs and offers in ${city.name}, ${city.stateName}. Posting on LocZ is always free.`;
 
   return {
     title,

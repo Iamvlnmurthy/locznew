@@ -150,6 +150,13 @@ export default async function SearchPage({
         <div>
           {!result || result.items.length === 0 ? (
             <div className="empty-state">
+              <img
+                className="empty-state__art"
+                src="/illustrations/empty-neighbourhood.webp"
+                alt=""
+                width="280"
+                height="230"
+              />
               <p style={{ fontSize: '1.125rem', fontWeight: 600 }}>{t('search.noResults')}</p>
               <p>{t('search.noResultsHint')}</p>
             </div>

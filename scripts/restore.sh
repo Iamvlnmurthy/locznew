@@ -44,10 +44,16 @@ POSTGRES_HOST="${POSTGRES_HOST:-localhost}"
 POSTGRES_PORT="${POSTGRES_PORT:-5432}"
 TARGET_DB="${TARGET_DB:-${POSTGRES_DB}}"
 
-export PGPASSWORD="${POSTGRES_PASSWORD}"
+# Restoring needs privileges the application role deliberately does not have: it is
+# NOSUPERUSER NOCREATEDB, so it cannot create a database or install extensions. Falls
+# back to the app role, which is enough to restore into an existing database.
+ADMIN_USER="${POSTGRES_SUPERUSER:-${POSTGRES_USER}}"
+ADMIN_PASSWORD="${POSTGRES_SUPERUSER_PASSWORD:-${POSTGRES_PASSWORD}}"
+
+export PGPASSWORD="${ADMIN_PASSWORD}"
 
 psql_do() {
-  psql --host="${POSTGRES_HOST}" --port="${POSTGRES_PORT}" --username="${POSTGRES_USER}" "$@"
+  psql --host="${POSTGRES_HOST}" --port="${POSTGRES_PORT}" --username="${ADMIN_USER}" "$@"
 }
 
 # Overwriting the live database is the one genuinely destructive thing this script can
@@ -61,9 +67,18 @@ if [[ "${TARGET_DB}" == "${POSTGRES_DB:-}" ]]; then
   fi
 else
   echo "Restoring into '${TARGET_DB}' (creating it if absent)"
-  psql_do --dbname=postgres -tc \
-    "SELECT 1 FROM pg_database WHERE datname='${TARGET_DB}'" | grep -q 1 || \
-    psql_do --dbname=postgres -c "CREATE DATABASE \"${TARGET_DB}\""
+  if ! psql_do --dbname=postgres -tc \
+      "SELECT 1 FROM pg_database WHERE datname='${TARGET_DB}'" | grep -q 1; then
+    if ! psql_do --dbname=postgres -c \
+        "CREATE DATABASE \"${TARGET_DB}\" OWNER ${POSTGRES_USER}"; then
+      echo >&2
+      echo "Could not create '${TARGET_DB}' as '${ADMIN_USER}'." >&2
+      echo "The application role is NOSUPERUSER NOCREATEDB by design — set" >&2
+      echo "POSTGRES_SUPERUSER and POSTGRES_SUPERUSER_PASSWORD, or create the" >&2
+      echo "database yourself and re-run." >&2
+      exit 1
+    fi
+  fi
 fi
 
 # PostGIS must exist before the dump's geography columns can be created.
@@ -78,7 +93,7 @@ echo "Restoring ${DUMP_FILE} into ${TARGET_DB}…"
 pg_restore \
   --host="${POSTGRES_HOST}" \
   --port="${POSTGRES_PORT}" \
-  --username="${POSTGRES_USER}" \
+  --username="${ADMIN_USER}" \
   --dbname="${TARGET_DB}" \
   --clean --if-exists \
   --no-owner --no-privileges \

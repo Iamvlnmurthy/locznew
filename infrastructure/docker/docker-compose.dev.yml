@@ -2,7 +2,7 @@ name: locz-dev
 
 services:
   postgres:
-    image: postgis/postgis:16-3.4
+    image: postgis/postgis:18-3.6
     container_name: locz-postgres
     restart: unless-stopped
     environment:
@@ -21,7 +21,7 @@ services:
       retries: 20
 
   redis:
-    image: redis:7-alpine
+    image: redis:8-alpine
     container_name: locz-redis
     restart: unless-stopped
     command: ['redis-server', '--appendonly', 'yes']
@@ -36,7 +36,7 @@ services:
       retries: 20
 
   meilisearch:
-    image: getmeili/meilisearch:v1.11
+    image: getmeili/meilisearch:v1.24
     container_name: locz-meilisearch
     restart: unless-stopped
     environment:

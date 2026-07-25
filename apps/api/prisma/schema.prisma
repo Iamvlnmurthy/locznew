@@ -17,11 +17,9 @@ generator client {
 
 datasource db {
   provider   = "postgresql"
-  url        = env("DATABASE_URL")
-  // Used by `migrate` and `db pull` only. Behind a transaction pooler (PgBouncer, Neon,
-  // Supabase) DDL cannot run through the pooled endpoint, so migrations take the direct
-  // connection while application traffic keeps the pool. Ignored when unset.
-  directUrl  = env("DIRECT_DATABASE_URL")
+  // Prisma 7 moved connection URLs out of the schema: the CLI reads them from
+  // prisma.config.ts, and the runtime client connects through a driver adapter
+  // (see src/prisma/prisma.service.ts). The schema now describes shape only.
   extensions = [postgis, pg_trgm, unaccent, citext]
 }
 

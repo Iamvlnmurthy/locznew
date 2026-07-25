@@ -1,7 +1,21 @@
 {
   "brand": {
     "name": "LocZ",
-    "tagline": "Everything local, in one place"
+    "tagline": "Find it here.. Deal it near.."
+  },
+  "home": {
+    "eyebrow": "Your neighbourhood, closer",
+    "title": "Find good things, right around you.",
+    "subtitle": "Buy, sell, hire, discover offers and meet trusted local businesses — all in one friendly place.",
+    "trustLabel": "Why people use LocZ",
+    "trustSafe": "Safer local community",
+    "trustFree": "Always free to post",
+    "trustLocal": "Made for your city",
+    "sceneOffer": "Offer nearby",
+    "sceneJob": "New job",
+    "sceneSale": "For sale",
+    "explore": "Explore LocZ",
+    "freshNearby": "Fresh around you"
   },
   "nav": {
     "home": "Home",

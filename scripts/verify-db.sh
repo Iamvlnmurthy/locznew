@@ -58,8 +58,8 @@ report "postgis version" "SELECT PostGIS_Lib_Version()"
 
 echo
 echo "Schema"
-check "45 tables created" \
-  "SELECT COUNT(*) FROM pg_tables WHERE schemaname='public' AND tablename NOT LIKE '_prisma%'" "45"
+check "53 tables created (52 models + PostGIS)" \
+  "SELECT COUNT(*) FROM pg_tables WHERE schemaname='public' AND tablename NOT LIKE '_prisma%'" "53"
 check "both migrations applied" \
   "SELECT COUNT(*) FROM _prisma_migrations WHERE finished_at IS NOT NULL" "2"
 

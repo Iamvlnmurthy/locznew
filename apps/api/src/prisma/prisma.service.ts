@@ -1,4 +1,5 @@
 import { Injectable, Logger, OnModuleDestroy, OnModuleInit } from '@nestjs/common';
+import { PrismaPg } from '@prisma/adapter-pg';
 import { Prisma, PrismaClient } from '@prisma/client';
 
 @Injectable()
@@ -6,7 +7,12 @@ export class PrismaService extends PrismaClient implements OnModuleInit, OnModul
   private readonly logger = new Logger(PrismaService.name);
 
   constructor() {
+    // Prisma 7 connects through a driver adapter rather than its own bundled engine, so
+    // the connection string is supplied here rather than in schema.prisma. The pool size
+    // comes from `connection_limit` in DATABASE_URL — see docs/SETUP.md on sizing it
+    // against the database's max_connections.
     super({
+      adapter: new PrismaPg({ connectionString: process.env.DATABASE_URL }),
       log: [
         { emit: 'event', level: 'warn' },
         { emit: 'event', level: 'error' },
@@ -31,8 +37,9 @@ export class PrismaService extends PrismaClient implements OnModuleInit, OnModul
   static readonly notDeleted = { deletedAt: null } satisfies Prisma.ListingWhereInput;
 
   /**
-   * Truncates every table except Prisma's migration bookkeeping. Test-only —
-   * guarded so a misconfigured environment cannot wipe a real database.
+   * Truncates every table except Prisma's migration bookkeeping and PostGIS's
+   * `spatial_ref_sys`, which holds reference data rather than application data.
+   * Test-only — guarded so a misconfigured environment cannot wipe a real database.
    */
   async truncateAllTables(): Promise<void> {
     if (process.env.NODE_ENV === 'production') {
@@ -41,7 +48,9 @@ export class PrismaService extends PrismaClient implements OnModuleInit, OnModul
 
     const tables = await this.$queryRaw<Array<{ tablename: string }>>`
       SELECT tablename FROM pg_tables
-      WHERE schemaname = 'public' AND tablename NOT LIKE '_prisma%'
+      WHERE schemaname = 'public'
+        AND tablename NOT LIKE '_prisma%'
+        AND tablename <> 'spatial_ref_sys'
     `;
 
     if (tables.length === 0) return;

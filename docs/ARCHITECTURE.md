@@ -56,7 +56,7 @@ along which a module can later become a service without a rewrite.
 
 ## Data
 
-45 tables. The shape that matters: **one `Listing` table carrying the common contract,
+52 models (53 tables — PostGIS adds `spatial_ref_sys`). The shape that matters: **one `Listing` table carrying the common contract,
 with a thin 1:1 extension table per type.** Nine listing types share ~25 fields — owner,
 location, moderation state, lifecycle, counters — and diverge on about ten each. One
 table with 200 columns and nine parallel implementations are both worse.

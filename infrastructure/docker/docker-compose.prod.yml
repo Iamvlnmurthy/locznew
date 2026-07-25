@@ -5,7 +5,7 @@ name: locz
 
 services:
   nginx:
-    image: nginx:1.27-alpine
+    image: nginx:1.29-alpine
     restart: unless-stopped
     depends_on: [api, web, admin]
     ports:
@@ -92,7 +92,7 @@ services:
     expose: ['3000']
 
   postgres:
-    image: postgis/postgis:16-3.4
+    image: postgis/postgis:18-3.6
     restart: unless-stopped
     environment:
       POSTGRES_USER: ${POSTGRES_USER}
@@ -111,7 +111,7 @@ services:
       retries: 10
 
   redis:
-    image: redis:7-alpine
+    image: redis:8-alpine
     restart: unless-stopped
     command: ['redis-server', '--appendonly', 'yes', '--requirepass', '${REDIS_PASSWORD}']
     volumes:
@@ -124,7 +124,7 @@ services:
       retries: 10
 
   meilisearch:
-    image: getmeili/meilisearch:v1.11
+    image: getmeili/meilisearch:v1.24
     restart: unless-stopped
     environment:
       MEILI_MASTER_KEY: ${MEILI_MASTER_KEY}

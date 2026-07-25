@@ -64,7 +64,7 @@ fi
 TABLE_COUNT="$(pg_restore --list "${TARGET}" | grep -c 'TABLE DATA' || true)"
 echo "[$(date -Is)] Verified: ${TABLE_COUNT} tables in the dump"
 
-# Sanity floor. The schema has 45 tables; a dump with a handful means someone pointed
+# Sanity floor. The schema has 53 tables; a dump with a handful means someone pointed
 # this at the wrong database, and rotating on it would age out the real backups.
 if [[ "${TABLE_COUNT}" -lt 20 ]]; then
   echo "[$(date -Is)] ERROR: only ${TABLE_COUNT} tables — wrong database? Not rotating." >&2

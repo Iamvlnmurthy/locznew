@@ -9,18 +9,40 @@ import './globals.css';
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   title: {
-    default: 'LocZ — free local classifieds, jobs and offers near you',
+    default: 'LocZ — Find it here.. Deal it near..',
     template: '%s | LocZ',
   },
   description:
-    'Post free ads, find local jobs, discover nearby offers and buy or sell used items in your city. Posting on LocZ is always free.',
+    'Find it here.. Deal it near.. Free classifieds, local jobs, nearby offers and services in your city. Posting on LocZ is always free.',
   applicationName: 'LocZ',
+  manifest: '/manifest.webmanifest',
+  icons: {
+    icon: [
+      { url: '/brand/favicon-16.png', sizes: '16x16', type: 'image/png' },
+      { url: '/brand/favicon-32.png', sizes: '32x32', type: 'image/png' },
+      { url: '/favicon.ico', sizes: 'any' },
+    ],
+    apple: [{ url: '/brand/apple-touch-icon.png', sizes: '180x180', type: 'image/png' }],
+  },
+  // Used by social cards and by the browser when the site is added to a home screen.
+  appleWebApp: { title: 'LocZ', statusBarStyle: 'default' },
   openGraph: {
     type: 'website',
     siteName: 'LocZ',
+    title: 'LocZ — Find it here.. Deal it near..',
+    description:
+      'Free classifieds, local jobs, nearby offers and services in your city. Posting is always free.',
     locale: 'en_IN',
+    images: [
+      {
+        url: '/brand/og-locz.jpg',
+        width: 1200,
+        height: 630,
+        alt: 'LocZ — everything local, in one place',
+      },
+    ],
   },
-  twitter: { card: 'summary_large_image' },
+  twitter: { card: 'summary_large_image', images: ['/brand/og-locz.jpg'] },
   alternates: { canonical: '/' },
 };
 
@@ -40,7 +62,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   return (
     // `lang` is set from the user's locale so screen readers pronounce Telugu and Hindi
     // correctly instead of reading them as accented English.
-    <html lang={locale}>
+    <html lang={locale} data-theme="light">
       <body>
         <Header locale={locale} />
         <main id="main">{children}</main>
@@ -55,6 +77,9 @@ export default async function RootLayout({ children }: { children: React.ReactNo
               <Link href="/terms">{t('footer.terms')}</Link>
               <Link href="/privacy">{t('footer.privacy')}</Link>
             </nav>
+            <p style={{ margin: '0 0 4px', fontWeight: 600, color: 'var(--locz-text)' }}>
+              {t('brand.tagline')}
+            </p>
             <p style={{ margin: 0 }}>{t('footer.postFree')}</p>
           </div>
         </footer>
