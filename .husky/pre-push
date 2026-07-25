@@ -1,0 +1,3 @@
+# The expensive checks run before code leaves the machine, not on every commit.
+npm run typecheck
+npm run test --workspace @locz/api

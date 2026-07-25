@@ -1,0 +1,66 @@
+{
+  "name": "locz",
+  "private": true,
+  "version": "0.1.0",
+  "description": "LocZ — location-first local discovery platform",
+  "workspaces": [
+    "apps/api",
+    "apps/web",
+    "apps/admin",
+    "packages/*"
+  ],
+  "engines": {
+    "node": ">=20.11.0"
+  },
+  "scripts": {
+    "dev:api": "npm run start:dev -w @locz/api",
+    "dev:web": "npm run dev -w @locz/web",
+    "dev:admin": "npm run dev -w @locz/admin",
+    "build": "npm run build --workspaces --if-present",
+    "lint": "npm run lint --workspaces --if-present",
+    "test": "npm run test --workspaces --if-present",
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "format": "prettier --write \"**/*.{ts,tsx,js,json,md,yml,yaml}\"",
+    "format:check": "prettier --check \"**/*.{ts,tsx,js,json,md,yml,yaml}\"",
+    "db:migrate": "npm run db:migrate -w @locz/api",
+    "db:seed": "npm run db:seed -w @locz/api",
+    "docker:up": "docker compose -f infrastructure/docker/docker-compose.dev.yml up -d",
+    "docker:down": "docker compose -f infrastructure/docker/docker-compose.dev.yml down",
+    "docker:logs": "docker compose -f infrastructure/docker/docker-compose.dev.yml logs -f",
+    "prepare": "husky"
+  },
+  "devDependencies": {
+    "husky": "^9.1.7",
+    "lint-staged": "^15.5.2",
+    "prettier": "^3.5.3",
+    "typescript": "^5.8.3"
+  },
+  "lint-staged": {
+    "apps/api/**/*.ts": [
+      "prettier --write"
+    ],
+    "apps/{web,admin}/**/*.{ts,tsx}": [
+      "prettier --write"
+    ],
+    "packages/**/*.ts": [
+      "prettier --write"
+    ],
+    "apps/mobile/**/*.dart": [
+      "dart format --line-length 100"
+    ],
+    "*.{json,md,yml,yaml}": [
+      "prettier --write"
+    ],
+    "apps/api/prisma/schema.prisma": [
+      "prisma format --schema"
+    ]
+  },
+  "allowScripts": {
+    "@prisma/client": true,
+    "@prisma/engines": true,
+    "argon2": true,
+    "msgpackr-extract": true,
+    "prisma": true,
+    "sharp": true
+  }
+}

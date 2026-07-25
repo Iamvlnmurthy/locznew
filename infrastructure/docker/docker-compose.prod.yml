@@ -1,0 +1,140 @@
+name: locz
+
+# Production stack. Storage points at Cloudflare R2 rather than MinIO, and every secret
+# comes from the .env file beside this one — nothing is inlined here.
+
+services:
+  nginx:
+    image: nginx:1.27-alpine
+    restart: unless-stopped
+    depends_on: [api, web, admin]
+    ports:
+      - '80:80'
+      - '443:443'
+    volumes:
+      - ../nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ../nginx/proxy_params_locz:/etc/nginx/proxy_params_locz:ro
+      - ./certbot/conf:/etc/letsencrypt:ro
+      - ./certbot/www:/var/www/certbot:ro
+
+  # Runs to completion before the API starts, so a container can never serve traffic
+  # against a schema older than its code.
+  migrate:
+    build:
+      context: ../..
+      dockerfile: infrastructure/docker/Dockerfile.api
+    restart: 'no'
+    env_file: [.env]
+    depends_on:
+      postgres:
+        condition: service_healthy
+    command: ['npx', 'prisma', 'migrate', 'deploy', '--schema', 'prisma/schema.prisma']
+
+  api:
+    build:
+      context: ../..
+      dockerfile: infrastructure/docker/Dockerfile.api
+    restart: unless-stopped
+    env_file: [.env]
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+      redis:
+        condition: service_healthy
+    expose: ['4000']
+    deploy:
+      resources:
+        limits:
+          memory: 1g
+
+  # Same image, no HTTP server. Separated so image processing and push delivery cannot
+  # compete with request handling for CPU.
+  worker:
+    build:
+      context: ../..
+      dockerfile: infrastructure/docker/Dockerfile.api
+    restart: unless-stopped
+    env_file: [.env]
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+      redis:
+        condition: service_healthy
+    command: ['node', 'dist/worker.js']
+    deploy:
+      resources:
+        limits:
+          memory: 1g
+
+  web:
+    build:
+      context: ../..
+      dockerfile: infrastructure/docker/Dockerfile.next
+      args:
+        APP: web
+        NEXT_PUBLIC_API_BASE_URL: ${NEXT_PUBLIC_API_BASE_URL}
+        NEXT_PUBLIC_SITE_URL: ${NEXT_PUBLIC_SITE_URL}
+    restart: unless-stopped
+    env_file: [.env]
+    depends_on: [api]
+    expose: ['3000']
+
+  admin:
+    build:
+      context: ../..
+      dockerfile: infrastructure/docker/Dockerfile.next
+      args:
+        APP: admin
+        NEXT_PUBLIC_API_BASE_URL: ${NEXT_PUBLIC_ADMIN_API_BASE_URL}
+    restart: unless-stopped
+    env_file: [.env]
+    depends_on: [api]
+    expose: ['3000']
+
+  postgres:
+    image: postgis/postgis:16-3.4
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - ../database/init:/docker-entrypoint-initdb.d:ro
+      - ./backups:/backups
+    # Not published: only the compose network reaches the database.
+    expose: ['5432']
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}']
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    command: ['redis-server', '--appendonly', 'yes', '--requirepass', '${REDIS_PASSWORD}']
+    volumes:
+      - redis-data:/data
+    expose: ['6379']
+    healthcheck:
+      test: ['CMD', 'redis-cli', '-a', '${REDIS_PASSWORD}', 'ping']
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  meilisearch:
+    image: getmeili/meilisearch:v1.11
+    restart: unless-stopped
+    environment:
+      MEILI_MASTER_KEY: ${MEILI_MASTER_KEY}
+      MEILI_ENV: production
+      MEILI_NO_ANALYTICS: 'true'
+    volumes:
+      - meili-data:/meili_data
+    expose: ['7700']
+
+volumes:
+  postgres-data:
+  redis-data:
+  meili-data:

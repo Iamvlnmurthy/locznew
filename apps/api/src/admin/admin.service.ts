@@ -1,0 +1,302 @@
+import { Injectable } from '@nestjs/common';
+import { ListingStatus, ModerationStatus, ReportStatus, UserStatus } from '@prisma/client';
+import { PrismaService } from '../prisma/prisma.service';
+import { RedisService } from '../redis/redis.service';
+import {
+  AdminMetricsDto,
+  AdminUserDto,
+  ListingsByBucketDto,
+  QueueHealthDto,
+  TopListingDto,
+} from './dto/admin.dto';
+
+@Injectable()
+export class AdminService {
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly redis: RedisService,
+  ) {}
+
+  /**
+   * Dashboard overview.
+   *
+   * Every count runs concurrently — the overview is the first screen a moderator opens
+   * each morning, and a serial chain of a dozen counts would make it feel broken.
+   */
+  async getMetrics(): Promise<AdminMetricsDto> {
+    const now = Date.now();
+    const dayAgo = new Date(now - 24 * 60 * 60 * 1000);
+    const weekAgo = new Date(now - 7 * 24 * 60 * 60 * 1000);
+    const monthAgo = new Date(now - 30 * 24 * 60 * 60 * 1000);
+
+    const [
+      totalUsers,
+      newUsersToday,
+      newUsersThisWeek,
+      activeUsersThisMonth,
+      suspendedUsers,
+      publishedListings,
+      pendingListings,
+      rejectedListings,
+      expiredListings,
+      listingsToday,
+      openReports,
+      totalBusinesses,
+      verifiedBusinesses,
+      openJobs,
+      liveOffers,
+    ] = await Promise.all([
+      this.prisma.user.count({ where: { deletedAt: null } }),
+      this.prisma.user.count({ where: { createdAt: { gte: dayAgo }, deletedAt: null } }),
+      this.prisma.user.count({ where: { createdAt: { gte: weekAgo }, deletedAt: null } }),
+      this.prisma.user.count({ where: { lastActiveAt: { gte: monthAgo }, deletedAt: null } }),
+      this.prisma.user.count({ where: { status: UserStatus.SUSPENDED } }),
+      this.prisma.listing.count({ where: { status: ListingStatus.PUBLISHED, deletedAt: null } }),
+      this.prisma.listing.count({
+        where: { moderationStatus: ModerationStatus.PENDING, deletedAt: null },
+      }),
+      this.prisma.listing.count({ where: { status: ListingStatus.REJECTED, deletedAt: null } }),
+      this.prisma.listing.count({ where: { status: ListingStatus.EXPIRED, deletedAt: null } }),
+      this.prisma.listing.count({ where: { createdAt: { gte: dayAgo }, deletedAt: null } }),
+      this.prisma.report.count({
+        where: { status: { in: [ReportStatus.OPEN, ReportStatus.UNDER_REVIEW] } },
+      }),
+      this.prisma.business.count({ where: { deletedAt: null } }),
+      this.prisma.business.count({ where: { verificationStatus: 'VERIFIED', deletedAt: null } }),
+      this.prisma.listing.count({
+        where: { type: 'JOB', status: ListingStatus.PUBLISHED, deletedAt: null },
+      }),
+      this.prisma.listing.count({
+        where: {
+          type: 'OFFER',
+          status: ListingStatus.PUBLISHED,
+          deletedAt: null,
+          offer: { endsAt: { gte: new Date() } },
+        },
+      }),
+    ]);
+
+    return {
+      totalUsers,
+      newUsersToday,
+      newUsersThisWeek,
+      activeUsersThisMonth,
+      suspendedUsers,
+      publishedListings,
+      pendingListings,
+      rejectedListings,
+      expiredListings,
+      listingsToday,
+      openReports,
+      totalBusinesses,
+      verifiedBusinesses,
+      openJobs,
+      liveOffers,
+    };
+  }
+
+  /** Listing volume by city — which markets are actually alive. */
+  async getListingsByCity(limit = 10): Promise<ListingsByBucketDto[]> {
+    const grouped = await this.prisma.listing.groupBy({
+      by: ['cityId'],
+      where: { status: ListingStatus.PUBLISHED, deletedAt: null },
+      _count: { _all: true },
+      orderBy: { _count: { cityId: 'desc' } },
+      take: limit,
+    });
+
+    const cities = await this.prisma.city.findMany({
+      where: { id: { in: grouped.map((entry) => entry.cityId) } },
+      select: { id: true, name: true },
+    });
+    const nameById = new Map(cities.map((city) => [city.id, city.name]));
+
+    return grouped.map((entry) => ({
+      id: entry.cityId,
+      label: nameById.get(entry.cityId) ?? 'Unknown',
+      count: entry._count._all,
+    }));
+  }
+
+  async getListingsByCategory(limit = 10): Promise<ListingsByBucketDto[]> {
+    const grouped = await this.prisma.listing.groupBy({
+      by: ['categoryId'],
+      where: { status: ListingStatus.PUBLISHED, deletedAt: null },
+      _count: { _all: true },
+      orderBy: { _count: { categoryId: 'desc' } },
+      take: limit,
+    });
+
+    const categories = await this.prisma.category.findMany({
+      where: { id: { in: grouped.map((entry) => entry.categoryId) } },
+      select: { id: true, name: true },
+    });
+    const nameById = new Map(categories.map((category) => [category.id, category.name]));
+
+    return grouped.map((entry) => ({
+      id: entry.categoryId,
+      label: nameById.get(entry.categoryId) ?? 'Unknown',
+      count: entry._count._all,
+    }));
+  }
+
+  /** Daily listing counts for the last N days, zero-filled so the chart has no gaps. */
+  async getDailyListings(days = 14): Promise<ListingsByBucketDto[]> {
+    const since = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
+
+    const rows = await this.prisma.$queryRaw<Array<{ day: Date; count: bigint }>>`
+      SELECT DATE_TRUNC('day', "createdAt") AS day, COUNT(*)::bigint AS count
+      FROM "listings"
+      WHERE "createdAt" >= ${since} AND "deletedAt" IS NULL
+      GROUP BY day
+      ORDER BY day ASC
+    `;
+
+    const countByDay = new Map(
+      rows.map((row) => [row.day.toISOString().slice(0, 10), Number(row.count)]),
+    );
+
+    const buckets: ListingsByBucketDto[] = [];
+    for (let offset = days - 1; offset >= 0; offset -= 1) {
+      const date = new Date(Date.now() - offset * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+      buckets.push({ id: date, label: date, count: countByDay.get(date) ?? 0 });
+    }
+    return buckets;
+  }
+
+  async getMostViewedListings(limit = 10): Promise<TopListingDto[]> {
+    const listings = await this.prisma.listing.findMany({
+      where: { status: ListingStatus.PUBLISHED, deletedAt: null },
+      select: {
+        id: true,
+        title: true,
+        slug: true,
+        viewCount: true,
+        saveCount: true,
+        city: { select: { name: true } },
+      },
+      orderBy: { viewCount: 'desc' },
+      take: limit,
+    });
+
+    return listings.map((listing) => ({
+      id: listing.id,
+      title: listing.title,
+      slug: listing.slug,
+      cityName: listing.city.name,
+      viewCount: listing.viewCount,
+      saveCount: listing.saveCount,
+    }));
+  }
+
+  /**
+   * Queue depth straight from Redis. A growing backlog here is the earliest warning
+   * that indexing or notification delivery has stalled.
+   */
+  async getQueueHealth(): Promise<QueueHealthDto[]> {
+    const queues = ['search', 'notifications', 'lifecycle'];
+    const health: QueueHealthDto[] = [];
+
+    for (const name of queues) {
+      try {
+        const [waiting, active, failed, delayed] = await Promise.all([
+          this.redis.client.llen(`bull:${name}:wait`),
+          this.redis.client.llen(`bull:${name}:active`),
+          this.redis.client.zcard(`bull:${name}:failed`),
+          this.redis.client.zcard(`bull:${name}:delayed`),
+        ]);
+        health.push({ name, waiting, active, failed, delayed, available: true });
+      } catch {
+        health.push({ name, waiting: 0, active: 0, failed: 0, delayed: 0, available: false });
+      }
+    }
+
+    return health;
+  }
+
+  /**
+   * User directory for the console. Searchable by name, phone or email so a moderator
+   * handling a report can find the account from whatever identifier they have.
+   */
+  async listUsers(
+    page: number,
+    limit: number,
+    search?: string,
+  ): Promise<{ items: AdminUserDto[]; total: number }> {
+    const where = search
+      ? {
+          deletedAt: null,
+          OR: [
+            { displayName: { contains: search, mode: 'insensitive' as const } },
+            { phoneE164: { contains: search } },
+            { email: { contains: search, mode: 'insensitive' as const } },
+          ],
+        }
+      : { deletedAt: null };
+
+    const [users, total] = await Promise.all([
+      this.prisma.user.findMany({
+        where,
+        include: {
+          roles: { include: { role: { select: { name: true } } } },
+          _count: { select: { listings: true } },
+        },
+        orderBy: { createdAt: 'desc' },
+        skip: (page - 1) * limit,
+        take: limit,
+      }),
+      this.prisma.user.count({ where }),
+    ]);
+
+    // Reports filed against each user's listings — the signal that matters most when
+    // deciding whether an account is a problem. Summed from the denormalised counter on
+    // each listing rather than by scanning the reports table.
+    const reportsByOwner = new Map<string, number>();
+    const grouped = await this.prisma.listing.findMany({
+      where: { ownerId: { in: users.map((user) => user.id) } },
+      select: { ownerId: true, reportCount: true },
+    });
+    for (const listing of grouped) {
+      reportsByOwner.set(
+        listing.ownerId,
+        (reportsByOwner.get(listing.ownerId) ?? 0) + listing.reportCount,
+      );
+    }
+
+    const items: AdminUserDto[] = users.map((user) => ({
+      id: user.id,
+      phone: user.phoneE164,
+      email: user.email,
+      displayName: user.displayName,
+      status: user.status,
+      roles: user.roles.map((assignment) => assignment.role.name),
+      listingCount: user._count.listings,
+      reportsAgainst: reportsByOwner.get(user.id) ?? 0,
+      createdAt: user.createdAt,
+      lastActiveAt: user.lastActiveAt,
+    }));
+
+    return { items, total };
+  }
+
+  async getStorageStats(): Promise<{
+    mediaCount: number;
+    totalBytes: number;
+    failedCount: number;
+  }> {
+    const [aggregate, failedCount] = await Promise.all([
+      this.prisma.listingMedia.aggregate({
+        where: { status: 'READY' },
+        _count: { _all: true },
+        _sum: { sizeBytes: true },
+      }),
+      this.prisma.listingMedia.count({ where: { status: 'FAILED' } }),
+    ]);
+
+    return {
+      mediaCount: aggregate._count._all,
+      totalBytes: aggregate._sum.sizeBytes ?? 0,
+      failedCount,
+    };
+  }
+}

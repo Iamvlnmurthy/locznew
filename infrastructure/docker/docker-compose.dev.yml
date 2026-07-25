@@ -1,0 +1,100 @@
+name: locz-dev
+
+services:
+  postgres:
+    image: postgis/postgis:16-3.4
+    container_name: locz-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-locz}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-locz_dev_password_change_me}
+      POSTGRES_DB: ${POSTGRES_DB:-locz}
+    ports:
+      - '${POSTGRES_PORT:-5432}:5432'
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - ../database/init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U ${POSTGRES_USER:-locz} -d ${POSTGRES_DB:-locz}']
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  redis:
+    image: redis:7-alpine
+    container_name: locz-redis
+    restart: unless-stopped
+    command: ['redis-server', '--appendonly', 'yes']
+    ports:
+      - '${REDIS_PORT:-6379}:6379'
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  meilisearch:
+    image: getmeili/meilisearch:v1.11
+    container_name: locz-meilisearch
+    restart: unless-stopped
+    environment:
+      MEILI_MASTER_KEY: ${MEILI_MASTER_KEY:-locz_dev_meili_master_key}
+      MEILI_ENV: development
+      MEILI_NO_ANALYTICS: 'true'
+    ports:
+      - '7700:7700'
+    volumes:
+      - meili-data:/meili_data
+    healthcheck:
+      test: ['CMD', 'curl', '-sf', 'http://localhost:7700/health']
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  # S3-compatible storage for local development.
+  # Production points the same STORAGE_* variables at Cloudflare R2.
+  minio:
+    image: minio/minio:RELEASE.2025-04-22T22-12-26Z
+    container_name: locz-minio
+    restart: unless-stopped
+    command: ['server', '/data', '--console-address', ':9001']
+    environment:
+      MINIO_ROOT_USER: ${STORAGE_ACCESS_KEY_ID:-locz_minio}
+      MINIO_ROOT_PASSWORD: ${STORAGE_SECRET_ACCESS_KEY:-locz_minio_dev_secret}
+    ports:
+      - '9000:9000'
+      - '9001:9001'
+    volumes:
+      - minio-data:/data
+    healthcheck:
+      test: ['CMD', 'mc', 'ready', 'local']
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  # Creates the media bucket and makes derivatives publicly readable. Runs once and exits.
+  minio-init:
+    image: minio/mc:RELEASE.2025-04-16T18-13-26Z
+    container_name: locz-minio-init
+    depends_on:
+      minio:
+        condition: service_healthy
+    environment:
+      STORAGE_BUCKET: ${STORAGE_BUCKET:-locz-media}
+      STORAGE_ACCESS_KEY_ID: ${STORAGE_ACCESS_KEY_ID:-locz_minio}
+      STORAGE_SECRET_ACCESS_KEY: ${STORAGE_SECRET_ACCESS_KEY:-locz_minio_dev_secret}
+    entrypoint: >
+      /bin/sh -c "
+      mc alias set local http://minio:9000 $$STORAGE_ACCESS_KEY_ID $$STORAGE_SECRET_ACCESS_KEY &&
+      mc mb --ignore-existing local/$$STORAGE_BUCKET &&
+      mc anonymous set download local/$$STORAGE_BUCKET/public &&
+      echo 'minio ready'
+      "
+
+volumes:
+  postgres-data:
+  redis-data:
+  meili-data:
+  minio-data:

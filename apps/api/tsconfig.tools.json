@@ -1,0 +1,10 @@
+{
+  // Type-checks the code that lives outside src/ — the seed script and the test suite.
+  // Kept separate so `nest build` emits dist/main.js rather than dist/src/main.js.
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "rootDir": "./",
+    "noEmit": true
+  },
+  "include": ["prisma/**/*.ts", "test/**/*.ts", "src/**/*.ts"]
+}

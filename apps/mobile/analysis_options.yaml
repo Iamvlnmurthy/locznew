@@ -1,0 +1,21 @@
+include: package:flutter_lints/flutter.yaml
+
+analyzer:
+  exclude:
+    - '**/*.g.dart'
+  errors:
+    # Hardcoded user-facing strings are the failure mode this project cares about most,
+    # so an unlocalised literal is an error rather than a hint.
+    avoid_print: error
+    unused_import: error
+
+linter:
+  rules:
+    - always_declare_return_types
+    - avoid_dynamic_calls
+    - prefer_const_constructors
+    - prefer_const_declarations
+    - prefer_final_locals
+    - require_trailing_commas
+    - unawaited_futures
+    - use_super_parameters

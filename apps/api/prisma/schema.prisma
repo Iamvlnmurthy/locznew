@@ -1,0 +1,1422 @@
+// LocZ — database schema (source of truth for all applications).
+//
+// Conventions
+//  - UUID primary keys, generated application-side (time-ordered) for index locality.
+//  - createdAt / updatedAt on every persistent entity.
+//  - deletedAt (soft delete) only on User, Business, Listing, Message — the entities a
+//    user can remove but whose history moderation and audit still need. Join tables,
+//    counters and logs are hard-deleted or never deleted.
+//  - `geo` columns are PostGIS geography(Point,4326). Prisma cannot type them, so they are
+//    declared Unsupported and every spatial read/write goes through GeoRepository (ADR-0003).
+//    Their GiST indexes live in the SQL migration, not here.
+
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["postgresqlExtensions"]
+}
+
+datasource db {
+  provider   = "postgresql"
+  url        = env("DATABASE_URL")
+  extensions = [postgis, pg_trgm, unaccent, citext]
+}
+
+// =====================================================================
+// Enums
+// =====================================================================
+
+enum RoleName {
+  GUEST
+  REGISTERED_USER
+  INDIVIDUAL_SELLER
+  BUSINESS_OWNER
+  EMPLOYER
+  SERVICE_PROVIDER
+  MODERATOR
+  ADMINISTRATOR
+  SUPER_ADMINISTRATOR
+}
+
+enum UserStatus {
+  ACTIVE
+  DEACTIVATED
+  SUSPENDED
+  DELETION_REQUESTED
+}
+
+enum ListingType {
+  CLASSIFIED
+  PRODUCT
+  BUYER_REQUIREMENT
+  OFFER
+  JOB
+  SERVICE
+  RENTAL
+  EVENT
+  BUSINESS_LISTING
+}
+
+enum ListingStatus {
+  DRAFT
+  PENDING_REVIEW
+  PUBLISHED
+  REJECTED
+  PAUSED
+  SOLD
+  FILLED
+  EXPIRED
+  ARCHIVED
+  REMOVED
+}
+
+enum ModerationStatus {
+  NOT_REQUIRED
+  PENDING
+  APPROVED
+  REJECTED
+  ESCALATED
+}
+
+enum ModerationDecision {
+  AUTO_APPROVE
+  REVIEW
+  AUTO_REJECT
+}
+
+enum Visibility {
+  PUBLIC
+  UNLISTED
+  PRIVATE
+}
+
+enum ContactPreference {
+  IN_APP_ONLY
+  PHONE
+  WHATSAPP
+  EMAIL
+  PHONE_AND_IN_APP
+}
+
+enum ItemCondition {
+  NEW
+  LIKE_NEW
+  GOOD
+  FAIR
+  FOR_PARTS
+}
+
+enum EmploymentType {
+  FULL_TIME
+  PART_TIME
+  CONTRACT
+  INTERNSHIP
+  FREELANCE
+  TEMPORARY
+  DAILY_WAGE
+}
+
+enum WorkplaceType {
+  ON_SITE
+  HYBRID
+  REMOTE
+}
+
+enum SalaryPeriod {
+  HOURLY
+  DAILY
+  MONTHLY
+  YEARLY
+}
+
+enum AttributeDataType {
+  TEXT
+  NUMBER
+  BOOLEAN
+  DATE
+  SELECT
+  MULTI_SELECT
+}
+
+enum MediaStatus {
+  PENDING_UPLOAD
+  UPLOADED
+  PROCESSING
+  READY
+  FAILED
+}
+
+enum ReportTargetType {
+  LISTING
+  BUSINESS
+  USER
+  MESSAGE
+}
+
+enum ReportStatus {
+  OPEN
+  UNDER_REVIEW
+  RESOLVED
+  DISMISSED
+}
+
+enum ReportReason {
+  SPAM
+  FRAUD_OR_SCAM
+  PROHIBITED_ITEM
+  DUPLICATE
+  WRONG_CATEGORY
+  OFFENSIVE_CONTENT
+  MISLEADING_PRICE
+  ALREADY_SOLD
+  HARASSMENT
+  OTHER
+}
+
+enum VerificationStatus {
+  UNVERIFIED
+  PENDING
+  VERIFIED
+  REJECTED
+}
+
+enum NotificationChannel {
+  IN_APP
+  PUSH
+  EMAIL
+  SMS
+}
+
+enum NotificationType {
+  LISTING_APPROVED
+  LISTING_REJECTED
+  LISTING_EXPIRING
+  LISTING_EXPIRED
+  NEW_ENQUIRY
+  NEW_MESSAGE
+  SAVED_SEARCH_MATCH
+  NEARBY_OFFER
+  JOB_ENQUIRY
+  BUSINESS_VERIFICATION_UPDATE
+  REPORT_RESOLUTION
+  SECURITY_ALERT
+}
+
+enum ConversationContext {
+  LISTING_ENQUIRY
+  BUSINESS_ENQUIRY
+  JOB_ENQUIRY
+}
+
+enum DevicePlatform {
+  ANDROID
+  IOS
+  WEB
+}
+
+enum Language {
+  EN
+  TE
+  HI
+}
+
+enum PlacementType {
+  FEATURED
+  SPONSORED
+  BOOST
+  BANNER
+}
+
+// =====================================================================
+// Identity & access
+// =====================================================================
+
+model User {
+  id                  String     @id @db.Uuid
+  // E.164, e.g. +919876543210. Unique because it is the primary login identifier and is
+  // looked up on every OTP request — this index is on the hottest auth path.
+  phoneE164           String     @unique @db.VarChar(20)
+  phoneVerifiedAt     DateTime?
+  email               String?    @unique @db.Citext
+  emailVerifiedAt     DateTime?
+  passwordHash        String?    @db.VarChar(255) // argon2id; null for OTP-only accounts
+  displayName         String     @db.VarChar(120)
+  avatarMediaId       String?    @db.Uuid
+  bio                 String?    @db.VarChar(500)
+  preferredLanguage   Language   @default(EN)
+  status              UserStatus @default(ACTIVE)
+  lastActiveAt        DateTime?
+  deletionRequestedAt DateTime?
+  createdAt           DateTime   @default(now())
+  updatedAt           DateTime   @updatedAt
+  deletedAt           DateTime?
+
+  roles                 UserRole[]
+  devices               Device[]
+  sessions              Session[]
+  savedLocations        SavedLocation[]
+  ownedBusinesses       Business[]               @relation("BusinessOwner")
+  businessStaffOf       BusinessStaff[]
+  listings              Listing[]                @relation("ListingOwner")
+  savedListings         SavedListing[]
+  savedBusinesses       SavedBusiness[]
+  recentlyViewed        RecentlyViewed[]
+  conversationsStarted  Conversation[]           @relation("ConversationInitiator")
+  conversationsReceived Conversation[]           @relation("ConversationRecipient")
+  messages              Message[]
+  blocksMade            Block[]                  @relation("Blocker")
+  blocksReceived        Block[]                  @relation("Blocked")
+  reportsFiled          Report[]                 @relation("Reporter")
+  moderationActions     ModerationAction[]       @relation("Moderator")
+  suspensions           UserSuspension[]         @relation("SuspendedUser")
+  notifications         Notification[]
+  notificationPrefs     NotificationPreference[]
+  searchSubscriptions   SearchSubscription[]
+  auditLogs             AuditLog[]
+
+  // "Active users near a city" and admin listings are the two common scans.
+  @@index([status, lastActiveAt(sort: Desc)])
+  @@index([createdAt(sort: Desc)])
+  @@map("users")
+}
+
+model Role {
+  id          String   @id @db.Uuid
+  name        RoleName @unique
+  description String   @db.VarChar(255)
+  // Permission strings such as "listing:moderate", "business:verify". Kept as a scalar
+  // list rather than a join table: the set is small, admin-managed and read on every request.
+  permissions String[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  users UserRole[]
+
+  @@map("roles")
+}
+
+model UserRole {
+  userId    String   @db.Uuid
+  roleId    String   @db.Uuid
+  grantedAt DateTime @default(now())
+  grantedBy String?  @db.Uuid
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role Role @relation(fields: [roleId], references: [id], onDelete: Cascade)
+
+  // Composite PK doubles as the uniqueness constraint — a role cannot be granted twice.
+  @@id([userId, roleId])
+  @@index([roleId])
+  @@map("user_roles")
+}
+
+model Device {
+  id         String         @id @db.Uuid
+  userId     String         @db.Uuid
+  platform   DevicePlatform
+  // Stable per-install identifier supplied by the client; unique per user so re-installing
+  // replaces rather than accumulates device rows.
+  deviceKey  String         @db.VarChar(128)
+  name       String?        @db.VarChar(120)
+  osVersion  String?        @db.VarChar(60)
+  appVersion String?        @db.VarChar(30)
+  pushToken  String?        @db.VarChar(512)
+  lastSeenAt DateTime       @default(now())
+  lastIp     String?        @db.VarChar(64)
+  revokedAt  DateTime?
+  createdAt  DateTime       @default(now())
+  updatedAt  DateTime       @updatedAt
+
+  user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  sessions Session[]
+
+  @@unique([userId, deviceKey])
+  @@index([pushToken])
+  @@map("devices")
+}
+
+model Session {
+  id                String    @id @db.Uuid
+  userId            String    @db.Uuid
+  deviceId          String    @db.Uuid
+  // SHA-256 of the opaque refresh token. The token itself is never stored (ADR-0007).
+  refreshTokenHash  String    @unique @db.VarChar(64)
+  // All rotations descend from one login; reuse of a rotated token revokes the whole family.
+  familyId          String    @db.Uuid
+  previousSessionId String?   @db.Uuid
+  expiresAt         DateTime
+  rotatedAt         DateTime?
+  revokedAt         DateTime?
+  revokedReason     String?   @db.VarChar(120)
+  ip                String?   @db.VarChar(64)
+  userAgent         String?   @db.VarChar(255)
+  createdAt         DateTime  @default(now())
+
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  device Device @relation(fields: [deviceId], references: [id], onDelete: Cascade)
+
+  @@index([userId, revokedAt])
+  @@index([familyId])
+  // Drives the expired-session sweeper.
+  @@index([expiresAt])
+  @@map("sessions")
+}
+
+model OtpAttempt {
+  id          String    @id @db.Uuid
+  phoneE164   String    @db.VarChar(20)
+  // SHA-256 of the code. Comparing hashes keeps plaintext OTPs out of the database.
+  codeHash    String    @db.VarChar(64)
+  purpose     String    @db.VarChar(40) // LOGIN | PHONE_CHANGE | DELETE_CONFIRM
+  attempts    Int       @default(0)
+  maxAttempts Int       @default(5)
+  consumedAt  DateTime?
+  expiresAt   DateTime
+  ip          String?   @db.VarChar(64)
+  deviceKey   String?   @db.VarChar(128)
+  createdAt   DateTime  @default(now())
+
+  // The verify path looks up the newest unconsumed attempt for a phone.
+  @@index([phoneE164, createdAt(sort: Desc)])
+  @@index([expiresAt])
+  @@map("otp_attempts")
+}
+
+model AuthLockout {
+  id          String   @id @db.Uuid
+  // Either a phone number or an IP — one table covers both brute-force surfaces.
+  identifier  String   @db.VarChar(80)
+  scope       String   @db.VarChar(20) // PHONE | IP
+  failedCount Int      @default(0)
+  lockedUntil DateTime
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([scope, identifier])
+  @@index([lockedUntil])
+  @@map("auth_lockouts")
+}
+
+model UserSuspension {
+  id        String    @id @db.Uuid
+  userId    String    @db.Uuid
+  reason    String    @db.VarChar(500)
+  issuedBy  String    @db.Uuid
+  startsAt  DateTime  @default(now())
+  endsAt    DateTime? // null = indefinite
+  liftedAt  DateTime?
+  createdAt DateTime  @default(now())
+
+  user User @relation("SuspendedUser", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, endsAt])
+  @@map("user_suspensions")
+}
+
+// =====================================================================
+// Geography
+// =====================================================================
+
+model Country {
+  id        String   @id @db.Uuid
+  name      String   @db.VarChar(120)
+  iso2      String   @unique @db.VarChar(2)
+  phoneCode String   @db.VarChar(6)
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  states State[]
+
+  @@map("countries")
+}
+
+model State {
+  id        String   @id @db.Uuid
+  countryId String   @db.Uuid
+  name      String   @db.VarChar(120)
+  slug      String   @db.VarChar(140)
+  code      String?  @db.VarChar(10)
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  country   Country    @relation(fields: [countryId], references: [id])
+  districts District[]
+  cities    City[]
+  listings  Listing[]
+
+  @@unique([countryId, slug])
+  @@map("states")
+}
+
+model District {
+  id        String   @id @db.Uuid
+  stateId   String   @db.Uuid
+  name      String   @db.VarChar(120)
+  slug      String   @db.VarChar(140)
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  state    State     @relation(fields: [stateId], references: [id])
+  cities   City[]
+  listings Listing[]
+
+  @@unique([stateId, slug])
+  @@map("districts")
+}
+
+model City {
+  id         String                                 @id @db.Uuid
+  stateId    String                                 @db.Uuid
+  districtId String?                                @db.Uuid
+  name       String                                 @db.VarChar(120)
+  // Globally unique so /hyderabad works as a landing-page URL without a state segment.
+  slug       String                                 @unique @db.VarChar(140)
+  nameTe     String?                                @db.VarChar(160)
+  nameHi     String?                                @db.VarChar(160)
+  latitude   Decimal                                @db.Decimal(10, 7)
+  longitude  Decimal                                @db.Decimal(10, 7)
+  geo        Unsupported("geography(Point, 4326)")?
+  isActive   Boolean                                @default(true)
+  isLaunched Boolean                                @default(false) // controls which cities the app offers at launch
+  population Int?
+  createdAt  DateTime                               @default(now())
+  updatedAt  DateTime                               @updatedAt
+
+  state          State           @relation(fields: [stateId], references: [id])
+  district       District?       @relation(fields: [districtId], references: [id])
+  localities     Locality[]
+  addresses      Address[]
+  savedLocations SavedLocation[]
+  businesses     Business[]
+  listings       Listing[]
+
+  @@index([stateId, isActive])
+  @@index([name])
+  @@map("cities")
+}
+
+model Locality {
+  id         String                                 @id @db.Uuid
+  cityId     String                                 @db.Uuid
+  name       String                                 @db.VarChar(140)
+  slug       String                                 @db.VarChar(160)
+  postalCode String?                                @db.VarChar(12)
+  latitude   Decimal?                               @db.Decimal(10, 7)
+  longitude  Decimal?                               @db.Decimal(10, 7)
+  geo        Unsupported("geography(Point, 4326)")?
+  isActive   Boolean                                @default(true)
+  createdAt  DateTime                               @default(now())
+  updatedAt  DateTime                               @updatedAt
+
+  city           City            @relation(fields: [cityId], references: [id])
+  addresses      Address[]
+  savedLocations SavedLocation[]
+  listings       Listing[]
+
+  @@unique([cityId, slug])
+  @@index([postalCode])
+  @@map("localities")
+}
+
+model Address {
+  id         String                                 @id @db.Uuid
+  line1      String?                                @db.VarChar(200)
+  line2      String?                                @db.VarChar(200)
+  landmark   String?                                @db.VarChar(160)
+  cityId     String                                 @db.Uuid
+  localityId String?                                @db.Uuid
+  postalCode String?                                @db.VarChar(12)
+  latitude   Decimal?                               @db.Decimal(10, 7)
+  longitude  Decimal?                               @db.Decimal(10, 7)
+  geo        Unsupported("geography(Point, 4326)")?
+  createdAt  DateTime                               @default(now())
+  updatedAt  DateTime                               @updatedAt
+
+  city       City       @relation(fields: [cityId], references: [id])
+  locality   Locality?  @relation(fields: [localityId], references: [id])
+  businesses Business[]
+
+  @@index([cityId])
+  @@map("addresses")
+}
+
+model SavedLocation {
+  id         String                                 @id @db.Uuid
+  userId     String                                 @db.Uuid
+  label      String                                 @db.VarChar(60) // Home, Work, …
+  cityId     String                                 @db.Uuid
+  localityId String?                                @db.Uuid
+  latitude   Decimal?                               @db.Decimal(10, 7)
+  longitude  Decimal?                               @db.Decimal(10, 7)
+  geo        Unsupported("geography(Point, 4326)")?
+  radiusKm   Int                                    @default(10)
+  isDefault  Boolean                                @default(false)
+  createdAt  DateTime                               @default(now())
+  updatedAt  DateTime                               @updatedAt
+
+  user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  city     City      @relation(fields: [cityId], references: [id])
+  locality Locality? @relation(fields: [localityId], references: [id])
+
+  @@index([userId])
+  // Exactly one default per user is enforced by a partial unique index in the SQL migration
+  // (Prisma cannot express `WHERE is_default`).
+  @@map("saved_locations")
+}
+
+// =====================================================================
+// Businesses
+// =====================================================================
+
+model Business {
+  id                 String                                 @id @db.Uuid
+  ownerId            String                                 @db.Uuid
+  name               String                                 @db.VarChar(180)
+  slug               String                                 @unique @db.VarChar(200)
+  categoryId         String                                 @db.Uuid
+  description        String?                                @db.Text
+  logoMediaId        String?                                @db.Uuid
+  coverMediaId       String?                                @db.Uuid
+  addressId          String?                                @db.Uuid
+  cityId             String                                 @db.Uuid
+  latitude           Decimal?                               @db.Decimal(10, 7)
+  longitude          Decimal?                               @db.Decimal(10, 7)
+  geo                Unsupported("geography(Point, 4326)")?
+  primaryPhone       String?                                @db.VarChar(20)
+  secondaryPhone     String?                                @db.VarChar(20)
+  whatsappNumber     String?                                @db.VarChar(20)
+  email              String?                                @db.VarChar(180)
+  website            String?                                @db.VarChar(255)
+  verificationStatus VerificationStatus                     @default(UNVERIFIED)
+  verifiedAt         DateTime?
+  isPremium          Boolean                                @default(false) // premium profile — inactive in Phase 1
+  isActive           Boolean                                @default(true)
+  viewCount          Int                                    @default(0)
+  saveCount          Int                                    @default(0)
+  createdAt          DateTime                               @default(now())
+  updatedAt          DateTime                               @updatedAt
+  deletedAt          DateTime?
+
+  owner        User              @relation("BusinessOwner", fields: [ownerId], references: [id])
+  category     Category          @relation(fields: [categoryId], references: [id])
+  address      Address?          @relation(fields: [addressId], references: [id])
+  city         City              @relation(fields: [cityId], references: [id])
+  staff        BusinessStaff[]
+  hours        BusinessHour[]
+  holidays     BusinessHoliday[]
+  serviceAreas ServiceArea[]
+  listings     Listing[]
+  savedBy      SavedBusiness[]
+
+  @@index([ownerId])
+  // City + category browse, the main business directory query.
+  @@index([cityId, categoryId, isActive])
+  @@index([verificationStatus])
+  @@map("businesses")
+}
+
+model BusinessStaff {
+  id          String    @id @db.Uuid
+  businessId  String    @db.Uuid
+  userId      String    @db.Uuid
+  role        String    @db.VarChar(40) // MANAGER | EDITOR | VIEWER
+  permissions String[] // e.g. listing:create, offer:publish, enquiry:reply
+  invitedAt   DateTime  @default(now())
+  acceptedAt  DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  business Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([businessId, userId])
+  @@index([userId])
+  @@map("business_staff")
+}
+
+model BusinessHour {
+  id         String   @id @db.Uuid
+  businessId String   @db.Uuid
+  dayOfWeek  Int // 0 = Sunday
+  opensAt    String   @db.VarChar(5) // "09:30"
+  closesAt   String   @db.VarChar(5)
+  isClosed   Boolean  @default(false)
+  createdAt  DateTime @default(now())
+
+  business Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+
+  @@unique([businessId, dayOfWeek, opensAt])
+  @@map("business_hours")
+}
+
+model BusinessHoliday {
+  id         String   @id @db.Uuid
+  businessId String   @db.Uuid
+  date       DateTime @db.Date
+  reason     String?  @db.VarChar(120)
+  createdAt  DateTime @default(now())
+
+  business Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+
+  @@unique([businessId, date])
+  @@map("business_holidays")
+}
+
+model ServiceArea {
+  id         String   @id @db.Uuid
+  businessId String   @db.Uuid
+  cityId     String?  @db.Uuid
+  localityId String?  @db.Uuid
+  radiusKm   Int?
+  createdAt  DateTime @default(now())
+
+  business Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+
+  @@index([businessId])
+  @@index([cityId])
+  @@map("service_areas")
+}
+
+// =====================================================================
+// Categories & dynamic attributes
+// =====================================================================
+
+model Category {
+  id             String        @id @db.Uuid
+  parentId       String?       @db.Uuid
+  name           String        @db.VarChar(140)
+  nameTe         String?       @db.VarChar(160)
+  nameHi         String?       @db.VarChar(160)
+  slug           String        @unique @db.VarChar(160)
+  description    String?       @db.VarChar(500)
+  iconKey        String?       @db.VarChar(80)
+  // Which listing types may use this category — lets one tree serve products, jobs and offers.
+  listingTypes   ListingType[]
+  sortOrder      Int           @default(0)
+  isActive       Boolean       @default(true)
+  seoTitle       String?       @db.VarChar(180)
+  seoDescription String?       @db.VarChar(300)
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+
+  parent      Category?           @relation("CategoryTree", fields: [parentId], references: [id])
+  children    Category[]          @relation("CategoryTree")
+  attributes  CategoryAttribute[]
+  listings    Listing[]
+  subListings Listing[]           @relation("ListingSubcategory")
+  businesses  Business[]
+
+  // Renders the category tree for a listing type in one indexed scan.
+  @@index([parentId, sortOrder])
+  @@index([isActive])
+  @@map("categories")
+}
+
+model CategoryAttribute {
+  id           String            @id @db.Uuid
+  categoryId   String            @db.Uuid
+  key          String            @db.VarChar(60) // brand, model, condition, experience …
+  label        String            @db.VarChar(120)
+  labelTe      String?           @db.VarChar(140)
+  labelHi      String?           @db.VarChar(140)
+  dataType     AttributeDataType
+  // SELECT / MULTI_SELECT choices: [{ value, label, labelTe, labelHi }]
+  options      Json?
+  unit         String?           @db.VarChar(20) // km, years, ₹ …
+  isRequired   Boolean           @default(false)
+  isFilterable Boolean           @default(false) // exposed as a Meilisearch facet
+  isSearchable Boolean           @default(false)
+  minValue     Decimal?          @db.Decimal(14, 2)
+  maxValue     Decimal?          @db.Decimal(14, 2)
+  sortOrder    Int               @default(0)
+  isActive     Boolean           @default(true)
+  createdAt    DateTime          @default(now())
+  updatedAt    DateTime          @updatedAt
+
+  category Category                @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  values   ListingAttributeValue[]
+
+  @@unique([categoryId, key])
+  @@index([categoryId, sortOrder])
+  @@map("category_attributes")
+}
+
+model ListingAttributeValue {
+  id          String    @id @db.Uuid
+  listingId   String    @db.Uuid
+  attributeId String    @db.Uuid
+  valueText   String?   @db.VarChar(300)
+  valueNumber Decimal?  @db.Decimal(16, 4)
+  valueBool   Boolean?
+  valueDate   DateTime?
+  valueJson   Json? // MULTI_SELECT
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  listing   Listing           @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  attribute CategoryAttribute @relation(fields: [attributeId], references: [id], onDelete: Cascade)
+
+  // One value per attribute per listing.
+  @@unique([listingId, attributeId])
+  // Filtering by attribute value in Postgres (Meilisearch handles the fast path).
+  @@index([attributeId, valueText])
+  @@index([attributeId, valueNumber])
+  @@map("listing_attribute_values")
+}
+
+// =====================================================================
+// Listings — base entity (ADR-0004)
+// =====================================================================
+
+model Listing {
+  id               String           @id @db.Uuid
+  type             ListingType
+  ownerId          String           @db.Uuid
+  businessId       String?          @db.Uuid
+  title            String           @db.VarChar(160)
+  // Unique across all listings so a listing has one canonical shareable URL.
+  slug             String           @unique @db.VarChar(200)
+  description      String           @db.Text
+  categoryId       String           @db.Uuid
+  subcategoryId    String?          @db.Uuid
+  status           ListingStatus    @default(DRAFT)
+  moderationStatus ModerationStatus @default(PENDING)
+  moderationScore  Int?
+  rejectionReason  String?          @db.VarChar(500)
+
+  // Location — administrative ids for cheap filtering, geo for radius search.
+  cityId          String                                 @db.Uuid
+  districtId      String?                                @db.Uuid
+  stateId         String?                                @db.Uuid
+  localityId      String?                                @db.Uuid
+  postalCode      String?                                @db.VarChar(12)
+  addressLine     String?                                @db.VarChar(240)
+  latitude        Decimal?                               @db.Decimal(10, 7)
+  longitude       Decimal?                               @db.Decimal(10, 7)
+  geo             Unsupported("geography(Point, 4326)")?
+  serviceRadiusKm Int?
+  isRemote        Boolean                                @default(false)
+
+  contactPreference ContactPreference @default(IN_APP_ONLY)
+  contactPhone      String?           @db.VarChar(20)
+  showPhonePublicly Boolean           @default(false)
+  visibility        Visibility        @default(PUBLIC)
+
+  publishedAt DateTime?
+  expiresAt   DateTime?
+  soldAt      DateTime?
+
+  viewCount    Int @default(0)
+  saveCount    Int @default(0)
+  reportCount  Int @default(0)
+  enquiryCount Int @default(0)
+
+  // Monetisation-ready flags — schema present, no payment path in Phase 1.
+  isFeatured    Boolean   @default(false)
+  featuredUntil DateTime?
+  isSponsored   Boolean   @default(false)
+  isVerified    Boolean   @default(false)
+
+  // Normalised hash of title+price+owner, used for duplicate detection at moderation time.
+  duplicateHash   String?   @db.VarChar(64)
+  searchIndexedAt DateTime?
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
+  owner       User      @relation("ListingOwner", fields: [ownerId], references: [id])
+  business    Business? @relation(fields: [businessId], references: [id])
+  category    Category  @relation(fields: [categoryId], references: [id])
+  subcategory Category? @relation("ListingSubcategory", fields: [subcategoryId], references: [id])
+  city        City      @relation(fields: [cityId], references: [id])
+  district    District? @relation(fields: [districtId], references: [id])
+  state       State?    @relation(fields: [stateId], references: [id])
+  locality    Locality? @relation(fields: [localityId], references: [id])
+
+  media             ListingMedia[]
+  attributeValues   ListingAttributeValue[]
+  marketplace       MarketplaceDetail?
+  buyerRequirement  BuyerRequirementDetail?
+  offer             OfferDetail?
+  job               JobDetail?
+  service           ServiceDetail?
+  rental            RentalDetail?
+  event             EventDetail?
+  savedBy           SavedListing[]
+  views             RecentlyViewed[]
+  conversations     Conversation[]
+  reports           Report[]
+  moderationActions ModerationAction[]
+  placements        FeaturedPlacement[]
+
+  // Home feed and city landing pages: filter by type+status+city, sort by recency.
+  @@index([type, status, cityId, publishedAt(sort: Desc)])
+  // Category landing pages.
+  @@index([categoryId, status, publishedAt(sort: Desc)])
+  // "My listings" dashboard.
+  @@index([ownerId, status, createdAt(sort: Desc)])
+  // Business profile tabs.
+  @@index([businessId, type, status])
+  // Expiry sweeper — narrowed further by a partial index in the SQL migration.
+  @@index([status, expiresAt])
+  // Moderation queue ordering.
+  @@index([moderationStatus, createdAt])
+  @@index([duplicateHash])
+  @@map("listings")
+}
+
+model ListingMedia {
+  id            String      @id @db.Uuid
+  listingId     String      @db.Uuid
+  status        MediaStatus @default(PENDING_UPLOAD)
+  storageKey    String      @db.VarChar(300) // original object key
+  thumbKey      String?     @db.VarChar(300) // 320px
+  cardKey       String?     @db.VarChar(300) // 720px
+  fullKey       String?     @db.VarChar(300) // 1600px
+  avifKey       String?     @db.VarChar(300)
+  mimeType      String      @db.VarChar(60)
+  sizeBytes     Int?
+  width         Int?
+  height        Int?
+  blurhash      String?     @db.VarChar(60)
+  sortOrder     Int         @default(0)
+  isPrimary     Boolean     @default(false)
+  failureReason String?     @db.VarChar(300)
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+
+  listing Listing @relation(fields: [listingId], references: [id], onDelete: Cascade)
+
+  @@index([listingId, sortOrder])
+  // Sweeper for uploads that were requested but never confirmed.
+  @@index([status, createdAt])
+  @@map("listing_media")
+}
+
+// ---------- Type-specific extensions (1:1 with Listing) ----------
+
+model MarketplaceDetail {
+  listingId         String        @id @db.Uuid
+  price             Decimal?      @db.Decimal(12, 2)
+  isNegotiable      Boolean       @default(false)
+  isFree            Boolean       @default(false)
+  condition         ItemCondition @default(GOOD)
+  isNewItem         Boolean       @default(false)
+  brand             String?       @db.VarChar(120)
+  model             String?       @db.VarChar(120)
+  purchaseYear      Int?
+  hasWarranty       Boolean       @default(false)
+  warrantyDetails   String?       @db.VarChar(240)
+  deliveryAvailable Boolean       @default(false)
+  pickupAvailable   Boolean       @default(true)
+  quantity          Int           @default(1)
+
+  listing Listing @relation(fields: [listingId], references: [id], onDelete: Cascade)
+
+  // Price-range filtering and price sorting in Postgres fallback queries.
+  @@index([price])
+  @@index([condition])
+  @@map("marketplace_details")
+}
+
+model BuyerRequirementDetail {
+  listingId          String         @id @db.Uuid
+  budgetMin          Decimal?       @db.Decimal(12, 2)
+  budgetMax          Decimal?       @db.Decimal(12, 2)
+  requiredBy         DateTime?
+  quantity           Int?
+  preferredCondition ItemCondition?
+
+  listing Listing @relation(fields: [listingId], references: [id], onDelete: Cascade)
+
+  @@index([budgetMax])
+  @@map("buyer_requirement_details")
+}
+
+model OfferDetail {
+  listingId              String   @id @db.Uuid
+  originalPrice          Decimal? @db.Decimal(12, 2)
+  offerPrice             Decimal? @db.Decimal(12, 2)
+  discountPercentage     Int?
+  couponCode             String?  @db.VarChar(40)
+  startsAt               DateTime
+  endsAt                 DateTime
+  redemptionInstructions String?  @db.Text
+  termsAndConditions     String?  @db.Text
+  limitedQuantity        Int?
+  redeemedCount          Int      @default(0)
+  isOnline               Boolean  @default(false)
+  isInStore              Boolean  @default(true)
+
+  listing Listing @relation(fields: [listingId], references: [id], onDelete: Cascade)
+
+  // "Offers valid now" — the primary offers query.
+  @@index([endsAt])
+  @@index([startsAt, endsAt])
+  @@map("offer_details")
+}
+
+model JobDetail {
+  listingId            String         @id @db.Uuid
+  companyName          String         @db.VarChar(180)
+  employmentType       EmploymentType
+  workplaceType        WorkplaceType
+  salaryMin            Decimal?       @db.Decimal(12, 2)
+  salaryMax            Decimal?       @db.Decimal(12, 2)
+  salaryPeriod         SalaryPeriod   @default(MONTHLY)
+  isSalaryVisible      Boolean        @default(true)
+  experienceMinYears   Int?
+  experienceMaxYears   Int?
+  educationRequirement String?        @db.VarChar(180)
+  skills               String[]
+  openings             Int            @default(1)
+  applicationDeadline  DateTime?
+  applyMethod          String         @db.VarChar(30) // IN_APP | EXTERNAL_LINK | WALK_IN | PHONE
+  externalApplyUrl     String?        @db.VarChar(400)
+  walkInDetails        String?        @db.Text
+  filledAt             DateTime?
+
+  listing Listing @relation(fields: [listingId], references: [id], onDelete: Cascade)
+
+  @@index([employmentType, workplaceType])
+  @@index([salaryMin])
+  @@map("job_details")
+}
+
+model ServiceDetail {
+  listingId       String   @id @db.Uuid
+  serviceType     String?  @db.VarChar(120)
+  priceFrom       Decimal? @db.Decimal(12, 2)
+  priceTo         Decimal? @db.Decimal(12, 2)
+  pricingUnit     String?  @db.VarChar(40) // per hour, per visit …
+  experienceYears Int?
+  availability    String?  @db.VarChar(180)
+  servesAtHome    Boolean  @default(false)
+  servesOnline    Boolean  @default(false)
+
+  listing Listing @relation(fields: [listingId], references: [id], onDelete: Cascade)
+
+  @@map("service_details")
+}
+
+model RentalDetail {
+  listingId       String    @id @db.Uuid
+  propertyType    String?   @db.VarChar(80) // ROOM | FLAT | HOUSE | SHOP | PG …
+  rentAmount      Decimal?  @db.Decimal(12, 2)
+  depositAmount   Decimal?  @db.Decimal(12, 2)
+  rentPeriod      String    @default("MONTHLY") @db.VarChar(20)
+  bedrooms        Int?
+  bathrooms       Int?
+  areaSqft        Int?
+  furnishing      String?   @db.VarChar(40)
+  availableFrom   DateTime?
+  preferredTenant String?   @db.VarChar(60)
+  amenities       String[]
+
+  listing Listing @relation(fields: [listingId], references: [id], onDelete: Cascade)
+
+  @@index([rentAmount])
+  @@map("rental_details")
+}
+
+model EventDetail {
+  listingId   String    @id @db.Uuid
+  startsAt    DateTime
+  endsAt      DateTime?
+  venueName   String?   @db.VarChar(180)
+  isFreeEntry Boolean   @default(true)
+  ticketPrice Decimal?  @db.Decimal(12, 2)
+  ticketUrl   String?   @db.VarChar(400)
+  organiser   String?   @db.VarChar(180)
+  capacity    Int?
+
+  listing Listing @relation(fields: [listingId], references: [id], onDelete: Cascade)
+
+  @@index([startsAt])
+  @@map("event_details")
+}
+
+// =====================================================================
+// Engagement
+// =====================================================================
+
+model SavedListing {
+  id        String   @id @db.Uuid
+  userId    String   @db.Uuid
+  listingId String   @db.Uuid
+  createdAt DateTime @default(now())
+
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  listing Listing @relation(fields: [listingId], references: [id], onDelete: Cascade)
+
+  // Makes saving idempotent and powers "is this saved?" in one lookup.
+  @@unique([userId, listingId])
+  @@index([userId, createdAt(sort: Desc)])
+  @@map("saved_listings")
+}
+
+model SavedBusiness {
+  id         String   @id @db.Uuid
+  userId     String   @db.Uuid
+  businessId String   @db.Uuid
+  createdAt  DateTime @default(now())
+
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  business Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, businessId])
+  @@map("saved_businesses")
+}
+
+model RecentlyViewed {
+  id        String   @id @db.Uuid
+  userId    String   @db.Uuid
+  listingId String   @db.Uuid
+  viewedAt  DateTime @default(now())
+
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  listing Listing @relation(fields: [listingId], references: [id], onDelete: Cascade)
+
+  // One row per user+listing, refreshed on re-view — keeps the table bounded by
+  // distinct items rather than by view events.
+  @@unique([userId, listingId])
+  @@index([userId, viewedAt(sort: Desc)])
+  @@map("recently_viewed")
+}
+
+// =====================================================================
+// Conversations
+// =====================================================================
+
+model Conversation {
+  id                   String              @id @db.Uuid
+  context              ConversationContext
+  listingId            String?             @db.Uuid
+  businessId           String?             @db.Uuid
+  initiatorId          String              @db.Uuid
+  recipientId          String              @db.Uuid
+  lastMessageAt        DateTime?
+  lastMessagePreview   String?             @db.VarChar(160)
+  initiatorUnreadCount Int                 @default(0)
+  recipientUnreadCount Int                 @default(0)
+  isClosed             Boolean             @default(false)
+  createdAt            DateTime            @default(now())
+  updatedAt            DateTime            @updatedAt
+
+  listing   Listing?  @relation(fields: [listingId], references: [id], onDelete: SetNull)
+  initiator User      @relation("ConversationInitiator", fields: [initiatorId], references: [id])
+  recipient User      @relation("ConversationRecipient", fields: [recipientId], references: [id])
+  messages  Message[]
+  reports   Report[]
+
+  // One enquiry thread per buyer per listing — prevents duplicate threads on repeat taps.
+  @@unique([listingId, initiatorId])
+  @@index([initiatorId, lastMessageAt(sort: Desc)])
+  @@index([recipientId, lastMessageAt(sort: Desc)])
+  @@map("conversations")
+}
+
+model Message {
+  id             String    @id @db.Uuid
+  conversationId String    @db.Uuid
+  senderId       String    @db.Uuid
+  body           String    @db.Text
+  readAt         DateTime?
+  isSystem       Boolean   @default(false)
+  createdAt      DateTime  @default(now())
+  deletedAt      DateTime?
+
+  conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  sender       User         @relation(fields: [senderId], references: [id])
+
+  @@index([conversationId, createdAt])
+  @@map("messages")
+}
+
+model Block {
+  id        String   @id @db.Uuid
+  blockerId String   @db.Uuid
+  blockedId String   @db.Uuid
+  reason    String?  @db.VarChar(240)
+  createdAt DateTime @default(now())
+
+  blocker User @relation("Blocker", fields: [blockerId], references: [id], onDelete: Cascade)
+  blocked User @relation("Blocked", fields: [blockedId], references: [id], onDelete: Cascade)
+
+  @@unique([blockerId, blockedId])
+  @@index([blockedId])
+  @@map("blocks")
+}
+
+// =====================================================================
+// Trust & safety
+// =====================================================================
+
+model Report {
+  id             String           @id @db.Uuid
+  targetType     ReportTargetType
+  listingId      String?          @db.Uuid
+  businessId     String?          @db.Uuid
+  reportedUserId String?          @db.Uuid
+  conversationId String?          @db.Uuid
+  reporterId     String           @db.Uuid
+  reason         ReportReason
+  details        String?          @db.VarChar(1000)
+  status         ReportStatus     @default(OPEN)
+  resolvedById   String?          @db.Uuid
+  resolutionNote String?          @db.VarChar(1000)
+  resolvedAt     DateTime?
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+
+  listing      Listing?      @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  reporter     User          @relation("Reporter", fields: [reporterId], references: [id])
+  conversation Conversation? @relation(fields: [conversationId], references: [id], onDelete: SetNull)
+
+  // A user may report a given listing once.
+  @@unique([reporterId, listingId])
+  // Moderation queue: open reports, oldest first.
+  @@index([status, createdAt])
+  @@index([listingId, status])
+  @@map("reports")
+}
+
+model ModerationAction {
+  id            String           @id @db.Uuid
+  listingId     String?          @db.Uuid
+  targetType    ReportTargetType
+  targetId      String           @db.Uuid
+  action        String           @db.VarChar(40) // APPROVE | REJECT | REMOVE | SUSPEND | RESTORE | ESCALATE
+  reason        String?          @db.VarChar(500)
+  // Machine reasons from the moderation provider, e.g. ["BANNED_KEYWORD:loan", "SHORTENED_URL"]
+  systemReasons String[]
+  isAutomated   Boolean          @default(false)
+  moderatorId   String?          @db.Uuid
+  appealStatus  String?          @db.VarChar(20) // NONE | REQUESTED | UPHELD | OVERTURNED
+  createdAt     DateTime         @default(now())
+
+  listing   Listing? @relation(fields: [listingId], references: [id], onDelete: SetNull)
+  moderator User?    @relation("Moderator", fields: [moderatorId], references: [id])
+
+  @@index([targetType, targetId, createdAt(sort: Desc)])
+  @@index([moderatorId, createdAt(sort: Desc)])
+  @@map("moderation_actions")
+}
+
+model ModeratorNote {
+  id         String           @id @db.Uuid
+  targetType ReportTargetType
+  targetId   String           @db.Uuid
+  authorId   String           @db.Uuid
+  note       String           @db.Text
+  createdAt  DateTime         @default(now())
+
+  @@index([targetType, targetId])
+  @@map("moderator_notes")
+}
+
+model BannedKeyword {
+  id        String   @id @db.Uuid
+  // Stored lowercase; matched against normalised listing text.
+  keyword   String   @unique @db.VarChar(120)
+  severity  Int      @default(1) // 1 = flag for review, 2 = auto-reject
+  scope     String   @default("ALL") @db.VarChar(30) // ALL | TITLE | DESCRIPTION
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([isActive])
+  @@map("banned_keywords")
+}
+
+model AuditLog {
+  id            String   @id @db.Uuid
+  actorId       String?  @db.Uuid // null for system actions
+  actorRole     String?  @db.VarChar(40)
+  action        String   @db.VarChar(80) // listing.approve, user.suspend, settings.update …
+  entityType    String   @db.VarChar(60)
+  entityId      String?  @db.VarChar(64)
+  // Before/after snapshot of changed fields only — never full records, never secrets.
+  changes       Json?
+  ip            String?  @db.VarChar(64)
+  userAgent     String?  @db.VarChar(255)
+  correlationId String?  @db.VarChar(64)
+  createdAt     DateTime @default(now())
+
+  actor User? @relation(fields: [actorId], references: [id], onDelete: SetNull)
+
+  // Admin forensics: "everything that happened to this entity", newest first.
+  @@index([entityType, entityId, createdAt(sort: Desc)])
+  @@index([actorId, createdAt(sort: Desc)])
+  @@index([correlationId])
+  @@map("audit_logs")
+}
+
+// =====================================================================
+// Notifications
+// =====================================================================
+
+model Notification {
+  id            String              @id @db.Uuid
+  userId        String              @db.Uuid
+  type          NotificationType
+  channel       NotificationChannel @default(IN_APP)
+  title         String              @db.VarChar(160)
+  body          String              @db.VarChar(500)
+  // Deep-link payload: { entityType, entityId, route }
+  data          Json?
+  readAt        DateTime?
+  sentAt        DateTime?
+  failedAt      DateTime?
+  failureReason String?             @db.VarChar(300)
+  createdAt     DateTime            @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Notification centre + unread badge in one index.
+  @@index([userId, readAt, createdAt(sort: Desc)])
+  @@map("notifications")
+}
+
+model NotificationPreference {
+  id        String              @id @db.Uuid
+  userId    String              @db.Uuid
+  type      NotificationType
+  channel   NotificationChannel
+  enabled   Boolean             @default(true)
+  updatedAt DateTime            @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, type, channel])
+  @@map("notification_preferences")
+}
+
+model SearchSubscription {
+  id            String    @id @db.Uuid
+  userId        String    @db.Uuid
+  label         String    @db.VarChar(120)
+  query         String?   @db.VarChar(200)
+  // Serialised filter set: categoryId, type, priceMin/Max, cityId, radiusKm …
+  filters       Json
+  cityId        String?   @db.Uuid
+  latitude      Decimal?  @db.Decimal(10, 7)
+  longitude     Decimal?  @db.Decimal(10, 7)
+  radiusKm      Int?
+  isActive      Boolean   @default(true)
+  lastMatchedAt DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, isActive])
+  // The saved-search matcher scans active subscriptions by city.
+  @@index([isActive, cityId])
+  @@map("search_subscriptions")
+}
+
+// =====================================================================
+// Monetisation-ready (schema only — no payment path in Phase 1)
+// =====================================================================
+
+model Plan {
+  id            String   @id @db.Uuid
+  code          String   @unique @db.VarChar(40)
+  name          String   @db.VarChar(120)
+  description   String?  @db.VarChar(500)
+  priceInPaise  Int      @default(0)
+  billingPeriod String   @db.VarChar(20) // MONTHLY | YEARLY | ONE_TIME
+  features      Json // { featuredListings: 5, verifiedBadge: true, … }
+  isActive      Boolean  @default(false)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  subscriptions Subscription[]
+
+  @@map("plans")
+}
+
+model Subscription {
+  id         String    @id @db.Uuid
+  planId     String    @db.Uuid
+  userId     String?   @db.Uuid
+  businessId String?   @db.Uuid
+  status     String    @default("INACTIVE") @db.VarChar(20)
+  startsAt   DateTime?
+  endsAt     DateTime?
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+
+  plan Plan @relation(fields: [planId], references: [id])
+
+  @@index([userId, status])
+  @@index([businessId, status])
+  @@map("subscriptions")
+}
+
+model FeaturedPlacement {
+  id         String        @id @db.Uuid
+  listingId  String        @db.Uuid
+  type       PlacementType
+  cityId     String?       @db.Uuid
+  categoryId String?       @db.Uuid
+  priority   Int           @default(0)
+  startsAt   DateTime
+  endsAt     DateTime
+  createdBy  String?       @db.Uuid
+  createdAt  DateTime      @default(now())
+
+  listing Listing @relation(fields: [listingId], references: [id], onDelete: Cascade)
+
+  // Feed injection: active placements for a city, highest priority first.
+  @@index([cityId, type, startsAt, endsAt])
+  @@map("featured_placements")
+}
+
+model Banner {
+  id        String    @id @db.Uuid
+  title     String    @db.VarChar(160)
+  imageKey  String    @db.VarChar(300)
+  targetUrl String?   @db.VarChar(400)
+  placement String    @db.VarChar(40) // HOME_TOP | CATEGORY | SEARCH
+  cityId    String?   @db.Uuid
+  sortOrder Int       @default(0)
+  startsAt  DateTime?
+  endsAt    DateTime?
+  isActive  Boolean   @default(true)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  @@index([placement, isActive, sortOrder])
+  @@map("banners")
+}
+
+// =====================================================================
+// Operations
+// =====================================================================
+
+model SystemSetting {
+  key         String   @id @db.VarChar(80)
+  value       Json
+  description String?  @db.VarChar(300)
+  isPublic    Boolean  @default(false) // whether the value may be served to clients
+  updatedBy   String?  @db.Uuid
+  updatedAt   DateTime @updatedAt
+
+  @@map("system_settings")
+}
+
+model ExpiryRule {
+  id             String      @id @db.Uuid
+  listingType    ListingType @unique
+  days           Int // 0 = never auto-expire (offers and events use their own end date)
+  warnBeforeDays Int         @default(3)
+  isActive       Boolean     @default(true)
+  updatedAt      DateTime    @updatedAt
+
+  @@map("expiry_rules")
+}

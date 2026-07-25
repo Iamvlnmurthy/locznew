@@ -1,0 +1,19 @@
+{
+  "name": "@locz/ui-tokens",
+  "version": "0.1.0",
+  "private": true,
+  "description": "LocZ design tokens — one visual system for web, admin and mobile",
+  "main": "src/index.ts",
+  "types": "src/index.ts",
+  "exports": {
+    ".": "./src/index.ts",
+    "./tokens.css": "./src/tokens.css"
+  },
+  "scripts": {
+    "build:dart": "node scripts/generate-dart.mjs",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "typescript": "^5.8.3"
+  }
+}

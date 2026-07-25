@@ -1,0 +1,61 @@
+name: locz
+description: LocZ — location-first local discovery for India.
+publish_to: 'none'
+version: 0.1.0+1
+
+environment:
+  sdk: '>=3.5.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+  flutter_localizations:
+    sdk: flutter
+
+  # State management — the brief specifies Riverpod.
+  flutter_riverpod: ^2.6.1
+  riverpod_annotation: ^2.6.1
+
+  # Routing with deep-link support (locz://ad/<slug> and https://locz.in/ad/<slug>).
+  go_router: ^14.6.2
+
+  # Networking. Dio is chosen over http for interceptors: token refresh and correlation
+  # ids belong in one place rather than at every call site.
+  dio: ^5.7.0
+
+  # Tokens are kept in the Keystore / Keychain, never in shared preferences.
+  flutter_secure_storage: ^9.2.4
+  shared_preferences: ^2.3.3
+
+  geolocator: ^13.0.2
+  image_picker: ^1.1.2
+  cached_network_image: ^3.4.1
+  firebase_core: ^3.8.0
+  firebase_messaging: ^15.1.5
+  flutter_local_notifications: ^18.0.1
+  intl: ^0.19.0
+  url_launcher: ^6.3.1
+  share_plus: ^10.1.2
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^5.0.0
+  build_runner: ^2.4.13
+  riverpod_generator: ^2.6.3
+
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/i18n/
+  fonts:
+    - family: Inter
+      fonts:
+        - asset: assets/fonts/Inter-Regular.ttf
+          weight: 400
+        - asset: assets/fonts/Inter-Medium.ttf
+          weight: 500
+        - asset: assets/fonts/Inter-SemiBold.ttf
+          weight: 600
+        - asset: assets/fonts/Inter-Bold.ttf
+          weight: 700

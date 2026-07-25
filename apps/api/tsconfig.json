@@ -1,0 +1,20 @@
+{
+  "extends": "../../packages/config/tsconfig.base.json",
+  "compilerOptions": {
+    "rootDir": "./src",
+    "outDir": "./dist",
+    // Kept inside dist so `nest build --deleteOutDir` discards it with the output.
+    // Left at the project root it survives the wipe, and tsc then skips emitting files
+    // it believes are already there — producing a dist that is silently incomplete.
+    "tsBuildInfoFile": "./dist/.tsbuildinfo",
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true,
+    "strictPropertyInitialization": false,
+    "paths": {
+      "@/*": ["./src/*"]
+    },
+    "types": ["node", "jest"]
+  },
+  "include": ["src/**/*.ts"],
+  "exclude": ["node_modules", "dist"]
+}

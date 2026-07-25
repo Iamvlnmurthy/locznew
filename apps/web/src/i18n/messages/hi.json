@@ -1,0 +1,98 @@
+{
+  "brand": {
+    "name": "LocZ",
+    "tagline": "आपके आसपास सब कुछ, एक जगह"
+  },
+  "nav": {
+    "home": "होम",
+    "search": "खोजें",
+    "post": "मुफ़्त विज्ञापन",
+    "myAds": "मेरे विज्ञापन",
+    "saved": "सहेजे गए",
+    "chats": "संदेश",
+    "notifications": "सूचनाएँ",
+    "account": "खाता",
+    "signIn": "साइन इन",
+    "signOut": "साइन आउट",
+    "language": "भाषा"
+  },
+  "location": {
+    "label": "स्थान",
+    "change": "बदलें",
+    "useCurrent": "मेरा वर्तमान स्थान",
+    "searchCity": "शहर खोजें",
+    "selectLocality": "इलाका चुनें",
+    "nearby": "आसपास",
+    "within": "{distance} किमी के भीतर",
+    "entireCity": "पूरा शहर",
+    "entireDistrict": "पूरा ज़िला",
+    "entireState": "पूरा राज्य"
+  },
+  "search": {
+    "placeholder": "कुछ भी खोजें — फ़ोन, नौकरी, कमरा",
+    "submit": "खोजें",
+    "filters": "फ़िल्टर",
+    "noResults": "कुछ नहीं मिला",
+    "sort": {
+      "label": "क्रम",
+      "newest": "नए पहले",
+      "priceAsc": "कीमत: कम से ज़्यादा",
+      "distance": "नज़दीकी पहले"
+    }
+  },
+  "feed": {
+    "sections": {
+      "nearby": "आपके पास",
+      "latest_products": "नई चीज़ें",
+      "offers": "ऑफ़र",
+      "jobs": "नौकरियाँ",
+      "services": "सेवाएँ",
+      "requirements": "ज़रूरत है",
+      "recently_viewed": "हाल में देखे गए"
+    },
+    "seeAll": "सभी देखें"
+  },
+  "listing": {
+    "free": "मुफ़्त",
+    "negotiable": "मोल-भाव संभव",
+    "contactSeller": "विक्रेता को संदेश",
+    "showPhone": "फ़ोन नंबर दिखाएँ",
+    "save": "सहेजें",
+    "saved": "सहेजा गया",
+    "share": "साझा करें",
+    "report": "शिकायत करें",
+    "description": "विवरण",
+    "location": "स्थान",
+    "seller": "विक्रेता"
+  },
+  "post": {
+    "title": "अपना मुफ़्त विज्ञापन दें",
+    "publish": "मुफ़्त प्रकाशित करें",
+    "field": {
+      "title": "शीर्षक",
+      "description": "विवरण",
+      "price": "कीमत (₹)",
+      "photos": "तस्वीरें",
+      "city": "शहर"
+    }
+  },
+  "auth": {
+    "signInTitle": "LocZ में साइन इन करें",
+    "phone": "मोबाइल नंबर",
+    "sendCode": "कोड भेजें",
+    "code": "सत्यापन कोड",
+    "verify": "सत्यापित करें"
+  },
+  "common": {
+    "loading": "लोड हो रहा है…",
+    "error": "कुछ गड़बड़ हुई",
+    "retry": "फिर कोशिश करें",
+    "cancel": "रद्द करें",
+    "back": "वापस",
+    "next": "आगे",
+    "km": "किमी"
+  },
+  "footer": {
+    "postFree": "LocZ पर विज्ञापन हमेशा मुफ़्त है।"
+  }
+}

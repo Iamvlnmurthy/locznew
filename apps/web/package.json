@@ -1,0 +1,26 @@
+{
+  "name": "@locz/web",
+  "version": "0.1.0",
+  "private": true,
+  "description": "LocZ public web application",
+  "scripts": {
+    "dev": "next dev --port 3000",
+    "build": "next build",
+    "start": "next start --port 3000",
+    "lint": "next lint",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@locz/shared-types": "*",
+    "@locz/ui-tokens": "*",
+    "next": "^15.2.4",
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.13.14",
+    "@types/react": "^19.1.0",
+    "@types/react-dom": "^19.1.0",
+    "typescript": "^5.8.3"
+  }
+}

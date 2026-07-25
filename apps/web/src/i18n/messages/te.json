@@ -1,0 +1,98 @@
+{
+  "brand": {
+    "name": "LocZ",
+    "tagline": "మీ ప్రాంతంలో అన్నీ ఒకే చోట"
+  },
+  "nav": {
+    "home": "హోమ్",
+    "search": "వెతకండి",
+    "post": "ఉచిత ప్రకటన",
+    "myAds": "నా ప్రకటనలు",
+    "saved": "సేవ్ చేసినవి",
+    "chats": "సందేశాలు",
+    "notifications": "నోటిఫికేషన్లు",
+    "account": "ఖాతా",
+    "signIn": "సైన్ ఇన్",
+    "signOut": "సైన్ అవుట్",
+    "language": "భాష"
+  },
+  "location": {
+    "label": "ప్రాంతం",
+    "change": "మార్చండి",
+    "useCurrent": "నా ప్రస్తుత ప్రాంతం",
+    "searchCity": "నగరం వెతకండి",
+    "selectLocality": "ప్రాంతాన్ని ఎంచుకోండి",
+    "nearby": "దగ్గరలో",
+    "within": "{distance} కి.మీ లోపల",
+    "entireCity": "నగరం మొత్తం",
+    "entireDistrict": "జిల్లా మొత్తం",
+    "entireState": "రాష్ట్రం మొత్తం"
+  },
+  "search": {
+    "placeholder": "ఏదైనా వెతకండి — ఫోన్లు, ఉద్యోగాలు, గదులు",
+    "submit": "వెతకండి",
+    "filters": "ఫిల్టర్లు",
+    "noResults": "ఏమీ దొరకలేదు",
+    "sort": {
+      "label": "క్రమం",
+      "newest": "కొత్తవి ముందు",
+      "priceAsc": "ధర: తక్కువ నుండి ఎక్కువ",
+      "distance": "దగ్గరివి ముందు"
+    }
+  },
+  "feed": {
+    "sections": {
+      "nearby": "మీ దగ్గర",
+      "latest_products": "కొత్త వస్తువులు",
+      "offers": "ఆఫర్లు",
+      "jobs": "ఉద్యోగాలు",
+      "services": "సేవలు",
+      "requirements": "కావాలి",
+      "recently_viewed": "ఇటీవల చూసినవి"
+    },
+    "seeAll": "అన్నీ చూడండి"
+  },
+  "listing": {
+    "free": "ఉచితం",
+    "negotiable": "బేరం చేయవచ్చు",
+    "contactSeller": "విక్రేతకు సందేశం",
+    "showPhone": "ఫోన్ నంబర్ చూపించు",
+    "save": "సేవ్",
+    "saved": "సేవ్ అయింది",
+    "share": "షేర్",
+    "report": "ఫిర్యాదు చేయండి",
+    "description": "వివరణ",
+    "location": "ప్రాంతం",
+    "seller": "విక్రేత"
+  },
+  "post": {
+    "title": "మీ ఉచిత ప్రకటన ఇవ్వండి",
+    "publish": "ఉచితంగా ప్రచురించండి",
+    "field": {
+      "title": "శీర్షిక",
+      "description": "వివరణ",
+      "price": "ధర (₹)",
+      "photos": "ఫోటోలు",
+      "city": "నగరం"
+    }
+  },
+  "auth": {
+    "signInTitle": "LocZ లోకి సైన్ ఇన్",
+    "phone": "మొబైల్ నంబర్",
+    "sendCode": "కోడ్ పంపండి",
+    "code": "ధృవీకరణ కోడ్",
+    "verify": "ధృవీకరించండి"
+  },
+  "common": {
+    "loading": "లోడ్ అవుతోంది…",
+    "error": "ఏదో తప్పు జరిగింది",
+    "retry": "మళ్లీ ప్రయత్నించండి",
+    "cancel": "రద్దు",
+    "back": "వెనుకకు",
+    "next": "తదుపరి",
+    "km": "కి.మీ"
+  },
+  "footer": {
+    "postFree": "LocZ లో ప్రకటనలు ఎప్పుడూ ఉచితం."
+  }
+}

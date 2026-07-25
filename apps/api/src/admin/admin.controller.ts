@@ -1,0 +1,97 @@
+import { Controller, Get, Query } from '@nestjs/common';
+import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { RequirePermissions } from '../rbac/rbac.decorators';
+import { AdminService } from './admin.service';
+import { PaginatedDto, paginate } from '../common/dto/pagination.dto';
+import {
+  AdminMetricsDto,
+  AdminUserDto,
+  ListingsByBucketDto,
+  QueueHealthDto,
+  StorageStatsDto,
+  TopListingDto,
+} from './dto/admin.dto';
+
+@ApiTags('admin')
+@ApiBearerAuth()
+@Controller('admin')
+export class AdminController {
+  constructor(private readonly admin: AdminService) {}
+
+  @Get('metrics')
+  @RequirePermissions('metrics:read')
+  @ApiOperation({ summary: 'Dashboard overview counters' })
+  @ApiResponse({ status: 200, type: AdminMetricsDto })
+  getMetrics(): Promise<AdminMetricsDto> {
+    return this.admin.getMetrics();
+  }
+
+  @Get('metrics/listings-by-city')
+  @RequirePermissions('metrics:read')
+  @ApiOperation({ summary: 'Published listings per city' })
+  @ApiResponse({ status: 200, type: [ListingsByBucketDto] })
+  listingsByCity(@Query('limit') limit?: string): Promise<ListingsByBucketDto[]> {
+    return this.admin.getListingsByCity(limit ? Number(limit) : 10);
+  }
+
+  @Get('metrics/listings-by-category')
+  @RequirePermissions('metrics:read')
+  @ApiOperation({ summary: 'Published listings per category' })
+  @ApiResponse({ status: 200, type: [ListingsByBucketDto] })
+  listingsByCategory(@Query('limit') limit?: string): Promise<ListingsByBucketDto[]> {
+    return this.admin.getListingsByCategory(limit ? Number(limit) : 10);
+  }
+
+  @Get('metrics/daily-listings')
+  @RequirePermissions('metrics:read')
+  @ApiOperation({ summary: 'Listings created per day, zero-filled' })
+  @ApiResponse({ status: 200, type: [ListingsByBucketDto] })
+  dailyListings(@Query('days') days?: string): Promise<ListingsByBucketDto[]> {
+    return this.admin.getDailyListings(days ? Number(days) : 14);
+  }
+
+  @Get('metrics/most-viewed')
+  @RequirePermissions('metrics:read')
+  @ApiOperation({ summary: 'Most viewed published listings' })
+  @ApiResponse({ status: 200, type: [TopListingDto] })
+  mostViewed(@Query('limit') limit?: string): Promise<TopListingDto[]> {
+    return this.admin.getMostViewedListings(limit ? Number(limit) : 10);
+  }
+
+  @Get('users')
+  @RequirePermissions('user:manage')
+  @ApiOperation({
+    summary: 'User directory',
+    description: 'Searchable by display name, phone number or email.',
+  })
+  @ApiResponse({ status: 200, type: [AdminUserDto] })
+  async users(
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
+    @Query('q') q?: string,
+  ): Promise<PaginatedDto<AdminUserDto>> {
+    const pageNumber = Math.max(1, Number(page ?? 1) || 1);
+    const pageSize = Math.min(50, Math.max(1, Number(limit ?? 25) || 25));
+    const { items, total } = await this.admin.listUsers(pageNumber, pageSize, q);
+    return paginate(items, total, pageNumber, pageSize);
+  }
+
+  @Get('queues')
+  @RequirePermissions('metrics:read')
+  @ApiOperation({
+    summary: 'Background queue depth',
+    description: 'A growing waiting count is the earliest signal that a worker has stalled.',
+  })
+  @ApiResponse({ status: 200, type: [QueueHealthDto] })
+  queues(): Promise<QueueHealthDto[]> {
+    return this.admin.getQueueHealth();
+  }
+
+  @Get('storage')
+  @RequirePermissions('metrics:read')
+  @ApiOperation({ summary: 'Object-storage usage' })
+  @ApiResponse({ status: 200, type: StorageStatsDto })
+  storage(): Promise<StorageStatsDto> {
+    return this.admin.getStorageStats();
+  }
+}

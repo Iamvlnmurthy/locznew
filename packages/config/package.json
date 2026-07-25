@@ -1,0 +1,18 @@
+{
+  "name": "@locz/config",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Shared TypeScript, ESLint and Prettier configuration for LocZ",
+  "files": [
+    "tsconfig.base.json",
+    "tsconfig.nextjs.json",
+    "eslint.base.mjs",
+    "prettier.config.mjs"
+  ],
+  "exports": {
+    "./tsconfig.base.json": "./tsconfig.base.json",
+    "./tsconfig.nextjs.json": "./tsconfig.nextjs.json",
+    "./eslint.base.mjs": "./eslint.base.mjs",
+    "./prettier": "./prettier.config.mjs"
+  }
+}
