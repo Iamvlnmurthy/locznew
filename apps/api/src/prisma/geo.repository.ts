@@ -146,6 +146,32 @@ export class GeoRepository {
   }
 
   /**
+   * Nearest pincodes to a point, nearest first.
+   *
+   * This is what makes "enter your pincode" work as a location primitive: the pincode
+   * gives a centroid, the centroid gives a radius, and the radius gives the listings.
+   * ST_DWithin uses the GiST index; the `<->` ordering is index-assisted nearest-neighbour.
+   */
+  async findNearbyPincodes(
+    latitude: number,
+    longitude: number,
+    radiusMeters: number,
+    limit: number,
+  ): Promise<Array<{ code: string; distanceMeters: number }>> {
+    const point = Prisma.sql`ST_SetSRID(ST_MakePoint(${longitude}::double precision, ${latitude}::double precision), 4326)::geography`;
+
+    return this.prisma.$queryRaw<Array<{ code: string; distanceMeters: number }>>`
+      SELECT p."code", ST_Distance(p."geo", ${point}) AS "distanceMeters"
+      FROM "pincodes" p
+      WHERE p."geo" IS NOT NULL
+        AND p."isServiceable" = true
+        AND ST_DWithin(p."geo", ${point}, ${radiusMeters})
+      ORDER BY p."geo" <-> ${point}
+      LIMIT ${limit}
+    `;
+  }
+
+  /**
    * Distance between a listing and a point, in metres. Used to render "2.4 km away"
    * on a listing detail page opened directly from a shared link.
    */

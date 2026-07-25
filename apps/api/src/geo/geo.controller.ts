@@ -14,6 +14,9 @@ import { AuthenticatedUser, CurrentUser } from '../common/decorators/current-use
 import { Public } from '../rbac/rbac.decorators';
 import {
   CityDto,
+  PincodeAreaDto,
+  PincodeDto,
+  PincodeSearchQueryDto,
   CitySearchQueryDto,
   CreateSavedLocationDto,
   LocalityDto,
@@ -63,6 +66,44 @@ export class GeoController {
   @ApiResponse({ status: 200, type: ResolvedLocationDto })
   resolve(@Body() dto: ResolveLocationDto): Promise<ResolvedLocationDto> {
     return this.geo.resolveByCoordinates(dto);
+  }
+
+  @Public()
+  @Post('resolve/pincode')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Resolve coordinates to the nearest pincode',
+    description:
+      'The GPS path and the typed-pincode path end in the same place, so everything downstream only has to understand one kind of location.',
+  })
+  @ApiResponse({ status: 200, type: PincodeDto })
+  async resolvePincode(@Body() dto: ResolveLocationDto): Promise<{ pincode: PincodeDto | null }> {
+    return { pincode: await this.geo.resolvePincodeByCoordinates(dto.latitude, dto.longitude) };
+  }
+
+  @Public()
+  @Get('pincodes')
+  @ApiOperation({
+    summary: 'Search pincodes by partial code or place name',
+    description:
+      'Typeahead over every Indian postal code. "5000" and "madhapur" both work. Codes inside a launched city rank first.',
+  })
+  @ApiResponse({ status: 200, type: [PincodeDto] })
+  searchPincodes(@Query() query: PincodeSearchQueryDto): Promise<PincodeDto[]> {
+    return this.geo.searchPincodes(query);
+  }
+
+  @Public()
+  @Get('pincodes/:code')
+  @ApiOperation({
+    summary: 'Resolve a pincode to its area',
+    description:
+      'Returns the place, district and state, how many ads are posted there, and the adjacent codes within 10 km — because "my area" is a radius, not a boundary.',
+  })
+  @ApiResponse({ status: 200, type: PincodeAreaDto })
+  @ApiResponse({ status: 404, description: 'Not a recognised Indian pincode' })
+  getPincode(@Param('code') code: string): Promise<PincodeAreaDto> {
+    return this.geo.getPincodeArea(code);
   }
 
   @Public()

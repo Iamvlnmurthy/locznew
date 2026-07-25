@@ -24,6 +24,10 @@ export class SearchQueryService {
   ) {}
 
   async search(query: SearchQueryDto, viewerId?: string): Promise<SearchResultDto> {
+    // A pincode is resolved once, here, so both the keyword path and the browse path
+    // see the same coordinates and return the same area.
+    query = await this.resolvePincode(query);
+
     // With no keyword there is nothing for a search engine to do better than the
     // database — structured browse goes straight to Postgres, indexes and all.
     if (!query.q?.trim()) {
@@ -71,6 +75,35 @@ export class SearchQueryService {
         usedSearchIndex: false,
       };
     }
+  }
+
+  /**
+   * Turns a pincode into coordinates plus a radius.
+   *
+   * Radius rather than an exact code match: someone in 500081 will happily cross the
+   * street into 500084, and an exact match would leave most of the country looking at an
+   * empty page. Explicit coordinates win — those came from the device and are better.
+   */
+  private async resolvePincode(query: SearchQueryDto): Promise<SearchQueryDto> {
+    if (!query.pincode || query.latitude !== undefined) return query;
+
+    const centre = await this.prisma.pincode.findUnique({
+      where: { code: query.pincode },
+      select: { latitude: true, longitude: true },
+    });
+
+    // An unknown code is not an error: the other filters still describe a valid search,
+    // and failing the whole request over one field would be worse than ignoring it.
+    if (!centre) {
+      this.logger.debug(`Ignoring unknown pincode ${query.pincode}`);
+      return query;
+    }
+
+    return Object.assign(new SearchQueryDto(), query, {
+      latitude: Number(centre.latitude),
+      longitude: Number(centre.longitude),
+      radiusKm: query.radiusKm ?? 10,
+    });
   }
 
   /**
@@ -150,6 +183,7 @@ export class SearchQueryService {
       latitude: query.latitude,
       longitude: query.longitude,
       radiusKm: query.radiusKm,
+      pincode: query.pincode,
       priceMin: query.priceMin,
       priceMax: query.priceMax,
       condition: query.condition,

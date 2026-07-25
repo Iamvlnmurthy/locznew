@@ -334,9 +334,9 @@ executed rather than described:
 | Meilisearch          | latest       | single binary                                |
 | MinIO + mc           | latest       | single binaries, `locz-media` bucket created |
 
-`scripts/acceptance.mjs` is an executable version of `docs/ACCEPTANCE.md` — 35 assertions
-over HTTP only, no direct database access, exits non-zero on failure so it can gate a
-deploy. **35 passed, 0 failed.**
+`scripts/acceptance.mjs` is an executable version of `docs/ACCEPTANCE.md` — HTTP only, no
+direct database access, exits non-zero on failure so it can gate a deploy. It has grown
+with the product; the current count is recorded in M16 below.
 
 ### Three more bugs the running system caught
 
@@ -358,7 +358,7 @@ Mock-OTP sign-in → city selection → create marketplace listing → image upl
 moderation → admin approval → search indexing → visible on web + mobile →
 saved by another user → enquiry sent → owner notified.
 
-Status: ✅ **PASSED 2026-07-26 — 35 assertions, 0 failures.**
+Status: PASSED 2026-07-26 — 61 assertions, 0 failures.
 
 ```
 node scripts/acceptance.mjs
@@ -372,3 +372,39 @@ enquiry threading · owner notification · sold removing from the index.
 
 Remaining for Phase 1 completion: the same flow on Flutter mobile, which needs an SDK
 this machine does not have.
+
+## M16 — Every pincode in India (2026-07-26)
+
+"This app serves in every pincode." It now does, as data rather than a claim.
+
+**19,238 pincodes imported** from the GeoNames postal dataset, covering 35 states and
+union territories, 0 rows missing coordinates, 442 linked to a launched city. GeoNames
+lists one row per post office (~155,000 rows); `prisma/import-pincodes.ts` collapses them
+to one record per code at the centroid of its offices, taking the most common spelling of
+the name, district and state. The import is idempotent.
+
+A pincode is modelled as a point with a radius, not a boundary — the reasoning is in
+`docs/ARCHITECTURE.md`. What that buys, concretely:
+
+- `GET /locations/pincodes?q=` — typeahead by code or place name, launched cities first
+- `GET /locations/pincodes/:code` — the code, its centroid, its live listing count and
+  its neighbours within 10 km
+- `POST /locations/resolve/pincode` — device coordinates to the pincode the user is in
+- `POST /listings` accepts `pincodeCode` **instead of** coordinates: the centroid places
+  the listing, the existing geo trigger and radius search work unchanged
+- `GET /listings?pincode=` and `GET /search?q=…&pincode=` — search the area around a code,
+  10 km unless a radius is given
+
+Verified end to end: a listing created with a pincode and no coordinates is found by a
+pincode search of that area, and is **not** found by a search of a code 1,500 km away.
+That negative assertion is the one that matters — it proves the radius is real rather
+than a filter being quietly dropped.
+
+### One bug this found
+
+`ListingSearchQueryDto.skip` is a getter on `PaginationQueryDto`. The first version of the
+pincode resolution spread the DTO into a new object to add coordinates, which silently
+dropped the getter and would have broken pagination on every pincode search. It assigns
+onto the instance instead.
+
+Acceptance suite: **61 assertions, 0 failures** — 12 of them new and covering pincodes.

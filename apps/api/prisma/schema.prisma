@@ -489,6 +489,7 @@ model City {
   state          State           @relation(fields: [stateId], references: [id])
   district       District?       @relation(fields: [districtId], references: [id])
   localities     Locality[]
+  pincodes       Pincode[]
   addresses      Address[]
   savedLocations SavedLocation[]
   businesses     Business[]
@@ -520,6 +521,41 @@ model Locality {
   @@unique([cityId, slug])
   @@index([postalCode])
   @@map("localities")
+}
+
+/// Every Indian postal code, so the platform works outside the launched cities.
+///
+/// One row per pincode, not per post office: India Post lists ~155,000 offices across
+/// ~19,300 codes, and a user typing "500081" wants one place, not forty. The centroid is
+/// the mean of that code's offices, which is accurate enough to anchor a radius search —
+/// pincodes are small, and the alternative (asking for GPS) is a permission most people
+/// decline.
+model Pincode {
+  code          String                                 @id @db.VarChar(6)
+  /// Best-known place name for the code — the office name that appears most often.
+  name          String                                 @db.VarChar(140)
+  districtName  String                                 @db.VarChar(120)
+  stateName     String                                 @db.VarChar(120)
+  latitude      Decimal                                @db.Decimal(10, 7)
+  longitude     Decimal                                @db.Decimal(10, 7)
+  geo           Unsupported("geography(Point, 4326)")?
+  /// How many post offices share this code — a proxy for how coarse the centroid is.
+  officeCount   Int                                    @default(1)
+  /// Set where the pincode falls inside a city LocZ has launched in; null elsewhere.
+  cityId        String?                                @db.Uuid
+  isServiceable Boolean                                @default(true)
+  createdAt     DateTime                               @default(now())
+  updatedAt     DateTime                               @updatedAt
+
+  city     City?     @relation(fields: [cityId], references: [id])
+  listings Listing[]
+
+  /// Typeahead on partial codes ("5000…") and on place name.
+  @@index([name])
+  @@index([districtName])
+  @@index([stateName])
+  @@index([cityId])
+  @@map("pincodes")
 }
 
 model Address {
@@ -794,6 +830,7 @@ model Listing {
   stateId         String?                                @db.Uuid
   localityId      String?                                @db.Uuid
   postalCode      String?                                @db.VarChar(12)
+  pincodeCode     String?                                @db.VarChar(6)
   addressLine     String?                                @db.VarChar(240)
   latitude        Decimal?                               @db.Decimal(10, 7)
   longitude       Decimal?                               @db.Decimal(10, 7)
@@ -837,6 +874,7 @@ model Listing {
   district    District? @relation(fields: [districtId], references: [id])
   state       State?    @relation(fields: [stateId], references: [id])
   locality    Locality? @relation(fields: [localityId], references: [id])
+  pincode     Pincode?  @relation(fields: [pincodeCode], references: [code])
 
   media             ListingMedia[]
   attributeValues   ListingAttributeValue[]
@@ -867,6 +905,8 @@ model Listing {
   // Moderation queue ordering.
   @@index([moderationStatus, createdAt])
   @@index([duplicateHash])
+  // "Ads in my pincode" — the primary query once the platform is open everywhere.
+  @@index([pincodeCode, status, publishedAt(sort: Desc)])
   @@map("listings")
 }
 

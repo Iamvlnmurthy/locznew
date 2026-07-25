@@ -1,10 +1,13 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
-import { Prisma } from '@prisma/client';
+import { ListingStatus, Prisma } from '@prisma/client';
 import { v7 as uuid } from 'uuid';
 import { GeoRepository } from '../prisma/geo.repository';
 import { PrismaService } from '../prisma/prisma.service';
 import {
   CityDto,
+  PincodeAreaDto,
+  PincodeDto,
+  PincodeSearchQueryDto,
   CitySearchQueryDto,
   CreateSavedLocationDto,
   LocalityDto,
@@ -112,6 +115,126 @@ export class GeoService {
         distanceMeters: Math.round(locality.distanceMeters),
       })),
     };
+  }
+
+  // -------------------------------------------------------------------
+  // Pincodes — how most users tell LocZ where they are
+  // -------------------------------------------------------------------
+
+  private toPincodeDto(
+    pincode: Prisma.PincodeGetPayload<{ include: { city: { select: { name: true } } } }>,
+  ): PincodeDto {
+    return {
+      code: pincode.code,
+      name: pincode.name,
+      districtName: pincode.districtName,
+      stateName: pincode.stateName,
+      latitude: Number(pincode.latitude),
+      longitude: Number(pincode.longitude),
+      cityId: pincode.cityId,
+      cityName: pincode.city?.name ?? null,
+      officeCount: pincode.officeCount,
+      isServiceable: pincode.isServiceable,
+    };
+  }
+
+  /**
+   * Resolves a pincode to its area: the code itself, how much is listed there, and the
+   * adjacent codes within 10 km.
+   *
+   * The neighbours matter — someone in 500081 looking for a sofa does not care that the
+   * seller is technically in 500084 a kilometre away. "The area" is a radius, not a
+   * boundary, which is why the centroid is stored and indexed.
+   */
+  async getPincodeArea(code: string): Promise<PincodeAreaDto> {
+    const pincode = await this.prisma.pincode.findUnique({
+      where: { code },
+      include: { city: { select: { name: true } } },
+    });
+
+    if (!pincode) {
+      throw new NotFoundException(
+        `We do not recognise pincode ${code}. Check the number, or choose a city instead.`,
+      );
+    }
+
+    const latitude = Number(pincode.latitude);
+    const longitude = Number(pincode.longitude);
+
+    const [listingCount, neighbours] = await Promise.all([
+      this.prisma.listing.count({
+        where: { pincodeCode: code, status: ListingStatus.PUBLISHED, deletedAt: null },
+      }),
+      this.geo.findNearbyPincodes(latitude, longitude, 10_000, 8),
+    ]);
+
+    const nearby = await this.prisma.pincode.findMany({
+      where: { code: { in: neighbours.map((entry) => entry.code), not: code } },
+      include: { city: { select: { name: true } } },
+    });
+
+    return {
+      ...this.toPincodeDto(pincode),
+      listingCount,
+      nearbyPincodes: nearby.map((entry) => this.toPincodeDto(entry)),
+    };
+  }
+
+  /**
+   * Typeahead over 19,000 codes. Matches a partial number or a place name, so both
+   * "5000" and "madhapur" get there.
+   */
+  async searchPincodes(query: PincodeSearchQueryDto): Promise<PincodeDto[]> {
+    const term = query.q?.trim();
+
+    if (!term) {
+      // No query: the codes with the most activity are the most useful default.
+      const popular = await this.prisma.pincode.findMany({
+        where: { cityId: { not: null } },
+        include: { city: { select: { name: true } } },
+        orderBy: { officeCount: 'desc' },
+        take: query.limit,
+      });
+      return popular.map((entry) => this.toPincodeDto(entry));
+    }
+
+    const isNumeric = /^\d+$/.test(term);
+
+    const matches = await this.prisma.pincode.findMany({
+      where: isNumeric
+        ? { code: { startsWith: term } }
+        : {
+            OR: [
+              { name: { contains: term, mode: 'insensitive' } },
+              { districtName: { contains: term, mode: 'insensitive' } },
+            ],
+          },
+      include: { city: { select: { name: true } } },
+      // A pincode inside a launched city is the more useful match.
+      orderBy: [{ cityId: 'desc' }, { officeCount: 'desc' }, { code: 'asc' }],
+      take: query.limit,
+    });
+
+    return matches.map((entry) => this.toPincodeDto(entry));
+  }
+
+  /**
+   * Nearest pincode to a set of coordinates — the "use my current location" path now
+   * resolves to a pincode as well as a city, so both routes end in the same place.
+   */
+  async resolvePincodeByCoordinates(
+    latitude: number,
+    longitude: number,
+  ): Promise<PincodeDto | null> {
+    const nearest = await this.geo.findNearbyPincodes(latitude, longitude, 50_000, 1);
+    if (nearest.length === 0) return null;
+
+    const pincode = await this.prisma.pincode.findUnique({
+      where: { code: nearest[0]!.code },
+      include: { city: { select: { name: true } } },
+    });
+
+    return pincode ? this.toPincodeDto(pincode) : null;
   }
 
   async listSavedLocations(userId: string): Promise<SavedLocationDto[]> {

@@ -9,6 +9,7 @@ import {
   IsLongitude,
   IsNumber,
   IsOptional,
+  Matches,
   IsString,
   IsUUID,
   MaxLength,
@@ -65,6 +66,15 @@ export class SearchQueryDto extends PaginationQueryDto {
   @ApiPropertyOptional() @IsOptional() @Type(() => Number) @IsLatitude() latitude?: number;
   @ApiPropertyOptional() @IsOptional() @Type(() => Number) @IsLongitude() longitude?: number;
   @ApiPropertyOptional() @IsOptional() @Type(() => Number) @IsInt() radiusKm?: number;
+
+  @ApiPropertyOptional({
+    example: '500081',
+    description:
+      'Search in and around this pincode. Resolved to the code’s centroid and searched by radius (10 km by default), so neighbouring codes are included.',
+  })
+  @IsOptional()
+  @Matches(/^\d{6}$/, { message: 'A pincode is exactly six digits' })
+  pincode?: string;
 
   @ApiPropertyOptional({
     enum: ['relevance', 'newest', 'price_asc', 'price_desc', 'popular', 'distance'],

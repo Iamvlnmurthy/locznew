@@ -3,6 +3,7 @@ import { ContactPreference, ItemCondition, ListingStatus, ListingType } from '@p
 import { Type } from 'class-transformer';
 import {
   IsBoolean,
+  Matches,
   IsEnum,
   IsInt,
   IsLatitude,
@@ -125,6 +126,15 @@ export class CreateListingDto {
   @IsOptional()
   @IsUUID()
   localityId?: string;
+
+  @ApiPropertyOptional({
+    example: '500081',
+    description:
+      'Postal code. Supply this instead of coordinates and the listing is placed at the pincode centroid — most users know their pincode and decline a GPS prompt.',
+  })
+  @IsOptional()
+  @Matches(/^\d{6}$/, { message: 'A pincode is exactly six digits' })
+  pincodeCode?: string;
 
   @ApiPropertyOptional({ example: 17.4483 })
   @IsOptional()
@@ -258,6 +268,7 @@ export class ListingDetailDto extends ListingSummaryDto {
   @ApiProperty() categoryId!: string;
   @ApiProperty() categoryName!: string;
   @ApiPropertyOptional() addressLine!: string | null;
+  @ApiPropertyOptional({ example: '500081' }) pincodeCode!: string | null;
   @ApiPropertyOptional() latitude!: number | null;
   @ApiPropertyOptional() longitude!: number | null;
   @ApiProperty({ enum: ContactPreference }) contactPreference!: ContactPreference;
@@ -288,6 +299,15 @@ export class ListingSearchQueryDto extends PaginationQueryDto {
   @IsOptional()
   @IsUUID()
   businessId?: string;
+
+  @ApiPropertyOptional({
+    example: '500081',
+    description:
+      'Listings in and around this pincode. Combined with radiusKm it searches outward from the pincode centroid; on its own it defaults to 10 km, because neighbouring codes are still "the area".',
+  })
+  @IsOptional()
+  @Matches(/^\d{6}$/, { message: 'A pincode is exactly six digits' })
+  pincode?: string;
 
   @ApiPropertyOptional({
     example: 17.4483,

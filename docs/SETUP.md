@@ -76,9 +76,21 @@ docker compose -f infrastructure/docker/docker-compose.dev.yml ps
 ## 4. Database
 
 ```bash
-npm run db:migrate    # applies both migrations
+npm run db:migrate    # applies all migrations
 npm run db:seed       # roles, geography, categories, test accounts
 ```
+
+Then load the postal codes — LocZ serves every pincode in India, and the pincode is how
+most users state their location:
+
+```bash
+curl -o IN.zip https://download.geonames.org/export/zip/IN.zip && unzip IN.zip
+npm run db:import-pincodes -w @locz/api -- ./IN.txt
+```
+
+That imports 19,238 codes (35 states and union territories) in about a minute. It is
+idempotent — re-run it whenever GeoNames publishes an update. Skip it and pincode search
+returns nothing; everything else still works.
 
 The first migration creates the 52 application tables and enables PostGIS. The second adds what Prisma's
 schema language cannot express: GiST spatial indexes, partial indexes for the background

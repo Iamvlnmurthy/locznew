@@ -93,23 +93,23 @@ Exceeding one returns `429` with `retryAfterSeconds`.
 
 ## Endpoint groups
 
-| Prefix           | Purpose                                                            |
-| ---------------- | ------------------------------------------------------------------ |
-| `/auth`          | OTP request and verify, email sign-in, refresh, logout, logout-all |
-| `/users`         | Profile, devices, push token, deactivate, deletion request         |
-| `/locations`     | Cities, localities, coordinate resolution, saved locations         |
-| `/categories`    | Category tree and dynamic attribute definitions                    |
-| `/listings`      | Create, browse, detail, lifecycle, save, my listings               |
-| `/search`        | Keyword search, index status, rebuild                              |
-| `/feed`          | Location-aware home feed                                           |
-| `/media`         | Signed upload URLs, confirmation, ordering                         |
-| `/conversations` | Enquiry threads, messages, blocking                                |
-| `/notifications` | Centre, unread count, preferences                                  |
-| `/businesses`    | Registration, staff, verification                                  |
-| `/reports`       | User reports and moderator resolution                              |
-| `/moderation`    | Review queue, approve, reject, remove                              |
-| `/admin`         | Metrics, users, audit trail, queue and storage health              |
-| `/health`        | `live` and `ready` probes                                          |
+| Prefix           | Purpose                                                              |
+| ---------------- | -------------------------------------------------------------------- |
+| `/auth`          | OTP request and verify, email sign-in, refresh, logout, logout-all   |
+| `/users`         | Profile, devices, push token, deactivate, deletion request           |
+| `/locations`     | Cities, localities, pincodes, coordinate resolution, saved locations |
+| `/categories`    | Category tree and dynamic attribute definitions                      |
+| `/listings`      | Create, browse, detail, lifecycle, save, my listings                 |
+| `/search`        | Keyword search, index status, rebuild                                |
+| `/feed`          | Location-aware home feed                                             |
+| `/media`         | Signed upload URLs, confirmation, ordering                           |
+| `/conversations` | Enquiry threads, messages, blocking                                  |
+| `/notifications` | Centre, unread count, preferences                                    |
+| `/businesses`    | Registration, staff, verification                                    |
+| `/reports`       | User reports and moderator resolution                                |
+| `/moderation`    | Review queue, approve, reject, remove                                |
+| `/admin`         | Metrics, users, audit trail, queue and storage health                |
+| `/health`        | `live` and `ready` probes                                            |
 
 ## Public versus authenticated
 

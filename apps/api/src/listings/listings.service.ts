@@ -105,6 +105,22 @@ export class ListingsService {
       await this.assertCanPostForBusiness(userId, dto.businessId);
     }
 
+    // A pincode is the location most users actually supply: everyone knows their own,
+    // and it needs no permission prompt. Its centroid becomes the listing's coordinates
+    // unless the poster shared something more precise.
+    let pincode = null;
+    if (dto.pincodeCode) {
+      pincode = await this.prisma.pincode.findUnique({ where: { code: dto.pincodeCode } });
+      if (!pincode) {
+        throw new BadRequestException(
+          `We do not recognise pincode ${dto.pincodeCode}. Check the number.`,
+        );
+      }
+      if (!pincode.isServiceable) {
+        throw new BadRequestException('LocZ does not serve that pincode yet.');
+      }
+    }
+
     // Each listing type has its own required detail payload (ADR-0004).
     this.details.assertDetailPresent(dto);
 
@@ -137,12 +153,16 @@ export class ListingsService {
         districtId: city.districtId,
         stateId: city.stateId,
         localityId: dto.localityId ?? null,
+        pincodeCode: pincode?.code ?? null,
+        postalCode: pincode?.code ?? dto.pincodeCode ?? null,
         addressLine: dto.addressLine,
         // Coordinates fall back to the city centre so a listing is always placeable on a
         // map and always reachable by radius search, even when the poster skipped
         // precise location. The `geo` column is derived by trigger (ADR-0009).
-        latitude: dto.latitude ?? city.latitude,
-        longitude: dto.longitude ?? city.longitude,
+        // Precision order: what the poster shared > the pincode centroid > the city
+        // centre. Something always resolves, so a listing is never unplaceable.
+        latitude: dto.latitude ?? pincode?.latitude ?? city.latitude,
+        longitude: dto.longitude ?? pincode?.longitude ?? city.longitude,
         contactPreference: dto.contactPreference ?? ContactPreference.IN_APP_ONLY,
         showPhonePublicly: dto.showPhonePublicly ?? false,
         expiresAt,
@@ -270,6 +290,32 @@ export class ListingsService {
     query: ListingSearchQueryDto,
     viewerId?: string,
   ): Promise<PaginatedDto<ListingSummaryDto>> {
+    // A pincode is a location, so it becomes a radius search around that code's centroid.
+    // Radius rather than an exact-code match is deliberate: a seller one street away in
+    // the next code is still "near me", and matching the code exactly would leave most of
+    // the country looking at an empty page. Explicit coordinates win — those came from
+    // the device and are more precise than any centroid.
+    if (query.pincode && query.latitude === undefined) {
+      const centre = await this.prisma.pincode.findUnique({
+        where: { code: query.pincode },
+        select: { latitude: true, longitude: true },
+      });
+
+      if (centre) {
+        // Assigned onto the DTO rather than spread into a new object: `skip` is a getter
+        // on PaginationQueryDto, and spreading would silently drop it.
+        Object.assign(query, {
+          latitude: Number(centre.latitude),
+          longitude: Number(centre.longitude),
+          radiusKm: query.radiusKm ?? 10,
+        });
+      } else {
+        // An unknown code is not an error: the remaining filters still describe a valid
+        // search, and failing the request over one field would serve the user worse.
+        this.logger.debug(`Ignoring unknown pincode ${query.pincode}`);
+      }
+    }
+
     const wantsNearby =
       query.latitude !== undefined && query.longitude !== undefined && query.radiusKm !== undefined;
 
@@ -443,14 +489,30 @@ export class ListingsService {
       throw new ForbiddenException('This listing was removed by a moderator and cannot be edited');
     }
 
+    // Changing the pincode moves the listing, unless the edit also carries explicit
+    // coordinates — otherwise the stated area and the map pin would drift apart.
+    let movedTo = null;
+    if (dto.pincodeCode && dto.pincodeCode !== listing.pincodeCode) {
+      movedTo = await this.prisma.pincode.findUnique({ where: { code: dto.pincodeCode } });
+      if (!movedTo || !movedTo.isServiceable) {
+        throw new BadRequestException(`We do not serve pincode ${dto.pincodeCode}.`);
+      }
+    }
+
     const updated = await this.prisma.listing.update({
       where: { id: listingId },
       data: {
         title: dto.title?.trim(),
         description: dto.description?.trim(),
         addressLine: dto.addressLine,
-        latitude: dto.latitude,
-        longitude: dto.longitude,
+        ...(movedTo
+          ? {
+              pincodeCode: movedTo.code,
+              postalCode: movedTo.code,
+              latitude: dto.latitude ?? movedTo.latitude,
+              longitude: dto.longitude ?? movedTo.longitude,
+            }
+          : { latitude: dto.latitude, longitude: dto.longitude }),
         contactPreference: dto.contactPreference,
         showPhonePublicly: dto.showPhonePublicly,
         localityId: dto.localityId,
@@ -885,6 +947,7 @@ export class ListingsService {
       categoryId: listing.category.id,
       categoryName: listing.category.name,
       addressLine: listing.addressLine,
+      pincodeCode: listing.pincodeCode,
       latitude: listing.latitude ? Number(listing.latitude) : null,
       longitude: listing.longitude ? Number(listing.longitude) : null,
       contactPreference: listing.contactPreference,

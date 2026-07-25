@@ -75,6 +75,7 @@ export function makeListing(overrides: Partial<Listing> = {}): Listing {
     stateId: null,
     localityId: null,
     postalCode: null,
+    pincodeCode: null,
     addressLine: null,
     latitude: new Prisma.Decimal('17.4483'),
     longitude: new Prisma.Decimal('78.3915'),

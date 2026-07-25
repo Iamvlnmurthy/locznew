@@ -22,5 +22,11 @@ export default defineConfig({
     // Migrations and introspection use the direct connection: DDL cannot run through a
     // transaction pooler. Falls back to DATABASE_URL when no pooler is in front.
     url: process.env.DIRECT_DATABASE_URL || process.env.DATABASE_URL,
+
+    // `prisma migrate dev` creates and drops a throwaway shadow database to work out the
+    // diff. The application role is NOSUPERUSER NOCREATEDB on purpose, so that privilege
+    // comes from a separate development-only connection rather than by relaxing the role.
+    // Production never needs this: `migrate deploy` applies committed SQL directly.
+    shadowDatabaseUrl: process.env.SHADOW_DATABASE_URL,
   },
 });

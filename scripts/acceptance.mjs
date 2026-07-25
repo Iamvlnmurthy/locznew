@@ -148,6 +148,29 @@ async function main() {
     `${resolved.nearbyLocalities.length} localities`,
   );
 
+  // Pincode is the location primitive most users actually supply — they know it, and it
+  // needs no GPS permission. Every one of India's ~19,000 codes must resolve.
+  const pincodeMatches = await call('/locations/pincodes?q=500081');
+  check('pincode lookup by code', pincodeMatches[0]?.code === '500081', pincodeMatches[0]?.name);
+
+  const byName = await call('/locations/pincodes?q=Madhapur');
+  check('pincode lookup by place name', byName.length > 0, `${byName.length} matches`);
+
+  const area = await call('/locations/pincodes/500081');
+  check('pincode carries a centroid', area.latitude !== null, `${area.latitude}, ${area.longitude}`);
+  check('pincode knows its state', area.stateName.length > 0, area.stateName);
+  check('pincode linked to its launched city', area.cityName === 'Hyderabad', area.cityName ?? 'unlinked');
+  check('neighbouring codes returned', area.nearbyPincodes.length > 0, `${area.nearbyPincodes.length} nearby`);
+
+  const fromCoords = await call('/locations/resolve/pincode', {
+    method: 'POST',
+    body: { latitude: 17.4483, longitude: 78.3915 },
+  });
+  check('coordinates resolve to a pincode', /^\d{6}$/.test(fromCoords.pincode?.code ?? ''), fromCoords.pincode?.code);
+
+  const unknownPincode = await call('/locations/pincodes/999999', { expect: 404 });
+  check('a non-existent pincode 404s', unknownPincode.error.code === 'NotFound', unknownPincode.error.code);
+
   // ---------------------------------------------------------------- 3. create
   step('3. Create a marketplace listing');
   const categories = await call('/categories?listingType=PRODUCT');
@@ -163,14 +186,15 @@ async function main() {
         'Bought two years ago, moving cities so selling. Includes the original remote and box.',
       categoryId: leaf.id,
       cityId: city.id,
-      latitude: 17.4483,
-      longitude: 78.3915,
+      // Deliberately no coordinates — the pincode centroid must place the listing.
+      pincodeCode: '500081',
       contactPreference: 'IN_APP_ONLY',
       marketplace: { price: 18000, condition: 'GOOD', isNegotiable: true },
     },
   });
 
   check('listing created', Boolean(listing.id), listing.slug);
+  check('pincode recorded on the listing', listing.pincodeCode === '500081', listing.pincodeCode);
   // A new account has no published listings, so the first one must go to review.
   check(
     'routed to review, not auto-published',
@@ -294,6 +318,30 @@ async function main() {
     'distance is plausible',
     found !== undefined && found.distanceMeters !== undefined && found.distanceMeters < 5000,
     found ? `${found.distanceMeters} m` : '',
+  );
+
+  // The user's actual journey: type a pincode, see what is for sale around it. The
+  // listing above was placed by pincode alone, so this exercises the whole chain.
+  const byPincode = await call('/listings?pincode=500081&limit=10');
+  check(
+    'found by pincode search',
+    byPincode.items.some((item) => item.id === listing.id),
+    `${byPincode.meta.total} in the 500081 area`,
+  );
+
+  // A code 1,500 km away must not match — proof the radius is real, not ignored.
+  const farAway = await call('/listings?pincode=110001&radiusKm=10&limit=10');
+  check(
+    'a distant pincode does not match',
+    !farAway.items.some((item) => item.id === listing.id),
+    `${farAway.meta.total} in the 110001 area`,
+  );
+
+  const keywordInArea = await call('/search?q=samsung%20tv&pincode=500081&limit=5');
+  check(
+    'keyword search accepts a pincode',
+    keywordInArea.items.some((item) => item.id === listing.id),
+    `${keywordInArea.total} results`,
   );
 
   const feed = await call(`/feed?cityId=${city.id}&limit=10`);

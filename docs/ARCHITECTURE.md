@@ -65,6 +65,22 @@ Genuinely dynamic, admin-defined fields live in `ListingAttributeValue` keyed by
 `CategoryAttribute`, so an administrator can add "Fuel type" to Cars and it appears in
 the posting form on web and mobile with no client release.
 
+### Pincode as the location primitive
+
+LocZ serves every pincode in India — all 19,238 of them, imported from GeoNames into the
+`pincodes` table with a centroid, district, state and office count per code.
+
+A pincode is treated as **a point with a radius, not a boundary**. Post office boundaries
+are not published as usable geometry, and a user in 500081 will happily cross the street
+into 500084, so a "pincode search" resolves the code to its centroid and runs the ordinary
+PostGIS radius query (10 km by default). One code path serves GPS and pincode alike; the
+pincode is simply another way to obtain coordinates — and the way most users prefer, since
+everyone knows their own and nobody has to grant a location permission.
+
+The same primitive works when posting: supply `pincodeCode` on a listing and its centroid
+becomes the coordinates. Precision order is _poster-supplied coordinates → pincode centroid
+→ city centre_, so a listing is always placeable and always reachable by radius search.
+
 Indexing decisions are documented inline in `schema.prisma` and in the second migration.
 The ones that carry the product: `GIST(listings.geo)` for every nearby query, the
 composite `(type, status, cityId, publishedAt DESC)` covering the home feed and city

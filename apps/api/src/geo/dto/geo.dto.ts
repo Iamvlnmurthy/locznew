@@ -2,6 +2,7 @@ import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
 import {
   IsBoolean,
+  Matches,
   IsInt,
   IsLatitude,
   IsLongitude,
@@ -144,4 +145,69 @@ export class SavedLocationDto {
   @ApiPropertyOptional() longitude!: number | null;
   @ApiProperty() radiusKm!: number;
   @ApiProperty() isDefault!: boolean;
+}
+
+/**
+ * A postal code and where it is.
+ *
+ * This is the primary way a user tells LocZ where they are: every Indian address has a
+ * pincode, everyone knows their own, and it needs no permission prompt.
+ */
+export class PincodeDto {
+  @ApiProperty({ example: '500081' }) code!: string;
+  @ApiProperty({ example: 'Madhapur' }) name!: string;
+  @ApiProperty({ example: 'Hyderabad' }) districtName!: string;
+  @ApiProperty({ example: 'Telangana' }) stateName!: string;
+  @ApiProperty() latitude!: number;
+  @ApiProperty() longitude!: number;
+
+  @ApiPropertyOptional({ description: 'Set when the pincode falls inside a launched city' })
+  cityId!: string | null;
+
+  @ApiPropertyOptional() cityName!: string | null;
+
+  @ApiProperty({
+    description:
+      'Post offices sharing this code — a proxy for how coarse the centroid is. A code with many offices covers a wider area.',
+  })
+  officeCount!: number;
+
+  @ApiProperty({ description: 'Whether LocZ currently serves this pincode' })
+  isServiceable!: boolean;
+}
+
+export class PincodeAreaDto extends PincodeDto {
+  @ApiProperty({ description: 'Published listings anchored to this exact pincode' })
+  listingCount!: number;
+
+  @ApiProperty({
+    type: [PincodeDto],
+    description: 'Adjacent codes within 10 km — "the area", not just the exact code',
+  })
+  nearbyPincodes!: PincodeDto[];
+}
+
+export class PincodeSearchQueryDto {
+  @ApiPropertyOptional({
+    example: '5000',
+    description: 'Partial code or place name — typeahead as the user types',
+  })
+  @IsOptional()
+  @IsString()
+  @MaxLength(60)
+  q?: string;
+
+  @ApiPropertyOptional({ default: 15, maximum: 50 })
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  @Max(50)
+  limit: number = 15;
+}
+
+export class PincodeParamDto {
+  @ApiProperty({ example: '500081' })
+  @Matches(/^\d{6}$/, { message: 'A pincode is exactly six digits' })
+  code!: string;
 }

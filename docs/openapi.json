@@ -522,6 +522,115 @@
         "tags": ["locations"]
       }
     },
+    "/api/locations/resolve/pincode": {
+      "post": {
+        "description": "The GPS path and the typed-pincode path end in the same place, so everything downstream only has to understand one kind of location.",
+        "operationId": "GeoController_resolvePincode",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ResolveLocationDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PincodeDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Resolve coordinates to the nearest pincode",
+        "tags": ["locations"]
+      }
+    },
+    "/api/locations/pincodes": {
+      "get": {
+        "description": "Typeahead over every Indian postal code. \"5000\" and \"madhapur\" both work. Codes inside a launched city rank first.",
+        "operationId": "GeoController_searchPincodes",
+        "parameters": [
+          {
+            "name": "q",
+            "required": false,
+            "in": "query",
+            "description": "Partial code or place name — typeahead as the user types",
+            "schema": {
+              "example": "5000",
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "maximum": 50,
+              "default": 15,
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/PincodeDto"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "summary": "Search pincodes by partial code or place name",
+        "tags": ["locations"]
+      }
+    },
+    "/api/locations/pincodes/{code}": {
+      "get": {
+        "description": "Returns the place, district and state, how many ads are posted there, and the adjacent codes within 10 km — because \"my area\" is a radius, not a boundary.",
+        "operationId": "GeoController_getPincode",
+        "parameters": [
+          {
+            "name": "code",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PincodeAreaDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not a recognised Indian pincode"
+          }
+        },
+        "summary": "Resolve a pincode to its area",
+        "tags": ["locations"]
+      }
+    },
     "/api/locations/radius-presets": {
       "get": {
         "operationId": "GeoController_radiusPresets",
@@ -1461,6 +1570,16 @@
             }
           },
           {
+            "name": "pincode",
+            "required": false,
+            "in": "query",
+            "description": "Listings in and around this pincode. Combined with radiusKm it searches outward from the pincode centroid; on its own it defaults to 10 km, because neighbouring codes are still \"the area\".",
+            "schema": {
+              "example": "500081",
+              "type": "string"
+            }
+          },
+          {
             "name": "latitude",
             "required": false,
             "in": "query",
@@ -2149,6 +2268,16 @@
             "in": "query",
             "schema": {
               "type": "number"
+            }
+          },
+          {
+            "name": "pincode",
+            "required": false,
+            "in": "query",
+            "description": "Search in and around this pincode. Resolved to the code’s centroid and searched by radius (10 km by default), so neighbouring codes are included.",
+            "schema": {
+              "example": "500081",
+              "type": "string"
             }
           },
           {
@@ -3741,6 +3870,123 @@
         },
         "required": ["nearbyLocalities"]
       },
+      "PincodeDto": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string",
+            "example": "500081"
+          },
+          "name": {
+            "type": "string",
+            "example": "Madhapur"
+          },
+          "districtName": {
+            "type": "string",
+            "example": "Hyderabad"
+          },
+          "stateName": {
+            "type": "string",
+            "example": "Telangana"
+          },
+          "latitude": {
+            "type": "number"
+          },
+          "longitude": {
+            "type": "number"
+          },
+          "cityId": {
+            "type": "object",
+            "description": "Set when the pincode falls inside a launched city"
+          },
+          "cityName": {
+            "type": "object"
+          },
+          "officeCount": {
+            "type": "number",
+            "description": "Post offices sharing this code — a proxy for how coarse the centroid is. A code with many offices covers a wider area."
+          },
+          "isServiceable": {
+            "type": "boolean",
+            "description": "Whether LocZ currently serves this pincode"
+          }
+        },
+        "required": [
+          "code",
+          "name",
+          "districtName",
+          "stateName",
+          "latitude",
+          "longitude",
+          "officeCount",
+          "isServiceable"
+        ]
+      },
+      "PincodeAreaDto": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string",
+            "example": "500081"
+          },
+          "name": {
+            "type": "string",
+            "example": "Madhapur"
+          },
+          "districtName": {
+            "type": "string",
+            "example": "Hyderabad"
+          },
+          "stateName": {
+            "type": "string",
+            "example": "Telangana"
+          },
+          "latitude": {
+            "type": "number"
+          },
+          "longitude": {
+            "type": "number"
+          },
+          "cityId": {
+            "type": "object",
+            "description": "Set when the pincode falls inside a launched city"
+          },
+          "cityName": {
+            "type": "object"
+          },
+          "officeCount": {
+            "type": "number",
+            "description": "Post offices sharing this code — a proxy for how coarse the centroid is. A code with many offices covers a wider area."
+          },
+          "isServiceable": {
+            "type": "boolean",
+            "description": "Whether LocZ currently serves this pincode"
+          },
+          "listingCount": {
+            "type": "number",
+            "description": "Published listings anchored to this exact pincode"
+          },
+          "nearbyPincodes": {
+            "description": "Adjacent codes within 10 km — \"the area\", not just the exact code",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PincodeDto"
+            }
+          }
+        },
+        "required": [
+          "code",
+          "name",
+          "districtName",
+          "stateName",
+          "latitude",
+          "longitude",
+          "officeCount",
+          "isServiceable",
+          "listingCount",
+          "nearbyPincodes"
+        ]
+      },
       "SavedLocationDto": {
         "type": "object",
         "properties": {
@@ -4598,6 +4844,10 @@
           "addressLine": {
             "type": "object"
           },
+          "pincodeCode": {
+            "type": "object",
+            "example": "500081"
+          },
           "latitude": {
             "type": "object"
           },
@@ -5023,6 +5273,11 @@
           "localityId": {
             "type": "string"
           },
+          "pincodeCode": {
+            "type": "string",
+            "example": "500081",
+            "description": "Postal code. Supply this instead of coordinates and the listing is placed at the pincode centroid — most users know their pincode and decline a GPS prompt."
+          },
           "latitude": {
             "type": "number",
             "example": 17.4483
@@ -5157,6 +5412,11 @@
           },
           "localityId": {
             "type": "string"
+          },
+          "pincodeCode": {
+            "type": "string",
+            "example": "500081",
+            "description": "Postal code. Supply this instead of coordinates and the listing is placed at the pincode centroid — most users know their pincode and decline a GPS prompt."
           },
           "latitude": {
             "type": "number",
