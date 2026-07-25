@@ -109,12 +109,14 @@ export default async function OverviewPage() {
           hint="Waiting for a moderator"
           attention={metrics.pendingListings > 0}
         />
-        <Metric
-          label="Open reports"
-          value={metrics.openReports}
-          hint="User-reported content"
-          attention={metrics.openReports > 0}
-        />
+        <Link href="/reports" style={{ textDecoration: 'none' }}>
+          <Metric
+            label="Open reports"
+            value={metrics.openReports}
+            hint="User-reported content"
+            attention={metrics.openReports > 0}
+          />
+        </Link>
         <Metric label="Published listings" value={metrics.publishedListings} />
         <Metric label="Posted today" value={metrics.listingsToday} hint="Last 24 hours" />
         <Metric

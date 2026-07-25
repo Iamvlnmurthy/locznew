@@ -11,3 +11,5 @@ process.env.JWT_ACCESS_SECRET ??= 'test-access-secret-that-is-long-enough-to-pas
 process.env.JWT_REFRESH_SECRET ??= 'test-refresh-secret-that-is-long-enough-to-pass';
 process.env.OTP_PROVIDER ??= 'mock';
 process.env.LOG_LEVEL ??= 'error';
+// No repeatable jobs, and therefore no live Redis connection, during a test run.
+process.env.SCHEDULER_ENABLED ??= 'false';

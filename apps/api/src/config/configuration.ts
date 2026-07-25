@@ -83,6 +83,13 @@ export const envSchema = z.object({
   SENTRY_TRACES_SAMPLE_RATE: z.coerce.number().min(0).max(1).default(0.1),
   LOG_LEVEL: z.enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace']).default('info'),
 
+  /**
+   * Registers the repeatable BullMQ jobs. Should be true on exactly one deployment —
+   * normally the worker — so several API replicas do not each re-register the schedule.
+   * Forced off under NODE_ENV=test so a test run never talks to a real queue.
+   */
+  SCHEDULER_ENABLED: booleanish.default(true),
+
   RATE_LIMIT_TTL_SECONDS: z.coerce.number().int().positive().default(60),
   RATE_LIMIT_MAX_REQUESTS: z.coerce.number().int().positive().default(120),
 });

@@ -145,6 +145,7 @@ converges rather than duplicating.
 
 ```bash
 npm run typecheck                       # every workspace
+npm run openapi -w @locz/api            # regenerate docs/openapi.json
 npm run test -w @locz/api               # unit + DI tests
 npm run db:studio -w @locz/api          # Prisma Studio
 npm run docker:logs                     # tail infrastructure

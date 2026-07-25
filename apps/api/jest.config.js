@@ -2,7 +2,8 @@
 module.exports = {
   rootDir: '.',
   testEnvironment: 'node',
-  testRegex: '.*\\.spec\\.ts$',
+  // Matches both unit specs and the e2e contract suite.
+  testRegex: '.*\\.(spec|e2e-spec)\\.ts$',
   moduleFileExtensions: ['js', 'json', 'ts'],
   // Runs before any import: the config module validates the environment at import time.
   setupFiles: ['<rootDir>/test/setup-env.ts'],

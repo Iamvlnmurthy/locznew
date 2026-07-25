@@ -6,6 +6,7 @@ import { PaginatedDto, paginate } from '../common/dto/pagination.dto';
 import {
   AdminMetricsDto,
   AdminUserDto,
+  AuditLogDto,
   ListingsByBucketDto,
   QueueHealthDto,
   StorageStatsDto,
@@ -73,6 +74,33 @@ export class AdminController {
     const pageNumber = Math.max(1, Number(page ?? 1) || 1);
     const pageSize = Math.min(50, Math.max(1, Number(limit ?? 25) || 25));
     const { items, total } = await this.admin.listUsers(pageNumber, pageSize, q);
+    return paginate(items, total, pageNumber, pageSize);
+  }
+
+  @Get('audit-logs')
+  @RequirePermissions('audit:read')
+  @ApiOperation({
+    summary: 'Audit trail',
+    description:
+      'Filter by entityType and entityId to reconstruct everything that happened to one listing or account.',
+  })
+  @ApiResponse({ status: 200, type: [AuditLogDto] })
+  async auditLogs(
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
+    @Query('entityType') entityType?: string,
+    @Query('entityId') entityId?: string,
+    @Query('actorId') actorId?: string,
+    @Query('action') action?: string,
+  ): Promise<PaginatedDto<AuditLogDto>> {
+    const pageNumber = Math.max(1, Number(page ?? 1) || 1);
+    const pageSize = Math.min(100, Math.max(1, Number(limit ?? 50) || 50));
+    const { items, total } = await this.admin.listAuditLogs(pageNumber, pageSize, {
+      entityType,
+      entityId,
+      actorId,
+      action,
+    });
     return paginate(items, total, pageNumber, pageSize);
   }
 

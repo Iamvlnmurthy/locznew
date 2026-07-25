@@ -31,6 +31,7 @@ apps/mobile     Flutter application
 packages/       shared-types · validation · ui-tokens · config
 infrastructure/ docker · nginx · database
 docs/           architecture, setup, mobile setup, acceptance, troubleshooting
+docs/openapi.json  committed API contract — 80 paths (npm run openapi -w @locz/api)
 ```
 
 ## Quick start
@@ -78,9 +79,10 @@ Hindi) · SEO-ready public pages with structured data.
 
 Read [PROGRESS.md](PROGRESS.md) before trusting any part of this. In summary:
 
-- ✅ **Verified here:** API typechecks and builds (`dist/main.js` + `dist/worker.js`),
-  9 tests pass, web and admin both `next build` clean, the Prisma schema validates, the
-  Dart token generator runs.
+- ✅ **Verified here:** all seven workspaces typecheck; **75 tests pass across 6 suites**
+  (unit, DI-graph and an HTTP-contract e2e suite); the API builds both `dist/main.js` and
+  `dist/worker.js`; web (18 routes) and admin (10 routes) both `next build` clean; the
+  Prisma schema validates; the OpenAPI export and the Dart token generator both run.
 - 🟡 **Authored, not executed:** everything requiring Docker (migrations, seeds, every
   database query) and everything requiring the Flutter SDK (the whole mobile app).
 

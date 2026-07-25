@@ -5,6 +5,7 @@ import { RedisService } from '../redis/redis.service';
 import {
   AdminMetricsDto,
   AdminUserDto,
+  AuditLogDto,
   ListingsByBucketDto,
   QueueHealthDto,
   TopListingDto,
@@ -274,6 +275,50 @@ export class AdminService {
       reportsAgainst: reportsByOwner.get(user.id) ?? 0,
       createdAt: user.createdAt,
       lastActiveAt: user.lastActiveAt,
+    }));
+
+    return { items, total };
+  }
+
+  /**
+   * Audit trail. Filterable by entity so a moderator can reconstruct everything that
+   * happened to one listing or one account, which is the question actually asked during
+   * a dispute or an appeal.
+   */
+  async listAuditLogs(
+    page: number,
+    limit: number,
+    filters: { entityType?: string; entityId?: string; actorId?: string; action?: string } = {},
+  ): Promise<{ items: AuditLogDto[]; total: number }> {
+    const where = {
+      ...(filters.entityType ? { entityType: filters.entityType } : {}),
+      ...(filters.entityId ? { entityId: filters.entityId } : {}),
+      ...(filters.actorId ? { actorId: filters.actorId } : {}),
+      ...(filters.action ? { action: { contains: filters.action } } : {}),
+    };
+
+    const [logs, total] = await Promise.all([
+      this.prisma.auditLog.findMany({
+        where,
+        include: { actor: { select: { displayName: true } } },
+        orderBy: { createdAt: 'desc' },
+        skip: (page - 1) * limit,
+        take: limit,
+      }),
+      this.prisma.auditLog.count({ where }),
+    ]);
+
+    const items: AuditLogDto[] = logs.map((log) => ({
+      id: log.id,
+      action: log.action,
+      entityType: log.entityType,
+      entityId: log.entityId,
+      actorName: log.actor?.displayName ?? null,
+      actorRole: log.actorRole,
+      changes: (log.changes as Record<string, unknown> | null) ?? null,
+      ip: log.ip,
+      correlationId: log.correlationId,
+      createdAt: log.createdAt,
     }));
 
     return { items, total };

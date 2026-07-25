@@ -62,15 +62,15 @@ export class SearchService implements OnModuleInit {
    * Settings are applied at boot and are idempotent. Doing it in code rather than by
    * hand means a fresh Meilisearch container is correctly configured with no runbook step.
    */
-  async onModuleInit(): Promise<void> {
-    try {
-      await this.configureIndex();
-    } catch (error) {
-      // Search being down must not stop the API from serving; the Postgres path still works.
+  onModuleInit(): void {
+    // Deliberately not awaited. A slow or unreachable Meilisearch must never delay the
+    // API accepting traffic — the database path serves search either way, and the
+    // nightly rebuild repairs an index that was configured late.
+    void this.configureIndex().catch((error: unknown) => {
       this.logger.warn(
         `Could not configure the search index at boot: ${error instanceof Error ? error.message : error}`,
       );
-    }
+    });
   }
 
   private get index(): Index<ListingDocument> {

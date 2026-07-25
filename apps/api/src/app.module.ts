@@ -3,9 +3,12 @@ import { APP_FILTER, APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { AdminModule } from './admin/admin.module';
 import { AuditModule } from './audit/audit.module';
+import { BusinessesModule } from './businesses/businesses.module';
 import { AuthModule } from './auth/auth.module';
 import { AllExceptionsFilter } from './common/filters/all-exceptions.filter';
+import { IdempotencyInterceptor } from './common/interceptors/idempotency.interceptor';
 import { ResponseInterceptor } from './common/interceptors/response.interceptor';
+import { ErrorReporter } from './common/monitoring/error-reporter';
 import { CorrelationIdMiddleware } from './common/middleware/correlation-id.middleware';
 import { AppConfigModule } from './config/config.module';
 import { CategoriesModule } from './categories/categories.module';
@@ -20,6 +23,7 @@ import { QueueModule } from './queue/queue.module';
 import { SearchModule } from './search/search.module';
 import { MediaModule } from './media/media.module';
 import { ModerationModule } from './moderation/moderation.module';
+import { ReportsModule } from './reports/reports.module';
 import { PrismaModule } from './prisma/prisma.module';
 import { JwtAuthGuard } from './rbac/jwt-auth.guard';
 import { PermissionsGuard } from './rbac/permissions.guard';
@@ -46,6 +50,8 @@ import { UsersModule } from './users/users.module';
     ListingsModule,
     FeedModule,
     ConversationsModule,
+    BusinessesModule,
+    ReportsModule,
     LifecycleModule,
     AdminModule,
     HealthModule,
@@ -64,8 +70,12 @@ import { UsersModule } from './users/users.module';
     { provide: APP_GUARD, useClass: ThrottlerGuard },
     { provide: APP_GUARD, useClass: JwtAuthGuard },
     { provide: APP_GUARD, useClass: PermissionsGuard },
+    // Idempotency runs before the response envelope so what is replayed is the
+    // domain payload, not a re-wrapped envelope.
+    { provide: APP_INTERCEPTOR, useClass: IdempotencyInterceptor },
     { provide: APP_INTERCEPTOR, useClass: ResponseInterceptor },
     { provide: APP_FILTER, useClass: AllExceptionsFilter },
+    ErrorReporter,
   ],
 })
 export class AppModule implements NestModule {

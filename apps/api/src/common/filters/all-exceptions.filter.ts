@@ -9,6 +9,7 @@ import {
 import { Prisma } from '@prisma/client';
 import { Response } from 'express';
 import { RequestWithUser } from '../decorators/current-user.decorator';
+import { ErrorReporter } from '../monitoring/error-reporter';
 
 export interface ErrorResponseBody {
   success: false;
@@ -32,6 +33,8 @@ export interface ErrorResponseBody {
 export class AllExceptionsFilter implements ExceptionFilter {
   private readonly logger = new Logger('ExceptionFilter');
 
+  constructor(private readonly reporter: ErrorReporter) {}
+
   catch(exception: unknown, host: ArgumentsHost): void {
     const ctx = host.switchToHttp();
     const response = ctx.getResponse<Response>();
@@ -44,6 +47,15 @@ export class AllExceptionsFilter implements ExceptionFilter {
         `${request.method} ${request.url} → ${status} [${request.correlationId ?? '-'}]`,
         exception instanceof Error ? exception.stack : String(exception),
       );
+
+      // Only unexpected failures are reported. A 404 or a validation error is normal
+      // traffic; alerting on it trains everyone to ignore the alerts.
+      this.reporter.capture(exception, {
+        correlationId: request.correlationId,
+        userId: request.user?.id,
+        route: request.url,
+        method: request.method,
+      });
     }
 
     const body: ErrorResponseBody = {
@@ -81,7 +93,10 @@ export class AllExceptionsFilter implements ExceptionFilter {
 
       return {
         status,
-        code: String(record.error ?? this.codeFor(status)),
+        // Normalised: Nest's built-in exceptions emit human-readable strings such as
+        // "Not Found", while ours emit "NotFound". Clients switch on this value, so it
+        // must not depend on which layer threw.
+        code: this.normaliseCode(String(record.error ?? this.codeFor(status))),
         message,
         details: Array.isArray(rawMessage) ? rawMessage : record.details,
       };
@@ -121,6 +136,11 @@ export class AllExceptionsFilter implements ExceptionFilter {
       code: 'InternalError',
       message: 'Something went wrong. Please try again.',
     };
+  }
+
+  /** "Not Found" → "NotFound", "Internal Server Error" → "InternalServerError". */
+  private normaliseCode(code: string): string {
+    return code.replace(/[^A-Za-z0-9]/g, '');
   }
 
   private codeFor(status: number): string {

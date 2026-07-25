@@ -6,9 +6,11 @@ import { NavLink } from './nav-link';
 const NAV = [
   { href: '/', label: 'Overview' },
   { href: '/moderation', label: 'Moderation queue' },
+  { href: '/reports', label: 'Reports' },
   { href: '/listings', label: 'Listings' },
   { href: '/users', label: 'Users' },
   { href: '/categories', label: 'Categories' },
+  { href: '/audit', label: 'Audit logs' },
   { href: '/system', label: 'System' },
 ];
 

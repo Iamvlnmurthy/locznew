@@ -1,0 +1,101 @@
+import {
+  CallHandler,
+  ConflictException,
+  ExecutionContext,
+  Injectable,
+  Logger,
+  NestInterceptor,
+} from '@nestjs/common';
+import { Observable, from, of, switchMap, tap } from 'rxjs';
+import { RequestWithUser } from '../decorators/current-user.decorator';
+import { RedisService } from '../../redis/redis.service';
+
+interface CachedResponse {
+  status: 'in-flight' | 'complete';
+  body?: unknown;
+}
+
+/**
+ * Honours the `Idempotency-Key` header on unsafe requests.
+ *
+ * The case this exists for: a seller on a patchy connection taps "Publish", the response
+ * is lost in transit, and they tap again. Without this they get two identical listings
+ * and a duplicate-detection flag against their own account.
+ *
+ * The key is namespaced per user, so one client cannot replay or observe another's
+ * response by guessing a key.
+ */
+@Injectable()
+export class IdempotencyInterceptor implements NestInterceptor {
+  private readonly logger = new Logger(IdempotencyInterceptor.name);
+
+  /** Long enough to cover a retry, short enough that a deliberate repost still works. */
+  private static readonly TTL_SECONDS = 24 * 60 * 60;
+
+  constructor(private readonly redis: RedisService) {}
+
+  intercept(context: ExecutionContext, next: CallHandler): Observable<unknown> {
+    const request = context.switchToHttp().getRequest<RequestWithUser>();
+
+    const header = request.headers['idempotency-key'];
+    const key = Array.isArray(header) ? header[0] : header;
+
+    // Only mutating requests, and only when the client asked for the guarantee.
+    if (!key || !['POST', 'PATCH', 'PUT'].includes(request.method)) {
+      return next.handle();
+    }
+
+    const scope = request.user?.id ?? request.ip ?? 'anonymous';
+    const cacheKey = `idem:${scope}:${key.slice(0, 128)}`;
+
+    return from(this.redis.getJson<CachedResponse>(cacheKey)).pipe(
+      switchMap((cached) => {
+        if (cached?.status === 'complete') {
+          this.logger.log(`Replaying idempotent response for ${cacheKey}`);
+          return of(cached.body);
+        }
+
+        if (cached?.status === 'in-flight') {
+          // The original is still running. Returning its response would mean waiting on
+          // another request; 409 tells the client to retry rather than duplicating work.
+          throw new ConflictException(
+            'That request is still being processed. Please wait a moment.',
+          );
+        }
+
+        return from(
+          this.redis.setIfAbsent(
+            cacheKey,
+            JSON.stringify({ status: 'in-flight' }),
+            IdempotencyInterceptor.TTL_SECONDS,
+          ),
+        ).pipe(
+          switchMap((claimed) => {
+            if (!claimed) {
+              throw new ConflictException(
+                'That request is still being processed. Please wait a moment.',
+              );
+            }
+
+            return next.handle().pipe(
+              tap({
+                next: (body) => {
+                  void this.redis.setJson(
+                    cacheKey,
+                    { status: 'complete', body } satisfies CachedResponse,
+                    IdempotencyInterceptor.TTL_SECONDS,
+                  );
+                },
+                error: () => {
+                  // A failed attempt must not be replayed as a success, and must not
+                  // block the client from trying again.
+                  void this.redis.del(cacheKey);
+                },
+              }),
+            );
+          }),
+        );
+      }),
+    );
+  }
+}

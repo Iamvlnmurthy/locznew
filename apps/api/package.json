@@ -2,7 +2,7 @@
   "name": "@locz/api",
   "version": "0.1.0",
   "private": true,
-  "description": "LocZ backend API — NestJS modular monolith",
+  "description": "LocZ backend API \u2014 NestJS modular monolith",
   "scripts": {
     "build": "nest build",
     "start": "nest start",
@@ -16,7 +16,8 @@
     "db:migrate": "prisma migrate dev",
     "db:migrate:deploy": "prisma migrate deploy",
     "db:seed": "ts-node prisma/seed.ts",
-    "db:studio": "prisma studio"
+    "db:studio": "prisma studio",
+    "openapi": "ts-node -P tsconfig.tools.json scripts/export-openapi.ts"
   },
   "prisma": {
     "seed": "ts-node prisma/seed.ts"

@@ -188,6 +188,37 @@ per-type/per-channel preferences. All ✅ typechecked, ⬜ unexecuted.
 | ESLint base config, husky hooks, lint-staged                                          | ✅                                 |
 | README rewritten with an explicit verification-status section                         | ✅                                 |
 
+## M11 — Gap closure (2026-07-26)
+
+Work found missing on review of the Phase 1 brief against what was actually built.
+
+| Item                                                                                                                                                          | Status      |
+| ------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------- |
+| **Reports module** — user reporting of listings/businesses/users/messages, auto-escalation at 3 reports, moderator resolution notifying every reporter        | ✅          |
+| **Businesses module** — free registration, staff with permission sets, opening hours, verification (admin-only), soft delete cascading to listings            | ✅          |
+| **All nine listing types accepted** — `ListingDetailsBuilder` handles job, offer, service, rental, event and buyer-requirement payloads, not just marketplace | ✅          |
+| `packages/validation` — Zod schemas and limits shared by API and frontends                                                                                    | ✅          |
+| `packages/api-client` — hand-written typed SDK (ADR-0011)                                                                                                     | ✅          |
+| Idempotency interceptor (ADR-0010)                                                                                                                            | ✅          |
+| Sentry-compatible error reporter with field scrubbing, wired into the exception filter                                                                        | ✅          |
+| OpenAPI export committed — **80 paths, 78 schemas** in `docs/openapi.json`                                                                                    | ✅ executed |
+| Web: `/report` page (the listing page linked to a 404), plus about / help / safety / terms / privacy                                                          | ✅          |
+| Admin: reports queue and audit-log viewer with per-entity history                                                                                             | ✅          |
+| Test factories, 75 tests across 6 suites including an HTTP-contract e2e suite                                                                                 | ✅          |
+
+### Defects this round found
+
+1. **`app.init()` hung indefinitely.** BullMQ opens its own Redis connection regardless of
+   the injected `RedisService`, and both `SearchService` and `LifecycleScheduler` awaited
+   network calls in `onModuleInit`. In production that means an unreachable Meilisearch or
+   Redis delays the API accepting traffic. Both hooks are now fire-and-forget, and
+   `SCHEDULER_ENABLED` controls which single process registers repeatable jobs.
+2. **Inconsistent error codes.** Nest's built-in 404 emitted `"Not Found"` while ours
+   emitted `"NotFound"`. A client switching on `error.code` would break depending on which
+   layer threw. Codes are now normalised in the exception filter.
+3. **`process.exit` swallowed the OpenAPI export's own error message** on Windows,
+   producing a silent failure. Replaced with `process.exitCode`.
+
 ## Final verification run (2026-07-26)
 
 | Check                            | Result                               |

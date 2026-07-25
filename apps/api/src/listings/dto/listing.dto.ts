@@ -18,6 +18,14 @@ import {
   ValidateNested,
 } from 'class-validator';
 import { PaginationQueryDto } from '../../common/dto/pagination.dto';
+import {
+  BuyerRequirementDetailsDto,
+  EventDetailsDto,
+  JobDetailsDto,
+  OfferDetailsDto,
+  RentalDetailsDto,
+  ServiceDetailsDto,
+} from './listing-details.dto';
 import { RADIUS_PRESETS_KM } from '../../geo/dto/geo.dto';
 import { MediaDto } from '../../media/dto/media.dto';
 
@@ -157,6 +165,45 @@ export class CreateListingDto {
   @ValidateNested()
   @Type(() => MarketplaceDetailsDto)
   marketplace?: MarketplaceDetailsDto;
+
+  @ApiPropertyOptional({ type: JobDetailsDto, description: 'Required for JOB listings' })
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => JobDetailsDto)
+  job?: JobDetailsDto;
+
+  @ApiPropertyOptional({ type: OfferDetailsDto, description: 'Required for OFFER listings' })
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => OfferDetailsDto)
+  offer?: OfferDetailsDto;
+
+  @ApiPropertyOptional({ type: ServiceDetailsDto, description: 'Required for SERVICE listings' })
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => ServiceDetailsDto)
+  service?: ServiceDetailsDto;
+
+  @ApiPropertyOptional({ type: RentalDetailsDto, description: 'Required for RENTAL listings' })
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => RentalDetailsDto)
+  rental?: RentalDetailsDto;
+
+  @ApiPropertyOptional({ type: EventDetailsDto, description: 'Required for EVENT listings' })
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => EventDetailsDto)
+  event?: EventDetailsDto;
+
+  @ApiPropertyOptional({
+    type: BuyerRequirementDetailsDto,
+    description: 'Required for BUYER_REQUIREMENT listings',
+  })
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => BuyerRequirementDetailsDto)
+  buyerRequirement?: BuyerRequirementDetailsDto;
 
   @ApiPropertyOptional({
     type: [ListingAttributeInputDto],

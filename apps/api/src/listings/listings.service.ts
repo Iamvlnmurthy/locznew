@@ -26,6 +26,7 @@ import { GeoRepository } from '../prisma/geo.repository';
 import { PrismaService } from '../prisma/prisma.service';
 import { RbacService } from '../rbac/rbac.service';
 import { SearchIndexPublisher } from '../search/search-index.publisher';
+import { ListingDetailsBuilder } from './listing-details.builder';
 import {
   CreateListingDto,
   ListingDetailDto,
@@ -60,6 +61,7 @@ export class ListingsService {
     private readonly rbac: RbacService,
     private readonly audit: AuditService,
     private readonly searchIndex: SearchIndexPublisher,
+    private readonly details: ListingDetailsBuilder,
   ) {}
 
   // -------------------------------------------------------------------
@@ -103,17 +105,18 @@ export class ListingsService {
       await this.assertCanPostForBusiness(userId, dto.businessId);
     }
 
-    if (MARKETPLACE_TYPES.includes(dto.type) && !dto.marketplace) {
-      throw new BadRequestException('Marketplace details are required for this listing type');
-    }
+    // Each listing type has its own required detail payload (ADR-0004).
+    this.details.assertDetailPresent(dto);
 
     const attributeRows = await this.categories.buildAttributeValues(
       dto.subcategoryId ?? dto.categoryId,
       (dto.attributes ?? []).map((attribute) => ({ key: attribute.key, value: attribute.value })),
     );
 
-    const price = dto.marketplace?.isFree ? 0 : (dto.marketplace?.price ?? null);
-    const expiresAt = await this.computeExpiry(dto.type);
+    const price = this.details.priceFor(dto);
+    // Offers and events carry their own end date; everything else uses the configured
+    // window for its type.
+    const expiresAt = this.details.explicitExpiry(dto) ?? (await this.computeExpiry(dto.type));
 
     const listing = await this.prisma.listing.create({
       data: {
@@ -143,27 +146,7 @@ export class ListingsService {
         contactPreference: dto.contactPreference ?? ContactPreference.IN_APP_ONLY,
         showPhonePublicly: dto.showPhonePublicly ?? false,
         expiresAt,
-        ...(dto.marketplace
-          ? {
-              marketplace: {
-                create: {
-                  price: price !== null ? new Prisma.Decimal(price) : null,
-                  isNegotiable: dto.marketplace.isNegotiable ?? false,
-                  isFree: dto.marketplace.isFree ?? false,
-                  condition: dto.marketplace.condition,
-                  isNewItem: dto.marketplace.condition === 'NEW',
-                  brand: dto.marketplace.brand,
-                  model: dto.marketplace.model,
-                  purchaseYear: dto.marketplace.purchaseYear,
-                  hasWarranty: dto.marketplace.hasWarranty ?? false,
-                  warrantyDetails: dto.marketplace.warrantyDetails,
-                  deliveryAvailable: dto.marketplace.deliveryAvailable ?? false,
-                  pickupAvailable: dto.marketplace.pickupAvailable ?? true,
-                  quantity: dto.marketplace.quantity ?? 1,
-                },
-              },
-            }
-          : {}),
+        ...this.details.build(dto),
         ...(attributeRows.length > 0
           ? { attributeValues: { createMany: { data: attributeRows } } }
           : {}),

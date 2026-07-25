@@ -23,6 +23,17 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: SITE_URL, lastModified: now, changeFrequency: 'hourly', priority: 1 },
   ];
 
+  // Information pages. Low priority but genuinely indexable — "is locz safe" is a real
+  // query, and the safety page is the honest answer to it.
+  for (const path of ['/about', '/help', '/safety', '/terms', '/privacy']) {
+    entries.push({
+      url: `${SITE_URL}${path}`,
+      lastModified: now,
+      changeFrequency: 'monthly',
+      priority: 0.3,
+    });
+  }
+
   for (const city of cities ?? []) {
     entries.push({
       url: `${SITE_URL}/in/${city.slug}`,

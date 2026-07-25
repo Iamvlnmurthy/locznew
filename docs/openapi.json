@@ -1,0 +1,6169 @@
+{
+  "openapi": "3.0.0",
+  "paths": {
+    "/api/auth/otp/request": {
+      "post": {
+        "description": "In development (OTP_PROVIDER=mock) the code is returned as `debugCode` so the flow can be completed without an SMS gateway.",
+        "operationId": "AuthController_requestOtp",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RequestOtpDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OtpRequestedDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too many code requests"
+          }
+        },
+        "summary": "Request a login code by SMS",
+        "tags": ["auth"]
+      }
+    },
+    "/api/auth/otp/verify": {
+      "post": {
+        "description": "Creates the account on first successful verification. There is no separate sign-up.",
+        "operationId": "AuthController_verifyOtp",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/VerifyOtpDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthSessionDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Incorrect or expired code"
+          },
+          "403": {
+            "description": "Locked out after repeated failures"
+          }
+        },
+        "summary": "Verify a login code",
+        "tags": ["auth"]
+      }
+    },
+    "/api/auth/login/email": {
+      "post": {
+        "operationId": "AuthController_loginWithEmail",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EmailLoginDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthSessionDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Optional email and password sign-in",
+        "tags": ["auth"]
+      }
+    },
+    "/api/auth/refresh": {
+      "post": {
+        "description": "Refresh tokens rotate on every use. Presenting an already-rotated token revokes the entire session family.",
+        "operationId": "AuthController_refresh",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RefreshTokenDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthSessionDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Exchange a refresh token for a new token pair",
+        "tags": ["auth"]
+      }
+    },
+    "/api/auth/logout": {
+      "post": {
+        "operationId": "AuthController_logout",
+        "parameters": [],
+        "responses": {
+          "204": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Log out of the current device",
+        "tags": ["auth"]
+      }
+    },
+    "/api/auth/logout/all": {
+      "post": {
+        "operationId": "AuthController_logoutAll",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Log out of every device",
+        "tags": ["auth"]
+      }
+    },
+    "/api/auth/me": {
+      "get": {
+        "operationId": "AuthController_me",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "The identity behind the current access token",
+        "tags": ["auth"]
+      }
+    },
+    "/api/users/me": {
+      "get": {
+        "operationId": "UsersController_getMe",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserProfileDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Current user profile",
+        "tags": ["users"]
+      },
+      "patch": {
+        "operationId": "UsersController_updateMe",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateProfileDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserProfileDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Update the current user profile",
+        "tags": ["users"]
+      }
+    },
+    "/api/users/me/devices": {
+      "get": {
+        "operationId": "UsersController_getDevices",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/DeviceDto"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Devices signed in to this account",
+        "tags": ["users"]
+      }
+    },
+    "/api/users/me/devices/{deviceId}": {
+      "delete": {
+        "operationId": "UsersController_revokeDevice",
+        "parameters": [
+          {
+            "name": "deviceId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Sign out one device and forget its push token",
+        "tags": ["users"]
+      }
+    },
+    "/api/users/me/push-token": {
+      "post": {
+        "description": "Called on every app launch — Firebase rotates tokens without warning.",
+        "operationId": "UsersController_updatePushToken",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdatePushTokenDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Register or refresh this device’s push token",
+        "tags": ["users"]
+      }
+    },
+    "/api/users/me/deactivate": {
+      "post": {
+        "description": "Reversible. Published listings are paused; signing in again restores the account.",
+        "operationId": "UsersController_deactivate",
+        "parameters": [],
+        "responses": {
+          "204": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Deactivate the account",
+        "tags": ["users"]
+      }
+    },
+    "/api/users/me/delete-request": {
+      "post": {
+        "description": "Archives the account and its listings. Records are anonymised after the retention window rather than deleted immediately, so moderation and dispute history survives.",
+        "operationId": "UsersController_requestDeletion",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DeleteAccountRequestDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Request account deletion",
+        "tags": ["users"]
+      }
+    },
+    "/api/locations/cities": {
+      "get": {
+        "operationId": "GeoController_searchCities",
+        "parameters": [
+          {
+            "name": "q",
+            "required": false,
+            "in": "query",
+            "description": "Substring match on the city name",
+            "schema": {
+              "example": "hyd",
+              "type": "string"
+            }
+          },
+          {
+            "name": "launchedOnly",
+            "required": false,
+            "in": "query",
+            "description": "Restrict to cities that have launched",
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "maximum": 50,
+              "default": 20,
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/CityDto"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "summary": "Search cities by name",
+        "tags": ["locations"]
+      }
+    },
+    "/api/locations/cities/{slug}": {
+      "get": {
+        "operationId": "GeoController_getCity",
+        "parameters": [
+          {
+            "name": "slug",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CityDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "One city by slug — backs the /:city landing pages",
+        "tags": ["locations"]
+      }
+    },
+    "/api/locations/cities/{cityId}/localities": {
+      "get": {
+        "operationId": "GeoController_listLocalities",
+        "parameters": [
+          {
+            "name": "cityId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/LocalityDto"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "summary": "Localities within a city",
+        "tags": ["locations"]
+      }
+    },
+    "/api/locations/resolve": {
+      "post": {
+        "description": "Returns `city: null` when the coordinates fall outside every launched area.",
+        "operationId": "GeoController_resolve",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ResolveLocationDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResolvedLocationDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Resolve device coordinates to a launched city",
+        "tags": ["locations"]
+      }
+    },
+    "/api/locations/radius-presets": {
+      "get": {
+        "operationId": "GeoController_radiusPresets",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "summary": "Radius options accepted by nearby search",
+        "tags": ["locations"]
+      }
+    },
+    "/api/locations/saved": {
+      "get": {
+        "operationId": "GeoController_listSaved",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/SavedLocationDto"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "The current user’s saved locations",
+        "tags": ["locations"]
+      },
+      "post": {
+        "operationId": "GeoController_createSaved",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateSavedLocationDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SavedLocationDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Save a location",
+        "tags": ["locations"]
+      }
+    },
+    "/api/locations/saved/{id}/default": {
+      "post": {
+        "operationId": "GeoController_setDefault",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Make a saved location the default",
+        "tags": ["locations"]
+      }
+    },
+    "/api/locations/saved/{id}": {
+      "delete": {
+        "operationId": "GeoController_deleteSaved",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Remove a saved location",
+        "tags": ["locations"]
+      }
+    },
+    "/api/categories": {
+      "get": {
+        "description": "Filter by `listingType` to get exactly the categories a posting flow should offer.",
+        "operationId": "CategoriesController_getTree",
+        "parameters": [
+          {
+            "name": "listingType",
+            "required": false,
+            "in": "query",
+            "description": "Only categories usable for this listing type",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "CLASSIFIED",
+                "PRODUCT",
+                "BUYER_REQUIREMENT",
+                "OFFER",
+                "JOB",
+                "SERVICE",
+                "RENTAL",
+                "EVENT",
+                "BUSINESS_LISTING"
+              ]
+            }
+          },
+          {
+            "name": "includeInactive",
+            "required": false,
+            "in": "query",
+            "description": "Include inactive categories (administrators only)",
+            "schema": {
+              "type": "boolean"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/CategoryDto"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "summary": "Category tree",
+        "tags": ["categories"]
+      },
+      "post": {
+        "operationId": "CategoriesController_create",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateCategoryDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CategoryDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Create a category (admin)",
+        "tags": ["categories"]
+      }
+    },
+    "/api/categories/{slug}": {
+      "get": {
+        "description": "Attributes include those inherited from ancestor categories.",
+        "operationId": "CategoriesController_getBySlug",
+        "parameters": [
+          {
+            "name": "slug",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CategoryDetailDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "One category with its attribute definitions",
+        "tags": ["categories"]
+      }
+    },
+    "/api/categories/{id}": {
+      "patch": {
+        "operationId": "CategoriesController_update",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateCategoryDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CategoryDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Update a category (admin)",
+        "tags": ["categories"]
+      }
+    },
+    "/api/categories/{id}/attributes": {
+      "post": {
+        "description": "Appears in the posting form on web and mobile immediately — no client release needed.",
+        "operationId": "CategoriesController_addAttribute",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateCategoryAttributeDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CategoryAttributeDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Define a category attribute (admin)",
+        "tags": ["categories"]
+      }
+    },
+    "/api/listings/{listingId}/media/upload-url": {
+      "post": {
+        "description": "Step 1 of 2. PUT the file to `uploadUrl` with exactly the Content-Type you declared, then call the confirm endpoint.",
+        "operationId": "MediaController_createUploadUrl",
+        "parameters": [
+          {
+            "name": "listingId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateUploadUrlDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UploadUrlDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Request a signed upload URL",
+        "tags": ["media"]
+      }
+    },
+    "/api/media/{mediaId}/confirm": {
+      "post": {
+        "description": "Step 2 of 2. Validates the real file type, strips metadata, applies EXIF orientation and produces thumb/card/full WebP renditions.",
+        "operationId": "MediaController_confirm",
+        "parameters": [
+          {
+            "name": "mediaId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MediaDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Confirm an upload and generate renditions",
+        "tags": ["media"]
+      }
+    },
+    "/api/listings/{listingId}/media": {
+      "get": {
+        "operationId": "MediaController_list",
+        "parameters": [
+          {
+            "name": "listingId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/MediaDto"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "summary": "Images on a listing",
+        "tags": ["media"]
+      }
+    },
+    "/api/listings/{listingId}/media/order": {
+      "put": {
+        "operationId": "MediaController_reorder",
+        "parameters": [
+          {
+            "name": "listingId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReorderMediaDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/MediaDto"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Reorder images — the first becomes the cover photo",
+        "tags": ["media"]
+      }
+    },
+    "/api/media/{mediaId}": {
+      "delete": {
+        "operationId": "MediaController_delete",
+        "parameters": [
+          {
+            "name": "mediaId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Delete an image and its renditions",
+        "tags": ["media"]
+      }
+    },
+    "/api/notifications": {
+      "get": {
+        "operationId": "NotificationsController_list",
+        "parameters": [
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "minimum": 1,
+              "default": 1,
+              "type": "number"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "minimum": 1,
+              "maximum": 50,
+              "default": 20,
+              "type": "number"
+            }
+          },
+          {
+            "name": "unreadOnly",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "default": false,
+              "type": "boolean"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/NotificationDto"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Notification centre",
+        "tags": ["notifications"]
+      }
+    },
+    "/api/notifications/unread-count": {
+      "get": {
+        "operationId": "NotificationsController_unreadCount",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Unread count for the badge",
+        "tags": ["notifications"]
+      }
+    },
+    "/api/notifications/{id}/read": {
+      "post": {
+        "operationId": "NotificationsController_markRead",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Mark one notification as read",
+        "tags": ["notifications"]
+      }
+    },
+    "/api/notifications/read-all": {
+      "post": {
+        "operationId": "NotificationsController_markAllRead",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Mark everything as read",
+        "tags": ["notifications"]
+      }
+    },
+    "/api/notifications/preferences": {
+      "get": {
+        "description": "Returns the full type × channel matrix with platform defaults applied.",
+        "operationId": "NotificationsController_listPreferences",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/NotificationPreferenceDto"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Notification preferences",
+        "tags": ["notifications"]
+      },
+      "put": {
+        "operationId": "NotificationsController_setPreference",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateNotificationPreferenceDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Turn one notification type and channel on or off",
+        "tags": ["notifications"]
+      }
+    },
+    "/api/moderation/queue": {
+      "get": {
+        "description": "Each item carries the automated reasons that flagged it, so a moderator sees why.",
+        "operationId": "ModerationController_getQueue",
+        "parameters": [
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "minimum": 1,
+              "default": 1,
+              "type": "number"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "minimum": 1,
+              "maximum": 50,
+              "default": 20,
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ModerationQueueItemDto"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Listings awaiting review, oldest first",
+        "tags": ["moderation"]
+      }
+    },
+    "/api/moderation/listings/{id}/approve": {
+      "post": {
+        "operationId": "ModerationController_approve",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ApproveListingDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Publish a listing from the queue",
+        "tags": ["moderation"]
+      }
+    },
+    "/api/moderation/listings/{id}/reject": {
+      "post": {
+        "description": "The reason is shown to the poster, so it must be written for them, not for internal notes.",
+        "operationId": "ModerationController_reject",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RejectListingDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Reject a listing",
+        "tags": ["moderation"]
+      }
+    },
+    "/api/moderation/listings/{id}/remove": {
+      "post": {
+        "operationId": "ModerationController_remove",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RejectListingDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Remove a listing that is already published",
+        "tags": ["moderation"]
+      }
+    },
+    "/api/listings": {
+      "get": {
+        "description": "Supply latitude, longitude and radiusKm together for a nearby search; otherwise filtering is by city, locality and category. Signed-in callers also get `isSaved`.",
+        "operationId": "ListingsController_search",
+        "parameters": [
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "minimum": 1,
+              "default": 1,
+              "type": "number"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "minimum": 1,
+              "maximum": 50,
+              "default": 20,
+              "type": "number"
+            }
+          },
+          {
+            "name": "type",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "CLASSIFIED",
+                "PRODUCT",
+                "BUYER_REQUIREMENT",
+                "OFFER",
+                "JOB",
+                "SERVICE",
+                "RENTAL",
+                "EVENT",
+                "BUSINESS_LISTING"
+              ]
+            }
+          },
+          {
+            "name": "categoryId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "cityId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "localityId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "latitude",
+            "required": false,
+            "in": "query",
+            "description": "With longitude and radiusKm, enables nearby search",
+            "schema": {
+              "example": 17.4483,
+              "type": "number"
+            }
+          },
+          {
+            "name": "longitude",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "example": 78.3915,
+              "type": "number"
+            }
+          },
+          {
+            "name": "radiusKm",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "number",
+              "enum": [1, 3, 5, 10, 25, 50]
+            }
+          },
+          {
+            "name": "priceMin",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "priceMax",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "condition",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": ["NEW", "LIKE_NEW", "GOOD", "FAIR", "FOR_PARTS"]
+            }
+          },
+          {
+            "name": "sort",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "default": "newest",
+              "type": "string",
+              "enum": ["newest", "price_asc", "price_desc", "popular", "distance"]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ListingSummaryDto"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "summary": "Browse and filter listings",
+        "tags": ["listings"]
+      },
+      "post": {
+        "description": "Posting is free. Unless `saveAsDraft` is set, the listing is screened immediately and comes back either PUBLISHED or PENDING_REVIEW.",
+        "operationId": "ListingsController_create",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateListingDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListingDetailDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Create a listing",
+        "tags": ["listings"]
+      }
+    },
+    "/api/listings/mine": {
+      "get": {
+        "operationId": "ListingsController_listMine",
+        "parameters": [
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "minimum": 1,
+              "default": 1,
+              "type": "number"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "minimum": 1,
+              "maximum": 50,
+              "default": 20,
+              "type": "number"
+            }
+          },
+          {
+            "name": "status",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "DRAFT",
+                "PENDING_REVIEW",
+                "PUBLISHED",
+                "REJECTED",
+                "PAUSED",
+                "SOLD",
+                "FILLED",
+                "EXPIRED",
+                "ARCHIVED",
+                "REMOVED"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "The current user’s listings, including drafts and rejections",
+        "tags": ["listings"]
+      }
+    },
+    "/api/listings/saved": {
+      "get": {
+        "operationId": "ListingsController_listSaved",
+        "parameters": [
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "minimum": 1,
+              "default": 1,
+              "type": "number"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "minimum": 1,
+              "maximum": 50,
+              "default": 20,
+              "type": "number"
+            }
+          },
+          {
+            "name": "status",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "DRAFT",
+                "PENDING_REVIEW",
+                "PUBLISHED",
+                "REJECTED",
+                "PAUSED",
+                "SOLD",
+                "FILLED",
+                "EXPIRED",
+                "ARCHIVED",
+                "REMOVED"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Listings the current user has saved",
+        "tags": ["listings"]
+      }
+    },
+    "/api/listings/recently-viewed": {
+      "get": {
+        "operationId": "ListingsController_recentlyViewed",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Recently viewed listings",
+        "tags": ["listings"]
+      }
+    },
+    "/api/listings/{slug}": {
+      "get": {
+        "description": "Public — no login required. The owner’s phone appears only if they chose to show it.",
+        "operationId": "ListingsController_getBySlug",
+        "parameters": [
+          {
+            "name": "slug",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListingDetailDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Listing detail by slug",
+        "tags": ["listings"]
+      }
+    },
+    "/api/listings/{id}": {
+      "patch": {
+        "description": "Editing the title or description of a published listing sends it back through moderation.",
+        "operationId": "ListingsController_update",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateListingDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Edit a listing",
+        "tags": ["listings"]
+      },
+      "delete": {
+        "description": "Soft delete — the record is retained so moderation and conversation history stay coherent.",
+        "operationId": "ListingsController_remove",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Delete a listing",
+        "tags": ["listings"]
+      }
+    },
+    "/api/listings/{id}/submit": {
+      "post": {
+        "operationId": "ListingsController_submit",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Submit a draft for review",
+        "tags": ["listings"]
+      }
+    },
+    "/api/listings/{id}/pause": {
+      "post": {
+        "operationId": "ListingsController_pause",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Hide a listing without deleting it",
+        "tags": ["listings"]
+      }
+    },
+    "/api/listings/{id}/resume": {
+      "post": {
+        "operationId": "ListingsController_resume",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Make a paused listing visible again",
+        "tags": ["listings"]
+      }
+    },
+    "/api/listings/{id}/sold": {
+      "post": {
+        "operationId": "ListingsController_markSold",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Mark an item as sold",
+        "tags": ["listings"]
+      }
+    },
+    "/api/listings/{id}/republish": {
+      "post": {
+        "operationId": "ListingsController_republish",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Republish an expired, sold or paused listing",
+        "tags": ["listings"]
+      }
+    },
+    "/api/listings/{id}/save": {
+      "post": {
+        "operationId": "ListingsController_save",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Save a listing",
+        "tags": ["listings"]
+      },
+      "delete": {
+        "operationId": "ListingsController_unsave",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Remove a listing from saved items",
+        "tags": ["listings"]
+      }
+    },
+    "/api/search": {
+      "get": {
+        "description": "Typo-tolerant keyword search with category, price, distance and freshness filters. Falls back to a database query if the search index is unavailable — `usedSearchIndex` tells you which path served the response.",
+        "operationId": "SearchController_search",
+        "parameters": [
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "minimum": 1,
+              "default": 1,
+              "type": "number"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "minimum": 1,
+              "maximum": 50,
+              "default": 20,
+              "type": "number"
+            }
+          },
+          {
+            "name": "q",
+            "required": false,
+            "in": "query",
+            "description": "Typo-tolerant keyword query",
+            "schema": {
+              "example": "samsung tv",
+              "type": "string"
+            }
+          },
+          {
+            "name": "type",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "CLASSIFIED",
+                "PRODUCT",
+                "BUYER_REQUIREMENT",
+                "OFFER",
+                "JOB",
+                "SERVICE",
+                "RENTAL",
+                "EVENT",
+                "BUSINESS_LISTING"
+              ]
+            }
+          },
+          {
+            "name": "categoryId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "cityId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "localityId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "priceMin",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "priceMax",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "condition",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": ["NEW", "LIKE_NEW", "GOOD", "FAIR", "FOR_PARTS"]
+            }
+          },
+          {
+            "name": "verifiedOnly",
+            "required": false,
+            "in": "query",
+            "description": "Only listings from verified businesses",
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "postedWithinDays",
+            "required": false,
+            "in": "query",
+            "description": "Posted within the last N days",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "latitude",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "longitude",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "radiusKm",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "sort",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "default": "relevance",
+              "type": "string",
+              "enum": ["relevance", "newest", "price_asc", "price_desc", "popular", "distance"]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SearchResultDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Search listings",
+        "tags": ["search"]
+      }
+    },
+    "/api/search/index/status": {
+      "get": {
+        "description": "Drift is the gap between published listings and indexed documents.",
+        "operationId": "SearchController_indexStatus",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SearchIndexStatusDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Search index health and drift (admin)",
+        "tags": ["search"]
+      }
+    },
+    "/api/search/index/rebuild": {
+      "post": {
+        "description": "Always safe: PostgreSQL is the source of truth, so a rebuild cannot lose data.",
+        "operationId": "SearchController_rebuild",
+        "parameters": [],
+        "responses": {
+          "202": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Rebuild the search index from the database (admin)",
+        "tags": ["search"]
+      }
+    },
+    "/api/feed": {
+      "get": {
+        "description": "Works signed out. Signed-in callers additionally get \"Recommended for you\" and \"Recently viewed\". Empty sections are omitted.",
+        "operationId": "FeedController_getFeed",
+        "parameters": [
+          {
+            "name": "cityId",
+            "required": false,
+            "in": "query",
+            "description": "Falls back to the user’s default saved location, then to the launch city",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "latitude",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "longitude",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "Items per section",
+            "schema": {
+              "default": 10,
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FeedDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Location-aware home feed",
+        "tags": ["feed"]
+      }
+    },
+    "/api/conversations": {
+      "post": {
+        "description": "One thread per buyer per listing — sending again continues the existing conversation. Contact details are never exchanged automatically.",
+        "operationId": "ConversationsController_start",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/StartConversationDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConversationDetailDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Start or continue an enquiry",
+        "tags": ["conversations"]
+      },
+      "get": {
+        "operationId": "ConversationsController_list",
+        "parameters": [
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "minimum": 1,
+              "default": 1,
+              "type": "number"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "minimum": 1,
+              "maximum": 50,
+              "default": 20,
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ConversationSummaryDto"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Conversation list, most recent first",
+        "tags": ["conversations"]
+      }
+    },
+    "/api/conversations/unread-count": {
+      "get": {
+        "operationId": "ConversationsController_unreadCount",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Total unread messages across all threads",
+        "tags": ["conversations"]
+      }
+    },
+    "/api/conversations/{id}": {
+      "get": {
+        "description": "Opening a thread marks the other party’s messages as read.",
+        "operationId": "ConversationsController_getOne",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConversationDetailDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "One conversation with its messages",
+        "tags": ["conversations"]
+      }
+    },
+    "/api/conversations/{id}/messages": {
+      "post": {
+        "operationId": "ConversationsController_sendMessage",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SendMessageDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MessageDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Reply in a conversation",
+        "tags": ["conversations"]
+      }
+    },
+    "/api/conversations/block": {
+      "post": {
+        "description": "Stops contact in both directions and closes any existing threads.",
+        "operationId": "ConversationsController_block",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BlockUserDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Block a user",
+        "tags": ["conversations"]
+      }
+    },
+    "/api/businesses": {
+      "post": {
+        "description": "Free and immediate — no approval step. Verification is a separate signal an administrator grants later.",
+        "operationId": "BusinessesController_create",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateBusinessDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BusinessDetailDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Register a business",
+        "tags": ["businesses"]
+      }
+    },
+    "/api/businesses/mine": {
+      "get": {
+        "operationId": "BusinessesController_listMine",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/BusinessSummaryDto"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Businesses this user owns or works for",
+        "tags": ["businesses"]
+      }
+    },
+    "/api/businesses/{slug}": {
+      "get": {
+        "operationId": "BusinessesController_getBySlug",
+        "parameters": [
+          {
+            "name": "slug",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BusinessDetailDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Public business profile",
+        "tags": ["businesses"]
+      }
+    },
+    "/api/businesses/{id}": {
+      "patch": {
+        "description": "Changing the name, phone or address of a verified business returns it to pending.",
+        "operationId": "BusinessesController_update",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateBusinessDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Update a business",
+        "tags": ["businesses"]
+      },
+      "delete": {
+        "description": "Soft delete. Its listings are archived so none is left pointing at nothing.",
+        "operationId": "BusinessesController_delete",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Delete a business",
+        "tags": ["businesses"]
+      }
+    },
+    "/api/businesses/{id}/staff": {
+      "get": {
+        "operationId": "BusinessesController_listStaff",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/BusinessStaffDto"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Staff on a business",
+        "tags": ["businesses"]
+      },
+      "post": {
+        "description": "They must already have a LocZ account — this never sends an SMS invitation.",
+        "operationId": "BusinessesController_addStaff",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AddStaffDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BusinessStaffDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Add a staff member by phone number",
+        "tags": ["businesses"]
+      }
+    },
+    "/api/businesses/{id}/staff/{staffId}": {
+      "delete": {
+        "operationId": "BusinessesController_removeStaff",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "staffId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Remove a staff member",
+        "tags": ["businesses"]
+      }
+    },
+    "/api/businesses/{id}/verification": {
+      "post": {
+        "operationId": "BusinessesController_setVerification",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Set verification status (admin)",
+        "tags": ["businesses"]
+      }
+    },
+    "/api/reports": {
+      "post": {
+        "description": "A report never removes anything on its own — it raises a counter and, past a threshold, pulls the content for human review.",
+        "operationId": "ReportsController_create",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateReportDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReportCreatedDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Report a listing, business, user or conversation",
+        "tags": ["reports"]
+      },
+      "get": {
+        "operationId": "ReportsController_list",
+        "parameters": [
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "minimum": 1,
+              "default": 1,
+              "type": "number"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "minimum": 1,
+              "maximum": 50,
+              "default": 20,
+              "type": "number"
+            }
+          },
+          {
+            "name": "status",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": ["OPEN", "UNDER_REVIEW", "RESOLVED", "DISMISSED"]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ReportDto"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Report queue, oldest first (moderators)",
+        "tags": ["reports"]
+      }
+    },
+    "/api/reports/{id}/resolve": {
+      "post": {
+        "description": "Resolving closes every open report against the same target and notifies each reporter of the outcome.",
+        "operationId": "ReportsController_resolve",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ResolveReportDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Resolve or dismiss a report",
+        "tags": ["reports"]
+      }
+    },
+    "/api/admin/metrics": {
+      "get": {
+        "operationId": "AdminController_getMetrics",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminMetricsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Dashboard overview counters",
+        "tags": ["admin"]
+      }
+    },
+    "/api/admin/metrics/listings-by-city": {
+      "get": {
+        "operationId": "AdminController_listingsByCity",
+        "parameters": [
+          {
+            "name": "limit",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ListingsByBucketDto"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Published listings per city",
+        "tags": ["admin"]
+      }
+    },
+    "/api/admin/metrics/listings-by-category": {
+      "get": {
+        "operationId": "AdminController_listingsByCategory",
+        "parameters": [
+          {
+            "name": "limit",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ListingsByBucketDto"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Published listings per category",
+        "tags": ["admin"]
+      }
+    },
+    "/api/admin/metrics/daily-listings": {
+      "get": {
+        "operationId": "AdminController_dailyListings",
+        "parameters": [
+          {
+            "name": "days",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ListingsByBucketDto"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Listings created per day, zero-filled",
+        "tags": ["admin"]
+      }
+    },
+    "/api/admin/metrics/most-viewed": {
+      "get": {
+        "operationId": "AdminController_mostViewed",
+        "parameters": [
+          {
+            "name": "limit",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/TopListingDto"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Most viewed published listings",
+        "tags": ["admin"]
+      }
+    },
+    "/api/admin/users": {
+      "get": {
+        "description": "Searchable by display name, phone number or email.",
+        "operationId": "AdminController_users",
+        "parameters": [
+          {
+            "name": "page",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "q",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/AdminUserDto"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "User directory",
+        "tags": ["admin"]
+      }
+    },
+    "/api/admin/audit-logs": {
+      "get": {
+        "description": "Filter by entityType and entityId to reconstruct everything that happened to one listing or account.",
+        "operationId": "AdminController_auditLogs",
+        "parameters": [
+          {
+            "name": "page",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "entityType",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "entityId",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "actorId",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "action",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/AuditLogDto"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Audit trail",
+        "tags": ["admin"]
+      }
+    },
+    "/api/admin/queues": {
+      "get": {
+        "description": "A growing waiting count is the earliest signal that a worker has stalled.",
+        "operationId": "AdminController_queues",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/QueueHealthDto"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Background queue depth",
+        "tags": ["admin"]
+      }
+    },
+    "/api/admin/storage": {
+      "get": {
+        "operationId": "AdminController_storage",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StorageStatsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Object-storage usage",
+        "tags": ["admin"]
+      }
+    },
+    "/api/health/live": {
+      "get": {
+        "operationId": "HealthController_live",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "summary": "Liveness probe",
+        "tags": ["health"]
+      }
+    },
+    "/api/health/ready": {
+      "get": {
+        "operationId": "HealthController_ready",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "summary": "Readiness probe",
+        "tags": ["health"]
+      }
+    }
+  },
+  "info": {
+    "title": "LocZ API",
+    "description": "Location-first local discovery platform. Successful responses are wrapped in `{ success, data }`; errors use `{ success: false, error: { code, message } }`.",
+    "version": "1.0",
+    "contact": {}
+  },
+  "tags": [],
+  "servers": [
+    {
+      "url": "http://localhost:4000",
+      "description": "Local development"
+    },
+    {
+      "url": "https://locz.in",
+      "description": "Production"
+    }
+  ],
+  "components": {
+    "securitySchemes": {
+      "bearer": {
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "type": "http"
+      }
+    },
+    "schemas": {
+      "RequestOtpDto": {
+        "type": "object",
+        "properties": {
+          "phone": {
+            "type": "string",
+            "example": "+919876543210",
+            "description": "Mobile number in E.164 format"
+          }
+        },
+        "required": ["phone"]
+      },
+      "OtpRequestedDto": {
+        "type": "object",
+        "properties": {
+          "expiresInSeconds": {
+            "type": "number",
+            "example": 300
+          },
+          "debugCode": {
+            "type": "string",
+            "description": "Returned only by the mock provider in non-production environments"
+          }
+        },
+        "required": ["expiresInSeconds"]
+      },
+      "DeviceInfoDto": {
+        "type": "object",
+        "properties": {
+          "deviceKey": {
+            "type": "string",
+            "example": "a3f1c8d2-9c1a-4a5e-8f1b-2f0c6d3e7a11",
+            "description": "Stable per-install identifier"
+          },
+          "platform": {
+            "type": "string",
+            "enum": ["ANDROID", "IOS", "WEB"],
+            "example": "ANDROID"
+          },
+          "name": {
+            "type": "string",
+            "example": "Pixel 7a"
+          },
+          "osVersion": {
+            "type": "string",
+            "example": "Android 15"
+          },
+          "appVersion": {
+            "type": "string",
+            "example": "1.0.0"
+          },
+          "pushToken": {
+            "type": "string",
+            "description": "FCM registration token"
+          }
+        },
+        "required": ["deviceKey", "platform"]
+      },
+      "VerifyOtpDto": {
+        "type": "object",
+        "properties": {
+          "phone": {
+            "type": "string",
+            "example": "+919876543210"
+          },
+          "code": {
+            "type": "string",
+            "example": "123456"
+          },
+          "device": {
+            "$ref": "#/components/schemas/DeviceInfoDto"
+          },
+          "displayName": {
+            "type": "string",
+            "example": "Anitha",
+            "description": "Display name, used only when creating the account"
+          }
+        },
+        "required": ["phone", "code", "device"]
+      },
+      "AuthUserDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "phone": {
+            "type": "string"
+          },
+          "email": {
+            "type": "object"
+          },
+          "displayName": {
+            "type": "string"
+          },
+          "preferredLanguage": {
+            "type": "string"
+          },
+          "roles": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "permissions": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "isNewUser": {
+            "type": "boolean",
+            "description": "True when the account was created by this request"
+          }
+        },
+        "required": [
+          "id",
+          "phone",
+          "displayName",
+          "preferredLanguage",
+          "roles",
+          "permissions",
+          "isNewUser"
+        ]
+      },
+      "AuthTokensDto": {
+        "type": "object",
+        "properties": {
+          "accessToken": {
+            "type": "string"
+          },
+          "refreshToken": {
+            "type": "string"
+          },
+          "accessTokenExpiresIn": {
+            "type": "string",
+            "example": "15m"
+          },
+          "refreshTokenExpiresAt": {
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "required": ["accessToken", "refreshToken", "accessTokenExpiresIn", "refreshTokenExpiresAt"]
+      },
+      "AuthSessionDto": {
+        "type": "object",
+        "properties": {
+          "user": {
+            "$ref": "#/components/schemas/AuthUserDto"
+          },
+          "tokens": {
+            "$ref": "#/components/schemas/AuthTokensDto"
+          }
+        },
+        "required": ["user", "tokens"]
+      },
+      "EmailLoginDto": {
+        "type": "object",
+        "properties": {
+          "email": {
+            "type": "string",
+            "example": "admin@locz.test"
+          },
+          "password": {
+            "type": "string",
+            "example": "LocZ@dev1234"
+          },
+          "device": {
+            "$ref": "#/components/schemas/DeviceInfoDto"
+          }
+        },
+        "required": ["email", "password", "device"]
+      },
+      "RefreshTokenDto": {
+        "type": "object",
+        "properties": {
+          "refreshToken": {
+            "type": "string"
+          }
+        },
+        "required": ["refreshToken"]
+      },
+      "UserProfileDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "phone": {
+            "type": "string"
+          },
+          "email": {
+            "type": "object"
+          },
+          "displayName": {
+            "type": "string"
+          },
+          "bio": {
+            "type": "object"
+          },
+          "preferredLanguage": {
+            "type": "string",
+            "enum": ["EN", "TE", "HI"]
+          },
+          "status": {
+            "type": "string"
+          },
+          "roles": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "publishedListingCount": {
+            "type": "number",
+            "description": "Listings this user has published"
+          },
+          "savedListingCount": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "id",
+          "phone",
+          "displayName",
+          "preferredLanguage",
+          "status",
+          "roles",
+          "createdAt",
+          "publishedListingCount",
+          "savedListingCount"
+        ]
+      },
+      "UpdateProfileDto": {
+        "type": "object",
+        "properties": {
+          "displayName": {
+            "type": "string",
+            "example": "Anitha Reddy"
+          },
+          "email": {
+            "type": "string",
+            "example": "anitha@example.com"
+          },
+          "bio": {
+            "type": "string",
+            "example": "Selling gently used electronics in Madhapur."
+          },
+          "preferredLanguage": {
+            "type": "string",
+            "enum": ["EN", "TE", "HI"]
+          }
+        }
+      },
+      "DeviceDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "platform": {
+            "type": "string",
+            "enum": ["ANDROID", "IOS", "WEB"]
+          },
+          "name": {
+            "type": "object"
+          },
+          "appVersion": {
+            "type": "object"
+          },
+          "lastSeenAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "isCurrent": {
+            "type": "boolean",
+            "description": "True for the device making this request"
+          }
+        },
+        "required": ["id", "platform", "lastSeenAt", "isCurrent"]
+      },
+      "UpdatePushTokenDto": {
+        "type": "object",
+        "properties": {
+          "deviceKey": {
+            "type": "string",
+            "description": "The stable per-install device key used at sign-in"
+          },
+          "pushToken": {
+            "type": "string",
+            "description": "FCM registration token"
+          }
+        },
+        "required": ["deviceKey", "pushToken"]
+      },
+      "DeleteAccountRequestDto": {
+        "type": "object",
+        "properties": {
+          "reason": {
+            "type": "string",
+            "example": "No longer needed"
+          }
+        }
+      },
+      "CityDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "slug": {
+            "type": "string"
+          },
+          "nameTe": {
+            "type": "object"
+          },
+          "nameHi": {
+            "type": "object"
+          },
+          "stateName": {
+            "type": "string"
+          },
+          "districtName": {
+            "type": "object"
+          },
+          "latitude": {
+            "type": "number"
+          },
+          "longitude": {
+            "type": "number"
+          },
+          "isLaunched": {
+            "type": "boolean"
+          },
+          "distanceMeters": {
+            "type": "number",
+            "description": "Metres from the supplied coordinates, when resolving by location"
+          }
+        },
+        "required": ["id", "name", "slug", "stateName", "latitude", "longitude", "isLaunched"]
+      },
+      "LocalityDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "slug": {
+            "type": "string"
+          },
+          "postalCode": {
+            "type": "object"
+          },
+          "latitude": {
+            "type": "object"
+          },
+          "longitude": {
+            "type": "object"
+          },
+          "distanceMeters": {
+            "type": "number"
+          }
+        },
+        "required": ["id", "name", "slug"]
+      },
+      "ResolveLocationDto": {
+        "type": "object",
+        "properties": {
+          "latitude": {
+            "type": "number",
+            "example": 17.4483
+          },
+          "longitude": {
+            "type": "number",
+            "example": 78.3915
+          }
+        },
+        "required": ["latitude", "longitude"]
+      },
+      "ResolvedLocationDto": {
+        "type": "object",
+        "properties": {
+          "city": {
+            "description": "Null when the coordinates are outside every launched city",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/CityDto"
+              }
+            ]
+          },
+          "nearbyLocalities": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/LocalityDto"
+            }
+          }
+        },
+        "required": ["nearbyLocalities"]
+      },
+      "SavedLocationDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "label": {
+            "type": "string"
+          },
+          "cityId": {
+            "type": "string"
+          },
+          "cityName": {
+            "type": "string"
+          },
+          "localityId": {
+            "type": "object"
+          },
+          "localityName": {
+            "type": "object"
+          },
+          "latitude": {
+            "type": "object"
+          },
+          "longitude": {
+            "type": "object"
+          },
+          "radiusKm": {
+            "type": "number"
+          },
+          "isDefault": {
+            "type": "boolean"
+          }
+        },
+        "required": ["id", "label", "cityId", "cityName", "radiusKm", "isDefault"]
+      },
+      "CreateSavedLocationDto": {
+        "type": "object",
+        "properties": {
+          "label": {
+            "type": "string",
+            "example": "Home"
+          },
+          "cityId": {
+            "type": "string"
+          },
+          "localityId": {
+            "type": "string"
+          },
+          "latitude": {
+            "type": "number",
+            "example": 17.4483
+          },
+          "longitude": {
+            "type": "number",
+            "example": 78.3915
+          },
+          "radiusKm": {
+            "type": "number",
+            "enum": [1, 3, 5, 10, 25, 50],
+            "default": 10
+          },
+          "isDefault": {
+            "type": "boolean",
+            "default": false
+          }
+        },
+        "required": ["label", "cityId"]
+      },
+      "CategoryDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "nameTe": {
+            "type": "object"
+          },
+          "nameHi": {
+            "type": "object"
+          },
+          "slug": {
+            "type": "string"
+          },
+          "iconKey": {
+            "type": "object"
+          },
+          "listingTypes": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "CLASSIFIED",
+                "PRODUCT",
+                "BUYER_REQUIREMENT",
+                "OFFER",
+                "JOB",
+                "SERVICE",
+                "RENTAL",
+                "EVENT",
+                "BUSINESS_LISTING"
+              ]
+            }
+          },
+          "parentId": {
+            "type": "object"
+          },
+          "sortOrder": {
+            "type": "number"
+          },
+          "children": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CategoryDto"
+            }
+          }
+        },
+        "required": ["id", "name", "slug", "listingTypes", "sortOrder"]
+      },
+      "CategoryAttributeOptionDto": {
+        "type": "object",
+        "properties": {
+          "value": {
+            "type": "string"
+          },
+          "label": {
+            "type": "string"
+          },
+          "labelTe": {
+            "type": "string"
+          },
+          "labelHi": {
+            "type": "string"
+          }
+        },
+        "required": ["value", "label"]
+      },
+      "CategoryAttributeDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "key": {
+            "type": "string",
+            "example": "brand"
+          },
+          "label": {
+            "type": "string"
+          },
+          "labelTe": {
+            "type": "object"
+          },
+          "labelHi": {
+            "type": "object"
+          },
+          "dataType": {
+            "type": "string",
+            "enum": ["TEXT", "NUMBER", "BOOLEAN", "DATE", "SELECT", "MULTI_SELECT"]
+          },
+          "options": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CategoryAttributeOptionDto"
+            }
+          },
+          "unit": {
+            "type": "object"
+          },
+          "isRequired": {
+            "type": "boolean"
+          },
+          "isFilterable": {
+            "type": "boolean"
+          },
+          "minValue": {
+            "type": "object"
+          },
+          "maxValue": {
+            "type": "object"
+          },
+          "sortOrder": {
+            "type": "number"
+          }
+        },
+        "required": ["id", "key", "label", "dataType", "isRequired", "isFilterable", "sortOrder"]
+      },
+      "CategoryDetailDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "nameTe": {
+            "type": "object"
+          },
+          "nameHi": {
+            "type": "object"
+          },
+          "slug": {
+            "type": "string"
+          },
+          "iconKey": {
+            "type": "object"
+          },
+          "listingTypes": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "CLASSIFIED",
+                "PRODUCT",
+                "BUYER_REQUIREMENT",
+                "OFFER",
+                "JOB",
+                "SERVICE",
+                "RENTAL",
+                "EVENT",
+                "BUSINESS_LISTING"
+              ]
+            }
+          },
+          "parentId": {
+            "type": "object"
+          },
+          "sortOrder": {
+            "type": "number"
+          },
+          "children": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CategoryDto"
+            }
+          },
+          "attributes": {
+            "description": "Attribute definitions for this category, including those inherited from its parent. The posting form renders exactly these fields — nothing is hardcoded client-side.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CategoryAttributeDto"
+            }
+          }
+        },
+        "required": ["id", "name", "slug", "listingTypes", "sortOrder", "attributes"]
+      },
+      "CreateCategoryDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "example": "Air Conditioners"
+          },
+          "nameTe": {
+            "type": "string"
+          },
+          "nameHi": {
+            "type": "string"
+          },
+          "slug": {
+            "type": "string",
+            "description": "Derived from the name when omitted"
+          },
+          "parentId": {
+            "type": "string"
+          },
+          "iconKey": {
+            "type": "string"
+          },
+          "listingTypes": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "CLASSIFIED",
+                "PRODUCT",
+                "BUYER_REQUIREMENT",
+                "OFFER",
+                "JOB",
+                "SERVICE",
+                "RENTAL",
+                "EVENT",
+                "BUSINESS_LISTING"
+              ]
+            }
+          },
+          "sortOrder": {
+            "type": "number",
+            "default": 0
+          }
+        },
+        "required": ["name", "listingTypes"]
+      },
+      "UpdateCategoryDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "nameTe": {
+            "type": "string"
+          },
+          "nameHi": {
+            "type": "string"
+          },
+          "iconKey": {
+            "type": "string"
+          },
+          "listingTypes": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "CLASSIFIED",
+                "PRODUCT",
+                "BUYER_REQUIREMENT",
+                "OFFER",
+                "JOB",
+                "SERVICE",
+                "RENTAL",
+                "EVENT",
+                "BUSINESS_LISTING"
+              ]
+            }
+          },
+          "sortOrder": {
+            "type": "number"
+          },
+          "isActive": {
+            "type": "boolean"
+          }
+        }
+      },
+      "CreateCategoryAttributeDto": {
+        "type": "object",
+        "properties": {
+          "key": {
+            "type": "string",
+            "example": "capacity_tons"
+          },
+          "label": {
+            "type": "string",
+            "example": "Capacity"
+          },
+          "labelTe": {
+            "type": "string"
+          },
+          "labelHi": {
+            "type": "string"
+          },
+          "dataType": {
+            "type": "string",
+            "enum": ["TEXT", "NUMBER", "BOOLEAN", "DATE", "SELECT", "MULTI_SELECT"]
+          },
+          "options": {
+            "description": "Required for SELECT and MULTI_SELECT",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CategoryAttributeOptionDto"
+            }
+          },
+          "unit": {
+            "type": "string"
+          },
+          "isRequired": {
+            "type": "boolean",
+            "default": false
+          },
+          "isFilterable": {
+            "type": "boolean",
+            "default": false
+          },
+          "isSearchable": {
+            "type": "boolean",
+            "default": false
+          },
+          "minValue": {
+            "type": "number"
+          },
+          "maxValue": {
+            "type": "number"
+          },
+          "sortOrder": {
+            "type": "number",
+            "default": 0
+          }
+        },
+        "required": ["key", "label", "dataType"]
+      },
+      "CreateUploadUrlDto": {
+        "type": "object",
+        "properties": {
+          "mimeType": {
+            "type": "string",
+            "example": "image/jpeg"
+          },
+          "sizeBytes": {
+            "type": "number",
+            "example": 842103,
+            "description": "Declared size in bytes; re-checked after upload"
+          }
+        },
+        "required": ["mimeType", "sizeBytes"]
+      },
+      "UploadUrlDto": {
+        "type": "object",
+        "properties": {
+          "mediaId": {
+            "type": "string",
+            "description": "Media record id — send this back to confirm the upload"
+          },
+          "uploadUrl": {
+            "type": "string",
+            "description": "PUT the file bytes here with the exact Content-Type requested"
+          },
+          "storageKey": {
+            "type": "string"
+          },
+          "expiresInSeconds": {
+            "type": "number"
+          }
+        },
+        "required": ["mediaId", "uploadUrl", "storageKey", "expiresInSeconds"]
+      },
+      "MediaDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": ["PENDING_UPLOAD", "UPLOADED", "PROCESSING", "READY", "FAILED"]
+          },
+          "thumbUrl": {
+            "type": "object",
+            "description": "Null until processing completes"
+          },
+          "cardUrl": {
+            "type": "object"
+          },
+          "fullUrl": {
+            "type": "object"
+          },
+          "blurhash": {
+            "type": "object"
+          },
+          "sortOrder": {
+            "type": "number"
+          },
+          "isPrimary": {
+            "type": "boolean"
+          },
+          "failureReason": {
+            "type": "object"
+          }
+        },
+        "required": ["id", "status", "sortOrder", "isPrimary"]
+      },
+      "ReorderMediaDto": {
+        "type": "object",
+        "properties": {
+          "mediaIds": {
+            "description": "Media ids in the order they should appear",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": ["mediaIds"]
+      },
+      "NotificationDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "LISTING_APPROVED",
+              "LISTING_REJECTED",
+              "LISTING_EXPIRING",
+              "LISTING_EXPIRED",
+              "NEW_ENQUIRY",
+              "NEW_MESSAGE",
+              "SAVED_SEARCH_MATCH",
+              "NEARBY_OFFER",
+              "JOB_ENQUIRY",
+              "BUSINESS_VERIFICATION_UPDATE",
+              "REPORT_RESOLUTION",
+              "SECURITY_ALERT"
+            ]
+          },
+          "title": {
+            "type": "string"
+          },
+          "body": {
+            "type": "string"
+          },
+          "data": {
+            "type": "object",
+            "additionalProperties": true,
+            "description": "Deep-link payload: entityType, entityId, route"
+          },
+          "readAt": {
+            "type": "object"
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "required": ["id", "type", "title", "body", "data", "createdAt"]
+      },
+      "NotificationPreferenceDto": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": [
+              "LISTING_APPROVED",
+              "LISTING_REJECTED",
+              "LISTING_EXPIRING",
+              "LISTING_EXPIRED",
+              "NEW_ENQUIRY",
+              "NEW_MESSAGE",
+              "SAVED_SEARCH_MATCH",
+              "NEARBY_OFFER",
+              "JOB_ENQUIRY",
+              "BUSINESS_VERIFICATION_UPDATE",
+              "REPORT_RESOLUTION",
+              "SECURITY_ALERT"
+            ]
+          },
+          "channel": {
+            "type": "string",
+            "enum": ["IN_APP", "PUSH", "EMAIL", "SMS"]
+          },
+          "enabled": {
+            "type": "boolean"
+          }
+        },
+        "required": ["type", "channel", "enabled"]
+      },
+      "UpdateNotificationPreferenceDto": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": [
+              "LISTING_APPROVED",
+              "LISTING_REJECTED",
+              "LISTING_EXPIRING",
+              "LISTING_EXPIRED",
+              "NEW_ENQUIRY",
+              "NEW_MESSAGE",
+              "SAVED_SEARCH_MATCH",
+              "NEARBY_OFFER",
+              "JOB_ENQUIRY",
+              "BUSINESS_VERIFICATION_UPDATE",
+              "REPORT_RESOLUTION",
+              "SECURITY_ALERT"
+            ]
+          },
+          "channel": {
+            "type": "string",
+            "enum": ["IN_APP", "PUSH", "EMAIL", "SMS"]
+          },
+          "enabled": {
+            "type": "boolean"
+          }
+        },
+        "required": ["type", "channel", "enabled"]
+      },
+      "ModerationQueueItemDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string"
+          },
+          "ownerId": {
+            "type": "string"
+          },
+          "ownerName": {
+            "type": "string"
+          },
+          "ownerPublishedCount": {
+            "type": "number",
+            "description": "Listings this owner already has published"
+          },
+          "cityName": {
+            "type": "string"
+          },
+          "categoryName": {
+            "type": "string"
+          },
+          "price": {
+            "type": "object"
+          },
+          "moderationScore": {
+            "type": "object"
+          },
+          "systemReasons": {
+            "description": "Why the automated pass flagged this listing",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "imageCount": {
+            "type": "number"
+          },
+          "reportCount": {
+            "type": "number"
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "title",
+          "type",
+          "ownerId",
+          "ownerName",
+          "ownerPublishedCount",
+          "cityName",
+          "categoryName",
+          "systemReasons",
+          "imageCount",
+          "reportCount",
+          "createdAt"
+        ]
+      },
+      "ApproveListingDto": {
+        "type": "object",
+        "properties": {
+          "note": {
+            "type": "string",
+            "example": "Checked images, genuine listing"
+          }
+        }
+      },
+      "RejectListingDto": {
+        "type": "object",
+        "properties": {
+          "reason": {
+            "type": "string",
+            "example": "Contact details in the description instead of the contact fields"
+          }
+        },
+        "required": ["reason"]
+      },
+      "ListingSummaryDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "slug": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "CLASSIFIED",
+              "PRODUCT",
+              "BUYER_REQUIREMENT",
+              "OFFER",
+              "JOB",
+              "SERVICE",
+              "RENTAL",
+              "EVENT",
+              "BUSINESS_LISTING"
+            ]
+          },
+          "title": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "DRAFT",
+              "PENDING_REVIEW",
+              "PUBLISHED",
+              "REJECTED",
+              "PAUSED",
+              "SOLD",
+              "FILLED",
+              "EXPIRED",
+              "ARCHIVED",
+              "REMOVED"
+            ]
+          },
+          "price": {
+            "type": "object"
+          },
+          "isNegotiable": {
+            "type": "boolean"
+          },
+          "cityName": {
+            "type": "string"
+          },
+          "localityName": {
+            "type": "object"
+          },
+          "thumbUrl": {
+            "type": "object"
+          },
+          "isFeatured": {
+            "type": "boolean"
+          },
+          "viewCount": {
+            "type": "number"
+          },
+          "publishedAt": {
+            "type": "object"
+          },
+          "distanceMeters": {
+            "type": "number",
+            "description": "Present when the request supplied coordinates"
+          },
+          "isSaved": {
+            "type": "boolean",
+            "description": "Present when the request is authenticated"
+          }
+        },
+        "required": [
+          "id",
+          "slug",
+          "type",
+          "title",
+          "status",
+          "isNegotiable",
+          "cityName",
+          "isFeatured",
+          "viewCount"
+        ]
+      },
+      "ListingOwnerDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "displayName": {
+            "type": "string"
+          },
+          "memberSince": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "phone": {
+            "type": "object",
+            "description": "Only when the owner chose to display it"
+          }
+        },
+        "required": ["id", "displayName", "memberSince"]
+      },
+      "ListingDetailDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "slug": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "CLASSIFIED",
+              "PRODUCT",
+              "BUYER_REQUIREMENT",
+              "OFFER",
+              "JOB",
+              "SERVICE",
+              "RENTAL",
+              "EVENT",
+              "BUSINESS_LISTING"
+            ]
+          },
+          "title": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "DRAFT",
+              "PENDING_REVIEW",
+              "PUBLISHED",
+              "REJECTED",
+              "PAUSED",
+              "SOLD",
+              "FILLED",
+              "EXPIRED",
+              "ARCHIVED",
+              "REMOVED"
+            ]
+          },
+          "price": {
+            "type": "object"
+          },
+          "isNegotiable": {
+            "type": "boolean"
+          },
+          "cityName": {
+            "type": "string"
+          },
+          "localityName": {
+            "type": "object"
+          },
+          "thumbUrl": {
+            "type": "object"
+          },
+          "isFeatured": {
+            "type": "boolean"
+          },
+          "viewCount": {
+            "type": "number"
+          },
+          "publishedAt": {
+            "type": "object"
+          },
+          "distanceMeters": {
+            "type": "number",
+            "description": "Present when the request supplied coordinates"
+          },
+          "isSaved": {
+            "type": "boolean",
+            "description": "Present when the request is authenticated"
+          },
+          "description": {
+            "type": "string"
+          },
+          "categoryId": {
+            "type": "string"
+          },
+          "categoryName": {
+            "type": "string"
+          },
+          "addressLine": {
+            "type": "object"
+          },
+          "latitude": {
+            "type": "object"
+          },
+          "longitude": {
+            "type": "object"
+          },
+          "contactPreference": {
+            "type": "string",
+            "enum": ["IN_APP_ONLY", "PHONE", "WHATSAPP", "EMAIL", "PHONE_AND_IN_APP"]
+          },
+          "owner": {
+            "$ref": "#/components/schemas/ListingOwnerDto"
+          },
+          "media": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MediaDto"
+            }
+          },
+          "attributes": {
+            "type": "object",
+            "additionalProperties": true,
+            "description": "Resolved dynamic attributes"
+          },
+          "marketplace": {
+            "type": "object"
+          },
+          "expiresAt": {
+            "type": "object"
+          },
+          "saveCount": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "id",
+          "slug",
+          "type",
+          "title",
+          "status",
+          "isNegotiable",
+          "cityName",
+          "isFeatured",
+          "viewCount",
+          "description",
+          "categoryId",
+          "categoryName",
+          "contactPreference",
+          "owner",
+          "media",
+          "attributes",
+          "saveCount"
+        ]
+      },
+      "MarketplaceDetailsDto": {
+        "type": "object",
+        "properties": {
+          "price": {
+            "type": "number",
+            "example": 18000
+          },
+          "isNegotiable": {
+            "type": "boolean",
+            "default": false
+          },
+          "isFree": {
+            "type": "boolean",
+            "default": false,
+            "description": "Giving the item away"
+          },
+          "condition": {
+            "type": "string",
+            "enum": ["NEW", "LIKE_NEW", "GOOD", "FAIR", "FOR_PARTS"]
+          },
+          "brand": {
+            "type": "string"
+          },
+          "model": {
+            "type": "string"
+          },
+          "purchaseYear": {
+            "type": "number",
+            "example": 2023
+          },
+          "hasWarranty": {
+            "type": "boolean",
+            "default": false
+          },
+          "warrantyDetails": {
+            "type": "string"
+          },
+          "deliveryAvailable": {
+            "type": "boolean",
+            "default": false
+          },
+          "pickupAvailable": {
+            "type": "boolean",
+            "default": true
+          },
+          "quantity": {
+            "type": "number",
+            "default": 1
+          }
+        },
+        "required": ["condition"]
+      },
+      "JobDetailsDto": {
+        "type": "object",
+        "properties": {
+          "companyName": {
+            "type": "string",
+            "example": "Sri Lakshmi Electronics"
+          },
+          "employmentType": {
+            "type": "string",
+            "enum": [
+              "FULL_TIME",
+              "PART_TIME",
+              "CONTRACT",
+              "INTERNSHIP",
+              "FREELANCE",
+              "TEMPORARY",
+              "DAILY_WAGE"
+            ]
+          },
+          "workplaceType": {
+            "type": "string",
+            "enum": ["ON_SITE", "HYBRID", "REMOTE"]
+          },
+          "salaryMin": {
+            "type": "number",
+            "example": 18000
+          },
+          "salaryMax": {
+            "type": "number",
+            "example": 25000
+          },
+          "salaryPeriod": {
+            "type": "string",
+            "enum": ["HOURLY", "DAILY", "MONTHLY", "YEARLY"],
+            "default": "MONTHLY"
+          },
+          "isSalaryVisible": {
+            "type": "boolean",
+            "default": true,
+            "description": "Hidden salaries halve applications — the default is to show it"
+          },
+          "experienceMinYears": {
+            "type": "number"
+          },
+          "experienceMaxYears": {
+            "type": "number"
+          },
+          "educationRequirement": {
+            "type": "string",
+            "example": "Intermediate or above"
+          },
+          "skills": {
+            "example": ["Billing", "Tally", "Customer service"],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "openings": {
+            "type": "number",
+            "default": 1
+          },
+          "applicationDeadline": {
+            "type": "string"
+          },
+          "applyMethod": {
+            "type": "string",
+            "enum": ["IN_APP", "EXTERNAL_LINK", "WALK_IN", "PHONE"]
+          },
+          "externalApplyUrl": {
+            "type": "string"
+          },
+          "walkInDetails": {
+            "type": "string",
+            "example": "Walk in Mon–Sat, 10am–4pm. Bring a copy of your CV."
+          }
+        },
+        "required": ["companyName", "employmentType", "workplaceType", "applyMethod"]
+      },
+      "OfferDetailsDto": {
+        "type": "object",
+        "properties": {
+          "originalPrice": {
+            "type": "number",
+            "example": 500
+          },
+          "offerPrice": {
+            "type": "number",
+            "example": 349
+          },
+          "discountPercentage": {
+            "type": "number",
+            "example": 30,
+            "description": "Computed from the prices when omitted"
+          },
+          "couponCode": {
+            "type": "string",
+            "example": "LOCZ30"
+          },
+          "startsAt": {
+            "type": "string",
+            "description": "ISO date the offer becomes valid"
+          },
+          "endsAt": {
+            "type": "string",
+            "description": "ISO date the offer expires — offers are time-bound by definition"
+          },
+          "redemptionInstructions": {
+            "type": "string"
+          },
+          "termsAndConditions": {
+            "type": "string"
+          },
+          "limitedQuantity": {
+            "type": "number",
+            "description": "Total redemptions available"
+          },
+          "isOnline": {
+            "type": "boolean",
+            "default": false
+          },
+          "isInStore": {
+            "type": "boolean",
+            "default": true
+          }
+        },
+        "required": ["startsAt", "endsAt"]
+      },
+      "ServiceDetailsDto": {
+        "type": "object",
+        "properties": {
+          "serviceType": {
+            "type": "string",
+            "example": "Plumbing"
+          },
+          "priceFrom": {
+            "type": "number"
+          },
+          "priceTo": {
+            "type": "number"
+          },
+          "pricingUnit": {
+            "type": "string",
+            "example": "per visit"
+          },
+          "experienceYears": {
+            "type": "number"
+          },
+          "availability": {
+            "type": "string",
+            "example": "Mon–Sat, 8am–8pm"
+          },
+          "servesAtHome": {
+            "type": "boolean",
+            "default": false
+          },
+          "servesOnline": {
+            "type": "boolean",
+            "default": false
+          }
+        }
+      },
+      "RentalDetailsDto": {
+        "type": "object",
+        "properties": {
+          "propertyType": {
+            "type": "string",
+            "enum": ["ROOM", "FLAT", "HOUSE", "PG", "SHOP", "OFFICE"]
+          },
+          "rentAmount": {
+            "type": "number",
+            "example": 12000
+          },
+          "depositAmount": {
+            "type": "number",
+            "example": 50000
+          },
+          "bedrooms": {
+            "type": "number"
+          },
+          "bathrooms": {
+            "type": "number"
+          },
+          "areaSqft": {
+            "type": "number"
+          },
+          "furnishing": {
+            "type": "string",
+            "enum": ["UNFURNISHED", "SEMI", "FULL"]
+          },
+          "availableFrom": {
+            "type": "string"
+          },
+          "preferredTenant": {
+            "type": "string",
+            "example": "Family / Bachelors / Anyone"
+          },
+          "amenities": {
+            "example": ["Lift", "Parking", "24x7 water"],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "EventDetailsDto": {
+        "type": "object",
+        "properties": {
+          "startsAt": {
+            "type": "string"
+          },
+          "endsAt": {
+            "type": "string"
+          },
+          "venueName": {
+            "type": "string",
+            "example": "Shilpakala Vedika"
+          },
+          "isFreeEntry": {
+            "type": "boolean",
+            "default": true
+          },
+          "ticketPrice": {
+            "type": "number"
+          },
+          "ticketUrl": {
+            "type": "string"
+          },
+          "organiser": {
+            "type": "string"
+          },
+          "capacity": {
+            "type": "number"
+          }
+        },
+        "required": ["startsAt"]
+      },
+      "BuyerRequirementDetailsDto": {
+        "type": "object",
+        "properties": {
+          "budgetMin": {
+            "type": "number",
+            "example": 5000
+          },
+          "budgetMax": {
+            "type": "number",
+            "example": 20000
+          },
+          "requiredBy": {
+            "type": "string",
+            "description": "When it is needed by"
+          },
+          "quantity": {
+            "type": "number"
+          },
+          "preferredCondition": {
+            "type": "string",
+            "enum": ["NEW", "LIKE_NEW", "GOOD", "FAIR", "FOR_PARTS"]
+          }
+        }
+      },
+      "ListingAttributeInputDto": {
+        "type": "object",
+        "properties": {
+          "key": {
+            "type": "string",
+            "example": "brand"
+          },
+          "value": {
+            "type": "object",
+            "example": "Samsung",
+            "description": "string | number | boolean | string[]"
+          }
+        },
+        "required": ["key", "value"]
+      },
+      "CreateListingDto": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": [
+              "CLASSIFIED",
+              "PRODUCT",
+              "BUYER_REQUIREMENT",
+              "OFFER",
+              "JOB",
+              "SERVICE",
+              "RENTAL",
+              "EVENT",
+              "BUSINESS_LISTING"
+            ],
+            "example": "PRODUCT"
+          },
+          "title": {
+            "type": "string",
+            "example": "Samsung 43-inch smart TV, barely used"
+          },
+          "description": {
+            "type": "string",
+            "example": "Bought last year, moving cities so selling. Includes remote and box."
+          },
+          "categoryId": {
+            "type": "string"
+          },
+          "subcategoryId": {
+            "type": "string"
+          },
+          "businessId": {
+            "type": "string",
+            "description": "Post on behalf of a business you own or manage"
+          },
+          "cityId": {
+            "type": "string"
+          },
+          "localityId": {
+            "type": "string"
+          },
+          "latitude": {
+            "type": "number",
+            "example": 17.4483
+          },
+          "longitude": {
+            "type": "number",
+            "example": 78.3915
+          },
+          "addressLine": {
+            "type": "string",
+            "example": "Near Durgam Cheruvu metro"
+          },
+          "contactPreference": {
+            "type": "string",
+            "enum": ["IN_APP_ONLY", "PHONE", "WHATSAPP", "EMAIL", "PHONE_AND_IN_APP"],
+            "default": "IN_APP_ONLY"
+          },
+          "showPhonePublicly": {
+            "type": "boolean",
+            "default": false,
+            "description": "Personal numbers stay hidden unless the owner opts in"
+          },
+          "marketplace": {
+            "description": "Required for PRODUCT and CLASSIFIED",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/MarketplaceDetailsDto"
+              }
+            ]
+          },
+          "job": {
+            "description": "Required for JOB listings",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/JobDetailsDto"
+              }
+            ]
+          },
+          "offer": {
+            "description": "Required for OFFER listings",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/OfferDetailsDto"
+              }
+            ]
+          },
+          "service": {
+            "description": "Required for SERVICE listings",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ServiceDetailsDto"
+              }
+            ]
+          },
+          "rental": {
+            "description": "Required for RENTAL listings",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/RentalDetailsDto"
+              }
+            ]
+          },
+          "event": {
+            "description": "Required for EVENT listings",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/EventDetailsDto"
+              }
+            ]
+          },
+          "buyerRequirement": {
+            "description": "Required for BUYER_REQUIREMENT listings",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/BuyerRequirementDetailsDto"
+              }
+            ]
+          },
+          "attributes": {
+            "description": "Values for the category’s dynamic attributes",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ListingAttributeInputDto"
+            }
+          },
+          "saveAsDraft": {
+            "type": "boolean",
+            "default": false,
+            "description": "Save without submitting for review — the poster can finish later"
+          }
+        },
+        "required": ["type", "title", "description", "categoryId", "cityId"]
+      },
+      "UpdateListingDto": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": [
+              "CLASSIFIED",
+              "PRODUCT",
+              "BUYER_REQUIREMENT",
+              "OFFER",
+              "JOB",
+              "SERVICE",
+              "RENTAL",
+              "EVENT",
+              "BUSINESS_LISTING"
+            ],
+            "example": "PRODUCT"
+          },
+          "title": {
+            "type": "string",
+            "example": "Samsung 43-inch smart TV, barely used"
+          },
+          "description": {
+            "type": "string",
+            "example": "Bought last year, moving cities so selling. Includes remote and box."
+          },
+          "categoryId": {
+            "type": "string"
+          },
+          "subcategoryId": {
+            "type": "string"
+          },
+          "businessId": {
+            "type": "string",
+            "description": "Post on behalf of a business you own or manage"
+          },
+          "cityId": {
+            "type": "string"
+          },
+          "localityId": {
+            "type": "string"
+          },
+          "latitude": {
+            "type": "number",
+            "example": 17.4483
+          },
+          "longitude": {
+            "type": "number",
+            "example": 78.3915
+          },
+          "addressLine": {
+            "type": "string",
+            "example": "Near Durgam Cheruvu metro"
+          },
+          "contactPreference": {
+            "type": "string",
+            "enum": ["IN_APP_ONLY", "PHONE", "WHATSAPP", "EMAIL", "PHONE_AND_IN_APP"],
+            "default": "IN_APP_ONLY"
+          },
+          "showPhonePublicly": {
+            "type": "boolean",
+            "default": false,
+            "description": "Personal numbers stay hidden unless the owner opts in"
+          },
+          "marketplace": {
+            "description": "Required for PRODUCT and CLASSIFIED",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/MarketplaceDetailsDto"
+              }
+            ]
+          },
+          "job": {
+            "description": "Required for JOB listings",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/JobDetailsDto"
+              }
+            ]
+          },
+          "offer": {
+            "description": "Required for OFFER listings",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/OfferDetailsDto"
+              }
+            ]
+          },
+          "service": {
+            "description": "Required for SERVICE listings",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ServiceDetailsDto"
+              }
+            ]
+          },
+          "rental": {
+            "description": "Required for RENTAL listings",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/RentalDetailsDto"
+              }
+            ]
+          },
+          "event": {
+            "description": "Required for EVENT listings",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/EventDetailsDto"
+              }
+            ]
+          },
+          "buyerRequirement": {
+            "description": "Required for BUYER_REQUIREMENT listings",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/BuyerRequirementDetailsDto"
+              }
+            ]
+          },
+          "attributes": {
+            "description": "Values for the category’s dynamic attributes",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ListingAttributeInputDto"
+            }
+          },
+          "saveAsDraft": {
+            "type": "boolean",
+            "default": false,
+            "description": "Save without submitting for review — the poster can finish later"
+          }
+        }
+      },
+      "SearchResultDto": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ListingSummaryDto"
+            }
+          },
+          "total": {
+            "type": "number"
+          },
+          "page": {
+            "type": "number"
+          },
+          "limit": {
+            "type": "number"
+          },
+          "usedSearchIndex": {
+            "type": "boolean",
+            "description": "False when the search index was unavailable and results came from the database"
+          }
+        },
+        "required": ["items", "total", "page", "limit", "usedSearchIndex"]
+      },
+      "SearchIndexStatusDto": {
+        "type": "object",
+        "properties": {
+          "available": {
+            "type": "boolean"
+          },
+          "indexedDocuments": {
+            "type": "number"
+          },
+          "publishedListings": {
+            "type": "number"
+          },
+          "drift": {
+            "type": "number",
+            "description": "Published listings missing from the index"
+          }
+        },
+        "required": ["available", "publishedListings", "drift"]
+      },
+      "FeedSectionDto": {
+        "type": "object",
+        "properties": {
+          "key": {
+            "type": "string",
+            "example": "nearby"
+          },
+          "title": {
+            "type": "string",
+            "example": "Near you"
+          },
+          "seeAllHref": {
+            "type": "string",
+            "description": "Deep link to the full list"
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ListingSummaryDto"
+            }
+          }
+        },
+        "required": ["key", "title", "items"]
+      },
+      "FeedDto": {
+        "type": "object",
+        "properties": {
+          "cityId": {
+            "type": "string"
+          },
+          "cityName": {
+            "type": "string"
+          },
+          "sections": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/FeedSectionDto"
+            }
+          }
+        },
+        "required": ["cityId", "cityName", "sections"]
+      },
+      "StartConversationDto": {
+        "type": "object",
+        "properties": {
+          "listingId": {
+            "type": "string",
+            "description": "Required for a listing or job enquiry"
+          },
+          "businessId": {
+            "type": "string",
+            "description": "Required for a business enquiry"
+          },
+          "message": {
+            "type": "string",
+            "example": "Is this still available?"
+          }
+        },
+        "required": ["message"]
+      },
+      "MessageDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "senderId": {
+            "type": "string"
+          },
+          "body": {
+            "type": "string"
+          },
+          "isMine": {
+            "type": "boolean"
+          },
+          "readAt": {
+            "type": "object"
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "required": ["id", "senderId", "body", "isMine", "createdAt"]
+      },
+      "ConversationDetailDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "context": {
+            "type": "string",
+            "enum": ["LISTING_ENQUIRY", "BUSINESS_ENQUIRY", "JOB_ENQUIRY"]
+          },
+          "listingId": {
+            "type": "object"
+          },
+          "listingTitle": {
+            "type": "object"
+          },
+          "listingThumbUrl": {
+            "type": "object"
+          },
+          "otherPartyId": {
+            "type": "string"
+          },
+          "otherPartyName": {
+            "type": "string"
+          },
+          "lastMessagePreview": {
+            "type": "object"
+          },
+          "lastMessageAt": {
+            "type": "object"
+          },
+          "unreadCount": {
+            "type": "number"
+          },
+          "isInitiator": {
+            "type": "boolean",
+            "description": "True when this user started the thread"
+          },
+          "messages": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MessageDto"
+            }
+          }
+        },
+        "required": [
+          "id",
+          "context",
+          "otherPartyId",
+          "otherPartyName",
+          "unreadCount",
+          "isInitiator",
+          "messages"
+        ]
+      },
+      "ConversationSummaryDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "context": {
+            "type": "string",
+            "enum": ["LISTING_ENQUIRY", "BUSINESS_ENQUIRY", "JOB_ENQUIRY"]
+          },
+          "listingId": {
+            "type": "object"
+          },
+          "listingTitle": {
+            "type": "object"
+          },
+          "listingThumbUrl": {
+            "type": "object"
+          },
+          "otherPartyId": {
+            "type": "string"
+          },
+          "otherPartyName": {
+            "type": "string"
+          },
+          "lastMessagePreview": {
+            "type": "object"
+          },
+          "lastMessageAt": {
+            "type": "object"
+          },
+          "unreadCount": {
+            "type": "number"
+          },
+          "isInitiator": {
+            "type": "boolean",
+            "description": "True when this user started the thread"
+          }
+        },
+        "required": [
+          "id",
+          "context",
+          "otherPartyId",
+          "otherPartyName",
+          "unreadCount",
+          "isInitiator"
+        ]
+      },
+      "SendMessageDto": {
+        "type": "object",
+        "properties": {
+          "body": {
+            "type": "string"
+          }
+        },
+        "required": ["body"]
+      },
+      "BlockUserDto": {
+        "type": "object",
+        "properties": {
+          "userId": {
+            "type": "string"
+          },
+          "reason": {
+            "type": "string"
+          }
+        },
+        "required": ["userId"]
+      },
+      "BusinessHourDto": {
+        "type": "object",
+        "properties": {
+          "dayOfWeek": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 6,
+            "description": "0 = Sunday"
+          },
+          "opensAt": {
+            "type": "string",
+            "example": "09:30"
+          },
+          "closesAt": {
+            "type": "string",
+            "example": "21:00"
+          },
+          "isClosed": {
+            "type": "boolean",
+            "default": false,
+            "description": "Closed all day"
+          }
+        },
+        "required": ["dayOfWeek", "opensAt", "closesAt"]
+      },
+      "CreateBusinessDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "example": "Sri Lakshmi Electronics"
+          },
+          "categoryId": {
+            "type": "string"
+          },
+          "cityId": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "addressLine": {
+            "type": "string",
+            "example": "Shop 12, Road No 36, Jubilee Hills"
+          },
+          "latitude": {
+            "type": "number"
+          },
+          "longitude": {
+            "type": "number"
+          },
+          "primaryPhone": {
+            "type": "string",
+            "example": "+919876543210"
+          },
+          "whatsappNumber": {
+            "type": "string",
+            "example": "+919876543210"
+          },
+          "email": {
+            "type": "string"
+          },
+          "website": {
+            "type": "string",
+            "example": "https://example.com"
+          },
+          "hours": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/BusinessHourDto"
+            }
+          }
+        },
+        "required": ["name", "categoryId", "cityId"]
+      },
+      "BusinessDetailDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "slug": {
+            "type": "string"
+          },
+          "categoryName": {
+            "type": "string"
+          },
+          "cityName": {
+            "type": "string"
+          },
+          "logoUrl": {
+            "type": "object"
+          },
+          "verificationStatus": {
+            "type": "string",
+            "enum": ["UNVERIFIED", "PENDING", "VERIFIED", "REJECTED"]
+          },
+          "listingCount": {
+            "type": "number"
+          },
+          "viewCount": {
+            "type": "number"
+          },
+          "description": {
+            "type": "object"
+          },
+          "addressLine": {
+            "type": "object"
+          },
+          "latitude": {
+            "type": "object"
+          },
+          "longitude": {
+            "type": "object"
+          },
+          "primaryPhone": {
+            "type": "object"
+          },
+          "whatsappNumber": {
+            "type": "object"
+          },
+          "email": {
+            "type": "object"
+          },
+          "website": {
+            "type": "object"
+          },
+          "hours": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/BusinessHourDto"
+            }
+          },
+          "isOwner": {
+            "type": "boolean"
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "slug",
+          "categoryName",
+          "cityName",
+          "verificationStatus",
+          "listingCount",
+          "viewCount",
+          "hours",
+          "isOwner",
+          "createdAt"
+        ]
+      },
+      "BusinessSummaryDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "slug": {
+            "type": "string"
+          },
+          "categoryName": {
+            "type": "string"
+          },
+          "cityName": {
+            "type": "string"
+          },
+          "logoUrl": {
+            "type": "object"
+          },
+          "verificationStatus": {
+            "type": "string",
+            "enum": ["UNVERIFIED", "PENDING", "VERIFIED", "REJECTED"]
+          },
+          "listingCount": {
+            "type": "number"
+          },
+          "viewCount": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "slug",
+          "categoryName",
+          "cityName",
+          "verificationStatus",
+          "listingCount",
+          "viewCount"
+        ]
+      },
+      "UpdateBusinessDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "example": "Sri Lakshmi Electronics"
+          },
+          "categoryId": {
+            "type": "string"
+          },
+          "cityId": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "addressLine": {
+            "type": "string",
+            "example": "Shop 12, Road No 36, Jubilee Hills"
+          },
+          "latitude": {
+            "type": "number"
+          },
+          "longitude": {
+            "type": "number"
+          },
+          "primaryPhone": {
+            "type": "string",
+            "example": "+919876543210"
+          },
+          "whatsappNumber": {
+            "type": "string",
+            "example": "+919876543210"
+          },
+          "email": {
+            "type": "string"
+          },
+          "website": {
+            "type": "string",
+            "example": "https://example.com"
+          },
+          "hours": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/BusinessHourDto"
+            }
+          }
+        }
+      },
+      "BusinessStaffDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "userId": {
+            "type": "string"
+          },
+          "displayName": {
+            "type": "string"
+          },
+          "role": {
+            "type": "string"
+          },
+          "permissions": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "acceptedAt": {
+            "type": "object"
+          }
+        },
+        "required": ["id", "userId", "displayName", "role", "permissions"]
+      },
+      "AddStaffDto": {
+        "type": "object",
+        "properties": {
+          "phone": {
+            "type": "string",
+            "example": "+919876543210",
+            "description": "The staff member must already have a LocZ account"
+          },
+          "role": {
+            "type": "string",
+            "enum": ["MANAGER", "EDITOR", "VIEWER"]
+          }
+        },
+        "required": ["phone", "role"]
+      },
+      "CreateReportDto": {
+        "type": "object",
+        "properties": {
+          "targetType": {
+            "type": "string",
+            "enum": ["LISTING", "BUSINESS", "USER", "MESSAGE"]
+          },
+          "targetId": {
+            "type": "string",
+            "description": "Id of the listing, business, user or conversation being reported"
+          },
+          "reason": {
+            "type": "string",
+            "enum": [
+              "SPAM",
+              "FRAUD_OR_SCAM",
+              "PROHIBITED_ITEM",
+              "DUPLICATE",
+              "WRONG_CATEGORY",
+              "OFFENSIVE_CONTENT",
+              "MISLEADING_PRICE",
+              "ALREADY_SOLD",
+              "HARASSMENT",
+              "OTHER"
+            ]
+          },
+          "details": {
+            "type": "string",
+            "example": "The seller asked for a deposit before showing the item."
+          }
+        },
+        "required": ["targetType", "targetId", "reason"]
+      },
+      "ReportCreatedDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string",
+            "example": "Thanks — our team will review this."
+          }
+        },
+        "required": ["id", "message"]
+      },
+      "ReportDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "targetType": {
+            "type": "string",
+            "enum": ["LISTING", "BUSINESS", "USER", "MESSAGE"]
+          },
+          "targetId": {
+            "type": "string"
+          },
+          "targetTitle": {
+            "type": "object"
+          },
+          "reason": {
+            "type": "string",
+            "enum": [
+              "SPAM",
+              "FRAUD_OR_SCAM",
+              "PROHIBITED_ITEM",
+              "DUPLICATE",
+              "WRONG_CATEGORY",
+              "OFFENSIVE_CONTENT",
+              "MISLEADING_PRICE",
+              "ALREADY_SOLD",
+              "HARASSMENT",
+              "OTHER"
+            ]
+          },
+          "details": {
+            "type": "object"
+          },
+          "status": {
+            "type": "string",
+            "enum": ["OPEN", "UNDER_REVIEW", "RESOLVED", "DISMISSED"]
+          },
+          "reporterName": {
+            "type": "string"
+          },
+          "reportsAgainstTarget": {
+            "type": "number",
+            "description": "Total open reports against this same target"
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "resolutionNote": {
+            "type": "object"
+          }
+        },
+        "required": [
+          "id",
+          "targetType",
+          "targetId",
+          "reason",
+          "status",
+          "reporterName",
+          "reportsAgainstTarget",
+          "createdAt"
+        ]
+      },
+      "ResolveReportDto": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": ["RESOLVED", "DISMISSED"]
+          },
+          "note": {
+            "type": "string",
+            "example": "Listing removed and seller warned."
+          },
+          "removeListing": {
+            "type": "boolean",
+            "description": "Remove the reported listing as part of resolving",
+            "default": false
+          }
+        },
+        "required": ["status", "note"]
+      },
+      "AdminMetricsDto": {
+        "type": "object",
+        "properties": {
+          "totalUsers": {
+            "type": "number"
+          },
+          "newUsersToday": {
+            "type": "number"
+          },
+          "newUsersThisWeek": {
+            "type": "number"
+          },
+          "activeUsersThisMonth": {
+            "type": "number",
+            "description": "Users active in the last 30 days"
+          },
+          "suspendedUsers": {
+            "type": "number"
+          },
+          "publishedListings": {
+            "type": "number"
+          },
+          "pendingListings": {
+            "type": "number",
+            "description": "Awaiting human review"
+          },
+          "rejectedListings": {
+            "type": "number"
+          },
+          "expiredListings": {
+            "type": "number"
+          },
+          "listingsToday": {
+            "type": "number"
+          },
+          "openReports": {
+            "type": "number"
+          },
+          "totalBusinesses": {
+            "type": "number"
+          },
+          "verifiedBusinesses": {
+            "type": "number"
+          },
+          "openJobs": {
+            "type": "number"
+          },
+          "liveOffers": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "totalUsers",
+          "newUsersToday",
+          "newUsersThisWeek",
+          "activeUsersThisMonth",
+          "suspendedUsers",
+          "publishedListings",
+          "pendingListings",
+          "rejectedListings",
+          "expiredListings",
+          "listingsToday",
+          "openReports",
+          "totalBusinesses",
+          "verifiedBusinesses",
+          "openJobs",
+          "liveOffers"
+        ]
+      },
+      "ListingsByBucketDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "label": {
+            "type": "string"
+          },
+          "count": {
+            "type": "number"
+          }
+        },
+        "required": ["id", "label", "count"]
+      },
+      "TopListingDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "slug": {
+            "type": "string"
+          },
+          "cityName": {
+            "type": "string"
+          },
+          "viewCount": {
+            "type": "number"
+          },
+          "saveCount": {
+            "type": "number"
+          }
+        },
+        "required": ["id", "title", "slug", "cityName", "viewCount", "saveCount"]
+      },
+      "AdminUserDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "phone": {
+            "type": "string"
+          },
+          "email": {
+            "type": "object",
+            "nullable": true
+          },
+          "displayName": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string"
+          },
+          "roles": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "listingCount": {
+            "type": "number"
+          },
+          "reportsAgainst": {
+            "type": "number"
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "lastActiveAt": {
+            "type": "object",
+            "nullable": true
+          }
+        },
+        "required": [
+          "id",
+          "phone",
+          "email",
+          "displayName",
+          "status",
+          "roles",
+          "listingCount",
+          "reportsAgainst",
+          "createdAt",
+          "lastActiveAt"
+        ]
+      },
+      "AuditLogDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "action": {
+            "type": "string",
+            "example": "listing.approve"
+          },
+          "entityType": {
+            "type": "string"
+          },
+          "entityId": {
+            "type": "object",
+            "nullable": true
+          },
+          "actorName": {
+            "type": "object",
+            "nullable": true,
+            "description": "Null for system actions"
+          },
+          "actorRole": {
+            "type": "object",
+            "nullable": true
+          },
+          "changes": {
+            "type": "object",
+            "additionalProperties": true,
+            "nullable": true,
+            "description": "Changed fields only, with credentials redacted"
+          },
+          "ip": {
+            "type": "object",
+            "nullable": true
+          },
+          "correlationId": {
+            "type": "object",
+            "nullable": true
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "action",
+          "entityType",
+          "entityId",
+          "actorName",
+          "actorRole",
+          "changes",
+          "ip",
+          "correlationId",
+          "createdAt"
+        ]
+      },
+      "QueueHealthDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "waiting": {
+            "type": "number"
+          },
+          "active": {
+            "type": "number"
+          },
+          "failed": {
+            "type": "number"
+          },
+          "delayed": {
+            "type": "number"
+          },
+          "available": {
+            "type": "boolean"
+          }
+        },
+        "required": ["name", "waiting", "active", "failed", "delayed", "available"]
+      },
+      "StorageStatsDto": {
+        "type": "object",
+        "properties": {
+          "mediaCount": {
+            "type": "number"
+          },
+          "totalBytes": {
+            "type": "number"
+          },
+          "failedCount": {
+            "type": "number"
+          }
+        },
+        "required": ["mediaCount", "totalBytes", "failedCount"]
+      }
+    }
+  }
+}

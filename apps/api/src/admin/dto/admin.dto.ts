@@ -60,3 +60,23 @@ export class AdminUserDto {
   @ApiProperty() createdAt!: Date;
   @ApiProperty({ nullable: true }) lastActiveAt!: Date | null;
 }
+
+export class AuditLogDto {
+  @ApiProperty() id!: string;
+  @ApiProperty({ example: 'listing.approve' }) action!: string;
+  @ApiProperty() entityType!: string;
+  @ApiProperty({ nullable: true }) entityId!: string | null;
+  @ApiProperty({ nullable: true, description: 'Null for system actions' })
+  actorName!: string | null;
+  @ApiProperty({ nullable: true }) actorRole!: string | null;
+  @ApiProperty({
+    type: 'object',
+    additionalProperties: true,
+    nullable: true,
+    description: 'Changed fields only, with credentials redacted',
+  })
+  changes!: Record<string, unknown> | null;
+  @ApiProperty({ nullable: true }) ip!: string | null;
+  @ApiProperty({ nullable: true }) correlationId!: string | null;
+  @ApiProperty() createdAt!: Date;
+}
