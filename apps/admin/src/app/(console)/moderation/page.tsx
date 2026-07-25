@@ -1,5 +1,5 @@
 import type { ModerationQueueItem, Paginated } from '@locz/shared-types';
-import { ApiRequestError, api } from '@/lib/api';
+import { ApiRequestError, locz } from '@/lib/api';
 import { QueueItem } from './queue-item';
 
 export const dynamic = 'force-dynamic';
@@ -19,7 +19,7 @@ export default async function ModerationPage({
 
   let queue: Paginated<ModerationQueueItem>;
   try {
-    queue = await api<Paginated<ModerationQueueItem>>(`/moderation/queue?page=${page}&limit=20`);
+    queue = await locz.moderation.queue({ page, limit: 20 });
   } catch (error) {
     return (
       <>

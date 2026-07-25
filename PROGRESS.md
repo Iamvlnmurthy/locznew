@@ -219,6 +219,22 @@ Work found missing on review of the Phase 1 brief against what was actually buil
 3. **`process.exit` swallowed the OpenAPI export's own error message** on Windows,
    producing a silent failure. Replaced with `process.exitCode`.
 
+## M12 — Database operations and dead-code removal (2026-07-26)
+
+| Item                                                                                                                                                              | Status                       |
+| ----------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------- |
+| `scripts/verify-db.sh` — 18 post-migration checks: extensions, 45 tables, GiST and partial indexes, geo triggers, coordinate-order sanity                         | ✅ authored, `bash -n` clean |
+| `scripts/backup.sh` — `pg_dump -Fc`, verifies the dump with `pg_restore --list`, refuses to rotate on an implausible table count, optional off-box upload         | ✅ same                      |
+| `scripts/restore.sh` — restore into a throwaway database with row counts and a spatial-integrity check; typing the database name required to overwrite production | ✅ same                      |
+| Connection pooling — explicit `connection_limit`, plus `directUrl` for migrations behind a transaction pooler                                                     | ✅ schema validates          |
+| `RecentlyViewed` trimming job — the unbounded table flagged in the database review, now capped at 200 rows per user                                               | ✅                           |
+| `@locz/validation` wired into the web posting flow, with per-field errors surfaced in the form                                                                    | ✅                           |
+| `@locz/api-client` replaces admin's duplicated client; moderation and system actions use its typed methods                                                        | ✅                           |
+| `docs/API.md` — conventions, rate limits, idempotency, endpoint groups                                                                                            | ✅                           |
+
+Both shared packages existed but nothing imported them — a package that compiles and is
+never used is dead code that looks like coverage. They are now on the real path.
+
 ## Final verification run (2026-07-26)
 
 | Check                            | Result                               |

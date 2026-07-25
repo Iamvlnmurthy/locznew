@@ -6,6 +6,7 @@ import {
   JOB_EXPIRE_LISTINGS,
   JOB_SWEEP_ORPHAN_MEDIA,
   JOB_SWEEP_SESSIONS,
+  JOB_TRIM_RECENTLY_VIEWED,
   JOB_WARN_EXPIRING,
   QUEUE_LIFECYCLE,
 } from '../queue/queue.constants';
@@ -41,6 +42,8 @@ export class LifecycleProcessor extends WorkerHost {
         return this.sweepOrphanMedia();
       case JOB_SWEEP_SESSIONS:
         return this.sweepSessions();
+      case JOB_TRIM_RECENTLY_VIEWED:
+        return this.trimRecentlyViewed();
       default:
         this.logger.error(`Unknown job "${job.name}" on the ${QUEUE_LIFECYCLE} queue`);
         return undefined;
@@ -150,6 +153,36 @@ export class LifecycleProcessor extends WorkerHost {
     }
 
     return { removed: orphans.length };
+  }
+
+  /**
+   * Caps each user's viewing history.
+   *
+   * `RecentlyViewed` holds one row per distinct listing a user has opened and is never
+   * pruned by the read path, so an active user accumulates rows indefinitely. Only the
+   * most recent handful are ever displayed, so anything past the cap is pure storage and
+   * index cost. Done in one statement per user rather than a global scan so the job stays
+   * bounded regardless of table size.
+   */
+  private async trimRecentlyViewed(): Promise<{ removed: number }> {
+    const KEEP_PER_USER = 200;
+
+    const removed = await this.prisma.$executeRaw`
+      DELETE FROM "recently_viewed"
+      WHERE "id" IN (
+        SELECT "id" FROM (
+          SELECT "id",
+                 ROW_NUMBER() OVER (PARTITION BY "userId" ORDER BY "viewedAt" DESC) AS position
+          FROM "recently_viewed"
+        ) ranked
+        WHERE ranked.position > ${KEEP_PER_USER}
+      )
+    `;
+
+    if (removed > 0) {
+      this.logger.log(`Trimmed ${removed} recently-viewed rows`);
+    }
+    return { removed };
   }
 
   /** Expired and revoked sessions have no further purpose; keeping them only grows the table. */

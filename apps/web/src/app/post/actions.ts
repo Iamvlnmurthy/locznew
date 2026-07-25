@@ -1,43 +1,61 @@
 'use server';
 
 import { revalidatePath } from 'next/cache';
+import { createListingSchema, marketplaceDetailsSchema, toFieldErrors } from '@locz/validation';
 import { api } from '@/lib/api';
 
 export interface PostAdState {
   error?: string;
+  /** Keyed by field name so the form can flag the offending input. */
+  fieldErrors?: Record<string, string>;
   /** Set when the listing was created — the form switches to the outcome screen. */
   outcome?: { slug: string; status: string; id: string };
 }
 
 /**
- * Creates a listing. The API decides whether it publishes immediately or goes to review,
- * so the outcome screen reports what actually happened rather than promising "published".
+ * Creates a listing.
+ *
+ * Validated with the shared Zod schemas so the browser and the API apply exactly the
+ * same rules — where they disagree the API still wins, but the user finds out before a
+ * round trip rather than after it.
+ *
+ * The API decides whether the listing publishes immediately or goes to review, so the
+ * outcome screen reports what actually happened rather than promising "published".
  */
 export async function createListingAction(
   _prev: PostAdState,
   formData: FormData,
 ): Promise<PostAdState> {
-  const title = String(formData.get('title') ?? '').trim();
-  const description = String(formData.get('description') ?? '').trim();
-  const categoryId = String(formData.get('categoryId') ?? '');
-  const cityId = String(formData.get('cityId') ?? '');
-  const localityId = String(formData.get('localityId') ?? '');
-  const priceRaw = String(formData.get('price') ?? '').trim();
   const isFree = formData.get('isFree') === 'on';
-  const isNegotiable = formData.get('isNegotiable') === 'on';
-  const condition = String(formData.get('condition') ?? 'GOOD');
-  const contactPreference = String(formData.get('contactPreference') ?? 'IN_APP_ONLY');
+  const priceRaw = String(formData.get('price') ?? '').trim();
   const saveAsDraft = formData.get('saveAsDraft') === 'true';
 
-  if (title.length < 5) return { error: 'Give your ad a clearer title (at least 5 characters)' };
-  if (description.length < 10)
-    return { error: 'Add a short description so buyers know what this is' };
-  if (!categoryId) return { error: 'Choose a category' };
-  if (!cityId) return { error: 'Choose your city' };
+  const marketplace = marketplaceDetailsSchema.safeParse({
+    price: isFree ? 0 : priceRaw === '' ? undefined : Number(priceRaw),
+    isFree,
+    isNegotiable: formData.get('isNegotiable') === 'on',
+    condition: String(formData.get('condition') ?? 'GOOD'),
+    brand: String(formData.get('brand') ?? '') || undefined,
+    model: String(formData.get('model') ?? '') || undefined,
+  });
 
-  const price = isFree ? 0 : priceRaw ? Number(priceRaw) : undefined;
-  if (price !== undefined && (Number.isNaN(price) || price < 0)) {
-    return { error: 'Enter a valid price' };
+  if (!marketplace.success) {
+    return { fieldErrors: toFieldErrors(marketplace.error) };
+  }
+
+  const parsed = createListingSchema.safeParse({
+    type: 'PRODUCT',
+    title: formData.get('title'),
+    description: formData.get('description'),
+    categoryId: formData.get('categoryId'),
+    cityId: formData.get('cityId'),
+    localityId: String(formData.get('localityId') ?? '') || undefined,
+    contactPreference: String(formData.get('contactPreference') ?? 'IN_APP_ONLY'),
+    marketplace: marketplace.data,
+  });
+
+  if (!parsed.success) {
+    return { fieldErrors: toFieldErrors(parsed.error) };
   }
 
   try {
@@ -45,21 +63,9 @@ export async function createListingAction(
       method: 'POST',
       auth: true,
       body: {
-        type: 'PRODUCT',
-        title,
-        description,
-        categoryId,
-        cityId,
-        ...(localityId ? { localityId } : {}),
-        contactPreference,
-        showPhonePublicly: contactPreference !== 'IN_APP_ONLY',
+        ...parsed.data,
+        showPhonePublicly: parsed.data.contactPreference !== 'IN_APP_ONLY',
         saveAsDraft,
-        marketplace: {
-          ...(price !== undefined ? { price } : {}),
-          isFree,
-          isNegotiable,
-          condition,
-        },
       },
     });
 
@@ -71,8 +77,8 @@ export async function createListingAction(
 }
 
 /**
- * Requests a signed upload URL, pushes the bytes straight to object storage, then asks
- * the API to process the image. The file never passes through this server.
+ * Requests a signed upload URL, so the browser can push the bytes straight to object
+ * storage. The file never passes through this server.
  */
 export async function requestUploadUrlAction(
   listingId: string,

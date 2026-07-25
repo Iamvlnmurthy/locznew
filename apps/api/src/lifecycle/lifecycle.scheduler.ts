@@ -7,6 +7,7 @@ import {
   JOB_REINDEX_ALL,
   JOB_SWEEP_ORPHAN_MEDIA,
   JOB_SWEEP_SESSIONS,
+  JOB_TRIM_RECENTLY_VIEWED,
   JOB_WARN_EXPIRING,
   QUEUE_LIFECYCLE,
   QUEUE_SEARCH,
@@ -70,6 +71,15 @@ export class LifecycleScheduler implements OnModuleInit {
       JOB_SWEEP_SESSIONS,
       {},
       { repeat: { pattern: '30 3 * * *', tz: 'Asia/Kolkata' }, jobId: 'repeat:sweep-sessions' },
+    );
+
+    await this.lifecycle.add(
+      JOB_TRIM_RECENTLY_VIEWED,
+      {},
+      {
+        repeat: { pattern: '45 3 * * *', tz: 'Asia/Kolkata' },
+        jobId: 'repeat:trim-recently-viewed',
+      },
     );
 
     // Nightly consistency rebuild. This is what makes it safe for the index publisher to

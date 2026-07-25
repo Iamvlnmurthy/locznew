@@ -1,7 +1,7 @@
 'use server';
 
 import { revalidatePath } from 'next/cache';
-import { ApiRequestError, api } from '@/lib/api';
+import { ApiRequestError, locz } from '@/lib/api';
 
 export interface RebuildState {
   message?: string;
@@ -17,7 +17,7 @@ export async function rebuildIndexAction(
   _formData: FormData,
 ): Promise<RebuildState> {
   try {
-    await api('/search/index/rebuild', { method: 'POST' });
+    await locz.admin.rebuildSearchIndex();
   } catch (error) {
     return {
       error: error instanceof ApiRequestError ? error.message : 'Could not queue the rebuild',

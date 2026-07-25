@@ -16,6 +16,7 @@ export const JOB_EXPIRE_LISTINGS = 'expire-listings';
 export const JOB_WARN_EXPIRING = 'warn-expiring';
 export const JOB_SWEEP_ORPHAN_MEDIA = 'sweep-orphan-media';
 export const JOB_SWEEP_SESSIONS = 'sweep-sessions';
+export const JOB_TRIM_RECENTLY_VIEWED = 'trim-recently-viewed';
 
 /** The job payload carries only an id — the worker re-reads current state (ADR-0005). */
 export interface IndexListingJob {

@@ -1,7 +1,7 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
-  transpilePackages: ['@locz/shared-types', '@locz/ui-tokens'],
+  transpilePackages: ['@locz/shared-types', '@locz/ui-tokens', '@locz/validation', '@locz/api-client'],
   poweredByHeader: false,
   images: {
     // Listing images come from R2 in production and MinIO locally.

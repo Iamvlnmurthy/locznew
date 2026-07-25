@@ -2,7 +2,7 @@
 const nextConfig = {
   reactStrictMode: true,
   // The workspace packages ship TypeScript source rather than a build step.
-  transpilePackages: ['@locz/shared-types', '@locz/ui-tokens'],
+  transpilePackages: ['@locz/shared-types', '@locz/ui-tokens', '@locz/validation', '@locz/api-client'],
   poweredByHeader: false,
   async headers() {
     return [

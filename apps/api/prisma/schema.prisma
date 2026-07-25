@@ -18,6 +18,10 @@ generator client {
 datasource db {
   provider   = "postgresql"
   url        = env("DATABASE_URL")
+  // Used by `migrate` and `db pull` only. Behind a transaction pooler (PgBouncer, Neon,
+  // Supabase) DDL cannot run through the pooled endpoint, so migrations take the direct
+  // connection while application traffic keeps the pool. Ignored when unset.
+  directUrl  = env("DIRECT_DATABASE_URL")
   extensions = [postgis, pg_trgm, unaccent, citext]
 }
 

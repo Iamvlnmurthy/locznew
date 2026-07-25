@@ -155,7 +155,7 @@ export function PostForm({
         <p className="field__hint">{labels.descriptionHint}</p>
       </div>
 
-      <div className="field">
+      <div className={`field${state.fieldErrors?.price ? ' field--error' : ''}`}>
         <label htmlFor="price">{labels.fieldPrice}</label>
         <input
           id="price"
@@ -166,6 +166,9 @@ export function PostForm({
           disabled={isFree}
           placeholder="0"
         />
+        {state.fieldErrors?.price ? (
+          <p className="field__error">{state.fieldErrors.price}</p>
+        ) : null}
         <label style={{ display: 'flex', gap: 8, alignItems: 'center', fontWeight: 400 }}>
           <input
             type="checkbox"

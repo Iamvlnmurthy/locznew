@@ -81,15 +81,17 @@ schema language cannot express: GiST spatial indexes, partial indexes for the ba
 sweepers, trigram indexes, the one-default-location constraint, and the triggers that
 derive the `geo` column from latitude/longitude.
 
-Verify PostGIS is actually working — this is the single most common setup failure:
+Then verify it. **Run this — it is the difference between "the migration succeeded" and
+"the database actually works":**
 
 ```bash
-docker compose -f infrastructure/docker/docker-compose.dev.yml exec postgres \
-  psql -U locz -d locz -c "SELECT PostGIS_Version();"
-
-docker compose -f infrastructure/docker/docker-compose.dev.yml exec postgres \
-  psql -U locz -d locz -c "\d listings" | grep gist
+./scripts/verify-db.sh
 ```
+
+It checks the failures that are otherwise silent: PostGIS missing, a GiST index that was
+never created, a `geo` column the trigger never populated, and coordinates entered the
+wrong way round. A radius search hitting any of those returns _no results_ rather than an
+error — which reads as "nothing near me" and can survive to production unnoticed.
 
 ## 5. Run
 
@@ -146,6 +148,9 @@ converges rather than duplicating.
 ```bash
 npm run typecheck                       # every workspace
 npm run openapi -w @locz/api            # regenerate docs/openapi.json
+./scripts/verify-db.sh                  # post-migration health check
+./scripts/backup.sh                     # pg_dump -Fc, verified and rotated
+./scripts/restore.sh <dump> --into locz_restore_test
 npm run test -w @locz/api               # unit + DI tests
 npm run db:studio -w @locz/api          # Prisma Studio
 npm run docker:logs                     # tail infrastructure
@@ -157,3 +162,44 @@ docker compose -f infrastructure/docker/docker-compose.dev.yml down -v   # wipe 
 ## Mobile
 
 See [MOBILE_SETUP.md](MOBILE_SETUP.md).
+
+---
+
+## Database operations
+
+### Backups
+
+```bash
+./scripts/backup.sh                          # writes infrastructure/docker/backups/
+BACKUP_S3_BUCKET=locz-backups ./scripts/backup.sh   # and ships it off-box
+```
+
+The script verifies each dump with `pg_restore --list` and refuses to rotate old backups
+if the new one contains implausibly few tables — otherwise pointing it at the wrong
+database would quietly age out every real backup. From cron on the database host:
+
+```
+0 2 * * * /srv/locz/scripts/backup.sh >> /var/log/locz-backup.log 2>&1
+```
+
+### Restore drills
+
+```bash
+./scripts/restore.sh backups/locz-20260726-020000.dump --into locz_restore_test
+```
+
+Do this monthly. It restores into a throwaway database and prints row counts plus a
+spatial-integrity check. A backup nobody has restored is a guess. Restoring over the live
+database is possible but requires typing the database name to confirm.
+
+### Connection pooling
+
+Prisma opens a pool per process, defaulting to `cpus * 2 + 1`. An API plus a worker plus
+a couple of replicas will exhaust Postgres's default `max_connections` of 100, so
+`DATABASE_URL` carries an explicit `connection_limit`. Keep
+`connection_limit × instances` comfortably below `max_connections`.
+
+Behind a transaction pooler (PgBouncer, Neon, Supabase) add `?pgbouncer=true` to
+`DATABASE_URL` and set `DIRECT_DATABASE_URL` to the unpooled endpoint — DDL cannot run
+through a transaction pooler, so migrations use the direct connection while application
+traffic keeps the pool.

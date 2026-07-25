@@ -1,7 +1,7 @@
 'use server';
 
 import { revalidatePath } from 'next/cache';
-import { ApiRequestError, api } from '@/lib/api';
+import { ApiRequestError, locz } from '@/lib/api';
 
 export interface ModerationActionState {
   error?: string;
@@ -23,10 +23,7 @@ export async function approveListingAction(
   if (!listingId) return { error: 'Missing listing' };
 
   try {
-    await api(`/moderation/listings/${listingId}/approve`, {
-      method: 'POST',
-      body: note ? { note } : {},
-    });
+    await locz.moderation.approve(listingId, note || undefined);
   } catch (error) {
     return {
       error: error instanceof ApiRequestError ? error.message : 'Could not approve the listing',
@@ -52,10 +49,7 @@ export async function rejectListingAction(
   }
 
   try {
-    await api(`/moderation/listings/${listingId}/reject`, {
-      method: 'POST',
-      body: { reason },
-    });
+    await locz.moderation.reject(listingId, reason);
   } catch (error) {
     return {
       error: error instanceof ApiRequestError ? error.message : 'Could not reject the listing',
