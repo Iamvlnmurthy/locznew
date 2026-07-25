@@ -11,7 +11,6 @@ import '../../../core/i18n/strings.dart';
 import '../../../core/network/api_exception.dart';
 import '../../../core/providers.dart';
 import '../../../core/theme/tokens.g.dart';
-import '../../listings/domain/models.dart';
 
 class _PendingImage {
   _PendingImage(this.file);
@@ -196,7 +195,6 @@ class _PostAdScreenState extends ConsumerState<PostAdScreen> {
           children: [
             Text(strings('post.subtitle'), style: Theme.of(context).textTheme.bodyMedium),
             const SizedBox(height: LoczSpacing.x4),
-
             if (_error != null)
               Container(
                 padding: const EdgeInsets.all(LoczSpacing.x3),
@@ -207,7 +205,6 @@ class _PostAdScreenState extends ConsumerState<PostAdScreen> {
                 ),
                 child: Text(_error!, style: const TextStyle(color: LoczColors.danger)),
               ),
-
             TextFormField(
               controller: _titleController,
               maxLength: 160,
@@ -215,7 +212,6 @@ class _PostAdScreenState extends ConsumerState<PostAdScreen> {
               validator: (value) =>
                   (value == null || value.trim().length < 5) ? strings('common.error') : null,
             ),
-
             categories.when(
               loading: () => const LinearProgressIndicator(),
               error: (error, _) => Text(error.toString()),
@@ -250,9 +246,7 @@ class _PostAdScreenState extends ConsumerState<PostAdScreen> {
                 );
               },
             ),
-
             const SizedBox(height: LoczSpacing.x4),
-
             TextFormField(
               controller: _descriptionController,
               maxLines: 5,
@@ -261,7 +255,6 @@ class _PostAdScreenState extends ConsumerState<PostAdScreen> {
               validator: (value) =>
                   (value == null || value.trim().length < 10) ? strings('common.error') : null,
             ),
-
             TextFormField(
               controller: _priceController,
               enabled: !_isFree,
@@ -269,7 +262,6 @@ class _PostAdScreenState extends ConsumerState<PostAdScreen> {
               inputFormatters: [FilteringTextInputFormatter.digitsOnly],
               decoration: InputDecoration(labelText: strings('post.fieldPrice'), prefixText: '₹ '),
             ),
-
             CheckboxListTile(
               value: _isFree,
               onChanged: (value) => setState(() => _isFree = value ?? false),
@@ -282,7 +274,6 @@ class _PostAdScreenState extends ConsumerState<PostAdScreen> {
               title: Text(strings('listing.negotiable')),
               contentPadding: EdgeInsets.zero,
             ),
-
             DropdownButtonFormField<String>(
               initialValue: _condition,
               decoration: const InputDecoration(labelText: 'Condition'),
@@ -295,9 +286,7 @@ class _PostAdScreenState extends ConsumerState<PostAdScreen> {
               ],
               onChanged: (value) => setState(() => _condition = value ?? 'GOOD'),
             ),
-
             const SizedBox(height: LoczSpacing.x4),
-
             cities.when(
               loading: () => const LinearProgressIndicator(),
               error: (error, _) => Text(error.toString()),
@@ -312,9 +301,7 @@ class _PostAdScreenState extends ConsumerState<PostAdScreen> {
                 validator: (value) => value == null ? strings('common.error') : null,
               ),
             ),
-
             const SizedBox(height: LoczSpacing.x4),
-
             DropdownButtonFormField<String>(
               initialValue: _contactPreference,
               isExpanded: true,
@@ -326,13 +313,10 @@ class _PostAdScreenState extends ConsumerState<PostAdScreen> {
               ],
               onChanged: (value) => setState(() => _contactPreference = value ?? 'IN_APP_ONLY'),
             ),
-
             const SizedBox(height: LoczSpacing.x6),
-
             Text(strings('post.photos'), style: Theme.of(context).textTheme.titleMedium),
             Text(strings('post.photosHint'), style: Theme.of(context).textTheme.labelSmall),
             const SizedBox(height: LoczSpacing.x3),
-
             SizedBox(
               height: 96,
               child: ListView(
@@ -383,7 +367,6 @@ class _PostAdScreenState extends ConsumerState<PostAdScreen> {
                         ],
                       ),
                     ),
-
                   if (_images.length < Env.maxImagesPerListing)
                     InkWell(
                       onTap: _submitting ? null : _pickImages,
@@ -400,14 +383,11 @@ class _PostAdScreenState extends ConsumerState<PostAdScreen> {
                 ],
               ),
             ),
-
             const SizedBox(height: LoczSpacing.x8),
-
             FilledButton(
               onPressed: _submitting ? null : _submit,
               child: Text(_submitting ? strings('post.publishing') : strings('post.publish')),
             ),
-
             const SizedBox(height: LoczSpacing.x8),
           ],
         ),

@@ -14,14 +14,14 @@ import 'storage/token_storage.dart';
 
 final tokenStorageProvider = Provider<TokenStorage>((ref) => TokenStorage());
 
-final apiClientProvider = Provider<ApiClient>((ref) {
+final Provider<ApiClient> apiClientProvider = Provider<ApiClient>((ref) {
   final client = ApiClient(ref.watch(tokenStorageProvider));
   // A refresh failure means the session is gone; clearing auth state routes to sign-in.
   client.onSessionExpired = () => ref.read(authProvider.notifier).handleSessionExpiry();
   return client;
 });
 
-final authRepositoryProvider = Provider<AuthRepository>(
+final Provider<AuthRepository> authRepositoryProvider = Provider<AuthRepository>(
   (ref) => AuthRepository(ref.watch(apiClientProvider), ref.watch(tokenStorageProvider)),
 );
 
@@ -68,7 +68,8 @@ class AuthNotifier extends StateNotifier<AuthState> {
   void handleSessionExpiry() => state = const AuthState();
 }
 
-final authProvider = StateNotifierProvider<AuthNotifier, AuthState>(
+final StateNotifierProvider<AuthNotifier, AuthState> authProvider =
+    StateNotifierProvider<AuthNotifier, AuthState>(
   (ref) => AuthNotifier(ref.watch(authRepositoryProvider)),
 );
 
@@ -77,12 +78,23 @@ final authProvider = StateNotifierProvider<AuthNotifier, AuthState>(
 // ---------------------------------------------------------------------------
 
 class SelectedCity {
-  const SelectedCity({required this.id, required this.name, this.latitude, this.longitude});
+  const SelectedCity({
+    required this.id,
+    required this.name,
+    this.latitude,
+    this.longitude,
+    this.pincode,
+  });
 
+  /// Empty when the user chose a pincode outside every launched city — the radius
+  /// search still works, so there is no reason to force a city on them.
   final String id;
   final String name;
   final double? latitude;
   final double? longitude;
+
+  /// Set when the user stated their location as a pincode rather than a city.
+  final String? pincode;
 }
 
 class CityNotifier extends StateNotifier<SelectedCity?> {
@@ -94,6 +106,7 @@ class CityNotifier extends StateNotifier<SelectedCity?> {
   static const _keyName = 'locz.city.name';
   static const _keyLat = 'locz.city.lat';
   static const _keyLng = 'locz.city.lng';
+  static const _keyPincode = 'locz.city.pincode';
 
   Future<void> _restore() async {
     // Not secret, so plain preferences are appropriate here — unlike tokens.
@@ -108,6 +121,7 @@ class CityNotifier extends StateNotifier<SelectedCity?> {
         name: name,
         latitude: prefs.getDouble(_keyLat),
         longitude: prefs.getDouble(_keyLng),
+        pincode: prefs.getString(_keyPincode),
       );
     }
   }
@@ -118,12 +132,34 @@ class CityNotifier extends StateNotifier<SelectedCity?> {
     await prefs.setString(_keyName, city.name);
     await prefs.setDouble(_keyLat, latitude ?? city.latitude);
     await prefs.setDouble(_keyLng, longitude ?? city.longitude);
+    // Choosing a city clears any earlier pincode: the two are alternative answers to
+    // the same question, and leaving both set would silently narrow every search.
+    await prefs.remove(_keyPincode);
 
     state = SelectedCity(
       id: city.id,
       name: city.name,
       latitude: latitude ?? city.latitude,
       longitude: longitude ?? city.longitude,
+    );
+  }
+
+  /// Location stated as a pincode — the answer most people can give without hesitating,
+  /// and one that costs no permission prompt.
+  Future<void> selectPincode(PincodeArea area) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_keyId, area.cityId ?? '');
+    await prefs.setString(_keyName, area.cityName ?? area.label);
+    await prefs.setDouble(_keyLat, area.latitude);
+    await prefs.setDouble(_keyLng, area.longitude);
+    await prefs.setString(_keyPincode, area.code);
+
+    state = SelectedCity(
+      id: area.cityId ?? '',
+      name: area.cityName ?? area.label,
+      latitude: area.latitude,
+      longitude: area.longitude,
+      pincode: area.code,
     );
   }
 }
@@ -176,9 +212,12 @@ final feedProvider = FutureProvider.autoDispose<Feed>((ref) {
   // Re-fetch when the user signs in: the feed gains personalised sections.
   ref.watch(authProvider.select((state) => state.user?.id));
 
-  return ref
-      .watch(listingRepositoryProvider)
-      .feed(cityId: city?.id, latitude: city?.latitude, longitude: city?.longitude);
+  return ref.watch(listingRepositoryProvider).feed(
+        cityId: (city?.id.isEmpty ?? true) ? null : city!.id,
+        latitude: city?.latitude,
+        longitude: city?.longitude,
+        pincode: city?.pincode,
+      );
 });
 
 final listingDetailProvider = FutureProvider.autoDispose.family<ListingDetail, String>((ref, slug) {

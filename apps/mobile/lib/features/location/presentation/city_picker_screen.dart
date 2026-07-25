@@ -20,9 +20,47 @@ class CityPickerScreen extends ConsumerStatefulWidget {
 }
 
 class _CityPickerScreenState extends ConsumerState<CityPickerScreen> {
+  final _pincodeController = TextEditingController();
   String _query = '';
   bool _locating = false;
+  bool _checkingPincode = false;
   String? _status;
+  String? _pincodeError;
+
+  @override
+  void dispose() {
+    _pincodeController.dispose();
+    super.dispose();
+  }
+
+  /// A pincode resolves to its centroid, and the area around that point is what gets
+  /// browsed. Nobody has to grant a permission, and a code outside every launched city
+  /// still works — radius search does not need a city.
+  Future<void> _applyPincode() async {
+    final strings = Strings.of(context);
+    final code = _pincodeController.text.trim();
+
+    setState(() {
+      _checkingPincode = true;
+      _pincodeError = null;
+    });
+
+    try {
+      final area = await ref.read(listingRepositoryProvider).lookupPincode(code);
+
+      if (!mounted) return;
+
+      if (area == null) {
+        setState(() => _pincodeError = strings('location.pincodeUnknown'));
+        return;
+      }
+
+      await ref.read(selectedCityProvider.notifier).selectPincode(area);
+      if (mounted) context.pop();
+    } finally {
+      if (mounted) setState(() => _checkingPincode = false);
+    }
+  }
 
   Future<void> _useCurrentLocation() async {
     final strings = Strings.of(context);
@@ -109,6 +147,42 @@ class _CityPickerScreenState extends ConsumerState<CityPickerScreen> {
                   ),
                 ],
                 const SizedBox(height: LoczSpacing.x4),
+                Row(
+                  children: [
+                    Expanded(
+                      child: TextField(
+                        controller: _pincodeController,
+                        keyboardType: TextInputType.number,
+                        maxLength: 6,
+                        decoration: InputDecoration(
+                          labelText: strings('location.pincodeLabel'),
+                          hintText: '500081',
+                          prefixIcon: const Icon(Icons.markunread_mailbox_outlined),
+                          counterText: '',
+                          errorText: _pincodeError,
+                        ),
+                        onChanged: (value) {
+                          if (_pincodeError != null) setState(() => _pincodeError = null);
+                        },
+                        onSubmitted: (_) {
+                          if (_pincodeController.text.trim().length == 6) _applyPincode();
+                        },
+                      ),
+                    ),
+                    const SizedBox(width: LoczSpacing.x2),
+                    FilledButton.tonal(
+                      onPressed: _checkingPincode ? null : _applyPincode,
+                      child: _checkingPincode
+                          ? const SizedBox(
+                              height: 16,
+                              width: 16,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            )
+                          : Text(strings('location.pincodeGo')),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: LoczSpacing.x4),
                 TextField(
                   decoration: InputDecoration(
                     hintText: strings('location.searchCity'),
@@ -119,24 +193,22 @@ class _CityPickerScreenState extends ConsumerState<CityPickerScreen> {
               ],
             ),
           ),
-
           Expanded(
             child: cities.when(
               loading: () => const Center(child: CircularProgressIndicator()),
               error: (error, _) => Center(child: Text(error.toString())),
               data: (list) {
-                final filtered =
-                    list
-                        .where(
-                          (city) =>
-                              _query.isEmpty ||
-                              city.name.toLowerCase().contains(_query) ||
-                              (city.nameTe?.contains(_query) ?? false) ||
-                              (city.nameHi?.contains(_query) ?? false),
-                        )
-                        .toList()
-                      // Launched cities first; the rest stay visible but clearly secondary.
-                      ..sort((a, b) => (b.isLaunched ? 1 : 0).compareTo(a.isLaunched ? 1 : 0));
+                final filtered = list
+                    .where(
+                      (city) =>
+                          _query.isEmpty ||
+                          city.name.toLowerCase().contains(_query) ||
+                          (city.nameTe?.contains(_query) ?? false) ||
+                          (city.nameHi?.contains(_query) ?? false),
+                    )
+                    .toList()
+                  // Launched cities first; the rest stay visible but clearly secondary.
+                  ..sort((a, b) => (b.isLaunched ? 1 : 0).compareTo(a.isLaunched ? 1 : 0));
 
                 return ListView.builder(
                   itemCount: filtered.length,

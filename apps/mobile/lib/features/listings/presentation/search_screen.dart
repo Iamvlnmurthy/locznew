@@ -53,11 +53,10 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
   void _run() {
     final city = ref.read(selectedCityProvider);
     setState(() {
-      _results = ref
-          .read(listingRepositoryProvider)
-          .search(
+      _results = ref.read(listingRepositoryProvider).search(
             query: _query,
-            cityId: city?.id,
+            cityId: (city?.id.isEmpty ?? true) ? null : city!.id,
+            pincode: city?.pincode,
             latitude: city?.latitude,
             longitude: city?.longitude,
             radiusKm: _radiusKm,
@@ -88,7 +87,6 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
           },
         ),
       ),
-
       body: Column(
         children: [
           SizedBox(
@@ -128,7 +126,6 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
               ],
             ),
           ),
-
           Expanded(
             child: FutureBuilder<List<ListingSummary>>(
               future: _results,

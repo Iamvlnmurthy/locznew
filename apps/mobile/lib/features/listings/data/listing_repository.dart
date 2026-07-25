@@ -14,12 +14,18 @@ class ListingRepository {
 
   final ApiClient _api;
 
-  Future<Feed> feed({String? cityId, double? latitude, double? longitude}) async {
+  Future<Feed> feed({
+    String? cityId,
+    double? latitude,
+    double? longitude,
+    String? pincode,
+  }) async {
     final json = await _api.get<Map<String, dynamic>>(
       '/feed',
       query: {
         'limit': 10,
         if (cityId != null) 'cityId': cityId,
+        if (pincode != null) 'pincode': pincode,
         if (latitude != null) 'latitude': latitude,
         if (longitude != null) 'longitude': longitude,
       },
@@ -35,6 +41,7 @@ class ListingRepository {
     double? latitude,
     double? longitude,
     int? radiusKm,
+    String? pincode,
     num? priceMin,
     num? priceMax,
     String sort = 'relevance',
@@ -48,6 +55,7 @@ class ListingRepository {
         'sort': sort,
         if (query != null && query.isNotEmpty) 'q': query,
         if (cityId != null) 'cityId': cityId,
+        if (pincode != null) 'pincode': pincode,
         if (categoryId != null) 'categoryId': categoryId,
         if (type != null) 'type': type,
         if (radiusKm != null && latitude != null && longitude != null) ...{
@@ -201,4 +209,74 @@ class ListingRepository {
     final city = json['city'];
     return city == null ? null : City.fromJson(city as Map<String, dynamic>);
   }
+
+  /// Looks up a pincode. Null means the dataset does not know it, which the caller
+  /// reports as a typo rather than an outage — every real Indian pincode is present.
+  Future<PincodeArea?> lookupPincode(String code) async {
+    if (!RegExp(r'^\d{6}$').hasMatch(code)) return null;
+
+    try {
+      final json = await _api.get<Map<String, dynamic>>(
+        '/locations/pincodes/$code',
+        auth: false,
+      );
+      return PincodeArea.fromJson(json);
+    } catch (_) {
+      return null;
+    }
+  }
+
+  /// The pincode the given coordinates fall in — used when someone grants location but
+  /// wants their area stated as a pincode rather than a whole city.
+  Future<PincodeArea?> resolvePincode(double latitude, double longitude) async {
+    final json = await _api.post<Map<String, dynamic>>(
+      '/locations/resolve/pincode',
+      body: {'latitude': latitude, 'longitude': longitude},
+      auth: false,
+    );
+    final pincode = json['pincode'];
+    return pincode == null ? null : PincodeArea.fromJson(pincode as Map<String, dynamic>);
+  }
+}
+
+/// A postal code and its centroid. LocZ treats a pincode as a point with a radius,
+/// not a boundary — post-office boundaries are not published as usable geometry, and
+/// people cross into the next code without noticing.
+class PincodeArea {
+  const PincodeArea({
+    required this.code,
+    required this.name,
+    required this.districtName,
+    required this.stateName,
+    required this.latitude,
+    required this.longitude,
+    this.cityId,
+    this.cityName,
+    this.listingCount = 0,
+  });
+
+  factory PincodeArea.fromJson(Map<String, dynamic> json) => PincodeArea(
+        code: json['code'] as String,
+        name: json['name'] as String,
+        districtName: json['districtName'] as String? ?? '',
+        stateName: json['stateName'] as String? ?? '',
+        latitude: (json['latitude'] as num).toDouble(),
+        longitude: (json['longitude'] as num).toDouble(),
+        cityId: json['cityId'] as String?,
+        cityName: json['cityName'] as String?,
+        listingCount: (json['listingCount'] as num?)?.toInt() ?? 0,
+      );
+
+  final String code;
+  final String name;
+  final String districtName;
+  final String stateName;
+  final double latitude;
+  final double longitude;
+  final String? cityId;
+  final String? cityName;
+  final int listingCount;
+
+  /// "Madhapur, Hyderabad" — what the user recognises, not the bare number.
+  String get label => cityName == null ? '$name, $districtName' : '$name, $cityName';
 }

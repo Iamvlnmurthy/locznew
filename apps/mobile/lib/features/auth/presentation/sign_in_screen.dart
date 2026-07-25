@@ -7,7 +7,6 @@ import '../../../core/i18n/strings.dart';
 import '../../../core/network/api_exception.dart';
 import '../../../core/providers.dart';
 import '../../../core/theme/tokens.g.dart';
-import '../data/auth_repository.dart';
 
 /// Mobile OTP sign-in. Two steps in one screen so "wrong number" is a state change
 /// rather than a navigation pop.
@@ -73,9 +72,7 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
     });
 
     try {
-      final user = await ref
-          .read(authRepositoryProvider)
-          .verifyOtp(
+      final user = await ref.read(authRepositoryProvider).verifyOtp(
             _phoneController.text.replaceAll(RegExp(r'\D'), ''),
             _codeController.text.trim(),
           );
@@ -199,11 +196,11 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
                 onPressed: _busy
                     ? null
                     : () => setState(() {
-                        _codeSent = false;
-                        _codeController.clear();
-                        _debugCode = null;
-                        _error = null;
-                      }),
+                          _codeSent = false;
+                          _codeController.clear();
+                          _debugCode = null;
+                          _error = null;
+                        }),
                 child: Text(strings('common.cancel')),
               ),
             ],

@@ -38,17 +38,17 @@ class Strings {
       'nav.saved': 'Saved',
       'nav.signIn': 'Sign in',
       'nav.signOut': 'Sign out',
-
       'location.change': 'Change',
       'location.useCurrent': 'Use my current location',
       'location.searchCity': 'Search for a city',
+      'location.pincodeLabel': 'Or enter your pincode',
+      'location.pincodeGo': 'Go',
+      'location.pincodeUnknown': 'That pincode does not look right. Check the six digits.',
       'location.permissionDenied': 'Location permission was declined. Pick a city instead.',
       'location.outsideLaunchArea': 'LocZ is not live in your area yet. Pick a city to browse.',
-
       'search.placeholder': 'Search phones, jobs, rooms…',
       'search.noResults': 'Nothing found',
       'search.noResultsHint': 'Try fewer words or a wider distance.',
-
       'feed.nearby': 'Near you',
       'feed.recommended': 'Recommended for you',
       'feed.latest_products': 'Latest items for sale',
@@ -59,7 +59,6 @@ class Strings {
       'feed.recently_viewed': 'Recently viewed',
       'feed.seeAll': 'See all',
       'feed.empty': 'Nothing here yet. Be the first to post in your area.',
-
       'listing.free': 'Free',
       'listing.negotiable': 'Negotiable',
       'listing.contactSeller': 'Message seller',
@@ -72,7 +71,6 @@ class Strings {
       'listing.description': 'Description',
       'listing.sold': 'This item has been sold',
       'listing.views': '{count} views',
-
       'post.title': 'Post your free ad',
       'post.subtitle': 'It takes about a minute and costs nothing.',
       'post.fieldTitle': 'Title',
@@ -89,7 +87,6 @@ class Strings {
       'post.successPending':
           'Your ad has been submitted. We review first ads to keep LocZ clean — usually within a few hours.',
       'post.loginRequired': 'Sign in to post your free ad',
-
       'auth.signInTitle': 'Sign in to LocZ',
       'auth.signInSubtitle': "Enter your mobile number and we'll send a code.",
       'auth.phone': 'Mobile number',
@@ -100,18 +97,15 @@ class Strings {
       'auth.verify': 'Verify and continue',
       'auth.invalidPhone': 'Enter a valid 10-digit mobile number',
       'auth.devCode': 'Development mode — your code is {code}',
-
       'chats.title': 'Chats',
       'chats.empty': 'No conversations yet',
       'chats.messageHint': 'Write a message…',
       'chats.send': 'Send',
-
       'account.myAds': 'My ads',
       'account.savedAds': 'Saved ads',
       'account.notifications': 'Notifications',
       'account.language': 'Language',
       'account.noAds': "You haven't posted anything yet",
-
       'common.retry': 'Try again',
       'common.error': 'Something went wrong',
       'common.offline': 'No internet connection',
@@ -130,21 +124,20 @@ class Strings {
       'nav.saved': 'సేవ్ చేసినవి',
       'nav.signIn': 'సైన్ ఇన్',
       'nav.signOut': 'సైన్ అవుట్',
-
       'location.change': 'మార్చండి',
       'location.useCurrent': 'నా ప్రస్తుత ప్రాంతం',
       'location.searchCity': 'నగరం వెతకండి',
-
+      'location.pincodeLabel': 'లేదా మీ పిన్‌కోడ్ ఇవ్వండి',
+      'location.pincodeGo': 'వెళ్లు',
+      'location.pincodeUnknown': 'ఈ పిన్‌కోడ్ సరైనది కాదు. ఆరు అంకెలు సరిచూడండి.',
       'search.placeholder': 'ఫోన్లు, ఉద్యోగాలు, గదులు…',
       'search.noResults': 'ఏమీ దొరకలేదు',
-
       'feed.nearby': 'మీ దగ్గర',
       'feed.latest_products': 'కొత్త వస్తువులు',
       'feed.offers': 'ఆఫర్లు',
       'feed.jobs': 'ఉద్యోగాలు',
       'feed.services': 'సేవలు',
       'feed.seeAll': 'అన్నీ చూడండి',
-
       'listing.free': 'ఉచితం',
       'listing.negotiable': 'బేరం చేయవచ్చు',
       'listing.contactSeller': 'విక్రేతకు సందేశం',
@@ -152,20 +145,17 @@ class Strings {
       'listing.save': 'సేవ్',
       'listing.saved': 'సేవ్ అయింది',
       'listing.description': 'వివరణ',
-
       'post.title': 'మీ ఉచిత ప్రకటన',
       'post.publish': 'ఉచితంగా ప్రచురించండి',
       'post.fieldTitle': 'శీర్షిక',
       'post.fieldDescription': 'వివరణ',
       'post.fieldPrice': 'ధర (₹)',
       'post.photos': 'ఫోటోలు',
-
       'auth.signInTitle': 'LocZ లోకి సైన్ ఇన్',
       'auth.phone': 'మొబైల్ నంబర్',
       'auth.sendCode': 'కోడ్ పంపండి',
       'auth.code': 'ధృవీకరణ కోడ్',
       'auth.verify': 'ధృవీకరించండి',
-
       'chats.title': 'సందేశాలు',
       'common.retry': 'మళ్లీ ప్రయత్నించండి',
       'common.error': 'ఏదో తప్పు జరిగింది',
@@ -182,21 +172,20 @@ class Strings {
       'nav.saved': 'सहेजे गए',
       'nav.signIn': 'साइन इन',
       'nav.signOut': 'साइन आउट',
-
       'location.change': 'बदलें',
       'location.useCurrent': 'मेरा वर्तमान स्थान',
+      'location.pincodeLabel': 'या अपना पिनकोड डालें',
+      'location.pincodeGo': 'चलें',
+      'location.pincodeUnknown': 'यह पिनकोड सही नहीं लगता। छह अंक जाँच लें।',
       'location.searchCity': 'शहर खोजें',
-
       'search.placeholder': 'फ़ोन, नौकरी, कमरा…',
       'search.noResults': 'कुछ नहीं मिला',
-
       'feed.nearby': 'आपके पास',
       'feed.latest_products': 'नई चीज़ें',
       'feed.offers': 'ऑफ़र',
       'feed.jobs': 'नौकरियाँ',
       'feed.services': 'सेवाएँ',
       'feed.seeAll': 'सभी देखें',
-
       'listing.free': 'मुफ़्त',
       'listing.negotiable': 'मोल-भाव संभव',
       'listing.contactSeller': 'विक्रेता को संदेश',
@@ -204,20 +193,17 @@ class Strings {
       'listing.save': 'सहेजें',
       'listing.saved': 'सहेजा गया',
       'listing.description': 'विवरण',
-
       'post.title': 'अपना मुफ़्त विज्ञापन',
       'post.publish': 'मुफ़्त प्रकाशित करें',
       'post.fieldTitle': 'शीर्षक',
       'post.fieldDescription': 'विवरण',
       'post.fieldPrice': 'कीमत (₹)',
       'post.photos': 'तस्वीरें',
-
       'auth.signInTitle': 'LocZ में साइन इन करें',
       'auth.phone': 'मोबाइल नंबर',
       'auth.sendCode': 'कोड भेजें',
       'auth.code': 'सत्यापन कोड',
       'auth.verify': 'सत्यापित करें',
-
       'chats.title': 'संदेश',
       'common.retry': 'फिर कोशिश करें',
       'common.error': 'कुछ गड़बड़ हुई',

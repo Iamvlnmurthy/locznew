@@ -4,7 +4,6 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
 import '../../../core/i18n/strings.dart';
-import '../../../core/network/api_client.dart';
 import '../../../core/providers.dart';
 
 class AppNotification {
@@ -122,12 +121,12 @@ class NotificationsScreen extends ConsumerWidget {
   }
 
   IconData _iconFor(String type) => switch (type) {
-    'LISTING_APPROVED' => Icons.check_circle_outline,
-    'LISTING_REJECTED' => Icons.block_outlined,
-    'LISTING_EXPIRING' || 'LISTING_EXPIRED' => Icons.schedule_outlined,
-    'NEW_ENQUIRY' || 'NEW_MESSAGE' => Icons.chat_bubble_outline,
-    'SAVED_SEARCH_MATCH' => Icons.search,
-    'NEARBY_OFFER' => Icons.local_offer_outlined,
-    _ => Icons.notifications_none,
-  };
+        'LISTING_APPROVED' => Icons.check_circle_outline,
+        'LISTING_REJECTED' => Icons.block_outlined,
+        'LISTING_EXPIRING' || 'LISTING_EXPIRED' => Icons.schedule_outlined,
+        'NEW_ENQUIRY' || 'NEW_MESSAGE' => Icons.chat_bubble_outline,
+        'SAVED_SEARCH_MATCH' => Icons.search,
+        'NEARBY_OFFER' => Icons.local_offer_outlined,
+        _ => Icons.notifications_none,
+      };
 }

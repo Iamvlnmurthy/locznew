@@ -52,7 +52,6 @@ class HomeScreen extends ConsumerWidget {
           ),
         ],
       ),
-
       body: RefreshIndicator(
         // Pull-to-refresh is the expected gesture on a feed; invalidating the provider
         // refetches through the same path as first load.
@@ -94,7 +93,6 @@ class HomeScreen extends ConsumerWidget {
                     ),
                   ),
                 ),
-
                 for (final section in data.sections)
                   SliverToBoxAdapter(
                     child: Padding(
@@ -131,7 +129,6 @@ class HomeScreen extends ConsumerWidget {
                       ),
                     ),
                   ),
-
                 const SliverToBoxAdapter(child: SizedBox(height: LoczSpacing.x8)),
               ],
             );
@@ -167,8 +164,15 @@ class _FeedError extends StatelessWidget {
 }
 
 class _EmptyFeed extends StatelessWidget {
-  const _EmptyFeed({required this.message, required this.actionLabel, required this.onAction});
+  const _EmptyFeed({
+    required this.slogan,
+    required this.message,
+    required this.actionLabel,
+    required this.onAction,
+  });
 
+  /// "Find it here. Deal it near." — the empty feed is the one screen with room for it.
+  final String slogan;
   final String message;
   final String actionLabel;
   final VoidCallback onAction;

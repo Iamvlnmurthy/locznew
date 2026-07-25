@@ -420,3 +420,28 @@ city hundreds of kilometres away.
 Verified against the running stack rather than assumed: with `500081` selected the
 Hyderabad listing appears; with `110001` selected it does not. Strings are translated in
 English, Telugu and Hindi.
+
+### Mobile — compiled for the first time
+
+A Flutter SDK turned out to be installed after all (3.41.5, with a working Android
+toolchain), so the mobile app stopped being unverified code. `flutter analyze` reported
+nine real errors that had accumulated unchecked; all are fixed:
+
+- three provider inference cycles (`apiClient → auth → authRepository`) — the cycle is
+  deliberate at runtime, so the fix is explicit type annotations, not restructuring
+- `_EmptyFeed` was passed a `slogan` it never declared, so the empty home screen would
+  not compile at all
+- four unused imports, and a declared asset directory that never existed
+
+The app also had no `android/` or `ios/` folder — it had never been built. Both are now
+scaffolded, the application id is `com.locz.app`, core library desugaring is enabled
+(`flutter_local_notifications` needs `java.time` on API < 26, which is a large share of
+the Indian install base), coarse-location and notification permissions are declared, and
+iOS carries the location purpose string without which the request is refused outright.
+Inter ships as four static faces with its OFL licence, replacing a font declaration that
+pointed at files nobody had ever added.
+
+**`flutter build apk --debug` succeeds.** The pincode picker, pincode-scoped feed and
+search are in, translated in all three languages, with unit tests over the area model.
+
+Not yet done: running the app against the API on a device, and iOS, which needs a Mac.
