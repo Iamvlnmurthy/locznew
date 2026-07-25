@@ -2,10 +2,10 @@
 
 Legend: ✅ done & verified · 🟡 authored, not yet verified · ⬜ not started
 
-> **Verification note.** PostgreSQL 18.4 + PostGIS 3.6.2 now runs natively on this
-> workstation, so the database, migrations, seed, backup and restore are all **executed and
-> verified**. Still absent: Docker (Redis, Meilisearch and MinIO are unrun) and the Flutter
-> SDK (the mobile app has never been compiled). Nothing is marked ✅ on the strength of
+> **Verification note.** The whole backend stack now runs natively on this workstation —
+> PostgreSQL 18.4 + PostGIS 3.6.2, Redis 8.8.1, Meilisearch and MinIO — and the
+> **Phase 1 acceptance gate passes 35/35 end to end**. Still unverified: the Flutter app,
+> which has never been compiled (no SDK here). Nothing is marked ✅ on the strength of
 > "it looks right".
 
 ## M0 — Repository foundation
@@ -322,12 +322,53 @@ rather than transliterated.
 | Anything needing Docker          | ⬜ not runnable here                 |
 | Anything needing Flutter         | ⬜ not runnable here                 |
 
+## M15 — Acceptance gate PASSED (2026-07-26)
+
+The rest of the stack now runs natively alongside Postgres, so the end-to-end flow is
+executed rather than described:
+
+| Service              | Version      | How                                          |
+| -------------------- | ------------ | -------------------------------------------- |
+| PostgreSQL + PostGIS | 18.4 / 3.6.2 | portable binaries, no admin                  |
+| Redis                | 8.8.1        | maintained Windows build, no service wrapper |
+| Meilisearch          | latest       | single binary                                |
+| MinIO + mc           | latest       | single binaries, `locz-media` bucket created |
+
+`scripts/acceptance.mjs` is an executable version of `docs/ACCEPTANCE.md` — 35 assertions
+over HTTP only, no direct database access, exits non-zero on failure so it can gate a
+deploy. **35 passed, 0 failed.**
+
+### Three more bugs the running system caught
+
+1. **All search indexing was silently dead.** BullMQ rejects a custom job id containing
+   `:`, and every job used `index:<id>`. Because the publisher swallows enqueue failures
+   by design, this appeared only as a log line — search would have stayed permanently
+   empty in production, masked by the nightly rebuild. Separator is now a hyphen.
+2. **`condition` and `brand` were modelled twice** — as first-class `MarketplaceDetail`
+   columns _and_ as required dynamic category attributes. A valid listing was impossible
+   to submit: the API demanded the same fact in two shapes. The duplicates are gone from
+   the seed.
+3. **The Prisma 7 seed had no driver adapter**, so `db:seed` failed outright.
+
+Also fixed: `forRoutes('*')` → `forRoutes('{*path}')` for path-to-regexp v8.
+
 ## Acceptance gate — end-to-end marketplace flow
 
 Mock-OTP sign-in → city selection → create marketplace listing → image upload →
 moderation → admin approval → search indexing → visible on web + mobile →
 saved by another user → enquiry sent → owner notified.
 
-Status: ⬜ — implemented end to end, never executed. The 12-step run with its SQL checks
-is written up in [docs/ACCEPTANCE.md](docs/ACCEPTANCE.md). Run it on a machine with Docker
-and record the outcome here. Until that is done, Phase 1 is **not** complete.
+Status: ✅ **PASSED 2026-07-26 — 35 assertions, 0 failures.**
+
+```
+node scripts/acceptance.mjs
+```
+
+Covers: health · mock-OTP sign-in · role resolution · city and coordinate resolution ·
+listing creation routed to review · spam auto-rejected · moderation queue with reasons ·
+approval publishing · public visibility without a token · phone hidden by default ·
+keyword search via Meilisearch · PostGIS radius search · home feed · idempotent saving ·
+enquiry threading · owner notification · sold removing from the index.
+
+Remaining for Phase 1 completion: the same flow on Flutter mobile, which needs an SDK
+this machine does not have.

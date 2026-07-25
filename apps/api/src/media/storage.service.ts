@@ -63,6 +63,10 @@ export class StorageService {
 
   /** Derivatives live under `public/`, which the bucket policy exposes anonymously. */
   publicUrl(key: string): string {
+    // Development seed media is served by the web app so a fresh checkout has a
+    // convincing catalogue before MinIO is populated. User uploads still use normal
+    // object-storage keys; absolute URLs are never accepted by the upload endpoints.
+    if (/^https?:\/\//i.test(key)) return key;
     return `${this.config.get('STORAGE_PUBLIC_BASE_URL')}/${key}`;
   }
 

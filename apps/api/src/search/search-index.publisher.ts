@@ -23,7 +23,11 @@ export class SearchIndexPublisher {
         { listingId },
         // One pending job per listing: rapid edits collapse into a single index write,
         // and the worker reads current state anyway.
-        { jobId: `index:${listingId}`, removeOnComplete: true },
+        //
+        // The separator is a hyphen, not a colon: BullMQ rejects a custom job id
+        // containing ':' because it namespaces its own Redis keys that way. Getting this
+        // wrong silently disabled *all* search indexing.
+        { jobId: `index-${listingId}`, removeOnComplete: true },
       );
     } catch (error) {
       this.logger.error(
@@ -37,7 +41,7 @@ export class SearchIndexPublisher {
       await this.queue.add(
         JOB_REMOVE_LISTING,
         { listingId },
-        { jobId: `remove:${listingId}`, removeOnComplete: true },
+        { jobId: `remove-${listingId}`, removeOnComplete: true },
       );
     } catch (error) {
       this.logger.error(

@@ -6,18 +6,32 @@
  */
 import {
   AttributeDataType,
+  ContactPreference,
+  EmploymentType,
+  ItemCondition,
   Language,
   ListingType,
+  ListingStatus,
+  MediaStatus,
+  ModerationStatus,
   NotificationChannel,
   NotificationType,
+  Prisma,
   PrismaClient,
   RoleName,
+  SalaryPeriod,
   UserStatus,
+  WorkplaceType,
 } from '@prisma/client';
+import { PrismaPg } from '@prisma/adapter-pg';
 import { v7 as uuid } from 'uuid';
 import * as argon2 from 'argon2';
 
-const prisma = new PrismaClient();
+// Prisma 7 connects through a driver adapter rather than a bundled engine, so the seed
+// supplies one exactly as the application does.
+const prisma = new PrismaClient({
+  adapter: new PrismaPg({ connectionString: process.env.DATABASE_URL }),
+});
 
 // ---------------------------------------------------------------------------
 // Roles and their permission sets. Permissions are checked as plain strings by
@@ -332,15 +346,12 @@ type CategorySeed = {
 // ---------------------------------------------------------------------------
 // Category tree. Attributes here are *definitions* — the posting form in web and
 // mobile renders whatever the admin has configured, nothing is hardcoded client-side.
+//
+// They cover only what the schema does NOT already model. Brand, model, condition,
+// purchase year and warranty are first-class columns on MarketplaceDetail; duplicating
+// them here made a poster supply the same fact twice, and marking them required made a
+// valid listing impossible to submit.
 // ---------------------------------------------------------------------------
-const CONDITION_OPTIONS = [
-  { value: 'NEW', label: 'New' },
-  { value: 'LIKE_NEW', label: 'Like new' },
-  { value: 'GOOD', label: 'Good' },
-  { value: 'FAIR', label: 'Fair' },
-  { value: 'FOR_PARTS', label: 'For parts' },
-];
-
 const CATEGORIES: CategorySeed[] = [
   {
     name: 'Electronics',
@@ -349,42 +360,7 @@ const CATEGORIES: CategorySeed[] = [
     slug: 'electronics',
     iconKey: 'device',
     listingTypes: [ListingType.CLASSIFIED, ListingType.PRODUCT, ListingType.BUYER_REQUIREMENT],
-    attributes: [
-      {
-        key: 'brand',
-        label: 'Brand',
-        labelTe: 'బ్రాండ్',
-        labelHi: 'ब्रांड',
-        dataType: AttributeDataType.TEXT,
-        isFilterable: true,
-        isSearchable: true,
-      },
-      {
-        key: 'model',
-        label: 'Model',
-        labelTe: 'మోడల్',
-        labelHi: 'मॉडल',
-        dataType: AttributeDataType.TEXT,
-        isSearchable: true,
-      },
-      {
-        key: 'condition',
-        label: 'Condition',
-        labelTe: 'స్థితి',
-        labelHi: 'स्थिति',
-        dataType: AttributeDataType.SELECT,
-        options: CONDITION_OPTIONS,
-        isRequired: true,
-        isFilterable: true,
-      },
-      {
-        key: 'warranty_months',
-        label: 'Warranty remaining',
-        dataType: AttributeDataType.NUMBER,
-        unit: 'months',
-        isFilterable: true,
-      },
-    ],
+    attributes: [],
     children: [
       {
         name: 'Mobile Phones',
@@ -458,19 +434,6 @@ const CATEGORIES: CategorySeed[] = [
     listingTypes: [ListingType.CLASSIFIED, ListingType.PRODUCT, ListingType.BUYER_REQUIREMENT],
     attributes: [
       {
-        key: 'brand',
-        label: 'Brand',
-        dataType: AttributeDataType.TEXT,
-        isFilterable: true,
-        isSearchable: true,
-      },
-      {
-        key: 'year',
-        label: 'Year of purchase',
-        dataType: AttributeDataType.NUMBER,
-        isFilterable: true,
-      },
-      {
         key: 'km_driven',
         label: 'Kilometres driven',
         dataType: AttributeDataType.NUMBER,
@@ -518,14 +481,6 @@ const CATEGORIES: CategorySeed[] = [
     listingTypes: [ListingType.CLASSIFIED, ListingType.PRODUCT, ListingType.BUYER_REQUIREMENT],
     attributes: [
       { key: 'material', label: 'Material', dataType: AttributeDataType.TEXT, isFilterable: true },
-      {
-        key: 'condition',
-        label: 'Condition',
-        dataType: AttributeDataType.SELECT,
-        options: CONDITION_OPTIONS,
-        isRequired: true,
-        isFilterable: true,
-      },
     ],
   },
   {
@@ -927,6 +882,258 @@ const TEST_ACCOUNTS: Array<{
 
 const DEV_PASSWORD = 'LocZ@dev1234';
 
+type DemoListingSeed = {
+  slug: string;
+  type: ListingType;
+  title: string;
+  description: string;
+  categorySlug: string;
+  localitySlug: string;
+  image: string;
+  ownerPhone: string;
+  priceLabel?: number;
+  featured?: boolean;
+  details:
+    | { kind: 'marketplace'; data: Record<string, unknown> }
+    | { kind: 'rental'; data: Record<string, unknown> }
+    | { kind: 'offer'; data: Record<string, unknown> }
+    | { kind: 'service'; data: Record<string, unknown> }
+    | { kind: 'job'; data: Record<string, unknown> };
+};
+
+/**
+ * A compact, believable launch catalogue. The image URLs deliberately point at the web
+ * app's checked-in development assets; production never runs this seed and real uploads
+ * continue to use R2/MinIO keys.
+ */
+function demoListings(now = new Date()): DemoListingSeed[] {
+  const inDays = (days: number) => new Date(now.getTime() + days * 86_400_000);
+
+  return [
+    {
+      slug: 'iphone-13-128gb-blue-madhapur',
+      type: ListingType.PRODUCT,
+      title: 'iPhone 13, 128 GB — excellent condition',
+      description:
+        'Personal phone, carefully used for two years. Battery health is 87%. No repairs or screen replacement. Includes the original cable and box. You are welcome to check everything before buying. Pickup near Madhapur metro.',
+      categorySlug: 'mobile-phones',
+      localitySlug: 'madhapur',
+      image: 'iphone-13-blue.webp',
+      ownerPhone: '+919000000004',
+      featured: true,
+      details: {
+        kind: 'marketplace',
+        data: {
+          price: 32900,
+          isNegotiable: true,
+          condition: ItemCondition.GOOD,
+          isNewItem: false,
+          brand: 'Apple',
+          model: 'iPhone 13',
+          purchaseYear: 2023,
+          hasWarranty: false,
+          deliveryAvailable: false,
+          pickupAvailable: true,
+          quantity: 1,
+        },
+      },
+    },
+    {
+      slug: 'red-scooter-low-km-kukatpally',
+      type: ListingType.PRODUCT,
+      title: '2019 family scooter, single owner',
+      description:
+        'Single-owner petrol scooter used mainly for short office trips. Regularly serviced, tyres changed last year and insurance is valid. A few normal parking marks are visible. RC transfer is mandatory.',
+      categorySlug: 'motorcycles-scooters',
+      localitySlug: 'kukatpally',
+      image: 'red-scooter.webp',
+      ownerPhone: '+919000000004',
+      details: {
+        kind: 'marketplace',
+        data: {
+          price: 48500,
+          isNegotiable: true,
+          condition: ItemCondition.GOOD,
+          isNewItem: false,
+          brand: 'Honda',
+          model: 'Activa 5G',
+          purchaseYear: 2019,
+          hasWarranty: false,
+          deliveryAvailable: false,
+          pickupAvailable: true,
+          quantity: 1,
+        },
+      },
+    },
+    {
+      slug: 'solid-wood-study-table-banjara-hills',
+      type: ListingType.PRODUCT,
+      title: 'Solid wood study table with drawers',
+      description:
+        'Strong handmade study table with two smooth drawers. Selling because we are moving. There are light signs of use on the top but no wobble or damage. Buyer should arrange pickup from the ground floor.',
+      categorySlug: 'furniture-home',
+      localitySlug: 'banjara-hills',
+      image: 'wood-study-desk.webp',
+      ownerPhone: '+919000000004',
+      details: {
+        kind: 'marketplace',
+        data: {
+          price: 4500,
+          isNegotiable: true,
+          condition: ItemCondition.GOOD,
+          isNewItem: false,
+          brand: null,
+          model: null,
+          purchaseYear: 2021,
+          hasWarranty: false,
+          deliveryAvailable: false,
+          pickupAvailable: true,
+          quantity: 1,
+        },
+      },
+    },
+    {
+      slug: 'thinkpad-business-laptop-gachibowli',
+      type: ListingType.PRODUCT,
+      title: 'Business laptop, 16 GB RAM with charger',
+      description:
+        'Reliable office laptop with Intel i5 processor, 16 GB RAM and 512 GB SSD. Keyboard, ports, camera and Wi-Fi all work correctly. Fresh Windows installation. Battery lasts around three hours.',
+      categorySlug: 'laptops-computers',
+      localitySlug: 'gachibowli',
+      image: 'business-laptop.webp',
+      ownerPhone: '+919000000004',
+      details: {
+        kind: 'marketplace',
+        data: {
+          price: 26500,
+          isNegotiable: false,
+          condition: ItemCondition.GOOD,
+          isNewItem: false,
+          brand: 'Lenovo',
+          model: 'ThinkPad',
+          purchaseYear: 2022,
+          hasWarranty: false,
+          deliveryAvailable: true,
+          pickupAvailable: true,
+          quantity: 1,
+        },
+      },
+    },
+    {
+      slug: 'semi-furnished-2bhk-gachibowli-rent',
+      type: ListingType.RENTAL,
+      title: 'Bright semi-furnished 2BHK near Financial District',
+      description:
+        'Well-ventilated east-facing flat in a quiet gated community. Five minutes from the main road, with grocery stores and public transport nearby. Family-owned property; no brokerage. Maintenance is ₹3,200 per month.',
+      categorySlug: 'real-estate-rentals',
+      localitySlug: 'gachibowli',
+      image: 'gachibowli-flat.webp',
+      ownerPhone: '+919000000004',
+      featured: true,
+      details: {
+        kind: 'rental',
+        data: {
+          propertyType: 'FLAT',
+          rentAmount: 28500,
+          depositAmount: 57000,
+          rentPeriod: 'MONTHLY',
+          bedrooms: 2,
+          bathrooms: 2,
+          areaSqft: 1180,
+          furnishing: 'SEMI',
+          availableFrom: inDays(7),
+          preferredTenant: 'FAMILY_OR_WORKING_PROFESSIONALS',
+          amenities: ['Lift', 'Power backup', 'Security', 'Covered parking'],
+        },
+      },
+    },
+    {
+      slug: 'weekend-family-biryani-offer-madhapur',
+      type: ListingType.OFFER,
+      title: 'Weekend family biryani combo — 25% off',
+      description:
+        'A family pack of chicken biryani with mirchi ka salan, raita and four pieces. Dine-in and takeaway available this weekend. Fresh batches are prepared through the day.',
+      categorySlug: 'offers-restaurants-food',
+      localitySlug: 'madhapur',
+      image: 'biryani-offer.webp',
+      ownerPhone: '+919000000006',
+      featured: true,
+      details: {
+        kind: 'offer',
+        data: {
+          originalPrice: 999,
+          offerPrice: 749,
+          discountPercentage: 25,
+          couponCode: 'LOCZ25',
+          startsAt: now,
+          endsAt: inDays(21),
+          redemptionInstructions: 'Show the LocZ offer at the counter before billing.',
+          termsAndConditions: 'Valid on one family combo per bill. Not valid with other offers.',
+          limitedQuantity: 100,
+          redeemedCount: 12,
+          isOnline: false,
+          isInStore: true,
+        },
+      },
+    },
+    {
+      slug: 'verified-electrician-home-service-hyderabad',
+      type: ListingType.SERVICE,
+      title: 'Experienced electrician — same-day home visits',
+      description:
+        'Electrical repairs, fan and light fitting, switchboard replacement, inverter wiring and fault checking. Twelve years of local experience. I bring the basic tools and explain the cost before starting.',
+      categorySlug: 'services-home-repair',
+      localitySlug: 'ameerpet',
+      image: 'electrician-service.webp',
+      ownerPhone: '+919000000007',
+      featured: true,
+      details: {
+        kind: 'service',
+        data: {
+          serviceType: 'Residential electrical repair',
+          priceFrom: 350,
+          priceTo: 1500,
+          pricingUnit: 'per visit',
+          experienceYears: 12,
+          availability: 'Monday–Saturday, 8 AM–8 PM',
+          servesAtHome: true,
+          servesOnline: false,
+        },
+      },
+    },
+    {
+      slug: 'barista-cafe-job-madhapur',
+      type: ListingType.JOB,
+      title: 'Barista / cafe team member',
+      description:
+        'Neighbourhood cafe looking for a friendly full-time team member. You will prepare beverages, help at the counter and keep the work area tidy. Training is provided; hospitality experience is useful but not compulsory.',
+      categorySlug: 'jobs-retail-hospitality',
+      localitySlug: 'madhapur',
+      image: 'madhapur-cafe.webp',
+      ownerPhone: '+919000000006',
+      details: {
+        kind: 'job',
+        data: {
+          companyName: 'The Daily Grind Cafe',
+          employmentType: EmploymentType.FULL_TIME,
+          workplaceType: WorkplaceType.ON_SITE,
+          salaryMin: 16000,
+          salaryMax: 22000,
+          salaryPeriod: SalaryPeriod.MONTHLY,
+          isSalaryVisible: true,
+          experienceMinYears: 0,
+          experienceMaxYears: 2,
+          educationRequirement: 'Intermediate or equivalent',
+          skills: ['Customer service', 'Basic English', 'Food hygiene'],
+          openings: 2,
+          applicationDeadline: inDays(25),
+          applyMethod: 'IN_APP',
+        },
+      },
+    },
+  ];
+}
+
 async function seedRoles() {
   for (const role of ROLES) {
     await prisma.role.upsert({
@@ -1243,6 +1450,148 @@ async function seedTestAccounts() {
   console.log(`  test accounts: ${TEST_ACCOUNTS.length} (password: ${DEV_PASSWORD})`);
 }
 
+async function seedDemoListings() {
+  if (process.env.NODE_ENV === 'production') {
+    console.log('  demo listings: skipped (NODE_ENV=production)');
+    return;
+  }
+
+  const city = await prisma.city.findUnique({ where: { slug: 'hyderabad' } });
+  if (!city) throw new Error('Hyderabad must be seeded before demo listings');
+
+  const [localities, categories, owners] = await Promise.all([
+    prisma.locality.findMany({ where: { cityId: city.id } }),
+    prisma.category.findMany(),
+    prisma.user.findMany({
+      where: { phoneE164: { in: TEST_ACCOUNTS.map((account) => account.phone) } },
+    }),
+  ]);
+
+  const localityBySlug = new Map(localities.map((locality) => [locality.slug, locality]));
+  const categoryBySlug = new Map(categories.map((category) => [category.slug, category]));
+  const ownerByPhone = new Map(owners.map((owner) => [owner.phoneE164, owner]));
+  const now = new Date();
+  const expiry = new Date(now.getTime() + 30 * 86_400_000);
+
+  let index = 0;
+  for (const seed of demoListings(now)) {
+    const locality = localityBySlug.get(seed.localitySlug);
+    const category = categoryBySlug.get(seed.categorySlug);
+    const owner = ownerByPhone.get(seed.ownerPhone);
+    if (!locality || !category || !owner) {
+      throw new Error(`Missing relation for demo listing ${seed.slug}`);
+    }
+
+    const publishedAt = new Date(now.getTime() - (index * 7 + 2) * 3_600_000);
+    const common = {
+      type: seed.type,
+      ownerId: owner.id,
+      title: seed.title,
+      description: seed.description,
+      categoryId: category.id,
+      cityId: city.id,
+      districtId: city.districtId,
+      stateId: city.stateId,
+      localityId: locality.id,
+      postalCode: locality.postalCode,
+      latitude: locality.latitude,
+      longitude: locality.longitude,
+      status: ListingStatus.PUBLISHED,
+      moderationStatus: ModerationStatus.APPROVED,
+      contactPreference: ContactPreference.IN_APP_ONLY,
+      visibility: 'PUBLIC' as const,
+      publishedAt,
+      expiresAt:
+        seed.type === ListingType.OFFER
+          ? ((seed.details.data.endsAt as Date | undefined) ?? expiry)
+          : expiry,
+      viewCount: 31 + index * 19,
+      saveCount: 2 + index * 3,
+      enquiryCount: 1 + index,
+      isFeatured: seed.featured ?? false,
+      isSponsored: false,
+      isVerified: seed.type === ListingType.SERVICE || seed.type === ListingType.OFFER,
+      deletedAt: null,
+    };
+
+    const listing = await prisma.listing.upsert({
+      where: { slug: seed.slug },
+      update: common,
+      create: { id: uuid(), slug: seed.slug, ...common },
+    });
+
+    switch (seed.details.kind) {
+      case 'marketplace': {
+        const data = seed.details.data as Prisma.MarketplaceDetailUncheckedCreateInput;
+        await prisma.marketplaceDetail.upsert({
+          where: { listingId: listing.id },
+          update: data,
+          create: { ...data, listingId: listing.id },
+        });
+        break;
+      }
+      case 'rental': {
+        const data = seed.details.data as Prisma.RentalDetailUncheckedCreateInput;
+        await prisma.rentalDetail.upsert({
+          where: { listingId: listing.id },
+          update: data,
+          create: { ...data, listingId: listing.id },
+        });
+        break;
+      }
+      case 'offer': {
+        const data = seed.details.data as Prisma.OfferDetailUncheckedCreateInput;
+        await prisma.offerDetail.upsert({
+          where: { listingId: listing.id },
+          update: data,
+          create: { ...data, listingId: listing.id },
+        });
+        break;
+      }
+      case 'service': {
+        const data = seed.details.data as Prisma.ServiceDetailUncheckedCreateInput;
+        await prisma.serviceDetail.upsert({
+          where: { listingId: listing.id },
+          update: data,
+          create: { ...data, listingId: listing.id },
+        });
+        break;
+      }
+      case 'job': {
+        const data = seed.details.data as Prisma.JobDetailUncheckedCreateInput;
+        await prisma.jobDetail.upsert({
+          where: { listingId: listing.id },
+          update: data,
+          create: { ...data, listingId: listing.id },
+        });
+        break;
+      }
+    }
+
+    const publicUrl = `http://localhost:3000/seed/listings/${seed.image}`;
+    await prisma.listingMedia.deleteMany({ where: { listingId: listing.id } });
+    await prisma.listingMedia.create({
+      data: {
+        id: uuid(),
+        listingId: listing.id,
+        status: MediaStatus.READY,
+        storageKey: publicUrl,
+        thumbKey: publicUrl,
+        cardKey: publicUrl,
+        fullKey: publicUrl,
+        mimeType: 'image/webp',
+        width: 1200,
+        height: 900,
+        sortOrder: 0,
+        isPrimary: true,
+      },
+    });
+    index += 1;
+  }
+
+  console.log(`  demo listings: ${index}`);
+}
+
 async function main() {
   console.log('Seeding LocZ…');
   await seedRoles();
@@ -1253,6 +1602,7 @@ async function main() {
   await seedExpiryRules();
   await seedSystemSettings();
   await seedTestAccounts();
+  await seedDemoListings();
   console.log('Seed complete.');
 }
 

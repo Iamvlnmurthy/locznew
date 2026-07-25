@@ -17,13 +17,16 @@ export async function Header({ locale }: { locale: Locale }) {
     <header className="header">
       <div className="container header__row">
         <Link href="/" className="header__brand" aria-label={t('brand.name')}>
-          <img
-            src="/brand/locz-logo.webp"
-            alt=""
-            width="214"
-            height="102"
-            className="header__logo"
-          />
+          <picture>
+            <source media="(max-width: 760px)" srcSet="/brand/locz-mark.png" />
+            <img
+              src="/brand/locz-logo.webp"
+              alt=""
+              width="214"
+              height="102"
+              className="header__logo"
+            />
+          </picture>
         </Link>
 
         <LocationChip cityName={city?.name ?? null} changeLabel={t('location.change')} />

@@ -80,6 +80,7 @@ import { UsersModule } from './users/users.module';
 })
 export class AppModule implements NestModule {
   configure(consumer: MiddlewareConsumer): void {
-    consumer.apply(CorrelationIdMiddleware).forRoutes('*');
+    // '{*path}' rather than '*': path-to-regexp v8 requires named wildcards.
+    consumer.apply(CorrelationIdMiddleware).forRoutes('{*path}');
   }
 }

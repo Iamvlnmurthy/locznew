@@ -789,11 +789,13 @@ img {
 
 html {
   scroll-behavior: smooth;
+  overflow-x: clip;
 }
 
 body {
   letter-spacing: -0.008em;
   padding-bottom: 0;
+  overflow-x: clip;
 }
 
 button,
@@ -1732,16 +1734,23 @@ textarea {
   object-fit: contain;
 }
 
+.header__brand picture {
+  display: block;
+}
+
 .home-hero__scene::before {
   display: none;
 }
 
 .home-hero__scene {
-  width: min(100%, 610px);
-  aspect-ratio: 1.7;
-  margin-right: -24px;
-  border-radius: 32px;
+  width: min(100%, 570px);
+  aspect-ratio: 1.46;
+  margin-right: -12px;
+  overflow: hidden;
+  border-radius: 42px;
   filter: drop-shadow(0 24px 48px rgba(24, 36, 31, 0.09));
+  -webkit-mask-image: radial-gradient(ellipse 76% 78% at 58% 50%, #000 58%, transparent 100%);
+  mask-image: radial-gradient(ellipse 76% 78% at 58% 50%, #000 58%, transparent 100%);
 }
 
 .home-hero__scene picture,
@@ -1753,7 +1762,7 @@ textarea {
 
 .home-hero__scene img {
   object-fit: cover;
-  object-position: 67% center;
+  object-position: right center;
   border-radius: inherit;
   mix-blend-mode: multiply;
 }
@@ -1818,12 +1827,26 @@ textarea {
   }
 }
 
+@media (max-width: 1120px) {
+  .home-hero__inner {
+    grid-template-columns: minmax(0, 760px);
+    justify-content: center;
+  }
+
+  .home-hero__copy {
+    max-width: 760px;
+  }
+
+  .home-hero__scene {
+    display: none;
+  }
+}
+
 @media (max-width: 760px) {
   .header__logo {
     width: 41px;
     height: 42px;
-    object-fit: cover;
-    object-position: left;
+    object-fit: contain;
   }
 }
 
