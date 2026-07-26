@@ -14,11 +14,12 @@
  * sit in the ordinary test path rather than behind a live-stack flag.
  */
 
-import { readFileSync } from 'node:fs';
+import { readdirSync, readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
-import { dirname, join } from 'node:path';
+import { dirname, join, relative } from 'node:path';
 
-const messages = join(dirname(fileURLToPath(import.meta.url)), '..', 'apps', 'web', 'src', 'i18n', 'messages');
+const root = join(dirname(fileURLToPath(import.meta.url)), '..');
+const messages = join(root, 'apps', 'web', 'src', 'i18n', 'messages');
 
 /** The product name is the same word in every language. */
 const NOT_TRANSLATED = new Set(['brand.name']);
@@ -88,6 +89,55 @@ for (const locale of ['te', 'hi']) {
 
   console.log('');
 }
+
+// ---------------------------------------------------------------- keys the code asks for
+//
+// Everything above compares the locales against English. A key missing from *all three*
+// slips straight past — and that is not hypothetical: a search page shipped referencing
+// `searchUi.localMatches`, the group existed in no language, and the page answered 500
+// rather than falling back to anything.
+//
+// Pages take a whole group at once — `const s = getMessageGroup(locale, 'searchUi')` — so
+// the group name and every property read are both visible in the file, and `s.localMatches`
+// resolves to `searchUi.localMatches` without running anything.
+console.log('keys the pages ask for:');
+
+const unresolved = [];
+
+function walk(directory) {
+  const files = [];
+  for (const entry of readdirSync(directory, { withFileTypes: true })) {
+    const full = join(directory, entry.name);
+    if (entry.isDirectory()) files.push(...walk(full));
+    else if (/\.tsx?$/.test(entry.name)) files.push(full);
+  }
+  return files;
+}
+
+const sources = [
+  ...walk(join(root, 'apps', 'web', 'src', 'app')),
+  ...walk(join(root, 'apps', 'web', 'src', 'components')),
+];
+
+for (const file of sources) {
+  const source = readFileSync(file, 'utf8');
+  const groups = [
+    ...source.matchAll(/const\s+(\w+)\s*=\s*getMessageGroup\([^,]+,\s*'([^']+)'\)/g),
+  ];
+
+  for (const [, variable, group] of groups) {
+    const reads = new RegExp('\\b' + variable + '\\.(\\w+)', 'g');
+    for (const [, property] of source.matchAll(reads)) {
+      const key = group + '.' + property;
+      if (!(key in english)) {
+        unresolved.push(relative(root, file).replace(/\\/g, '/') + ': ' + key);
+      }
+    }
+  }
+}
+
+check('every key a page reads exists in English', [...new Set(unresolved)]);
+console.log('');
 
 if (failures > 0) {
   console.log(`${failures} check(s) failed.`);
