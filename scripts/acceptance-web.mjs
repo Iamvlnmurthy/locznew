@@ -48,9 +48,13 @@ function step(title) {
  * running them back to back legitimately trips it. Capped so a broken limiter cannot hang
  * the run.
  */
-function backoffMs(body) {
-  const hinted = Number(/try again in (\d+) seconds/i.exec(body)?.[1] ?? 0);
-  return Math.min(Math.max(hinted + 2, 11) * 1000, 360_000);
+function backoffMs(response, body) {
+  // Retry-After is what the server actually promised; the sentence in the body is a
+  // fallback for a build that predates the header.
+  const header = Number(response?.headers?.get?.('retry-after') ?? 0);
+  const hinted = Number(/try again in (\d+) seconds/i.exec(body ?? '')?.[1] ?? 0);
+  const seconds = header > 0 ? header : hinted;
+  return Math.min(Math.max(seconds + 2, 11) * 1000, 360_000);
 }
 
 async function api(path, { method = 'GET', body, token, retries = 6 } = {}) {
@@ -61,14 +65,15 @@ async function api(path, { method = 'GET', body, token, retries = 6 } = {}) {
   let response = await fetch(`${API}${path}`, init);
   // A 429 is the rate limiter working, not a failure.
   for (let attempt = 0; response.status === 429 && attempt < retries; attempt += 1) {
-    const waitMs = backoffMs(await response.clone().text());
+    const waitMs = backoffMs(response, await response.clone().text());
     console.log(`    (rate limited — waiting ${Math.round(waitMs / 1000)}s)`);
     await new Promise((resolve) => setTimeout(resolve, waitMs));
     response = await fetch(`${API}${path}`, init);
   }
 
   const text = await response.text();
-  if (!response.ok) throw new Error(`${method} ${path} → ${response.status}: ${text.slice(0, 200)}`);
+  if (!response.ok)
+    throw new Error(`${method} ${path} → ${response.status}: ${text.slice(0, 200)}`);
   const payload = text ? JSON.parse(text) : null;
   return payload?.data ?? payload;
 }
@@ -162,17 +167,31 @@ async function main() {
   const listing = results.items[0];
   check('published listing available', Boolean(listing), listing?.slug);
 
+  const businessDirectory = await api('/businesses?limit=12');
+  const business = businessDirectory.items[0];
+  check('active public business available', Boolean(business), business?.slug);
+
   // ---------------------------------------------------------------- 1. public pages
   step('1. Public pages — no session');
 
   // The home feed must show real listing titles, not an empty shell.
   await checkPage('home', '/', [listing.title.slice(0, 30), 'Find it here']);
-  await checkPage('search', `/search?q=${encodeURIComponent(listing.title.split(' ')[0])}`, listing.title.slice(0, 30));
+  await checkPage(
+    'search',
+    `/search?q=${encodeURIComponent(listing.title.split(' ')[0])}`,
+    listing.title.slice(0, 30),
+  );
   await checkPage('listing detail', `/ad/${listing.slug}`, [listing.title.slice(0, 30), 'LocZ']);
   await checkPage('category', `/c/${category.slug}`, category.name);
   await checkPage('city landing', `/in/${city.slug}`, city.name);
   await checkPage('location picker', '/location', ['Or enter your pincode', city.name]);
   await checkPage('sign-in', '/signin', 'form');
+  await checkPage(
+    'business directory',
+    `/business?q=${encodeURIComponent(business.name.split(' ')[0])}`,
+    [business.name, `/b/${business.slug}`],
+  );
+  await checkPage('business profile', `/b/${business.slug}`, business.name);
 
   // Static pages carry the brand promise; if the slogan is missing, a deploy dropped it.
   for (const [label, path] of [
@@ -188,6 +207,61 @@ async function main() {
   // ---------------------------------------------------------------- 1b. filters
   step('1b. Filters actually filter');
 
+  const businessByName = await api(
+    `/businesses?q=${encodeURIComponent(business.name.split(' ')[0])}&limit=12`,
+  );
+  check(
+    'business name search returns the matching profile',
+    businessByName.items.some((item) => item.id === business.id),
+    `${businessByName.meta.total} matches`,
+  );
+
+  const directoryCity = cities.find((entry) => entry.name === business.cityName);
+  const flatCategories = (list) =>
+    list.flatMap((entry) => [entry, ...flatCategories(entry.children ?? [])]);
+  const directoryCategory = flatCategories(categories).find(
+    (entry) => entry.name === business.categoryName,
+  );
+
+  const businessByCity = await api(`/businesses?cityId=${directoryCity.id}&limit=12`);
+  check(
+    'business city filter returns only that city',
+    businessByCity.items.length > 0 &&
+      businessByCity.items.every((item) => item.cityName === business.cityName),
+    business.cityName,
+  );
+
+  const businessByCategory = await api(`/businesses?categoryId=${directoryCategory.id}&limit=12`);
+  check(
+    'business category filter returns only that category',
+    businessByCategory.items.length > 0 &&
+      businessByCategory.items.every((item) => item.categoryName === business.categoryName),
+    business.categoryName,
+  );
+
+  const impossibleBusiness = await api('/businesses?q=locz-no-such-business-9f8c4a&limit=12');
+  check(
+    'business text filter excludes non-matches with an honest total',
+    impossibleBusiness.items.length === 0 && impossibleBusiness.meta.total === 0,
+  );
+
+  const verifiedBusinesses = await api('/businesses?verifiedOnly=true&limit=50');
+  check(
+    'verified-only directory contains no unverified profiles',
+    verifiedBusinesses.items.every((item) => item.verificationStatus === 'VERIFIED'),
+    `${verifiedBusinesses.meta.total} verified`,
+  );
+
+  const popularBusinesses = await api('/businesses?sort=popular&limit=50');
+  check(
+    'popular business order follows profile views',
+    popularBusinesses.items.every(
+      (item, index) =>
+        index === 0 || popularBusinesses.items[index - 1].viewCount >= item.viewCount,
+    ),
+    popularBusinesses.items.map((item) => item.viewCount).join(' ≥ '),
+  );
+
   /**
    * The search page and the API must agree, exactly.
    *
@@ -198,20 +272,29 @@ async function main() {
    */
   async function agreesWithApi(label, query) {
     const rendered = await page(`/search?${query}`);
-    const shown = [...rendered.html.matchAll(/href="\/ad\/([a-z0-9-]+)"/g)].map((match) => match[1]);
+    const shown = [
+      ...new Set(
+        [...rendered.html.matchAll(/href="\/ad\/([a-z0-9-]+)"/g)].map((match) => match[1]),
+      ),
+    ];
 
     const expected = await api(`/search?${query}&limit=24`);
     const expectedSlugs = expected.items.map((item) => item.slug);
 
     const missing = expectedSlugs.filter((slug) => !shown.includes(slug));
     const extra = [...new Set(shown)].filter((slug) => !expectedSlugs.includes(slug));
+    const exactOrder =
+      shown.length === expectedSlugs.length &&
+      shown.every((slug, index) => slug === expectedSlugs[index]);
 
     check(
       `${label} — page matches the API`,
-      missing.length === 0 && extra.length === 0,
+      missing.length === 0 && extra.length === 0 && exactOrder,
       missing.length || extra.length
         ? `${missing.length} missing, ${extra.length} unexpected (API returned ${expectedSlugs.length})`
-        : `${expectedSlugs.length} results`,
+        : exactOrder
+          ? `${expectedSlugs.length} results in exact order`
+          : 'the result set matches, but its order does not',
     );
 
     return expected;
@@ -229,7 +312,14 @@ async function main() {
   );
 
   const good = await agreesWithApi('condition', 'condition=GOOD');
-  check('condition narrows the set', good.total <= unfiltered.total, `${good.total} in good condition`);
+  const goodDetails = await Promise.all(
+    good.items.map((item) => api(`/listings/${encodeURIComponent(item.slug)}`)),
+  );
+  check(
+    'condition returns only matching marketplace details',
+    goodDetails.length > 0 && goodDetails.every((item) => item.marketplace?.condition === 'GOOD'),
+    `${good.total} in good condition`,
+  );
 
   const products = await agreesWithApi('listing type', 'type=PRODUCT');
   check(
@@ -240,6 +330,48 @@ async function main() {
 
   await agreesWithApi('pincode', 'pincode=500081');
   await agreesWithApi('sorted by price', 'sort=price_asc');
+
+  const nearbyCheap = await agreesWithApi(
+    'pincode plus price ceiling',
+    'pincode=500081&priceMax=5000',
+  );
+  check(
+    'a nearby price ceiling excludes dearer and unpriced listings',
+    nearbyCheap.items.every((item) => item.price !== null && item.price <= 5000),
+    nearbyCheap.items.map((item) => item.price ?? 'unpriced').join(', '),
+  );
+
+  const nearbyJobs = await agreesWithApi('pincode plus type', 'pincode=500081&type=JOB');
+  check(
+    'a nearby type filter has an honest total',
+    nearbyJobs.items.every((item) => item.type === 'JOB') &&
+      nearbyJobs.total === nearbyJobs.items.length,
+    `${nearbyJobs.items.length} shown of ${nearbyJobs.total}`,
+  );
+
+  const nearbyGood = await agreesWithApi('pincode plus condition', 'pincode=500081&condition=GOOD');
+  const nearbyGoodDetails = await Promise.all(
+    nearbyGood.items.map((item) => api(`/listings/${encodeURIComponent(item.slug)}`)),
+  );
+  check(
+    'a nearby condition filter returns only matching details',
+    nearbyGoodDetails.length > 0 &&
+      nearbyGoodDetails.every((item) => item.marketplace?.condition === 'GOOD'),
+    `${nearbyGood.items.length} shown of ${nearbyGood.total}`,
+  );
+
+  const nearbyAscending = await agreesWithApi(
+    'pincode plus price order',
+    'pincode=500081&sort=price_asc',
+  );
+  const nearbyPrices = nearbyAscending.items
+    .map((item) => item.price)
+    .filter((price) => price !== null);
+  check(
+    'nearby price sort is actually ordered',
+    nearbyPrices.every((price, index) => index === 0 || nearbyPrices[index - 1] <= price),
+    nearbyPrices.slice(0, 4).join(' ≤ '),
+  );
 
   // Featured placement used to prefix every ordering, so "price: low to high" opened with
   // a ₹32,900 phone above a ₹4,500 table. A paid boost may break a tie; it may not answer

@@ -46,9 +46,13 @@ function step(title) {
  * running them back to back legitimately trips it. Capped so a broken limiter cannot hang
  * the run.
  */
-function backoffMs(body) {
-  const hinted = Number(/try again in (\d+) seconds/i.exec(body)?.[1] ?? 0);
-  return Math.min(Math.max(hinted + 2, 11) * 1000, 360_000);
+function backoffMs(response, body) {
+  // Retry-After is what the server actually promised; the sentence in the body is a
+  // fallback for a build that predates the header.
+  const header = Number(response?.headers?.get?.('retry-after') ?? 0);
+  const hinted = Number(/try again in (\d+) seconds/i.exec(body ?? '')?.[1] ?? 0);
+  const seconds = header > 0 ? header : hinted;
+  return Math.min(Math.max(seconds + 2, 11) * 1000, 360_000);
 }
 
 async function call(path, { method = 'GET', body, token, expect, retries = 6 } = {}) {
@@ -66,7 +70,7 @@ async function call(path, { method = 'GET', body, token, expect, retries = 6 } =
   // limit, which is a real protection.
   let attempt = 0;
   while (response.status === 429 && attempt < retries) {
-    const waitMs = backoffMs(await response.clone().text());
+    const waitMs = backoffMs(response, await response.clone().text());
     console.log(`    (rate limited — waiting ${Math.round(waitMs / 1000)}s)`);
     await new Promise((resolve) => setTimeout(resolve, waitMs));
     attempt += 1;

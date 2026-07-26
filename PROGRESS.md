@@ -684,3 +684,128 @@ tests (89).
 **Five gates: 61 + 95 + 55 + 53 + 24 = 288 assertions**, plus 89 unit tests. Still missing,
 and named honestly: browser-level interaction coverage for the lightbox, filter drawer,
 optimistic save and undo — behaviour no HTTP gate can reach.
+
+## M23 — Browser interactions that re-check themselves (2026-07-26)
+
+`scripts/acceptance-browser.mjs` drives a real headless Chrome through the DevTools
+protocol and exits non-zero on failure. It covers the behavior the HTTP gates cannot see:
+
+- the mobile search drawer opens, locks the page, closes with Escape and carries an
+  entered filter into the URL
+- the listing gallery opens as an accessible modal, closes with Escape and releases its
+  scroll lock
+- the listing heart changes optimistically, then both save and unsave are confirmed
+  against the authenticated API
+- removing a saved-library card offers Undo, and both transitions are confirmed in the
+  API rather than trusted from the DOM
+- entering pincode `500081` redirects home with both the exact pincode and Hyderabad city
+  identity in the persisted location cookie
+
+The gate uses the seeded buyer and restores the touched listing to unsaved in `finally`,
+so repeated runs do not accumulate fixture state. Chrome is auto-detected on Windows,
+macOS and Linux, with `CHROME_PATH` as an override.
+
+Verified twice against the live stack: **13 assertions, 0 failures**, with no browser
+runtime errors. It is available as `npm run acceptance:browser` and is listed in the
+release acceptance checklist.
+
+**Six gates: 61 + 95 + 55 + 13 + 53 + 24 = 301 assertions**, plus 89 unit tests.
+
+## M24 — Businesses people can actually discover (2026-07-26)
+
+The polished public profile at `/b/[slug]` no longer depends on someone already knowing
+its URL. `/business` is now a location-aware directory with text, city, category and
+verification filters; useful ordering; clear opening-hour and verification states; and
+a calm route from discovery into the full profile. The homepage, footer and sitemap all
+provide honest entry points.
+
+The API now exposes active business summaries through `GET /businesses`. Its public
+response includes the address, description and hours the cards need, while preserving
+Claude's concurrent address-persistence changes in business creation and editing.
+Recommended results use live-listing activity and profile interest—never enum ordering,
+which would accidentally have ranked rejected verification states first.
+
+This surface checks itself in both durable gates:
+
+- `acceptance-web.mjs` verifies a real database-backed directory and profile, then checks
+  text, city, category, verified-only, empty-result and popularity semantics
+- `acceptance-browser.mjs` verifies the real directory card, desktop and mobile overflow,
+  framework error overlays and card-to-profile navigation
+
+The browser gate passes **17/17**, including all earlier interaction coverage, with zero
+runtime errors. Focused live API/SSR checks also pass **5/5**. The full web gate was not
+re-run in this session because Claude's concurrent security gate held the shared OTP
+rate limiter; its new public checks are syntax-checked and the affected live paths were
+verified independently.
+
+**Six gates: 61 + 109 + 55 + 17 + 53 + 24 = 319 assertions**, plus 89 unit tests.
+
+## M25 — A business owner can finish what they started (2026-07-26)
+
+The business flow now continues beyond a polished registration screen. Unfinished
+three-step profiles are recovered from device-local storage, the final step provides a
+plain-language review, and a successful creation clears the draft and routes into a real
+owner workspace.
+
+`/business/manage/[id]` gives owners one calm place to maintain:
+
+- recognised name, category, city, address and business story
+- public phone, WhatsApp, email and website
+- all seven days of opening hours, including closed-day controls
+- profile completion, verification state, public views and live listing counts
+
+The dashboard has a dedicated **Businesses** destination, so the management route remains
+discoverable after the success screen disappears. Material edits still pass through the
+API's ownership and verification rules. Opening an owner workspace no longer increments
+the public view counter; maintenance is not customer interest.
+
+The browser gate creates a temporary business through the actual UI and removes it in
+`finally`. It proves step guidance, draft recovery after reload, server-field validation,
+API creation, draft cleanup, dashboard re-entry, management rendering, persisted edits,
+desktop/mobile overflow and zero runtime errors. The expanded gate passes **27/27**.
+
+Both production applications build, both typechecks pass, and the temporary acceptance
+business is cleaned up after every run.
+
+**Six gates: 61 + 109 + 55 + 27 + 53 + 24 = 329 assertions**, plus 89 unit tests.
+
+## M23 — Trying to break it (2026-07-26)
+
+`scripts/acceptance-security.mjs` — **51 assertions, 0 failures**. The only suite written
+from the attacker's side: every assertion passes when an attempt is _refused_, because
+"the guard is in place" and "the guard stops this request" are different claims and only
+the second one is testable.
+
+Two unrelated accounts are created and one spends the run reaching for things that are not
+hers: editing, deleting, marking sold and attaching photos to another person's listing;
+reading and posting into a conversation she is not part of; doing a moderator's job;
+presenting a garbage token, a forged one and an `alg: none` one; reusing a session after
+logout and a refresh token after it was spent; brute-forcing a verification code;
+smuggling `status`, `isFeatured`, `moderationStatus` and `ownerId` past validation; putting
+SQL in a pincode as a field and as a query parameter; and getting a `<script>` tag to
+survive as executable markup.
+
+A phone number is the prize on a classifieds site, so it is checked in six places — the
+public listing, the same listing while signed in, a conversation payload, a search
+response, the rendered page and the admin directory — rather than trusting one.
+
+Everything held. Nothing needed fixing in the application.
+
+### What did need fixing was the honesty of a 429
+
+Three suites in sequence tripped the per-phone limit, and the only way for a client to
+back off correctly was to parse an English sentence — _"try again in 321 seconds"_. The
+global throttler said nothing at all. Every 429 now carries `Retry-After`: the OTP limiter
+passes its real TTL (guarding against Redis answering -1 for no expiry or -2 for no key,
+neither of which is a number of seconds), and `RetryAwareThrottlerGuard` asks the throttler
+what it already knew. The Flutter client had the same problem and no way to fix it from its
+side.
+
+Two limits also had to be raised **locally**, and the shipped defaults deliberately were
+not: every suite and browser test on this machine arrives from `127.0.0.1`, so they share
+one bucket and throttle each other rather than any attacker. `.env.example` now explains
+which figure matters in production and which one only misleads on a laptop. When a wait
+would exceed three minutes the suites now stop and say which ceiling was hit, instead of
+sitting silent for an hour — a hang and a rate limit look identical otherwise.
+
+**Six gates, 339 assertions**, plus 89 unit tests and Codex's 27 browser tests.

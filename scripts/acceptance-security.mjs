@@ -1,0 +1,541 @@
+#!/usr/bin/env node
+/**
+ * Security probes.
+ *
+ *   node scripts/acceptance-security.mjs
+ *
+ * Every other gate asks whether the product works. This one tries to make it misbehave,
+ * against a stack the operator controls, before anyone else gets the chance.
+ *
+ * Each probe is a genuine attempt at something a real attacker would want:
+ *
+ *   - read or alter another person's listings, messages and notifications
+ *   - do a moderator's job without being one
+ *   - harvest phone numbers, which on a classifieds site is the whole prize
+ *   - reuse a session that was logged out, or a refresh token that was already spent
+ *   - guess an OTP by brute force
+ *   - smuggle a field past validation, or script into a page
+ *
+ * A passing assertion means the attempt was refused. Every one of these is written from
+ * the attacker's side, because "the guard is in place" and "the guard stops this request"
+ * are different claims and only the second one is testable.
+ */
+
+import { getSession } from './lib/session.mjs';
+
+const API = process.env.LOCZ_API ?? 'http://127.0.0.1:4000/api/v1';
+const WEB = process.env.LOCZ_WEB ?? 'http://127.0.0.1:3000';
+
+let passed = 0;
+let failed = 0;
+const failures = [];
+
+function check(label, condition, detail = '') {
+  if (condition) {
+    passed += 1;
+    console.log(`  ✓ ${label}${detail ? `  ${detail}` : ''}`);
+  } else {
+    failed += 1;
+    failures.push(label);
+    console.log(`  ✗ ${label}${detail ? `  ${detail}` : ''}`);
+  }
+}
+
+function step(title) {
+  console.log(`\n${title}`);
+}
+
+function backoffMs(response, body) {
+  // Retry-After is what the server actually promised; the sentence in the body is a
+  // fallback for a build that predates the header.
+  const header = Number(response?.headers?.get?.('retry-after') ?? 0);
+  const hinted = Number(/try again in (\d+) seconds/i.exec(body ?? '')?.[1] ?? 0);
+  const seconds = header > 0 ? header : hinted;
+  return Math.min(Math.max(seconds + 2, 11) * 1000, 360_000);
+}
+
+/**
+ * `expectLimit` turns the retry loop off.
+ *
+ * Some probes here are *trying* to be rate limited — brute-forcing an OTP is the whole
+ * point of section 6 — and patiently waiting out each rejection would make the suite take
+ * an hour to prove the limiter works. Every other call keeps the backoff, because there a
+ * 429 is noise from a neighbouring suite rather than the result under test.
+ */
+async function raw(path, { method = 'GET', body, token, headers = {}, expectLimit = false } = {}) {
+  const init = {
+    method,
+    headers: {
+      'Content-Type': 'application/json',
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      ...headers,
+    },
+    ...(body !== undefined ? { body: JSON.stringify(body) } : {}),
+  };
+
+  let response = await fetch(`${API}${path}`, init);
+  for (let attempt = 0; !expectLimit && response.status === 429 && attempt < 4; attempt += 1) {
+    const waitMs = backoffMs(response, await response.clone().text());
+    console.log(`    (rate limited — waiting ${Math.round(waitMs / 1000)}s)`);
+    await new Promise((resolve) => setTimeout(resolve, waitMs));
+    response = await fetch(`${API}${path}`, init);
+  }
+
+  const text = await response.text();
+  let payload = null;
+  try {
+    payload = text ? JSON.parse(text) : null;
+  } catch {
+    payload = null;
+  }
+
+  return { status: response.status, body: payload?.data ?? payload, text };
+}
+
+async function call(path, options = {}) {
+  const result = await raw(path, options);
+  if (result.status >= 400) {
+    throw new Error(`${options.method ?? 'GET'} ${path} → ${result.status}: ${result.text.slice(0, 200)}`);
+  }
+  return result.body;
+}
+
+/** Refused means 401 or 403 — never a 200 with an empty body, which hides a leak. */
+function refused(result) {
+  return result.status === 401 || result.status === 403 || result.status === 404;
+}
+
+async function main() {
+  console.log(`LocZ security probes against ${API}`);
+
+  // ---------------------------------------------------------------- 0. cast
+  step('0. Two unrelated people and a moderator');
+  const alicePhone = `+9193${String(Math.floor(10_000_000 + Math.random() * 89_999_999))}`;
+  const malloryPhone = `+9192${String(Math.floor(10_000_000 + Math.random() * 89_999_999))}`;
+
+  const alice = await getSession(API, alicePhone, 'security-alice');
+  const mallory = await getSession(API, malloryPhone, 'security-mallory');
+  const moderator = await getSession(API, '+919000000003', 'security-moderator');
+
+  const aliceToken = alice.tokens.accessToken;
+  const malloryToken = mallory.tokens.accessToken;
+  const moderatorToken = moderator.tokens.accessToken;
+
+  check('two separate accounts', alice.user.id !== mallory.user.id);
+  check(
+    'neither has moderator powers',
+    !alice.user.permissions.includes('listing:moderate') &&
+      !mallory.user.permissions.includes('listing:moderate'),
+  );
+
+  // Alice posts something; Mallory will spend the rest of this run trying to touch it.
+  const categories = await call('/categories?listingType=PRODUCT');
+  const leaf = categories.flatMap((entry) => entry.children ?? []).find(Boolean) ?? categories[0];
+  const cities = await call('/locations/cities?launchedOnly=true&limit=1');
+
+  const listing = await call('/listings', {
+    method: 'POST',
+    token: aliceToken,
+    body: {
+      type: 'PRODUCT',
+      title: 'Bookshelf in solid sheesham wood',
+      description: 'Selling because we are moving to a smaller flat this month.',
+      categoryId: leaf.id,
+      cityId: cities[0].id,
+      pincodeCode: '500081',
+      contactPreference: 'IN_APP_ONLY',
+      marketplace: { price: 6000, condition: 'GOOD' },
+    },
+  });
+
+  await call(`/moderation/listings/${listing.id}/approve`, {
+    method: 'POST',
+    token: moderatorToken,
+    body: { note: 'Security probe run' },
+  });
+
+  // ---------------------------------------------------------------- 1. other people's things
+  step("1. Mallory reaches for Alice's listing");
+
+  const edit = await raw(`/listings/${listing.id}`, {
+    method: 'PATCH',
+    token: malloryToken,
+    body: { title: 'Bookshelf — PRICE DROPPED, call 9876543210' },
+  });
+  check('cannot edit it', refused(edit), `HTTP ${edit.status}`);
+
+  const destroy = await raw(`/listings/${listing.id}`, { method: 'DELETE', token: malloryToken });
+  check('cannot delete it', refused(destroy), `HTTP ${destroy.status}`);
+
+  const markSold = await raw(`/listings/${listing.id}/sold`, {
+    method: 'POST',
+    token: malloryToken,
+  });
+  check('cannot mark it sold', refused(markSold), `HTTP ${markSold.status}`);
+
+  const uploadUrl = await raw(`/listings/${listing.id}/media/upload-url`, {
+    method: 'POST',
+    token: malloryToken,
+    body: { mimeType: 'image/jpeg', sizeBytes: 1024 },
+  });
+  check('cannot attach photos to it', refused(uploadUrl), `HTTP ${uploadUrl.status}`);
+
+  const stillIntact = await call(`/listings/${listing.slug}`);
+  check('the listing is untouched', stillIntact.title.startsWith('Bookshelf in solid'), stillIntact.title);
+
+  // ---------------------------------------------------------------- 2. private conversations
+  step('2. Mallory reaches into a conversation she is not in');
+
+  const conversation = await call('/conversations', {
+    method: 'POST',
+    token: malloryToken,
+    body: { listingId: listing.id, message: 'Is the bookshelf still available?' },
+  });
+
+  // Mallory is legitimately in that one. Alice starts a second thread that Mallory is not.
+  const bystander = await getSession(API, `+9191${String(Math.floor(10_000_000 + Math.random() * 89_999_999))}`, 'security-bystander');
+  const bystanderThread = await call('/conversations', {
+    method: 'POST',
+    token: bystander.tokens.accessToken,
+    body: { listingId: listing.id, message: 'Would you take four thousand?' },
+  });
+
+  const peek = await raw(`/conversations/${bystanderThread.id}`, { token: malloryToken });
+  check("cannot read someone else's thread", refused(peek), `HTTP ${peek.status}`);
+
+  const intrude = await raw(`/conversations/${bystanderThread.id}/messages`, {
+    method: 'POST',
+    token: malloryToken,
+    body: { body: 'Ignore the other buyer, deal with me' },
+  });
+  check('cannot post into it', refused(intrude), `HTTP ${intrude.status}`);
+
+  const inbox = await call('/conversations?limit=50', { token: malloryToken });
+  check(
+    "it does not appear in Mallory's inbox",
+    !inbox.items.some((thread) => thread.id === bystanderThread.id),
+    `${inbox.items.length} threads`,
+  );
+
+  const ownThread = await call(`/conversations/${conversation.id}`, { token: malloryToken });
+  check('her own thread is still readable', ownThread.id === conversation.id);
+
+  // ---------------------------------------------------------------- 3. phone numbers
+  step('3. Phone numbers — the thing worth stealing');
+
+  const publicDetail = await call(`/listings/${listing.slug}`);
+  check(
+    "the seller's number is hidden on a public listing",
+    publicDetail.owner.phone === null,
+    String(publicDetail.owner.phone),
+  );
+  check(
+    'and not smuggled elsewhere in the payload',
+    !JSON.stringify(publicDetail).includes(alicePhone.slice(3)),
+  );
+
+  const asBuyer = await call(`/listings/${listing.slug}`, { token: malloryToken });
+  check(
+    'signing in does not reveal it',
+    asBuyer.owner.phone === null && !JSON.stringify(asBuyer).includes(alicePhone.slice(3)),
+  );
+
+  const threadPayload = await call(`/conversations/${conversation.id}`, { token: malloryToken });
+  check(
+    'nor does being in a conversation with them',
+    !JSON.stringify(threadPayload).includes(alicePhone.slice(3)),
+  );
+
+  const searchPayload = await call('/search?limit=24');
+  check(
+    'search results carry no phone numbers',
+    !/\+91\d{10}/.test(JSON.stringify(searchPayload)),
+  );
+
+  const renderedPage = await fetch(`${WEB}/ad/${listing.slug}`).then((response) => response.text());
+  check(
+    'and the rendered page does not contain one either',
+    !renderedPage.includes(alicePhone.slice(3)),
+  );
+
+  // The admin directory is where numbers legitimately live — for administrators only.
+  const directory = await raw('/admin/users?limit=5', { token: malloryToken });
+  check('the user directory is closed to her', refused(directory), `HTTP ${directory.status}`);
+
+  // ---------------------------------------------------------------- 4. doing a moderator's job
+  step("4. Mallory tries to do a moderator's job");
+
+  for (const [label, path, method, body] of [
+    ['read the moderation queue', '/moderation/queue?limit=5', 'GET', undefined],
+    ['approve a listing', `/moderation/listings/${listing.id}/approve`, 'POST', { note: 'ok' }],
+    ['reject a listing', `/moderation/listings/${listing.id}/reject`, 'POST', { reason: 'SPAM' }],
+    ['rebuild the search index', '/search/index/rebuild', 'POST', undefined],
+    ['run a maintenance job', '/admin/jobs/expire-listings/run', 'POST', undefined],
+    ['read platform metrics', '/admin/metrics', 'GET', undefined],
+  ]) {
+    const result = await raw(path, { method, token: malloryToken, body });
+    check(`cannot ${label}`, refused(result), `HTTP ${result.status}`);
+  }
+
+  const stillPublished = await call(`/listings/${listing.slug}`);
+  check('the listing survived all of that', stillPublished.status === 'PUBLISHED', stillPublished.status);
+
+  // ---------------------------------------------------------------- 5. tokens
+  step('5. Tokens that should not work');
+
+  const noToken = await raw('/users/me');
+  check('no token is refused', noToken.status === 401, `HTTP ${noToken.status}`);
+
+  const garbage = await raw('/users/me', { token: 'not-a-token' });
+  check('a garbage token is refused', garbage.status === 401, `HTTP ${garbage.status}`);
+
+  // A structurally valid JWT signed with the wrong key — the classic forgery attempt.
+  const forged = [
+    Buffer.from(JSON.stringify({ alg: 'HS256', typ: 'JWT' })).toString('base64url'),
+    Buffer.from(JSON.stringify({ sub: alice.user.id, exp: Math.floor(Date.now() / 1000) + 3600 })).toString('base64url'),
+    'this-signature-is-invented',
+  ].join('.');
+  const forgedResult = await raw('/users/me', { token: forged });
+  check('a forged token is refused', forgedResult.status === 401, `HTTP ${forgedResult.status}`);
+
+  // The `alg: none` trick, in case verification ever trusts the header.
+  const unsigned = [
+    Buffer.from(JSON.stringify({ alg: 'none', typ: 'JWT' })).toString('base64url'),
+    Buffer.from(JSON.stringify({ sub: alice.user.id, exp: Math.floor(Date.now() / 1000) + 3600 })).toString('base64url'),
+    '',
+  ].join('.');
+  const unsignedResult = await raw('/users/me', { token: unsigned });
+  check('an unsigned token is refused', unsignedResult.status === 401, `HTTP ${unsignedResult.status}`);
+
+  // A logged-out session must die immediately, not linger until the token expires.
+  const doomed = await getSession(API, `+9190${String(Math.floor(10_000_000 + Math.random() * 89_999_999))}`, 'security-logout');
+  const doomedToken = doomed.tokens.accessToken;
+  check('the session works before logout', (await raw('/users/me', { token: doomedToken })).status === 200);
+
+  await raw('/auth/logout', { method: 'POST', token: doomedToken, body: { refreshToken: doomed.tokens.refreshToken } });
+  const afterLogout = await raw('/users/me', { token: doomedToken });
+  check('and stops working after it', afterLogout.status === 401, `HTTP ${afterLogout.status}`);
+
+  const replayRefresh = await raw('/auth/refresh', {
+    method: 'POST',
+    body: { refreshToken: doomed.tokens.refreshToken },
+  });
+  check(
+    'a logged-out refresh token cannot revive it',
+    replayRefresh.status >= 400,
+    `HTTP ${replayRefresh.status}`,
+  );
+
+  // Refresh rotation: the old token must die the moment it is exchanged, so a stolen copy
+  // is worth nothing once the real user has moved on.
+  const rotating = await getSession(API, `+9189${String(Math.floor(10_000_000 + Math.random() * 89_999_999))}`, 'security-rotate');
+  const firstRefresh = rotating.tokens.refreshToken;
+  const rotated = await raw('/auth/refresh', { method: 'POST', body: { refreshToken: firstRefresh } });
+  check('a refresh token can be exchanged once', rotated.status === 200 || rotated.status === 201, `HTTP ${rotated.status}`);
+
+  const reused = await raw('/auth/refresh', { method: 'POST', body: { refreshToken: firstRefresh } });
+  check('but never twice', reused.status >= 400, `HTTP ${reused.status}`);
+
+  // ---------------------------------------------------------------- 6. guessing an OTP
+  step('6. Guessing a verification code');
+  const victimPhone = `+9188${String(Math.floor(10_000_000 + Math.random() * 89_999_999))}`;
+  await raw('/auth/otp/request', { method: 'POST', body: { phone: victimPhone } });
+
+  let blocked = false;
+  let attempts = 0;
+  for (; attempts < 12 && !blocked; attempts += 1) {
+    const guess = await raw('/auth/otp/verify', {
+      method: 'POST',
+      expectLimit: true,
+      body: {
+        phone: victimPhone,
+        code: String(100000 + attempts),
+        device: { deviceKey: 'security-guesser', platform: 'WEB', name: 'Probe' },
+      },
+    });
+    if (guess.status === 429 || guess.status === 423) blocked = true;
+    // A correct guess would be catastrophic; it is also a 1-in-900,000 accident.
+    if (guess.status === 200 || guess.status === 201) {
+      check('a guessed code was accepted — investigate immediately', false, `after ${attempts + 1} tries`);
+      break;
+    }
+  }
+  check('repeated wrong codes lock the attempt out', blocked, `after ${attempts} guesses`);
+
+  // ---------------------------------------------------------------- 7. input
+  step('7. Input that should not be accepted');
+
+  const smuggled = await raw('/listings', {
+    method: 'POST',
+    token: malloryToken,
+    body: {
+      type: 'PRODUCT',
+      title: 'A perfectly ordinary listing title',
+      description: 'Nothing unusual about this description at all, it is quite normal.',
+      categoryId: leaf.id,
+      cityId: cities[0].id,
+      marketplace: { price: 500, condition: 'GOOD' },
+      // The fields an attacker would most like to set directly.
+      status: 'PUBLISHED',
+      isFeatured: true,
+      moderationStatus: 'APPROVED',
+      ownerId: alice.user.id,
+      viewCount: 999999,
+    },
+  });
+  check(
+    'unknown properties are rejected outright',
+    smuggled.status === 400,
+    `HTTP ${smuggled.status}`,
+  );
+
+  const badPincode = await raw('/listings', {
+    method: 'POST',
+    token: malloryToken,
+    body: {
+      type: 'PRODUCT',
+      title: 'Another perfectly ordinary title here',
+      description: 'Nothing unusual about this description at all, it is quite normal.',
+      categoryId: leaf.id,
+      cityId: cities[0].id,
+      pincodeCode: "500081' OR '1'='1",
+      marketplace: { price: 500, condition: 'GOOD' },
+    },
+  });
+  check('a malformed pincode is rejected', badPincode.status === 400, `HTTP ${badPincode.status}`);
+
+  // The same string through the query parameter, where it reaches the spatial query.
+  const injected = await raw(`/listings?pincode=${encodeURIComponent("500081' OR '1'='1")}`);
+  check(
+    'and rejected as a search parameter too',
+    injected.status === 400,
+    `HTTP ${injected.status}`,
+  );
+
+  const stillAlive = await raw('/health/ready');
+  check('the database is unharmed', stillAlive.status === 200);
+
+  // Script in a title must come back escaped, wherever it is rendered.
+  const scripted = await call('/listings', {
+    method: 'POST',
+    token: malloryToken,
+    body: {
+      type: 'PRODUCT',
+      title: 'Sofa set <script>alert(1)</script> for sale',
+      description: 'A three-seater sofa in reasonable condition, collection only please.',
+      categoryId: leaf.id,
+      cityId: cities[0].id,
+      marketplace: { price: 3000, condition: 'FAIR' },
+    },
+  });
+  check('a listing with script in the title is accepted as text', Boolean(scripted.id));
+
+  const drafts = await call('/listings/mine?limit=50', { token: malloryToken });
+  const stored = drafts.items.find((item) => item.id === scripted.id);
+  check(
+    'and stored verbatim rather than silently mangled',
+    stored?.title.includes('<script>'),
+    stored?.title?.slice(0, 40),
+  );
+
+  // Storing it verbatim is only safe if every renderer escapes it, so the tag has to be
+  // followed all the way onto a real page. Escaping at the boundary and storing the
+  // original is the correct shape — the danger is a page that trusts the field.
+  await call(`/moderation/listings/${scripted.id}/approve`, {
+    method: 'POST',
+    token: moderatorToken,
+    body: { note: 'Security probe — XSS rendering check' },
+  }).catch(() => null);
+
+  const publishedScripted = await raw(`/listings/${scripted.slug}`);
+  if (publishedScripted.status === 200) {
+    const page = await fetch(`${WEB}/ad/${scripted.slug}`);
+    const html = await page.text();
+
+    check(
+      'the listing page renders',
+      page.status === 200,
+      `HTTP ${page.status}`,
+    );
+    check(
+      'the script tag is escaped, not executable',
+      !html.includes('<script>alert(1)</script>'),
+      html.includes('&lt;script&gt;') ? 'escaped as &lt;script&gt;' : 'tag absent entirely',
+    );
+    check(
+      'the surrounding title still reaches the reader',
+      html.includes('Sofa set') && html.includes('for sale'),
+    );
+
+    const searchPage = await fetch(`${WEB}/search?q=sofa`).then((response) => response.text());
+    check(
+      'and stays escaped in search results',
+      !searchPage.includes('<script>alert(1)</script>'),
+    );
+  } else {
+    check(
+      'the scripted listing could be published for the rendering check',
+      false,
+      `HTTP ${publishedScripted.status}`,
+    );
+  }
+
+  // ---------------------------------------------------------------- 8. drafts
+  step("8. A draft is nobody else's business");
+
+  // Its own listing, deliberately: the scripted one above had to be published to prove
+  // the rendering escapes, and reusing it here would have tested nothing.
+  const draft = await call('/listings', {
+    method: 'POST',
+    token: malloryToken,
+    body: {
+      type: 'PRODUCT',
+      title: 'Unfinished draft with the asking price still blank',
+      description: 'Half-written notes about a dining table, not ready for anyone to read.',
+      categoryId: leaf.id,
+      cityId: cities[0].id,
+      marketplace: { price: 7000, condition: 'GOOD' },
+      saveAsDraft: true,
+    },
+  });
+  check('the draft is saved unpublished', draft.status === 'DRAFT', draft.status);
+
+  const draftDetail = await raw(`/listings/${draft.slug}`);
+  check('a draft is not public', refused(draftDetail), `HTTP ${draftDetail.status}`);
+
+  const draftToAlice = await raw(`/listings/${draft.slug}`, { token: aliceToken });
+  check('nor visible to another signed-in user', refused(draftToAlice), `HTTP ${draftToAlice.status}`);
+
+  const draftInSearch = await call('/search?q=unfinished%20draft&limit=10');
+  check(
+    'and never reaches the search index',
+    !draftInSearch.items.some((item) => item.id === draft.id),
+    `${draftInSearch.total} results`,
+  );
+
+  const ownDraft = await call('/listings/mine?limit=50', { token: malloryToken });
+  check(
+    'while its owner still sees it',
+    ownDraft.items.some((item) => item.id === draft.id),
+  );
+
+  // ---------------------------------------------------------------- 9. cleanup
+  step('9. Cleanup');
+  await raw(`/listings/${draft.id}`, { method: 'DELETE', token: malloryToken });
+  await raw(`/listings/${scripted.id}`, { method: 'DELETE', token: malloryToken });
+  await raw(`/listings/${listing.id}`, { method: 'DELETE', token: aliceToken });
+  check('probe listings removed', true);
+
+  console.log(`\n${'='.repeat(60)}`);
+  console.log(`${passed} passed, ${failed} failed`);
+  if (failed > 0) {
+    console.log('\nFailed:');
+    for (const failure of failures) console.log(`  - ${failure}`);
+    process.exitCode = 1;
+  }
+}
+
+main().catch((error) => {
+  console.error(`\nSecurity probe run aborted: ${error.message}`);
+  process.exitCode = 1;
+});

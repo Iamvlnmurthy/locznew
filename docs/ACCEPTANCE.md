@@ -174,15 +174,17 @@ with the daily limit message.
 
 ## Executable gates
 
-Two scripts replace most of the manual walkthrough above. Both talk HTTP only, and both
-exit non-zero on failure so they can gate a deploy.
+These scripts replace most of the manual walkthrough above. Each exits non-zero on
+failure so it can gate a deploy.
 
 ```bash
 node scripts/acceptance.mjs          # the buyer/seller flow   — 61 assertions
-node scripts/acceptance-web.mjs      # the public web app      — 95 assertions
+node scripts/acceptance-web.mjs      # the public web app      — 109 assertions
 node scripts/acceptance-filters.mjs  # filter semantics        — 55 assertions
+node scripts/acceptance-browser.mjs  # browser interactions    — 27 assertions
 node scripts/acceptance-admin.mjs    # the admin console       — 53 assertions
 node scripts/acceptance-jobs.mjs     # the background jobs     — 24 assertions
+node scripts/acceptance-security.mjs # security probes         — 51 assertions
 ```
 
 `acceptance-filters.mjs` exists because the others check that layers **agree**, and two
@@ -192,11 +194,31 @@ it fetches the unfiltered set once, computes what each filter should return in p
 JavaScript, and holds the API to that — the exact set, an honest `total`, and the exact
 order.
 
-189 assertions in total. They need the API on :4000, web on :3000 and admin on :3001,
-with `OTP_PROVIDER=mock` so a sign-in can be completed without an SMS gateway.
+329 assertions in total. They need the API on :4000, web on :3000 and admin on :3001,
+with `OTP_PROVIDER=mock` so a sign-in can be completed without an SMS gateway. The browser
+gate also needs Chrome; set `CHROME_PATH` when it is not installed in a standard location.
 
 The admin gate checks authorisation with **negative** assertions — an ordinary account
 and an anonymous request must be refused by every `/admin/*` endpoint — and checks each
 console page for data that can only have come from the database. That second part
 matters more than it looks: a Next.js page whose API call failed still returns HTTP 200
 with an empty shell, so "the page loads" is not evidence of anything.
+
+## Security probes
+
+`scripts/acceptance-security.mjs` is the only suite written from the attacker's side.
+Every assertion passes when an attempt is **refused**, because "the guard is in place" and
+"the guard stops this request" are different claims and only the second is testable.
+
+It creates two unrelated accounts and has one of them try, in order, to: edit, delete,
+mark sold and attach photos to the other's listing; read and post into a conversation she
+is not part of; find the seller's phone number in a public listing, a signed-in listing, a
+conversation payload, a search response and the rendered page; do a moderator's job;
+present a garbage, forged and `alg: none` token; reuse a session after logout and a
+refresh token after it was spent; brute-force an OTP; smuggle `status`, `isFeatured`,
+`moderationStatus` and `ownerId` past validation; put SQL in a pincode both as a field and
+as a query parameter; and get a `<script>` tag to survive as executable markup onto a
+page.
+
+A phone number is the prize on a classifieds site, so it is checked in six places rather
+than one.
