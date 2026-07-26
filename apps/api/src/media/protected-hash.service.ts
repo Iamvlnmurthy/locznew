@@ -8,6 +8,8 @@ import {
   validateProtectedHashResult,
 } from './protected-hash-provider.interface';
 
+class ProtectedHashTimeoutError extends Error {}
+
 @Injectable()
 export class ProtectedHashService {
   private readonly logger = new Logger(ProtectedHashService.name);
@@ -26,10 +28,13 @@ export class ProtectedHashService {
         const result = await this.withTimeout(this.provider.match(subject), timeoutMs);
         return validateProtectedHashResult(result);
       } catch (error) {
+        // Adapter errors can contain raw vendor payloads, hashes or provider references.
+        // Ordinary application logs may identify the media and failure class, but must
+        // never copy an untrusted provider error message.
+        const failure =
+          error instanceof ProtectedHashTimeoutError ? 'timed out' : 'provider call failed';
         this.logger.warn(
-          `Protected-hash attempt ${attempt}/${attempts} failed for ${subject.mediaId}: ${
-            error instanceof Error ? error.message : String(error)
-          }`,
+          `Protected-hash attempt ${attempt}/${attempts} failed for ${subject.mediaId}: ${failure}`,
         );
       }
     }
@@ -47,10 +52,7 @@ export class ProtectedHashService {
       return await Promise.race([
         operation,
         new Promise<never>((_, reject) => {
-          timer = setTimeout(
-            () => reject(new Error(`protected-hash provider timed out after ${timeoutMs}ms`)),
-            timeoutMs,
-          );
+          timer = setTimeout(() => reject(new ProtectedHashTimeoutError()), timeoutMs);
         }),
       ]);
     } finally {

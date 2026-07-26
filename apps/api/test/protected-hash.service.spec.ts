@@ -1,3 +1,4 @@
+import { Logger } from '@nestjs/common';
 import { ProtectedHashService } from '../src/media/protected-hash.service';
 import { UnconfiguredProtectedHashProvider } from '../src/media/unconfigured-protected-hash.provider';
 
@@ -14,6 +15,8 @@ describe('ProtectedHashService', () => {
       get: jest.fn((key: string) => (key === 'PROTECTED_HASH_TIMEOUT_MS' ? timeoutMs : attempts)),
     };
   }
+
+  afterEach(() => jest.restoreAllMocks());
 
   it('returns an opaque confirmed match without logging or interpreting it', async () => {
     const provider = {
@@ -99,6 +102,23 @@ describe('ProtectedHashService', () => {
       reasonCode: 'PROTECTED_HASH_PROVIDER_UNAVAILABLE',
     });
     expect(provider.match).toHaveBeenCalledTimes(2);
+  });
+
+  it('never copies adapter error payloads into ordinary logs', async () => {
+    const warn = jest.spyOn(Logger.prototype, 'warn').mockImplementation();
+    const provider = {
+      match: jest
+        .fn()
+        .mockRejectedValue(new Error('vendor payload: raw-hash secret-provider-reference')),
+    };
+    const service = new ProtectedHashService(provider, config(50, 1) as never);
+
+    await expect(service.match(subject)).resolves.toMatchObject({ status: 'UNAVAILABLE' });
+
+    const logged = warn.mock.calls.flat().join(' ');
+    expect(logged).toContain('provider call failed');
+    expect(logged).not.toContain('raw-hash');
+    expect(logged).not.toContain('secret-provider-reference');
   });
 
   it('bounds a provider that never responds', async () => {
