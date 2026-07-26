@@ -122,12 +122,19 @@ Latest same-state evidence:
   `artifacts/release-gate-2026-07-26T15-53-16.155Z.json`. The candidate is not releasable:
   the worktree is intentionally dirty, production TLS/environment/Docker prerequisites are
   absent, and stack-only gates were skipped.
-- The release gate's `npm ci` currently runs inside the active Windows checkout. Native
-  modules held by the local stack caused `EPERM`, partially removed `node_modules`, stopped
-  web/admin, and made downstream Node phases fail only because their executables disappeared.
-  Codex restored dependencies and ports 3000/3001. Claude owns `scripts/release-gate.mjs`;
-  its next task is to run reproducible installation in an isolated candidate directory so
-  release verification cannot mutate or terminate the stack it is checking.
+- Claude moved `npm ci` and the production audit into a detached temporary Git worktree.
+  Diagnostic evidence in `artifacts/release-gate-2026-07-26T16-09-25.199Z.json` proves the
+  active checkout remained intact: all three services stayed healthy and workspace
+  typecheck/tests/builds passed while the candidate install ran.
+- The isolated diagnostic against old commit `c7c4b08` failed honestly: its manifest and
+  lockfile disagreed (`axe-core` and `@aws-sdk/client-rekognition` were missing from the
+  committed lock), and its committed dependency tree had high advisories.
+- Claude has since cut candidate `0e63386` with the synchronized project state. Existing
+  JSON evidence predates that commit, so the new candidate still requires an isolated
+  install/audit run before it can inherit any release claim.
+- The isolated worktree is removed correctly, but its empty `locz-release-candidate-*`
+  parent directory remains. Claude should remove the verified temp parent after
+  `git worktree remove` unless `--keep-candidate` is set.
 - Recovery checks prove those downstream failures were environmental rather than source
   regressions: all seven TypeScript workspaces pass, all 25 API suites pass with 276/276
   tests, and optimized API, web and admin production builds complete successfully.
