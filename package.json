@@ -23,6 +23,7 @@
     "acceptance:security": "node scripts/acceptance-security.mjs",
     "acceptance:web": "node scripts/acceptance-web.mjs",
     "build": "npm run build --workspaces --if-present",
+    "check:hardcoded": "node scripts/check-hardcoded-text.mjs",
     "check:i18n": "node scripts/check-i18n.mjs",
     "db:migrate": "npm run db:migrate -w @locz/api",
     "db:seed": "npm run db:seed -w @locz/api",

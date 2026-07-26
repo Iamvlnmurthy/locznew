@@ -1374,3 +1374,39 @@ the same reason the OTP-logging tests were checked by making the provider leak.
 
 **16 checks, 0 failures**, 62 tables, 191 indexes, and the geo trigger still firing on a
 fresh insert in the restored copy.
+
+## M38 — The catalogue was complete; the pages were not (2026-07-26)
+
+Screenshots of the Telugu post wizard showed translated headings above English
+instructions. Both facts were true at once: `check:i18n` reported 269 of 269 keys in every
+language, and the page was half English.
+
+A string typed straight into a component never reaches the catalogue. It is not missing —
+it does not exist as a key at all — so a coverage report cannot see it, and it stays English
+in every language while the number reads 100%. My gate measured the dictionary and called it
+the language.
+
+`npm run check:hardcoded` reads the components instead: text between JSX tags, plus
+`placeholder`, `title`, `aria-label` and `alt`, which are the easiest to forget because they
+are attributes rather than content and only a screen reader or a tooltip ever surfaces them.
+
+**448 strings across 37 files.** Concentrated where it matters most:
+
+| File                             | Strings |
+| -------------------------------- | ------- |
+| `post/listing-type-fields.tsx`   | 81      |
+| `business/new/business-form.tsx` | 37      |
+| `b/[slug]/page.tsx`              | 29      |
+| `dashboard/page.tsx`             | 27      |
+| `search/search-filters.tsx`      | 25      |
+
+The nine listing types each carry their own fields — "Like new", "For parts", "Walk-in
+address and timings" — and every one of them is English for every user.
+
+Precision was checked before the number was reported: of twenty sampled findings, nineteen
+were genuine and one was a code fragment, which is now excluded. A list nobody trusts is a
+list nobody acts on, so the aim was accuracy over completeness.
+
+It is **not** wired into the release gate yet. Failing a release on 448 pre-existing strings
+would only teach people to pass `--skip`, and the fix belongs with whoever is localising the
+wizard. It is a script to run and a number to drive down.
