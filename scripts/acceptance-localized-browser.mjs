@@ -32,6 +32,7 @@ const messages = Object.fromEntries(
   ]),
 );
 const email = process.env.LOCZ_BROWSER_EMAIL ?? 'buyer@locz.test';
+const fixtureOwnerEmail = process.env.LOCZ_BROWSER_FIXTURE_OWNER_EMAIL ?? 'seller@locz.test';
 const password = process.env.LOCZ_BROWSER_PASSWORD ?? 'LocZ@dev1234';
 let passed = 0;
 
@@ -73,7 +74,21 @@ async function main() {
   const browser = new CdpBrowser();
 
   try {
-    await createPublicFixtures(login.tokens.accessToken, fixture);
+    // Keep the browsing account distinct from the listing owner. The owner experience
+    // intentionally omits the enquiry control this story verifies.
+    const fixtureOwnerLogin = await api('/auth/login/email', {
+      method: 'POST',
+      body: {
+        email: fixtureOwnerEmail,
+        password,
+        device: {
+          deviceKey: `localized-fixture-owner-${Date.now()}`,
+          platform: 'WEB',
+          name: 'Localized fixture owner',
+        },
+      },
+    });
+    await createPublicFixtures(fixtureOwnerLogin.tokens.accessToken, fixture);
     check(
       'fixture business is publicly addressable',
       Boolean((await api(`/businesses/${fixture.business.slug}`)).id),

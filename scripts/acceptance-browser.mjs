@@ -50,6 +50,7 @@ const postableTypes = [
 const API = process.env.LOCZ_API ?? 'http://127.0.0.1:4000/api/v1';
 const WEB = process.env.LOCZ_WEB ?? 'http://localhost:3000';
 const EMAIL = process.env.LOCZ_BROWSER_EMAIL ?? 'buyer@locz.test';
+const FIXTURE_OWNER_EMAIL = process.env.LOCZ_BROWSER_FIXTURE_OWNER_EMAIL ?? 'seller@locz.test';
 const PASSWORD = process.env.LOCZ_BROWSER_PASSWORD ?? 'LocZ@dev1234';
 const TEST_PHOTO = process.env.LOCZ_TEST_PHOTO ?? 'C:/Users/USER/locz-stack/test-photo.jpg';
 const SCREENSHOT_DIR = process.env.LOCZ_SCREENSHOT_DIR;
@@ -755,7 +756,21 @@ async function main() {
   let safetyFixture;
   try {
     if (!businessSafetyOnly) {
-      await createPublicFixtures(token, publicFixture);
+      // The browser acts as a prospective buyer. Fixture ownership must belong to a
+      // different account; owners correctly do not see Save or Contact Seller controls.
+      const fixtureOwnerLogin = await api('/auth/login/email', {
+        method: 'POST',
+        body: {
+          email: FIXTURE_OWNER_EMAIL,
+          password: PASSWORD,
+          device: {
+            deviceKey: `browser-fixture-owner-${Date.now()}`,
+            platform: 'WEB',
+            name: 'Browser fixture owner',
+          },
+        },
+      });
+      await createPublicFixtures(fixtureOwnerLogin.tokens.accessToken, publicFixture);
       business = publicFixture.business;
       listing = publicFixture.listing;
       await api(`/listings/${listing.id}/save`, { method: 'DELETE', token });
