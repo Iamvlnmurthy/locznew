@@ -177,6 +177,14 @@ with the daily limit message.
 These scripts replace most of the manual walkthrough above. Each exits non-zero on
 failure so it can gate a deploy.
 
+All of them, in one run:
+
+```bash
+npm run acceptance:all
+```
+
+Or individually:
+
 ```bash
 node scripts/acceptance.mjs          # the buyer/seller flow   — 61 assertions
 node scripts/acceptance-web.mjs      # the public web app      — 109 assertions
@@ -248,3 +256,18 @@ seeded database would be measuring nothing. The suite checks the _plan_ — whic
 used, and whether the query fell back to reading the whole table — as well as the time,
 because on a warm laptop a sequential scan over fifty thousand rows still looks fast and
 then falls over at five hundred thousand.
+
+## Running them as part of a release
+
+`npm run gate:release` does not run these by default, because they need a live stack —
+API, web, admin, PostgreSQL, Redis, Meilisearch, object storage — and a build machine may
+have none of it. Pass `--stack` for any release that matters:
+
+```bash
+npm run gate:release -- --stack --dns --smoke
+```
+
+Without it the gate records the stage as **skipped**, not passed, and says so in both the
+console summary and the evidence file. That distinction is the point: a report that cannot
+tell "we checked and it was fine" from "we did not check" is the kind of evidence that gets
+quoted in a post-mortem.

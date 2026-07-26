@@ -13,23 +13,38 @@
     "node": ">=20.11.0"
   },
   "scripts": {
-    "dev:api": "npm run start:dev -w @locz/api",
-    "dev:web": "npm run dev -w @locz/web",
-    "dev:admin": "npm run dev -w @locz/admin",
+    "acceptance": "node scripts/acceptance.mjs",
+    "acceptance:admin": "node scripts/acceptance-admin.mjs",
+    "acceptance:all": "node scripts/acceptance-all.mjs",
+    "acceptance:browser": "node scripts/acceptance-browser.mjs",
+    "acceptance:filters": "node scripts/acceptance-filters.mjs",
+    "acceptance:jobs": "node scripts/acceptance-jobs.mjs",
+    "acceptance:performance": "node scripts/acceptance-performance.mjs",
+    "acceptance:security": "node scripts/acceptance-security.mjs",
+    "acceptance:web": "node scripts/acceptance-web.mjs",
     "build": "npm run build --workspaces --if-present",
-    "lint": "npm run lint --workspaces --if-present",
-    "test": "npm run test --workspaces --if-present",
-    "typecheck": "npm run typecheck --workspaces --if-present",
-    "format": "prettier --write \"**/*.{ts,tsx,js,json,md,yml,yaml}\"",
-    "format:check": "prettier --check \"**/*.{ts,tsx,js,json,md,yml,yaml}\"",
     "db:migrate": "npm run db:migrate -w @locz/api",
     "db:seed": "npm run db:seed -w @locz/api",
-    "docker:up": "docker compose -f infrastructure/docker/docker-compose.dev.yml up -d",
+    "dev:admin": "npm run dev -w @locz/admin",
+    "dev:api": "npm run start:dev -w @locz/api",
+    "dev:web": "npm run dev -w @locz/web",
     "docker:down": "docker compose -f infrastructure/docker/docker-compose.dev.yml down",
     "docker:logs": "docker compose -f infrastructure/docker/docker-compose.dev.yml logs -f",
-    "prepare": "husky"
+    "docker:up": "docker compose -f infrastructure/docker/docker-compose.dev.yml up -d",
+    "format": "prettier --write \"**/*.{ts,tsx,js,json,md,yml,yaml}\"",
+    "format:check": "prettier --check \"**/*.{ts,tsx,js,json,md,yml,yaml}\"",
+    "gate:release": "node scripts/release-gate.mjs",
+    "lint": "npm run lint --workspaces --if-present",
+    "preflight:production": "node scripts/production-preflight.mjs",
+    "prepare": "husky",
+    "smoke:production": "node scripts/production-smoke.mjs",
+    "test": "npm run test --workspaces --if-present",
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "verify:safety-readiness": "node scripts/child-safety-readiness.mjs",
+    "verify:safety": "node scripts/verify-safety-workflow.mjs"
   },
   "devDependencies": {
+    "axe-core": "^4.12.1",
     "husky": "^9.1.7",
     "lint-staged": "^17.2.0",
     "prettier": "^3.9.6",
@@ -63,5 +78,14 @@
     "prisma": true,
     "sharp": true,
     "unrs-resolver": true
+  },
+  "overrides": {
+    "find-my-way": "9.7.0",
+    "js-yaml": "5.2.2",
+    "next": {
+      "postcss": "8.5.18",
+      "sharp": "0.35.3"
+    },
+    "valibot": "1.4.2"
   }
 }

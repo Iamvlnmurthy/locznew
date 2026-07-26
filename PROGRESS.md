@@ -1281,3 +1281,29 @@ should not reach say `Missing permission: listing:moderate` rather than a generi
 — which is what the error handling was doing correctly the whole time.
 
 **241 unit tests. Admin 53, web 110, security 99.**
+
+## M35 — The release gate did not consult the suites (2026-07-26)
+
+The release gate ran typechecks, unit tests, production builds, the browser gate and the
+preflight — and none of the seven HTTP suites. Roughly four hundred assertions, including
+every security probe, the filter semantics, the background jobs and the index plans, took
+no part in the decision to ship.
+
+They are opt-in rather than default for a good reason: they need a live stack, and a build
+machine may have no database. So `--stack` runs them, and without it the gate now records
+the stage as **skipped** rather than passed:
+
+```
+PASS — 7/7 gates passed, 1 skipped
+Not run: http acceptance suites
+```
+
+The previous summary said `8/8 gates passed` while one of them had never run. A report that
+cannot distinguish "we checked and it was fine" from "we did not check" is the kind of
+evidence that gets quoted in a post-mortem.
+
+`npm run acceptance:all` runs all seven in the order where the first failure is the most
+informative — the buyer and seller journey first, because if that is broken, knowing a
+filter is also wrong tells you nothing you can act on.
+
+**All seven pass together: 375 assertions in 216 seconds.**
