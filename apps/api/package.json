@@ -5,22 +5,23 @@
   "description": "LocZ backend API \u2014 NestJS modular monolith",
   "scripts": {
     "build": "nest build",
-    "start": "nest start",
-    "start:dev": "nest start --watch",
-    "start:worker": "node dist/worker.js",
-    "lint": "eslint \"src/**/*.ts\" --max-warnings 0",
-    "typecheck": "tsc --noEmit -p tsconfig.tools.json",
-    "test": "jest",
-    "test:e2e": "jest --config test/jest-e2e.json",
+    "db:activate-india": "ts-node prisma/activate-india.ts",
     "db:generate": "prisma generate",
+    "db:generate-load": "ts-node prisma/generate-load.ts",
+    "db:import-pincodes": "ts-node prisma/import-pincodes.ts",
+    "db:import-villages": "ts-node prisma/import-villages.ts",
     "db:migrate": "prisma migrate dev",
     "db:migrate:deploy": "prisma migrate deploy",
     "db:seed": "ts-node prisma/seed.ts",
     "db:studio": "prisma studio",
+    "lint": "eslint \"src/**/*.ts\" --max-warnings 0",
     "openapi": "ts-node -P tsconfig.tools.json scripts/export-openapi.ts",
-    "db:import-pincodes": "ts-node prisma/import-pincodes.ts",
-    "db:generate-load": "ts-node prisma/generate-load.ts",
-    "db:activate-india": "ts-node prisma/activate-india.ts"
+    "start": "nest start",
+    "start:dev": "nest start --watch",
+    "start:worker": "node dist/worker.js",
+    "test": "jest",
+    "test:e2e": "jest --config test/jest-e2e.json",
+    "typecheck": "tsc --noEmit -p tsconfig.tools.json"
   },
   "prisma": {
     "seed": "ts-node prisma/seed.ts"

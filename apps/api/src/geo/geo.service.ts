@@ -303,10 +303,22 @@ export class GeoService {
       ? await this.geo.findNearbyLocalities(closest.cityId, latitude, longitude, 1)
       : [];
 
+    // How much is actually here. The point of allowing location is to see what is nearby,
+    // so the count comes back with the name rather than costing a second request — and an
+    // area with nothing in it is worth saying so, since that is the moment to invite the
+    // first post rather than show an empty shelf.
+    const listingsNearby = await this.geo.countNearbyListings({
+      latitude,
+      longitude,
+      radiusMeters: 10_000,
+    });
+
     return {
       pincode: this.toPincodeDto(closest),
       areaName: closest.name,
       localityName: locality[0]?.name ?? null,
+      mandal: closest.mandal ?? null,
+      listingsNearby,
       districtName: closest.districtName,
       stateName: closest.stateName,
       cityId: closest.city?.id ?? null,

@@ -526,6 +526,10 @@ model Locality {
   cityId     String                                 @db.Uuid
   name       String                                 @db.VarChar(140)
   slug       String                                 @db.VarChar(160)
+  // The sub-district: mandal in Telangana and Andhra, taluk in the south, tehsil in the
+  // north, block in the east. Stored here rather than in its own table because it is read
+  // as part of an address and never browsed as an index of its own.
+  mandal     String?                                @db.VarChar(140)
   postalCode String?                                @db.VarChar(12)
   latitude   Decimal?                               @db.Decimal(10, 7)
   longitude  Decimal?                               @db.Decimal(10, 7)
@@ -556,6 +560,8 @@ model Pincode {
   /// Best-known place name for the code — the office name that appears most often.
   name          String                                 @db.VarChar(140)
   districtName  String                                 @db.VarChar(120)
+  /// The sub-district: mandal, taluk, tehsil or block depending on the state.
+  mandal        String?                                @db.VarChar(140)
   stateName     String                                 @db.VarChar(120)
   latitude      Decimal                                @db.Decimal(10, 7)
   longitude     Decimal                                @db.Decimal(10, 7)

@@ -1467,3 +1467,43 @@ Verified end to end: one correction changed nothing, the second flipped 500081 �
 raised confidence to HIGH.
 
 **250 unit tests; acceptance 67, filters 54, web 110, admin 53, jobs 25, performance 17.**
+
+## M40 — Every village and mandal in India (2026-07-26)
+
+Districts made the country postable. They did not make it _local_. Somebody in Sirikonda
+does not think of themselves as being in Nizamabad, any more than a Londoner thinks of
+themselves as being in the South East — and the layer that says so had been thrown away.
+
+The pincode import collapsed 155,570 post-office rows into 19,238 codes, which is the right
+unit for "where shall I search" and the wrong one for "where am I". The same file carries
+the finer layer, unread: column 3 is the village, column 8 is the mandal.
+
+**155,543 villages and areas, every one with a map position. 10,034 mandals, taluks,
+tehsils and blocks.** Every pincode now names its own sub-district.
+
+The mandal lives on the rows that display it rather than in a table of its own. Nobody
+browses a mandal index — it appears in an address line and in search — and a table would
+add a join to every locality query to hold a name we already have.
+
+Location access now answers in the terms a person would use themselves:
+
+```
+Madhapur, Shaikpet, Hyderabad, Telangana          3,575 posts   HIGH
+Chungom, Ambalapuzha, Alappuzha, Kerala               0 posts   HIGH
+Sawkuchi, Kamrup, Assam                               0 posts   MEDIUM
+Jamia Masjid, Srinagar, Jammu & Kashmir             120 posts   HIGH
+```
+
+The count comes back with the name rather than costing a second request, and an area with
+nothing in it says so — that is the moment to invite the first post, not to show an empty
+shelf.
+
+### "Sawkuchi, NA, Kamrup"
+
+GeoNames writes the literal string `NA` where it has no sub-district, and 8,035 places
+carry it. Stored as-is it renders in an address line, which reads as a bug to anyone who
+lives there. 8,035 localities and 937 pincodes were corrected, and the importer now treats
+the placeholder as what it is: absent.
+
+**250 unit tests; acceptance 67, filters 54, web 110, performance 17 — all still green at
+155,543 localities.**

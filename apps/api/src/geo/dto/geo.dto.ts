@@ -231,8 +231,24 @@ export class NearbyAreaDto {
 export class AreaDto {
   @ApiProperty({ type: PincodeDto }) pincode!: PincodeDto;
   @ApiProperty({ example: 'Madhapur', description: 'The post office area' }) areaName!: string;
-  @ApiPropertyOptional({ example: 'Gachibowli', description: 'Finer than a pincode, where mapped' })
+  @ApiPropertyOptional({
+    example: 'Gachibowli',
+    description: 'The nearest of 155,543 named villages and areas — finer than a pincode',
+  })
   localityName!: string | null;
+
+  @ApiPropertyOptional({
+    example: 'Serilingampally',
+    description:
+      'The sub-district: mandal in the Telugu states, taluk in the south, tehsil in the north, block in the east',
+  })
+  mandal!: string | null;
+
+  @ApiProperty({
+    example: 43,
+    description: 'Published listings within 10 km — what there is to see, returned with the name',
+  })
+  listingsNearby!: number;
   @ApiProperty({ example: 'Hyderabad' }) districtName!: string;
   @ApiProperty({ example: 'Telangana' }) stateName!: string;
   @ApiPropertyOptional() cityId!: string | null;
