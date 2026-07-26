@@ -519,8 +519,186 @@ async function main() {
     ownDraft.items.some((item) => item.id === draft.id),
   );
 
+  // ---------------------------------------------------------------- 8b. business roles
+  step('8b. A business has an owner, staff, and everyone else');
+
+  const allCategories = await call('/categories');
+  const business = await call('/businesses', {
+    method: 'POST',
+    token: aliceToken,
+    body: {
+      name: `Sri Lakshmi Electronics ${Math.floor(Math.random() * 100000)}`,
+      categoryId: allCategories[0].id,
+      cityId: cities[0].id,
+      description: 'Small electronics shop selling and repairing home appliances.',
+      addressLine: 'Shop 4, main road',
+      primaryPhone: alicePhone,
+    },
+  });
+  check('the owner can create a business', Boolean(business.id), business.slug);
+
+  // A stranger has no relationship to it at all.
+  for (const [label, path, method, body] of [
+    ['see who works there', `/businesses/${business.id}/staff`, 'GET', undefined],
+    ['edit it', `/businesses/${business.id}`, 'PATCH', { description: 'Under new management' }],
+    [
+      'hire staff',
+      `/businesses/${business.id}/staff`,
+      'POST',
+      { phone: malloryPhone, role: 'MANAGER' },
+    ],
+    ['ask for verification', `/businesses/${business.id}/verification-request`, 'POST', undefined],
+    ['delete it', `/businesses/${business.id}`, 'DELETE', undefined],
+  ]) {
+    const result = await raw(path, { method, token: malloryToken, body });
+    check(`a stranger cannot ${label}`, refused(result), `HTTP ${result.status}`);
+  }
+
+  // Verification is the trust signal buyers actually rely on, so it is an administrator's
+  // decision and never the owner's. An owner may ask; only an admin may grant.
+  const selfVerify = await raw(`/businesses/${business.id}/verification`, {
+    method: 'POST',
+    token: aliceToken,
+    body: { verified: true },
+  });
+  check('an owner cannot verify their own business', refused(selfVerify), `HTTP ${selfVerify.status}`);
+
+  // Verification cannot be requested from a bare profile — a badge earned by filling in
+  // nothing would be worth nothing to the buyer reading it. The refusal names what is
+  // missing rather than saying no.
+  const requested = await raw(`/businesses/${business.id}/verification-request`, {
+    method: 'POST',
+    token: aliceToken,
+  });
+  check(
+    'an incomplete profile cannot request verification',
+    requested.status === 400,
+    `HTTP ${requested.status}`,
+  );
+  check(
+    'and the refusal says what is missing',
+    /address|opening hours|description|phone/i.test(requested.body?.error?.message ?? requested.text),
+    requested.body?.error?.message ?? '',
+  );
+
+  const publicProfile = await call(`/businesses/${business.slug}`);
+  check(
+    'the business is not verified',
+    publicProfile.verificationStatus === 'UNVERIFIED' ||
+      publicProfile.verificationStatus === 'NOT_REQUESTED',
+    `verificationStatus=${publicProfile.verificationStatus}`,
+  );
+
+  // Now Mallory genuinely works there, in the most limited role.
+  const hired = await call(`/businesses/${business.id}/staff`, {
+    method: 'POST',
+    token: aliceToken,
+    body: { phone: malloryPhone, role: 'VIEWER' },
+  });
+  check('the owner can hire a viewer', Boolean(hired.id), hired.role);
+
+  // A viewer answers enquiries. A viewer does not run the business.
+  for (const [label, path, method, body] of [
+    [
+      'hire other staff',
+      `/businesses/${business.id}/staff`,
+      'POST',
+      { phone: '+919000000005', role: 'MANAGER' },
+    ],
+    ['remove staff', `/businesses/${business.id}/staff/${hired.id}`, 'DELETE', undefined],
+    ['request verification', `/businesses/${business.id}/verification-request`, 'POST', undefined],
+    ['delete the business', `/businesses/${business.id}`, 'DELETE', undefined],
+    [
+      'edit the profile',
+      `/businesses/${business.id}`,
+      'PATCH',
+      { description: 'A viewer should not be rewriting the shop description.' },
+    ],
+  ]) {
+    const result = await raw(path, { method, token: malloryToken, body });
+    check(`a viewer cannot ${label}`, refused(result), `HTTP ${result.status}`);
+  }
+
+  // Being staff is not a way to post as the business either — that needs listing:create,
+  // which a viewer does not have.
+  const postAsBusiness = await raw('/listings', {
+    method: 'POST',
+    token: malloryToken,
+    body: {
+      type: 'PRODUCT',
+      title: 'Washing machine sold by the shop',
+      description: 'Posting this as the business, which a viewer has no right to do.',
+      categoryId: leaf.id,
+      cityId: cities[0].id,
+      businessId: business.id,
+      marketplace: { price: 9000, condition: 'GOOD' },
+    },
+  });
+  check(
+    'a viewer cannot post on the business behalf',
+    refused(postAsBusiness),
+    `HTTP ${postAsBusiness.status}`,
+  );
+
+  // Dismissal has to take effect immediately, not at the next sign-in.
+  await call(`/businesses/${business.id}/staff/${hired.id}`, {
+    method: 'DELETE',
+    token: aliceToken,
+  });
+  const afterRemoval = await raw(`/businesses/${business.id}/staff`, { token: malloryToken });
+  check('a removed staff member loses access at once', refused(afterRemoval), `HTTP ${afterRemoval.status}`);
+
+  const removedPost = await raw('/listings', {
+    method: 'POST',
+    token: malloryToken,
+    body: {
+      type: 'PRODUCT',
+      title: 'Another washing machine from the shop',
+      description: 'Posting as a business this account no longer has any part in.',
+      categoryId: leaf.id,
+      cityId: cities[0].id,
+      businessId: business.id,
+      marketplace: { price: 9000, condition: 'GOOD' },
+    },
+  });
+  check('and cannot keep posting as the business', refused(removedPost), `HTTP ${removedPost.status}`);
+
+  // A manager runs the day-to-day work and still does not own the place.
+  const manager = await call(`/businesses/${business.id}/staff`, {
+    method: 'POST',
+    token: aliceToken,
+    body: { phone: malloryPhone, role: 'MANAGER' },
+  });
+  check('the owner can promote someone to manager', manager.role === 'MANAGER');
+
+  const managerHires = await raw(`/businesses/${business.id}/staff`, {
+    method: 'POST',
+    token: malloryToken,
+    body: { phone: '+919000000005', role: 'EDITOR' },
+  });
+  check('a manager still cannot hire', refused(managerHires), `HTTP ${managerHires.status}`);
+
+  const managerDeletes = await raw(`/businesses/${business.id}`, {
+    method: 'DELETE',
+    token: malloryToken,
+  });
+  check('nor delete the business', refused(managerDeletes), `HTTP ${managerDeletes.status}`);
+
+  // Rewriting your own row is the obvious next move once you are inside.
+  const escalate = await raw(`/businesses/${business.id}/staff`, {
+    method: 'POST',
+    token: malloryToken,
+    body: { phone: malloryPhone, role: 'MANAGER', permissions: ['*'] },
+  });
+  check(
+    'a manager cannot rewrite their own permissions',
+    refused(escalate) || escalate.status === 400,
+    `HTTP ${escalate.status}`,
+  );
+
   // ---------------------------------------------------------------- 9. cleanup
   step('9. Cleanup');
+  await raw(`/businesses/${business.id}`, { method: 'DELETE', token: aliceToken });
   await raw(`/listings/${draft.id}`, { method: 'DELETE', token: malloryToken });
   await raw(`/listings/${scripted.id}`, { method: 'DELETE', token: malloryToken });
   await raw(`/listings/${listing.id}`, { method: 'DELETE', token: aliceToken });

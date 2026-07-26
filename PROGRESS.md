@@ -809,3 +809,55 @@ would exceed three minutes the suites now stop and say which ceiling was hit, in
 sitting silent for an hour — a hang and a rate limit look identical otherwise.
 
 **Six gates, 339 assertions**, plus 89 unit tests and Codex's 27 browser tests.
+
+## M26 — Business trust and delegated access (2026-07-26)
+
+Business ownership now has a complete trust workflow rather than a decorative badge.
+The owner workspace explains exactly which profile signals are missing, accepts a
+verification request only when the profile is ready, and shows pending, approved and
+correction-needed states without implying paid placement or guaranteed quality.
+
+The operations console has a dedicated verification queue with search and status
+filters, visible evidence, public-profile review, approval and rejection notes. Status
+filtering happens in the API before pagination, so a pending business cannot disappear
+merely because it fell beyond the first 50 public records. Decisions notify the owner
+and immediately update the public profile.
+
+Owners can also grant existing LocZ accounts clearly described Manager, Editor or
+Responder access, and remove access behind an explicit second decision. The service,
+not only the UI, enforces exact ownership. A newly created owner can manage staff
+without refreshing a stale token.
+
+The browser gate now proves incomplete verification is refused, a complete request
+reaches pending, staff access is granted and removed, a non-owner receives HTTP 403,
+an administrator verifies the business, the public trust signal changes, and the owner
+receives the decision. It passes **35/35** with no runtime errors, alongside **89/89**
+API unit tests and clean API, web and admin typechecks/builds.
+
+**Six core gates: 61 + 109 + 55 + 35 + 53 + 24 = 337 assertions**, plus 51 security
+assertions and 89 unit tests.
+
+## M24 — Four different amounts of power over one record (2026-07-26)
+
+The security suite grew a section for business roles — **74 assertions total, 0 failures**
+— because "owner", "manager", "viewer" and "stranger" are four different amounts of power
+over the same record, and an authorisation table that has never been attacked is a claim
+rather than a fact.
+
+A stranger is refused everything: seeing who works there, editing, hiring, requesting
+verification, deleting. A viewer — the most limited role — answers enquiries and nothing
+else: not hiring, not firing, not editing the profile, not deleting, and not posting a
+listing under the business name. A manager runs day-to-day work and still cannot hire or
+delete, nor rewrite their own permissions row. Nobody verifies their own business, because
+the badge is the trust signal buyers actually rely on.
+
+Dismissal is checked as a live boundary, not a flag: a removed staff member is refused on
+the very next request, and specifically cannot keep posting as the business they no longer
+work for.
+
+Everything held. Two of my assertions were wrong again, and one of them taught me something
+worth keeping: verification cannot be requested from a bare profile, and the refusal names
+what is missing — _"Complete opening hours before requesting verification"_. That is a real
+product rule, so the suite now asserts the rule instead of contradicting it.
+
+**Six gates, 362 assertions**, plus 89 unit tests and Codex's 27 browser tests.
