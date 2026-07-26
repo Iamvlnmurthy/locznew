@@ -21,7 +21,11 @@
  * are different claims and only the second one is testable.
  */
 
+import { readFileSync } from 'node:fs';
+import sharp from 'sharp';
 import { getSession } from './lib/session.mjs';
+
+const TEST_PHOTO = process.env.LOCZ_TEST_PHOTO ?? 'C:/Users/USER/locz-stack/test-photo.jpg';
 
 const API = process.env.LOCZ_API ?? 'http://127.0.0.1:4000/api/v1';
 const WEB = process.env.LOCZ_WEB ?? 'http://127.0.0.1:3000';
@@ -762,6 +766,108 @@ async function main() {
     refused(escalate) || escalate.status === 400,
     `HTTP ${escalate.status}`,
   );
+
+  // ---------------------------------------------------------------- 8c. blocked images
+  step('8c. A picture a moderator refused does not come back');
+
+  /** Uploads one image to a listing and returns the confirmation result. */
+  async function uploadImage(listingId, token, bytes) {
+    const ticket = await call(`/listings/${listingId}/media/upload-url`, {
+      method: 'POST',
+      token,
+      body: { mimeType: 'image/jpeg', sizeBytes: bytes.length },
+    });
+
+    const put = await fetch(ticket.uploadUrl, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'image/jpeg' },
+      body: bytes,
+    });
+    if (!put.ok) throw new Error(`Object storage refused the upload: HTTP ${put.status}`);
+
+    return { mediaId: ticket.mediaId, confirmed: await raw(`/media/${ticket.mediaId}/confirm`, { method: 'POST', token }) };
+  }
+
+  const photo = readFileSync(TEST_PHOTO);
+  const carrier = await call('/listings', {
+    method: 'POST',
+    token: aliceToken,
+    body: {
+      type: 'PRODUCT',
+      title: 'Wooden coffee table with glass top',
+      description: 'Selling a coffee table bought two years ago, in good condition throughout.',
+      categoryId: leaf.id,
+      cityId: cities[0].id,
+      marketplace: { price: 3500, condition: 'GOOD' },
+      saveAsDraft: true,
+    },
+  });
+
+  const first = await uploadImage(carrier.id, aliceToken, photo);
+  check('an ordinary image uploads', first.confirmed.body?.status === 'READY', first.confirmed.body?.status);
+
+  const blockResult = await call(`/moderation/media/${first.mediaId}/block`, {
+    method: 'POST',
+    token: moderatorToken,
+    body: { reason: 'Security probe — blocking to prove the refusal holds', category: 'WILDLIFE' },
+  });
+  check(
+    'a moderator can block it',
+    blockResult.blocked === 2,
+    `${blockResult.blocked} hashes recorded`,
+  );
+
+  // The same file again, on a different listing owned by someone else — a block has to be
+  // about the picture, not about the listing or the account it first appeared on.
+  const second = await call('/listings', {
+    method: 'POST',
+    token: malloryToken,
+    body: {
+      type: 'PRODUCT',
+      title: 'Another coffee table for sale cheap',
+      description: 'Reposting the same photograph from a different account entirely.',
+      categoryId: leaf.id,
+      cityId: cities[0].id,
+      marketplace: { price: 3200, condition: 'GOOD' },
+      saveAsDraft: true,
+    },
+  });
+
+  const repeat = await uploadImage(second.id, malloryToken, photo);
+  check(
+    'the identical file is refused',
+    repeat.confirmed.body?.status === 'FAILED',
+    repeat.confirmed.body?.status ?? `HTTP ${repeat.confirmed.status}`,
+  );
+
+  // Re-saving at a different quality is what someone actually does next. The bytes change
+  // completely, so only the perceptual hash can catch it.
+  const resaved = await sharp(photo).jpeg({ quality: 45 }).toBuffer();
+  check('the re-saved file is genuinely different bytes', !resaved.equals(photo));
+
+  const evaded = await uploadImage(second.id, malloryToken, resaved);
+  check(
+    'and so is the same picture re-saved',
+    evaded.confirmed.body?.status === 'FAILED',
+    evaded.confirmed.body?.status ?? `HTTP ${evaded.confirmed.status}`,
+  );
+
+  // A different photograph must still get through, or the block is just an outage.
+  const unrelated = await sharp({
+    create: { width: 400, height: 300, channels: 3, background: { r: 20, g: 140, b: 90 } },
+  })
+    .jpeg()
+    .toBuffer();
+
+  const innocent = await uploadImage(second.id, malloryToken, unrelated);
+  check(
+    'an unrelated picture is unaffected',
+    innocent.confirmed.body?.status === 'READY',
+    innocent.confirmed.body?.status ?? `HTTP ${innocent.confirmed.status}`,
+  );
+
+  await raw(`/listings/${carrier.id}`, { method: 'DELETE', token: aliceToken });
+  await raw(`/listings/${second.id}`, { method: 'DELETE', token: malloryToken });
 
   // ---------------------------------------------------------------- 9. cleanup
   step('9. Cleanup');

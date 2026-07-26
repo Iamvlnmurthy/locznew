@@ -244,29 +244,37 @@ async function main() {
     method: 'POST',
     token: sellerToken,
   });
-  check('processing succeeded', media.status === 'READY', media.status || media.failureReason);
-  check('thumb rendition generated', Boolean(media.thumbUrl));
-  check('card rendition generated', Boolean(media.cardUrl));
-  check('full rendition generated', Boolean(media.fullUrl));
 
-  // The renditions are public; the original is not.
-  const rendition = await fetch(media.fullUrl);
-  check('rendition publicly readable', rendition.ok, `HTTP ${rendition.status}`);
-
-  const renditionBytes = Buffer.from(await rendition.arrayBuffer());
-  const renditionMeta = await sharp(renditionBytes).metadata();
-  check('rendition is WebP', renditionMeta.format === 'webp', renditionMeta.format);
-  // A seller's home GPS must not ride along in a listing photo.
-  check('EXIF stripped from the public rendition', !renditionMeta.exif);
+  // A picture from an account with no history is held, not published. This is the
+  // assertion that matters most in this suite: before quarantine existed, an image became
+  // publicly fetchable the moment it was processed, and taking the listing down afterwards
+  // left the object exactly where it was.
   check(
-    'resized to the full-size cap',
-    renditionMeta.width !== undefined && renditionMeta.width <= 1600,
-    `${renditionMeta.width}×${renditionMeta.height}`,
+    "a new account's image is held for review, not published",
+    media.status === 'REVIEW_REQUIRED',
+    media.status || media.failureReason,
+  );
+  check(
+    'and the uploader is told why in plain words',
+    typeof media.failureReason === 'string' && media.failureReason.length > 0,
+    media.failureReason,
   );
 
-  const gallery = await call(`/listings/${listing.id}/media`);
-  check('image attached to the listing', gallery.length === 1);
-  check('first image becomes the cover', gallery[0]?.isPrimary === true);
+  // Confirmation reports the image; the public gallery does not carry it. Both are
+  // checked, because "no URL on the object" and "the object is not served at all" are
+  // different guarantees and only the second one survives someone guessing a URL.
+  check(
+    'no public URL is handed out while it waits',
+    !media.thumbUrl && !media.cardUrl && !media.fullUrl,
+    `thumb=${media.thumbUrl ?? 'none'}`,
+  );
+
+  const heldPublicGallery = await call(`/listings/${listing.id}/media`);
+  check(
+    'and the public gallery does not show it at all',
+    heldPublicGallery.length === 0,
+    `${heldPublicGallery.length} images visible`,
+  );
 
   // ---------------------------------------------------------------- 4. spam is blocked
   step('4. Moderation blocks an obvious scam');
@@ -308,6 +316,46 @@ async function main() {
     body: { note: 'Acceptance run' },
   });
   check('status is PUBLISHED', approved.status === 'PUBLISHED', approved.status);
+
+  // Approval is what makes an image public. Until this point the picture existed, was
+  // attached, and was reachable by nobody.
+  const approvedGallery = await waitFor(async () => {
+    const gallery = await call(`/listings/${listing.id}/media`);
+    return gallery[0]?.fullUrl ? gallery : false;
+  });
+  check('approval publishes the renditions', Boolean(approvedGallery));
+
+  const approvedImage = (await call(`/listings/${listing.id}/media`))[0];
+  check('the image is now visible on the listing', Boolean(approvedImage));
+  check('thumb rendition generated', Boolean(approvedImage?.thumbUrl));
+  check('card rendition generated', Boolean(approvedImage?.cardUrl));
+  check('full rendition generated', Boolean(approvedImage?.fullUrl));
+  check('first image becomes the cover', approvedImage?.isPrimary === true);
+
+  const rendition = await fetch(approvedImage.fullUrl);
+  check('rendition publicly readable once approved', rendition.ok, `HTTP ${rendition.status}`);
+
+  const renditionBytes = Buffer.from(await rendition.arrayBuffer());
+  const renditionMeta = await sharp(renditionBytes).metadata();
+  check('rendition is WebP', renditionMeta.format === 'webp', renditionMeta.format);
+  // A seller's home GPS must not ride along in a listing photo.
+  check('EXIF stripped from the public rendition', !renditionMeta.exif);
+  check(
+    'resized to the full-size cap',
+    renditionMeta.width !== undefined && renditionMeta.width <= 1600,
+    `${renditionMeta.width}×${renditionMeta.height}`,
+  );
+
+  // The original never becomes public, approved or not — it still carries the EXIF the
+  // renditions had stripped.
+  const originalFetch = await fetch(
+    approvedImage.fullUrl.replace(/\/public\/.*$/, `/${upload.storageKey}`),
+  ).catch(() => null);
+  check(
+    'the original stays private even after approval',
+    !originalFetch || !originalFetch.ok,
+    originalFetch ? `HTTP ${originalFetch.status}` : 'unreachable',
+  );
 
   const detail = await call(`/listings/${listing.slug}`);
   check('publicly visible without a token', detail.title.startsWith('Samsung'));

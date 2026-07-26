@@ -1147,3 +1147,32 @@ ES modules to evaluate in a cycle — the second to load sees an uninitialised c
 suites failed exactly that way before the module was pulled out.
 
 **163 unit tests.**
+
+## M31 — Private until approved, proved over HTTP (2026-07-26)
+
+Quarantine landed, and the acceptance suite was still asserting the behaviour it replaced:
+"thumb rendition generated", "rendition publicly readable". Those were assertions that an
+image became public the moment it was processed — which was the hole.
+
+The suite now tests the guarantee instead. A new account's photograph is confirmed
+`REVIEW_REQUIRED`, the uploader is told why in plain words, no public URL is handed out,
+and the public gallery does not carry the image at all. Both of those last two are checked:
+"no URL on the object" and "the object is not served" are different guarantees, and only
+the second survives someone guessing a URL. Approval then publishes the renditions — WebP,
+EXIF stripped, within the size cap — and **the original is still 403 afterwards**.
+
+Two things had to be fixed to get there, neither of them Codex's implementation.
+
+**A committed schema change with no migration.** `MediaStatus` had gained `QUARANTINED`,
+`SCANNING`, `REVIEW_REQUIRED` and `REJECTED` in `schema.prisma`, and the code using them
+shipped, while the database enum still had five values. Every listing approval returned a
+500 reading `invalid input value for enum "MediaStatus"` — which looks like a database
+fault rather than a missing migration. `20260726160000_media_quarantine_states` adds them
+with `IF NOT EXISTS`, so it is safe on a database in either state.
+
+**My own sequencing.** Approving the listing early to check renditions emptied the
+moderation queue that two later sections are about. The rendition assertions now sit after
+the approval the suite already performs, which also makes them test the real order rather
+than a contrived one.
+
+**189 unit tests. Acceptance 67, web 110.**
