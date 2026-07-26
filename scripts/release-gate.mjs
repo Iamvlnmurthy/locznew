@@ -493,6 +493,28 @@ if (options.has('--stack')) {
       '--skip-http was supplied for a diagnostic run',
     );
   } else {
+    // Let the shared sign-in window drain before the HTTP suites start.
+    //
+    // Every suite and browser gate on this machine signs in against one per-IP OTP bucket.
+    // The browser stages immediately above spend a large part of it, so the HTTP suites
+    // begin already throttled: the security probes alone went from 90s to 318s of mostly
+    // waiting, and the stage failed inside the gate while passing standalone minutes later.
+    // A gate that fails for a reason unrelated to the candidate teaches people to re-run it
+    // rather than read it.
+    //
+    // Waiting is the honest fix. Raising the limit would make the suites pass by weakening
+    // the control that the security suite exists to prove.
+    if (!options.has('--skip-browser')) {
+      const cooldownSeconds = Number(process.env.LOCZ_GATE_COOLDOWN_SECONDS ?? 90);
+      if (cooldownSeconds > 0) {
+        console.log(`
+Letting the shared sign-in limit drain for ${cooldownSeconds}s…`);
+        spawnSync(process.execPath, ['-e', `setTimeout(() => {}, ${cooldownSeconds * 1000})`], {
+          windowsHide: true,
+        });
+      }
+    }
+
     run('http acceptance suites', npm, [...npmPrefix, 'run', 'acceptance:all']);
   }
 } else {
