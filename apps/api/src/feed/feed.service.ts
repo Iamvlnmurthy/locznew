@@ -105,6 +105,28 @@ export class FeedService {
       if (city) return { id: city.id, name: city.name };
     }
 
+    // A pincode stands in for coordinates: its centroid decides the city, and the
+    // sections below then build around that point exactly as they do for a GPS fix.
+    if (query.pincode && query.latitude === undefined) {
+      const pincode = await this.prisma.pincode.findUnique({
+        where: { code: query.pincode },
+        select: { latitude: true, longitude: true, cityId: true, city: { select: { name: true } } },
+      });
+
+      if (pincode) {
+        Object.assign(query, {
+          latitude: Number(pincode.latitude),
+          longitude: Number(pincode.longitude),
+        });
+
+        // Most of India sits outside a launched city; those codes fall through to the
+        // nearest-city lookup below rather than failing.
+        if (pincode.cityId && pincode.city) {
+          return { id: pincode.cityId, name: pincode.city.name };
+        }
+      }
+    }
+
     if (query.latitude !== undefined && query.longitude !== undefined) {
       const nearest = await this.geo.findNearestCity(query.latitude, query.longitude);
       if (nearest) return { id: nearest.id, name: nearest.name };

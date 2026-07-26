@@ -444,4 +444,28 @@ pointed at files nobody had ever added.
 **`flutter build apk --debug` succeeds.** The pincode picker, pincode-scoped feed and
 search are in, translated in all three languages, with unit tests over the area model.
 
-Not yet done: running the app against the API on a device, and iOS, which needs a Mac.
+### Run on a device — three bugs the emulator caught
+
+Compiling is not running. On an Android 16 emulator against the live API:
+
+1. **The location picker rendered as a blank screen.** The theme gives every filled
+   button an infinite minimum width (`Size.fromHeight`), and a `Row` hands unbounded
+   width to its non-flex children — so the pincode "Go" button asserted during layout and
+   took the whole screen down with it. An explicit width reconciles the two.
+2. **`/feed` rejected the `pincode` parameter outright** — 400, "property pincode should
+   not exist". I had added the parameter to the web and mobile feed calls without adding
+   it to `FeedQueryDto`, so the home feed was broken for anyone who chose a pincode, on
+   _both_ clients. The web build passed and the page still rendered, because `apiSafe`
+   swallows the failure; only running the mobile app made it visible. The feed now
+   resolves a pincode to its centroid exactly as search does.
+3. **The mobile chip showed the city** where the web header shows the pincode. It now
+   shows back what the user typed.
+
+Verified on device: pincode 500081 entered by hand, persisted across an app restart, and
+"Near you" leads with Madhapur listings.
+
+Also added `scripts/dev-stack.ps1` — PostgreSQL, Redis, Meilisearch and MinIO run as
+plain processes, so a reboot left nothing running and the recovery was four
+half-remembered commands. Now `dev-stack.ps1 start|stop|status`.
+
+Not yet done: iOS, which needs a Mac.

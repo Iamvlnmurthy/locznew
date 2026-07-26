@@ -4,4 +4,9 @@
          to allow setting breakpoints, to provide hot reload, etc.
     -->
     <uses-permission android:name="android.permission.INTERNET"/>
+
+    <!-- Debug only. The dev API runs over plain HTTP on the host machine, which Android
+         blocks by default since API 28. Release builds keep that protection: this file
+         is not merged into them. -->
+    <application android:usesCleartextTraffic="true" />
 </manifest>

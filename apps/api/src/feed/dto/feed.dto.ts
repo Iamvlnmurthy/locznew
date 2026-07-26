@@ -1,6 +1,6 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
-import { IsInt, IsLatitude, IsLongitude, IsOptional, IsUUID } from 'class-validator';
+import { IsInt, IsLatitude, IsLongitude, IsOptional, IsUUID, Matches } from 'class-validator';
 import { ListingSummaryDto } from '../../listings/dto/listing.dto';
 
 export class FeedQueryDto {
@@ -10,6 +10,15 @@ export class FeedQueryDto {
   @IsOptional()
   @IsUUID()
   cityId?: string;
+
+  @ApiPropertyOptional({
+    example: '500081',
+    description:
+      'The visitor’s pincode. Its centroid becomes the coordinates the feed is built around, so someone who never granted location still gets a local feed.',
+  })
+  @IsOptional()
+  @Matches(/^\d{6}$/, { message: 'A pincode is exactly six digits' })
+  pincode?: string;
 
   @ApiPropertyOptional() @IsOptional() @Type(() => Number) @IsLatitude() latitude?: number;
   @ApiPropertyOptional() @IsOptional() @Type(() => Number) @IsLongitude() longitude?: number;

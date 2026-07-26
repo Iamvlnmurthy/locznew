@@ -170,15 +170,22 @@ class _CityPickerScreenState extends ConsumerState<CityPickerScreen> {
                       ),
                     ),
                     const SizedBox(width: LoczSpacing.x2),
-                    FilledButton.tonal(
-                      onPressed: _checkingPincode ? null : _applyPincode,
-                      child: _checkingPincode
-                          ? const SizedBox(
-                              height: 16,
-                              width: 16,
-                              child: CircularProgressIndicator(strokeWidth: 2),
-                            )
-                          : Text(strings('location.pincodeGo')),
+                    // The theme makes every filled button full-width (Size.fromHeight
+                    // gives an infinite minimum width), and a Row hands unbounded width
+                    // to its non-flex children — which asserts. An explicit width is what
+                    // reconciles a full-width button style with sitting beside a field.
+                    SizedBox(
+                      width: 104,
+                      child: FilledButton.tonal(
+                        onPressed: _checkingPincode ? null : _applyPincode,
+                        child: _checkingPincode
+                            ? const SizedBox(
+                                height: 16,
+                                width: 16,
+                                child: CircularProgressIndicator(strokeWidth: 2),
+                              )
+                            : Text(strings('location.pincodeGo')),
+                      ),
                     ),
                   ],
                 ),

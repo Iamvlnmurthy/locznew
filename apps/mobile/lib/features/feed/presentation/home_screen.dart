@@ -34,7 +34,10 @@ class HomeScreen extends ConsumerWidget {
                 const SizedBox(width: 4),
                 Flexible(
                   child: Text(
-                    city?.name ?? strings('location.change'),
+                    // Show the pincode back when that is what the user typed — the web
+                    // header does the same, and a chip that answers with something else
+                    // reads as though the app ignored them.
+                    city?.pincode ?? city?.name ?? strings('location.change'),
                     overflow: TextOverflow.ellipsis,
                     style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
                   ),
