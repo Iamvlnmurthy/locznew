@@ -130,6 +130,12 @@ async function pace(onWait) {
  * Split out so a code that went stale can be abandoned and a new one requested, rather than
  * being submitted twice. See `freshSignIn`.
  */
+/** Whole sign-in attempts, each with its own freshly requested code. */
+const MAX_SIGN_IN_ATTEMPTS = 3;
+
+/** Grows with each attempt, so a saturated bucket is given progressively longer to drain. */
+const THROTTLE_BACKOFF_SECONDS = 30;
+
 async function requestAndSpendCode(api, phone, deviceKey, onWait) {
   await pace(onWait);
 
@@ -221,13 +227,27 @@ async function freshSignIn(api, phone, deviceKey, onWait) {
 
     const message = JSON.stringify(payload);
     const staleCode = /Incorrect code|expired|invalid code/i.test(message);
+    // The inner loops already waited out several 429s. Reaching here means the shared
+    // per-IP bucket is saturated rather than this phone being throttled — which is what a
+    // machine running seven HTTP suites and three browser gates looks like. One more,
+    // longer wait costs a minute; failing here costs the whole suite.
+    const throttled = /TooManyRequests|ThrottlerException|Too Many Requests/i.test(message);
 
-    if (!staleCode || attempt >= 1) {
+    if ((!staleCode && !throttled) || attempt >= MAX_SIGN_IN_ATTEMPTS - 1) {
       throw new Error(`Sign-in failed for ${phone}: ${message.slice(0, 200)}`);
     }
 
-    onWait?.(0);
-    console.log(`    (the code for ${phone} expired before it could be used — asking for another)`);
+    if (staleCode) {
+      onWait?.(0);
+      console.log(
+        `    (the code for ${phone} expired before it could be used — asking for another)`,
+      );
+    } else {
+      const seconds = THROTTLE_BACKOFF_SECONDS * (attempt + 1);
+      onWait?.(seconds);
+      console.log(`    (the shared sign-in limit is saturated — waiting ${seconds}s)`);
+      await new Promise((resolve) => setTimeout(resolve, seconds * 1000));
+    }
   }
 }
 
