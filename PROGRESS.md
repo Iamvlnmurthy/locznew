@@ -1218,3 +1218,36 @@ suite.
 
 **Verified over HTTP:** the blocked picture is refused, a re-saved copy of it is refused,
 and an unrelated picture is not. **222 unit tests, security 88, acceptance 67, web 110.**
+
+## M33 — The wildcard opened the one door it should not (2026-07-26)
+
+A `CHILD_SAFETY_OFFICER` role arrived with five permissions and no moderation or
+administrative powers — restricted-case reading, evidence preview, report, release, close.
+The separation is the whole point: access to that material is limited to named, trained
+people and recorded with a justification.
+
+**The super administrator's wildcard bypassed all of it.** `SUPER_ADMINISTRATOR` holds
+`'*'`, the guard returned `true` before looking at what was being asked for, and a live
+probe confirmed it: an account that does not hold `safety:evidence:read` opened the
+restricted queue with a 200.
+
+That credential is the one most likely to be shared during an incident, held by whoever
+runs deployments, or issued to a contractor. "Root can do anything" is a convenience
+everywhere else on this platform and a liability in this one corner. The five child-safety
+permissions are now exempt from the wildcard — an explicit grant of the role, and nothing
+else, confers them. Ten unit tests pin it, six of which fail against the previous guard.
+
+**And nobody held the role.** It existed, correctly defined, with zero accounts attached —
+the same shape as `user:suspend` being granted to moderators while no endpoint could
+suspend anyone. In production that means an image held as evidence sits in a queue with no
+reader, including for the report POCSO ss19–20 makes mandatory. A development officer
+account is now seeded, and `docs/MODERATION.md` states plainly that production needs a real
+one.
+
+Eleven probes cover the boundary in both directions: the officer opens the restricted queue
+and is refused the moderation queue, the user directory and platform metrics; a moderator
+and an ordinary account are refused the restricted queue; the super administrator is refused
+it **while still opening everything else**, because protecting one corner must not break the
+platform around it.
+
+**241 unit tests. Security 99, admin 53, acceptance 67.**

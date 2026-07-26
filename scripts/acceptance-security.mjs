@@ -933,6 +933,66 @@ async function main() {
   //
   //   DELETE FROM blocked_image_hashes WHERE reason LIKE 'Security probe%';
 
+  // ---------------------------------------------------------------- 8d. child safety
+  step('8d. Restricted material is reachable only by the person named for it');
+
+  const officer = await getSession(API, '+919000000008', 'security-officer');
+  const officerToken = officer.tokens.accessToken;
+  check(
+    'a designated officer exists at all',
+    officer.user.roles.includes('CHILD_SAFETY_OFFICER'),
+    officer.user.roles.join(', '),
+  );
+
+  // The queue is useless without someone able to read it, and the report POCSO makes
+  // mandatory cannot be made by a role nobody holds.
+  const officerCases = await raw('/moderation/safety/cases', { token: officerToken });
+  check('and can open the restricted queue', officerCases.status === 200, `HTTP ${officerCases.status}`);
+
+  for (const [label, path] of [
+    ['the moderation queue', '/moderation/queue?limit=1'],
+    ['the user directory', '/admin/users?limit=1'],
+    ['platform metrics', '/admin/metrics'],
+  ]) {
+    const result = await raw(path, { token: officerToken });
+    check(`the officer cannot reach ${label}`, refused(result), `HTTP ${result.status}`);
+  }
+
+  // The other direction. An ordinary moderator handles listings and reports; restricted
+  // evidence is a different job with different training.
+  const moderatorCases = await raw('/moderation/safety/cases', { token: moderatorToken });
+  check('a moderator cannot open the restricted queue', refused(moderatorCases), `HTTP ${moderatorCases.status}`);
+
+  const strangerCases = await raw('/moderation/safety/cases', { token: malloryToken });
+  check('nor can an ordinary account', refused(strangerCases), `HTTP ${strangerCases.status}`);
+
+  // And the one that matters most: the platform's most powerful credential.
+  const superAdmin = await getSession(API, '+919000000001', 'security-superadmin');
+  check(
+    'the super administrator holds the wildcard',
+    superAdmin.user.permissions.includes('*'),
+  );
+  check(
+    'but not the child-safety permissions',
+    !superAdmin.user.permissions.includes('safety:evidence:read'),
+  );
+
+  const superCases = await raw('/moderation/safety/cases', {
+    token: superAdmin.tokens.accessToken,
+  });
+  check(
+    'and the wildcard does not open the restricted queue',
+    refused(superCases),
+    `HTTP ${superCases.status}`,
+  );
+
+  // The wildcard must still work for everything else, or this has broken the platform to
+  // protect one corner of it.
+  const superQueue = await raw('/moderation/queue?limit=1', {
+    token: superAdmin.tokens.accessToken,
+  });
+  check('while still opening everything else', superQueue.status === 200, `HTTP ${superQueue.status}`);
+
   // ---------------------------------------------------------------- 9. cleanup
   step('9. Cleanup');
   await raw(`/businesses/${business.id}`, { method: 'DELETE', token: aliceToken });

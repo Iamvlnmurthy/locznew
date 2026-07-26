@@ -40,6 +40,7 @@ import { PrismaPg } from '@prisma/adapter-pg';
 import { BANNED_KEYWORDS } from './banned-keywords';
 import { v7 as uuid } from 'uuid';
 import * as argon2 from 'argon2';
+import { CHILD_SAFETY_PERMISSIONS } from '../src/rbac/child-safety-role';
 
 // Prisma 7 connects through a driver adapter rather than a bundled engine, so the seed
 // supplies one exactly as the application does.
@@ -127,6 +128,11 @@ const ROLES: Array<{ name: RoleName; description: string; permissions: string[] 
       'moderation:note',
       'audit:read',
     ],
+  },
+  {
+    name: RoleName.CHILD_SAFETY_OFFICER,
+    description: 'Named officer handling restricted child-safety cases',
+    permissions: [...CHILD_SAFETY_PERMISSIONS],
   },
   {
     name: RoleName.ADMINISTRATOR,
@@ -883,6 +889,17 @@ const TEST_ACCOUNTS: Array<{
     email: 'business@locz.test',
     name: 'Sai Business Owner',
     roles: [RoleName.BUSINESS_OWNER, RoleName.EMPLOYER, RoleName.REGISTERED_USER],
+    language: Language.EN,
+  },
+  {
+    // Someone has to be able to work the restricted queue, or it is a queue with no
+    // reader. The role existed with no holder, which in production means an image held as
+    // evidence sits there and nobody can act on it — including making the report that
+    // POCSO ss19-20 makes mandatory.
+    phone: '+919000000008',
+    email: 'childsafety@locz.test',
+    name: 'Designated Child Safety Officer',
+    roles: [RoleName.CHILD_SAFETY_OFFICER, RoleName.REGISTERED_USER],
     language: Language.EN,
   },
   {
