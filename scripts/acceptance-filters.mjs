@@ -69,10 +69,64 @@ async function api(path, { token } = {}) {
   return payload?.data ?? payload;
 }
 
-/** Browse (no keyword) — the path where the compound-filter defects lived. */
+/**
+ * Every expectation here is computed by enumerating a set, which only works while the set
+ * fits on one page. A seeded database has fifty listings and a loaded one has fifty
+ * thousand, so the suite narrows itself to a slice small enough to enumerate and applies
+ * that slice to every query it makes.
+ *
+ * Scoping by pincode is deliberate rather than convenient: it means every assertion below
+ * is a *compound* query — a location plus whatever is being tested — which is precisely
+ * where the filters were being dropped.
+ */
+let scope = '';
+
+function scoped(query) {
+  return [scope, query].filter(Boolean).join('&');
+}
+
 async function browse(query) {
+  const result = await api(`/listings?${scoped(query)}&limit=50`);
+  return { items: result.items, total: result.meta.total };
+}
+
+/** An unscoped view, for the few checks that are about the whole database. */
+async function browseAll(query) {
   const result = await api(`/listings?${query}&limit=50`);
   return { items: result.items, total: result.meta.total };
+}
+
+/**
+ * Finds a slice that fits one page.
+ *
+ * Discovered rather than hardcoded: how listings are spread across the country depends on
+ * the data in front of the suite, and a fixed list of "quiet" pincodes is a guess that
+ * goes stale. Real codes are read from the API and probed at a tight radius until one
+ * holds a handful of listings — few enough to enumerate, more than none.
+ */
+async function chooseScope() {
+  const unscoped = await browseAll('');
+  if (unscoped.items.length === unscoped.total) return '';
+
+  const seen = new Set();
+  for (const prefix of ['5000', '5001', '4000', '1100', '6000', '7000', '3800', '2260']) {
+    const matches = await api(`/locations/pincodes?q=${prefix}&limit=20`);
+
+    for (const pincode of matches) {
+      if (seen.has(pincode.code)) continue;
+      seen.add(pincode.code);
+
+      const candidate = await browseAll(`pincode=${pincode.code}&radiusKm=1`);
+      if (candidate.total > 0 && candidate.total <= 50) {
+        return `pincode=${pincode.code}&radiusKm=1`;
+      }
+    }
+  }
+
+  throw new Error(
+    `Probed ${seen.size} pincodes and none holds between 1 and 50 listings. This database ` +
+      'is too uniformly dense to enumerate any slice of — widen the search in chooseScope().',
+  );
 }
 
 async function main() {
@@ -80,9 +134,16 @@ async function main() {
 
   // ---------------------------------------------------------------- 0. the universe
   step('0. The set every expectation is computed from');
+  scope = await chooseScope();
+  console.log(scope ? `  scoped to ${scope}` : '  small database — no scoping needed');
+
   const all = await browse('');
-  check('published listings available', all.items.length > 0, `${all.total} listings`);
-  check('the whole set fits one page', all.items.length === all.total, 'expectations stay exact');
+  check('listings available to reason about', all.items.length > 0, `${all.total} in scope`);
+  check(
+    'the scoped set fits one page',
+    all.items.length === all.total,
+    'so every expectation below can be exact',
+  );
 
   // Condition is not on the summary, so it is read once per listing from the detail
   // endpoint — the same place a buyer reads it.
@@ -175,7 +236,7 @@ async function main() {
 
   // Everything in the seeded city sits inside a 10 km radius of this pincode, so the
   // location narrows nothing on its own and any change must come from the other filter.
-  const nearby = await browse(`pincode=${PINCODE}`);
+  const nearby = await (scope ? browse('') : browseAll(`pincode=${PINCODE}`));
   const inArea = new Set(nearby.items.map((item) => item.id));
   check('the pincode area is populated', inArea.size > 0, `${nearby.total} within 10 km`);
 
@@ -187,17 +248,17 @@ async function main() {
     areaAndBudget.length < inArea.size,
     `${areaAndBudget.length} of ${inArea.size} under ₹5,000`,
   );
-  await expectSet('pincode + price ceiling', `pincode=${PINCODE}&priceMax=5000`, areaAndBudget);
+  await expectSet('location + price ceiling', 'priceMax=5000', areaAndBudget);
 
   const areaAndCondition = all.items.filter(
     (item) => inArea.has(item.id) && conditionOf(item.id) === 'GOOD',
   );
-  await expectSet('pincode + condition', `pincode=${PINCODE}&condition=GOOD`, areaAndCondition);
+  await expectSet('location + condition', 'condition=GOOD', areaAndCondition);
 
   for (const type of ['JOB', 'PRODUCT']) {
     const areaAndType = all.items.filter((item) => inArea.has(item.id) && item.type === type);
     if (areaAndType.length === 0) continue;
-    await expectSet(`pincode + type ${type}`, `pincode=${PINCODE}&type=${type}`, areaAndType);
+    await expectSet(`location + type ${type}`, `type=${type}`, areaAndType);
   }
 
   const three = all.items.filter(
@@ -209,8 +270,8 @@ async function main() {
       conditionOf(item.id) === 'GOOD',
   );
   await expectSet(
-    'pincode + type + price + condition',
-    `pincode=${PINCODE}&type=PRODUCT&priceMax=20000&condition=GOOD`,
+    'location + type + price + condition',
+    'type=PRODUCT&priceMax=20000&condition=GOOD',
     three,
   );
 
@@ -270,15 +331,23 @@ async function main() {
     views.slice(0, 4).join(' ≥ '),
   );
 
-  const featuredFirst = await browse('');
+  // Stated as a property rather than "the first one is featured": a small slice may
+  // legitimately contain none, and an assertion that depends on the sample containing a
+  // rarity is a flake waiting to happen. Every featured listing ahead of every ordinary
+  // one is the actual rule, and it holds either way.
+  const featuredFirst = await browseAll('');
+  const lastFeatured = featuredFirst.items.map((item) => item.isFeatured).lastIndexOf(true);
+  const firstOrdinary = featuredFirst.items.map((item) => item.isFeatured).indexOf(false);
   check(
-    'the default view leads with featured listings',
-    featuredFirst.items[0]?.isFeatured === true,
-    featuredFirst.items[0]?.slug?.slice(0, 30),
+    'the default view puts featured listings ahead of ordinary ones (distance wins inside a radius)',
+    lastFeatured === -1 || firstOrdinary === -1 || lastFeatured < firstOrdinary,
+    `${featuredFirst.items.filter((item) => item.isFeatured).length} featured in scope`,
   );
 
   // An explicit sort must survive a location filter — the same rule as featured placement.
-  const nearbySorted = await browse(`pincode=${PINCODE}&sort=price_asc`);
+  // The scope is already a radius search, so this only adds the sort — stacking a second
+  // pincode parameter on top of it is a malformed request, not a stronger test.
+  const nearbySorted = await browse('sort=price_asc');
   const nearbyPrices = nearbySorted.items.map((item) => item.price).filter((price) => price !== null);
   check(
     'an explicit sort survives a radius search',
@@ -289,8 +358,8 @@ async function main() {
   // ---------------------------------------------------------------- 4. pagination
   step('4. Pagination does not lose or repeat listings');
 
-  const firstPage = await api('/listings?limit=3&page=1');
-  const secondPage = await api('/listings?limit=3&page=2');
+  const firstPage = await api(`/listings?${scoped('limit=3&page=1')}`);
+  const secondPage = await api(`/listings?${scoped('limit=3&page=2')}`);
   const firstIds = firstPage.items.map((item) => item.id);
   const secondIds = secondPage.items.map((item) => item.id);
 
@@ -310,13 +379,13 @@ async function main() {
     `${firstPage.meta.total} vs ${all.total}`,
   );
 
-  const deepPage = await api('/listings?limit=3&page=99');
+  const deepPage = await api(`/listings?${scoped('limit=3&page=99')}`);
   check('a page past the end is empty, not an error', deepPage.items.length === 0);
   check('and still reports the true total', deepPage.meta.total === all.total);
 
   // Paginating a radius search used to slice one list and count another.
-  const nearbyPage = await api(`/listings?pincode=${PINCODE}&limit=2&page=1`);
-  const nearbyPageTwo = await api(`/listings?pincode=${PINCODE}&limit=2&page=2`);
+  const nearbyPage = await api(`/listings?${scoped('limit=2&page=1')}`);
+  const nearbyPageTwo = await api(`/listings?${scoped('limit=2&page=2')}`);
   check(
     'a paged radius search reports one consistent total',
     nearbyPage.meta.total === nearbyPageTwo.meta.total && nearbyPage.meta.total === nearby.total,
@@ -334,18 +403,28 @@ async function main() {
   check('an impossible filter returns no listings', impossible.items.length === 0);
   check('and says so in the total', impossible.total === 0, `total ${impossible.total}`);
 
-  const impossibleNearby = await browse(`pincode=${PINCODE}&priceMax=1&type=PRODUCT`);
+  const impossibleNearby = await browse('priceMax=1&type=PRODUCT');
   check(
     'the same holds inside a radius',
     impossibleNearby.items.length === 0 && impossibleNearby.total === 0,
     `total ${impossibleNearby.total}`,
   );
 
-  const emptyArea = await browse('pincode=190001');
+  // A distant pincode returns its own neighbourhood or nothing — never the database. The
+  // guarantee is containment rather than emptiness: whether Srinagar holds eight listings
+  // or none depends on the data, but every listing it returns must genuinely be within
+  // the radius asked for.
+  const remote = await browseAll('pincode=190001&radiusKm=1');
+  const everything = await browseAll('');
   check(
-    'a pincode with nothing nearby returns nothing, not everything',
-    emptyArea.items.length === 0 && emptyArea.total === 0,
-    `total ${emptyArea.total} in 190001`,
+    'a distant pincode returns its own area, not the database',
+    remote.total < everything.total,
+    `${remote.total} near 190001 of ${everything.total} in total`,
+  );
+  check(
+    'and everything it returns is genuinely within the radius',
+    remote.items.every((item) => item.distanceMeters === undefined || item.distanceMeters <= 1000),
+    remote.items.length ? `farthest ${Math.max(...remote.items.map((item) => item.distanceMeters ?? 0))} m` : 'none nearby',
   );
 
   console.log(`\n${'='.repeat(60)}`);

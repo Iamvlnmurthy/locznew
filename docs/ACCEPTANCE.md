@@ -185,6 +185,7 @@ node scripts/acceptance-browser.mjs  # browser interactions    — 35 assertions
 node scripts/acceptance-admin.mjs    # the admin console       — 53 assertions
 node scripts/acceptance-jobs.mjs     # the background jobs     — 24 assertions
 node scripts/acceptance-security.mjs # security probes         — 74 assertions
+node scripts/acceptance-performance.mjs # plans and latency    — 17 assertions
 ```
 
 `acceptance-filters.mjs` exists because the others check that layers **agree**, and two
@@ -230,3 +231,20 @@ a viewer answers enquiries but cannot hire, fire, edit, delete or post as the bu
 manager runs the day-to-day work and still cannot hire or delete; nobody verifies their own
 business; and a dismissed staff member loses access on the next request rather than the
 next sign-in.
+
+## Performance
+
+`scripts/acceptance-performance.mjs` needs a database with real volume, and refuses to run
+without one:
+
+```bash
+npm run db:generate-load -w @locz/api -- 50000
+LOCZ_PSQL=/path/to/psql node scripts/acceptance-performance.mjs
+npm run db:generate-load -w @locz/api -- --clean     # removes exactly what it added
+```
+
+With fifty listings PostgreSQL is right to ignore every index, so a green run against a
+seeded database would be measuring nothing. The suite checks the _plan_ — which index was
+used, and whether the query fell back to reading the whole table — as well as the time,
+because on a warm laptop a sequential scan over fifty thousand rows still looks fast and
+then falls over at five hundred thousand.

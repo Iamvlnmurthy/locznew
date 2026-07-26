@@ -163,8 +163,13 @@ async function main() {
   const category = categories[0];
   check('category available', Boolean(category), category?.slug);
 
+  // Taken from the feed rather than from "newest": with fifty thousand listings the newest
+  // one is not necessarily on the home page, and a fixture the page never shows would
+  // make every assertion about it a false alarm.
+  const feed = await api('/feed?limit=12');
+  const fromFeed = feed.sections.flatMap((section) => section.items ?? []).find(Boolean);
   const results = await api('/search?limit=1&sort=newest');
-  const listing = results.items[0];
+  const listing = fromFeed ?? results.items[0];
   check('published listing available', Boolean(listing), listing?.slug);
 
   const businessDirectory = await api('/businesses?limit=12');
@@ -343,10 +348,17 @@ async function main() {
 
   const nearbyJobs = await agreesWithApi('pincode plus type', 'pincode=500081&type=JOB');
   check(
-    'a nearby type filter has an honest total',
-    nearbyJobs.items.every((item) => item.type === 'JOB') &&
-      nearbyJobs.total === nearbyJobs.items.length,
-    `${nearbyJobs.items.length} shown of ${nearbyJobs.total}`,
+    'a nearby type filter returns only that type',
+    nearbyJobs.items.every((item) => item.type === 'JOB'),
+    `${nearbyJobs.items.length} shown of ${nearbyJobs.total} matching`,
+  );
+  // `total` counts everything that matches; the page holds at most `limit`. Requiring the
+  // two to be equal only held while the database was small enough for one page to be the
+  // whole answer — on a loaded one it asserts that pagination does not exist.
+  check(
+    'and a total that is at least the page it filled',
+    nearbyJobs.total >= nearbyJobs.items.length,
+    `${nearbyJobs.items.length} of ${nearbyJobs.total}`,
   );
 
   const nearbyGood = await agreesWithApi('pincode plus condition', 'pincode=500081&condition=GOOD');

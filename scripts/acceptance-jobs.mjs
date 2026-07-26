@@ -273,6 +273,19 @@ async function main() {
   const before = await call('/search/index/status', { token: adminToken });
   check('index status readable', typeof before.indexedDocuments === 'number', `${before.indexedDocuments} documents`);
 
+  // Twice, deliberately. A fixed job id kept the rebuild from being queued more than once
+  // ever: BullMQ discards a duplicate id, and finished jobs were never removed, so the
+  // second request and every one after it was silently dropped while the endpoint went on
+  // answering 202. The operator's remedy for a broken index was itself broken.
+  await call('/search/index/rebuild', { method: 'POST', token: adminToken, expect: 202 });
+  await waitFor(
+    async () => {
+      const status = await call('/search/index/status', { token: adminToken });
+      return Math.abs(status.drift ?? 0) <= 1;
+    },
+    { attempts: 60, delayMs: 2000 },
+  );
+
   await call('/search/index/rebuild', { method: 'POST', token: adminToken, expect: 202 });
   const rebuilt = await waitFor(
     async () => {
@@ -282,6 +295,11 @@ async function main() {
     { attempts: 30, delayMs: 1000 },
   );
   const after = await call('/search/index/status', { token: adminToken });
+  check(
+    'a second rebuild is accepted and actually runs',
+    rebuilt,
+    'the job id is released when the job finishes',
+  );
   check(
     'rebuild restores every published listing',
     rebuilt,

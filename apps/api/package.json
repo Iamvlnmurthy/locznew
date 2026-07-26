@@ -18,7 +18,8 @@
     "db:seed": "ts-node prisma/seed.ts",
     "db:studio": "prisma studio",
     "openapi": "ts-node -P tsconfig.tools.json scripts/export-openapi.ts",
-    "db:import-pincodes": "ts-node prisma/import-pincodes.ts"
+    "db:import-pincodes": "ts-node prisma/import-pincodes.ts",
+    "db:generate-load": "ts-node prisma/generate-load.ts"
   },
   "prisma": {
     "seed": "ts-node prisma/seed.ts"

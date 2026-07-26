@@ -837,6 +837,69 @@ API unit tests and clean API, web and admin typechecks/builds.
 **Six core gates: 61 + 109 + 55 + 35 + 53 + 24 = 337 assertions**, plus 51 security
 assertions and 89 unit tests.
 
+## M27 — The mobile app is a running product, not an unchecked source tree (2026-07-26)
+
+The installed Flutter 3.41.5 and Android 36 toolchains were used to resolve the mobile
+dependencies, migrate the language selector to Flutter's current `RadioGroup` API, and
+fix every unawaited navigation warning and strict formatting issue. `flutter analyze`
+now reports **zero issues** and the existing pincode contract suite passes **4/4**.
+
+`flutter doctor -v` is fully green. The app compiles into a real debug APK, installs on
+the dedicated `LocZ_Dev` Android 16 emulator, reaches the host API through `10.0.2.2`,
+and renders seeded location-aware listings. The home, account, language and listing
+detail surfaces were exercised on-device; logcat showed no Flutter exception, fatal
+exception or layout overflow.
+
+The remaining mobile quality gap is durable integration coverage for sign-in, search,
+save and enquiry behavior. Coordinate-only emulator taps are not accepted as that
+evidence because system UI can steal focus; the next gate should use Flutter semantic
+finders and assert API state.
+
+## M28 — A mobile buyer journey that checks itself (2026-07-26)
+
+`integration_test/buyer_journey_test.dart` now runs the compiled application on the
+Android 16 `LocZ_Dev` emulator against the real API. It establishes a seeded buyer
+session through the real email-login endpoint, persists it through Android secure
+storage, and proves the app restores that identity.
+
+The test then verifies the live feed, account tabs, unfiltered search results, the
+keyword empty state, another seller's listing detail and optimistic save. It polls
+`GET /listings/saved` to prove both save and unsave reached the database, and teardown
+restores the listing's original state even after a later assertion fails.
+
+The gate passes **1/1** on-device, the Dart unit suite remains **4/4**, and
+`flutter analyze` reports **zero issues**.
+
+## M29 — Production should fail before traffic, not during it (2026-07-26)
+
+Production deployment now has a secret-safe executable preflight, an HTTP-only ACME
+bootstrap configuration, a pinned Certbot maintenance service, and a runbook covering
+environment placement, TLS, migrations, health checks, renewal and rollback.
+
+The preflight deliberately fails on this workstation with four honest blockers: Docker
+is unavailable, the production Compose environment has not been created, and neither
+TLS certificate file exists. No fake credentials or certificates were generated to
+make the check green. The Certbot image tag was verified against its official registry.
+
+## M30 — The release boundary checks the whole system (2026-07-26)
+
+The shared Next.js Dockerfile now copies every internal workspace manifest required by
+both applications before `npm ci`. Previously it omitted `@locz/validation` and
+`@locz/api-client`, a defect local builds cannot reveal because the full monorepo is
+already present. Production preflight now derives those internal dependencies directly
+from each app manifest and fails if the image recipe drifts again.
+
+`scripts/production-smoke.mjs` checks the deployed boundary rather than individual
+processes: public TLS headers, API liveness and dependency readiness, keyword requests
+actually using Meilisearch, zero/allowed index drift through an authenticated admin
+session, hidden API documentation, admin anti-indexing/framing headers and logout
+cleanup.
+
+Against the split local origins, all six applicable application checks pass, including
+zero search-index drift and session cleanup. The two remaining failures are intentionally
+production-only Nginx headers (HSTS and admin `noindex`/`DENY`), which cannot be asserted
+until the Docker/TLS stack is running.
+
 ## M24 — Four different amounts of power over one record (2026-07-26)
 
 The security suite grew a section for business roles — **74 assertions total, 0 failures**
@@ -861,3 +924,51 @@ what is missing — _"Complete opening hours before requesting verification"_. T
 product rule, so the suite now asserts the rule instead of contradicting it.
 
 **Six gates, 362 assertions**, plus 89 unit tests and Codex's 27 browser tests.
+
+## M25 — Fifty thousand listings, and two things that only break at scale (2026-07-26)
+
+Nobody had measured anything, and with fifty-five listings nobody could: PostgreSQL
+correctly ignores every index on a table that small, so a fast response proved nothing
+about the design. `prisma/generate-load.ts` builds a realistically shaped dataset —
+weighted heavily toward launched cities, thin across the rest of the country, every row
+tagged so `--clean` removes exactly what it added.
+
+**50,055 listings**, and the design holds: the radius search uses the spatial index, city
+and pincode browse and the expiry sweeper never read the whole table, and every endpoint
+answers well inside budget — home feed 31 ms, pincode area 87 ms, keyword search 9 ms,
+page fifty only 1.2× slower than page one.
+
+Two defects surfaced that fifty rows could never have shown.
+
+### The same query returned different results
+
+`sort=price_asc` gave a different twenty-fourth row between identical runs. Thousands of
+listings share a price and a whole day's postings share a publication date, so rows tied on
+every sort key — and PostgreSQL is free to return tied rows in any order, which a parallel
+scan happily varies. The user-visible cost is specific and silent: page one ends at row 24
+of one arrangement and page two begins at row 25 of another, so a listing appears twice
+while another is never shown. Nobody reports that; they conclude the search is unreliable.
+Every ordering now ends with the row id, which is a UUIDv7 and therefore unique and roughly
+chronological.
+
+### The button for fixing a broken search index did nothing
+
+`POST /search/index/rebuild` answered `202 queued` and silently discarded the work. The
+fixed job id was deliberate — it stops a double-click starting two full scans — but BullMQ
+keeps finished jobs, so after the first successful rebuild the id was permanently taken and
+every later request was dropped. The nightly repair still ran, on its own separate key,
+which is what hid it. The remedy an operator reaches for when search is visibly broken was
+the one thing that could not work. Freeing the id on completion and on failure fixed it:
+**50,014 documents indexed in about forty seconds**. The jobs gate now runs the rebuild
+twice and requires the second one to actually happen.
+
+### And several of my own assertions
+
+The filter gate computed its expectations by enumerating the whole database, which stopped
+being possible at fifty thousand rows. It now discovers a slice small enough to enumerate
+by probing real pincodes from the API, and applies that slice to every query — which makes
+every assertion in it a compound query, exactly where the earlier defects lived. Two web
+assertions assumed the newest listing appears on the home page and that `total` equals the
+number of rows on the page; both were true only while one page was the whole answer.
+
+**Seven gates, 379 assertions**, plus 89 unit tests and Codex's browser suite.

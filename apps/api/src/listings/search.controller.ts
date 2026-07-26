@@ -53,9 +53,19 @@ export class SearchController {
     description: 'Always safe: PostgreSQL is the source of truth, so a rebuild cannot lose data.',
   })
   async rebuild(@CurrentUser() user: AuthenticatedUser): Promise<{ queued: boolean }> {
-    // One rebuild at a time — a fixed job id makes a double-click a no-op instead of
-    // two concurrent full scans.
-    await this.queue.add(JOB_REINDEX_ALL, { requestedBy: user.id }, { jobId: 'reindex-all' });
+    // One rebuild at a time — a fixed job id makes a double-click a no-op instead of two
+    // concurrent full scans.
+    //
+    // Removed on completion *and* on failure, which is the part that was missing: BullMQ
+    // keeps finished jobs, so the id stayed taken forever and every rebuild after the
+    // first was silently discarded while this endpoint went on reporting `queued: true`.
+    // The button an operator presses when search is visibly broken did nothing at all.
+    // The id only needs to be reserved while the job is waiting or running.
+    await this.queue.add(
+      JOB_REINDEX_ALL,
+      { requestedBy: user.id },
+      { jobId: 'reindex-all', removeOnComplete: true, removeOnFail: true },
+    );
     return { queued: true };
   }
 }
