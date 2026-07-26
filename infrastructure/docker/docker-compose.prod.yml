@@ -28,7 +28,10 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
-    command: ['npx', 'prisma', 'migrate', 'deploy', '--schema', 'prisma/schema.prisma']
+    # No --schema: Prisma 7 takes both the schema path and the datasource URL from
+    # prisma.config.ts, and passing the flag would point the CLI at a schema whose
+    # datasource block deliberately carries no url.
+    command: ['npx', 'prisma', 'migrate', 'deploy']
 
   api:
     build:

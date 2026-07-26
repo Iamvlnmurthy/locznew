@@ -491,3 +491,52 @@ HTTP 200 with an empty shell, so "the page loads" proves nothing — exactly the
 hid the `/feed?pincode=` 400 earlier. Each of the eight console pages is checked for a
 value that can only have come from the database (a user's display name, an audit action,
 the live user count) and for the absence of an error boundary.
+
+## M18 — The deployment path, as far as this machine allows (2026-07-26)
+
+Docker is not installed here and installing it needs administrator rights, so the compose
+stack itself is still unbuilt. Everything that could be executed without a daemon, was —
+and it found three defects that would each have broken the _first_ deploy rather than a
+later one.
+
+**`prisma.config.ts` was never copied into the runtime image.** Prisma 7 reads the
+datasource URL from that file, not from `schema.prisma`, so the `migrate` service had
+nothing to connect to. Fixed, and the file is now copied explicitly.
+
+**The `prisma` CLI was pruned out of the image** by `npm prune --omit=dev`, while the
+`migrate` service runs `npx prisma migrate deploy` from that same image — `npx` would
+have tried to fetch the CLI from the registry at deploy time. It is now reinstalled at
+the version the workspace pins.
+
+**`shadowDatabaseUrl` was declared unconditionally.** Prisma validates the key whenever
+it is present, so an unset `SHADOW_DATABASE_URL` became an empty string and failed
+`migrate deploy` with "must start with the protocol postgresql://" — in production, where
+a shadow database is neither configured nor wanted. It is now spread in only when set.
+Verified both ways: `migrate deploy` with only the two production variables, and
+`migrate status` with the development shadow URL present.
+
+Also removed `--schema` from the compose migrate command: Prisma 7 takes the schema path
+from the config file, and the flag pointed the CLI at a schema whose datasource block
+deliberately carries no url.
+
+### Nginx, actually running
+
+A portable nginx 1.28 validated `infrastructure/nginx/nginx.conf` verbatim (`syntax is
+ok`), then served the real thing on high ports in front of the live API, web and admin:
+
+- HTTP → HTTPS redirect: 301
+- TLS termination and `/api/` proxy: health check returns through it, correlation id
+  carried as nginx's `$request_id`
+- `locz.in` → web, `admin.locz.in` → admin: both 200
+- HSTS, `X-Frame-Options`, `X-Content-Type-Options`, `Referrer-Policy` all present
+- 12 MB body cap: a 15 MB upload gets 413
+
+One defect fixed there too: **nginx answered a throttled request with 503**, meaning "the
+service is broken", where the API answers 429, meaning "you are going too fast". Clients
+back off on 429 — including this project's own Flutter client and acceptance suite — so
+the two layers disagreeing about the name of the same event is a real bug. `limit_req_status
+429` and `limit_conn_status 429` now make them agree; verified by driving the auth zone
+past its burst and watching every rejection come back 429.
+
+Still unverified, honestly: `docker compose build` and `up`. Nothing here proves the
+images build.

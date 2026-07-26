@@ -27,6 +27,13 @@ export default defineConfig({
     // diff. The application role is NOSUPERUSER NOCREATEDB on purpose, so that privilege
     // comes from a separate development-only connection rather than by relaxing the role.
     // Production never needs this: `migrate deploy` applies committed SQL directly.
-    shadowDatabaseUrl: process.env.SHADOW_DATABASE_URL,
+    //
+    // Spread rather than assigned: Prisma validates the key whenever it is present, so an
+    // unset SHADOW_DATABASE_URL becomes an empty string and fails `migrate deploy` with
+    // "must start with the protocol postgresql://" — in production, where the shadow
+    // database is neither configured nor needed.
+    ...(process.env.SHADOW_DATABASE_URL
+      ? { shadowDatabaseUrl: process.env.SHADOW_DATABASE_URL }
+      : {}),
   },
 });

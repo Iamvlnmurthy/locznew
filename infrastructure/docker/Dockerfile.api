@@ -36,7 +36,16 @@ COPY packages packages
 RUN npx prisma generate --schema apps/api/prisma/schema.prisma \
     && npm run build --workspace @locz/api
 
+# The `prisma` CLI is a devDependency, but the `migrate` service runs `prisma migrate
+# deploy` from this very image — pruning it away would leave `npx` trying to download the
+# CLI at deploy time, on a machine that may have no route to the npm registry. Keeping
+# one package is cheaper than a migration that fails in production.
 RUN npm prune --omit=dev --workspace @locz/api --include-workspace-root
+
+# Reinstalled at the version the workspace pins, so the CLI running the migration is the
+# same one the migrations were authored with.
+RUN npm install --no-save --workspace @locz/api \
+      "prisma@$(node -p "require('./apps/api/package.json').devDependencies.prisma")"
 
 # ---------------------------------------------------------------------------
 # Runtime
@@ -55,6 +64,11 @@ COPY --from=build /app/node_modules ./node_modules
 COPY --from=build /app/apps/api/dist ./dist
 COPY --from=build /app/apps/api/prisma ./prisma
 COPY --from=build /app/apps/api/package.json ./package.json
+
+# Prisma 7 reads the datasource URL from this file rather than from schema.prisma, so
+# without it `prisma migrate deploy` has nothing to connect to. It was the one file the
+# image was missing, and it would have failed the first deploy, not a later one.
+COPY --from=build /app/apps/api/prisma.config.ts ./prisma.config.ts
 
 # Never root. The image writes nothing outside /tmp — media goes to object storage.
 USER node
