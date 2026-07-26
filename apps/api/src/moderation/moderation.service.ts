@@ -302,7 +302,8 @@ export class ModerationService {
     userId: string,
     moderatorId: string,
     reason: string,
-  ): Promise<{ suspended: true; sessionsRevoked: number }> {
+    durationDays?: number,
+  ): Promise<{ suspended: true; sessionsRevoked: number; endsAt: Date | null }> {
     const user = await this.prisma.user.findFirst({ where: { id: userId, deletedAt: null } });
     if (!user) throw new NotFoundException('User not found');
 
@@ -313,10 +314,20 @@ export class ModerationService {
       throw new ConflictException('That account is already suspended');
     }
 
-    await this.prisma.user.update({
-      where: { id: userId },
-      data: { status: UserStatus.SUSPENDED },
-    });
+    // Null means indefinite. Most suspensions should not be: a fortnight is a correction,
+    // and a permanent ban for a first offence is a decision to lose a user rather than
+    // teach one.
+    const endsAt = durationDays ? new Date(Date.now() + durationDays * 24 * 60 * 60 * 1000) : null;
+
+    await this.prisma.$transaction([
+      this.prisma.user.update({
+        where: { id: userId },
+        data: { status: UserStatus.SUSPENDED },
+      }),
+      this.prisma.userSuspension.create({
+        data: { id: uuid(), userId, reason, issuedBy: moderatorId, endsAt },
+      }),
+    ]);
 
     const sessionsRevoked = await this.tokens.revokeAllForUser(userId, `suspended: ${reason}`);
 
@@ -325,11 +336,45 @@ export class ModerationService {
       entityType: 'User',
       entityId: userId,
       actorId: moderatorId,
-      changes: { reason, sessionsRevoked },
+      changes: { reason, sessionsRevoked, endsAt },
     });
 
-    this.logger.warn(`User ${userId} suspended by ${moderatorId}: ${reason}`);
-    return { suspended: true, sessionsRevoked };
+    this.logger.warn(
+      `User ${userId} suspended by ${moderatorId} until ${endsAt?.toISOString() ?? 'further notice'}: ${reason}`,
+    );
+    return { suspended: true, sessionsRevoked, endsAt };
+  }
+
+  /**
+   * Lifts suspensions whose term has run out.
+   *
+   * A suspension "for seven days" that nobody lifts is a permanent one with a misleading
+   * label. The moderator who set it has moved on, and the person serving it has no way to
+   * appeal a date that never arrives — so the system keeps the promise itself.
+   */
+  async liftExpiredSuspensions(): Promise<{ lifted: number }> {
+    const due = await this.prisma.userSuspension.findMany({
+      where: { liftedAt: null, endsAt: { not: null, lte: new Date() } },
+      select: { id: true, userId: true },
+    });
+
+    if (due.length === 0) return { lifted: 0 };
+
+    await this.prisma.$transaction([
+      this.prisma.userSuspension.updateMany({
+        where: { id: { in: due.map((row) => row.id) } },
+        data: { liftedAt: new Date() },
+      }),
+      // Only accounts whose suspension is the reason they are suspended: someone
+      // deactivated or pending deletion must stay as they are.
+      this.prisma.user.updateMany({
+        where: { id: { in: due.map((row) => row.userId) }, status: UserStatus.SUSPENDED },
+        data: { status: UserStatus.ACTIVE },
+      }),
+    ]);
+
+    this.logger.log(`Lifted ${due.length} expired suspension(s)`);
+    return { lifted: due.length };
   }
 
   /**
@@ -344,10 +389,19 @@ export class ModerationService {
       throw new ConflictException('That account is not suspended');
     }
 
-    await this.prisma.user.update({
-      where: { id: userId },
-      data: { status: UserStatus.ACTIVE },
-    });
+    await this.prisma.$transaction([
+      this.prisma.user.update({
+        where: { id: userId },
+        data: { status: UserStatus.ACTIVE },
+      }),
+      // Closing the record matters as much as changing the flag: an open suspension row
+      // would otherwise be lifted a second time by the sweeper, and the history would show
+      // a punishment that never ended.
+      this.prisma.userSuspension.updateMany({
+        where: { userId, liftedAt: null },
+        data: { liftedAt: new Date() },
+      }),
+    ]);
 
     await this.audit.record({
       action: 'user.reinstate',

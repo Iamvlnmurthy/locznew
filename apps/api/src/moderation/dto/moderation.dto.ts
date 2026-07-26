@@ -1,5 +1,6 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsOptional, IsString, MaxLength, MinLength } from 'class-validator';
+import { Type } from 'class-transformer';
+import { IsInt, IsOptional, IsString, Max, MaxLength, Min, MinLength } from 'class-validator';
 import { PaginationQueryDto } from '../../common/dto/pagination.dto';
 
 export class ModerationQueueQueryDto extends PaginationQueryDto {}
@@ -48,4 +49,18 @@ export class SuspendUserDto {
   @MinLength(10)
   @MaxLength(500)
   reason!: string;
+
+  @ApiPropertyOptional({
+    example: 7,
+    description:
+      'Days to suspend for. Omit for indefinite — but most suspensions should not be: a fortnight is a correction, a permanent ban for a first offence is a decision to lose a user rather than teach one.',
+    minimum: 1,
+    maximum: 365,
+  })
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  @Max(365)
+  durationDays?: number;
 }

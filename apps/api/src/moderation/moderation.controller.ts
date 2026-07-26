@@ -88,8 +88,8 @@ export class ModerationController {
     @Param('id') id: string,
     @Body() dto: SuspendUserDto,
     @CurrentUser() user: AuthenticatedUser,
-  ): Promise<{ suspended: true; sessionsRevoked: number }> {
-    return this.moderation.suspendUser(id, user.id, dto.reason);
+  ): Promise<{ suspended: true; sessionsRevoked: number; endsAt: Date | null }> {
+    return this.moderation.suspendUser(id, user.id, dto.reason, dto.durationDays);
   }
 
   @Post('users/:id/reinstate')

@@ -7,6 +7,7 @@ import {
   JOB_REINDEX_ALL,
   JOB_SWEEP_ORPHAN_MEDIA,
   JOB_SWEEP_SESSIONS,
+  JOB_LIFT_EXPIRED_SUSPENSIONS,
   JOB_TRIM_RECENTLY_VIEWED,
   JOB_WARN_EXPIRING,
   QUEUE_LIFECYCLE,
@@ -80,6 +81,14 @@ export class LifecycleScheduler implements OnModuleInit {
         repeat: { pattern: '45 3 * * *', tz: 'Asia/Kolkata' },
         jobId: 'repeat:trim-recently-viewed',
       },
+    );
+
+    // Hourly, not nightly. A suspension that ends at nine in the morning should not last
+    // until three the next, and an hourly sweep costs one indexed query.
+    await this.lifecycle.add(
+      JOB_LIFT_EXPIRED_SUSPENSIONS,
+      {},
+      { repeat: { pattern: '5 * * * *' }, jobId: 'repeat:lift-expired-suspensions' },
     );
 
     // Nightly consistency rebuild. This is what makes it safe for the index publisher to

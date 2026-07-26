@@ -207,7 +207,13 @@ async function main() {
   check('and is in the search index', indexed);
 
   // The one direct database write: no API backdates a record, and none should.
-  sql(`UPDATE listings SET "expiresAt" = NOW() - INTERVAL '1 day' WHERE id = '${listing.id}'`);
+  // `AT TIME ZONE 'UTC'` is not decoration. Prisma stores timestamps as UTC in columns
+  // that carry no zone, while psql's NOW() returns the server's local time — here
+  // Asia/Kolkata. Writing plain NOW() into one of these columns lands five and a half
+  // hours in the future, and a backdate by an hour would move the row forwards.
+  sql(
+    `UPDATE listings SET "expiresAt" = (NOW() AT TIME ZONE 'UTC') - INTERVAL '1 day' WHERE id = '${listing.id}'`,
+  );
   check('expiry backdated', sql(`SELECT "expiresAt" < NOW() FROM listings WHERE id = '${listing.id}'`) === 't');
 
   const queued = await call('/admin/jobs/expire-listings/run', {

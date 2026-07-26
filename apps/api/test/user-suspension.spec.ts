@@ -17,7 +17,16 @@ describe('ModerationService.suspendUser', () => {
       user: {
         findFirst: jest.fn().mockResolvedValue(user),
         update: jest.fn().mockResolvedValue(user),
+        updateMany: jest.fn().mockResolvedValue({ count: 1 }),
       },
+      userSuspension: {
+        create: jest.fn().mockResolvedValue({}),
+        updateMany: jest.fn().mockResolvedValue({ count: 1 }),
+        findMany: jest.fn().mockResolvedValue([]),
+      },
+      // The writes are one transaction on purpose: a status without its record, or a
+      // record without the status, is worse than neither.
+      $transaction: jest.fn((operations: unknown[]) => Promise.all(operations)),
     };
     const tokens = { revokeAllForUser: jest.fn().mockResolvedValue(3) };
     const audit = { record: jest.fn().mockResolvedValue(undefined) };
@@ -43,11 +52,12 @@ describe('ModerationService.suspendUser', () => {
       where: { id: target.id },
       data: { status: UserStatus.SUSPENDED },
     });
+    expect(prisma.userSuspension.create).toHaveBeenCalled();
     expect(tokens.revokeAllForUser).toHaveBeenCalledWith(
       target.id,
       expect.stringContaining('suspended'),
     );
-    expect(result).toEqual({ suspended: true, sessionsRevoked: 3 });
+    expect(result).toEqual({ suspended: true, sessionsRevoked: 3, endsAt: null });
   });
 
   it('records who did it and why, because the action has to be reviewable', async () => {
@@ -103,7 +113,14 @@ describe('ModerationService.reinstateUser', () => {
       user: {
         findFirst: jest.fn().mockResolvedValue(user),
         update: jest.fn().mockResolvedValue(user),
+        updateMany: jest.fn().mockResolvedValue({ count: 1 }),
       },
+      userSuspension: {
+        create: jest.fn().mockResolvedValue({}),
+        updateMany: jest.fn().mockResolvedValue({ count: 1 }),
+        findMany: jest.fn().mockResolvedValue([]),
+      },
+      $transaction: jest.fn((operations: unknown[]) => Promise.all(operations)),
     };
     const audit = { record: jest.fn().mockResolvedValue(undefined) };
     const service = new ModerationService(
@@ -134,5 +151,80 @@ describe('ModerationService.reinstateUser', () => {
     await expect(
       service.reinstateUser('user-1', 'moderator-1', 'Appeal upheld'),
     ).rejects.toBeInstanceOf(ConflictException);
+  });
+});
+
+describe('timed suspensions', () => {
+  function build(rows: Array<{ id: string; userId: string }> = []) {
+    const prisma = {
+      user: {
+        findFirst: jest.fn().mockResolvedValue(makeUser({ status: UserStatus.ACTIVE })),
+        update: jest.fn().mockResolvedValue({}),
+        updateMany: jest.fn().mockResolvedValue({ count: rows.length }),
+      },
+      userSuspension: {
+        create: jest.fn().mockResolvedValue({}),
+        updateMany: jest.fn().mockResolvedValue({ count: rows.length }),
+        findMany: jest.fn().mockResolvedValue(rows),
+      },
+      $transaction: jest.fn((operations: unknown[]) => Promise.all(operations)),
+    };
+    const service = new ModerationService(
+      {} as never,
+      prisma as never,
+      { record: jest.fn() } as never,
+      {} as never,
+      { revokeAllForUser: jest.fn().mockResolvedValue(1) } as never,
+    );
+    return { service, prisma };
+  }
+
+  it('records an end date when given a duration', async () => {
+    const { service, prisma } = build();
+
+    const result = await service.suspendUser('user-1', 'moderator-1', 'Fake listings', 7);
+
+    const created = prisma.userSuspension.create.mock.calls[0][0].data;
+    expect(created.endsAt).toBeInstanceOf(Date);
+    // Seven days out, within a minute of tolerance for the clock moving during the test.
+    const days = (created.endsAt.getTime() - Date.now()) / 86_400_000;
+    expect(days).toBeGreaterThan(6.99);
+    expect(days).toBeLessThan(7.01);
+    expect(result.endsAt).toEqual(created.endsAt);
+  });
+
+  it('leaves the end date open when no duration is given', async () => {
+    const { service, prisma } = build();
+
+    const result = await service.suspendUser('user-1', 'moderator-1', 'Fake listings');
+
+    expect(prisma.userSuspension.create.mock.calls[0][0].data.endsAt).toBeNull();
+    expect(result.endsAt).toBeNull();
+  });
+
+  it('lifts a suspension whose term has run out', async () => {
+    const { service, prisma } = build([{ id: 'susp-1', userId: 'user-1' }]);
+
+    const result = await service.liftExpiredSuspensions();
+
+    expect(result).toEqual({ lifted: 1 });
+    expect(prisma.userSuspension.updateMany).toHaveBeenCalledWith(
+      expect.objectContaining({ data: { liftedAt: expect.any(Date) } }),
+    );
+    // Only accounts suspended for this reason — a deactivated or deleted account must not
+    // be quietly reactivated by a sweeper.
+    expect(prisma.user.updateMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({ status: UserStatus.SUSPENDED }),
+        data: { status: UserStatus.ACTIVE },
+      }),
+    );
+  });
+
+  it('does nothing when no suspension is due, rather than writing anyway', async () => {
+    const { service, prisma } = build([]);
+
+    expect(await service.liftExpiredSuspensions()).toEqual({ lifted: 0 });
+    expect(prisma.$transaction).not.toHaveBeenCalled();
   });
 });

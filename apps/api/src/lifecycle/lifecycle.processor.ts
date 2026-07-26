@@ -6,11 +6,13 @@ import {
   JOB_EXPIRE_LISTINGS,
   JOB_SWEEP_ORPHAN_MEDIA,
   JOB_SWEEP_SESSIONS,
+  JOB_LIFT_EXPIRED_SUSPENSIONS,
   JOB_TRIM_RECENTLY_VIEWED,
   JOB_WARN_EXPIRING,
   QUEUE_LIFECYCLE,
 } from '../queue/queue.constants';
 import { NotificationsService } from '../notifications/notifications.service';
+import { ModerationService } from '../moderation/moderation.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { SearchIndexPublisher } from '../search/search-index.publisher';
 import { StorageService } from '../media/storage.service';
@@ -28,6 +30,7 @@ export class LifecycleProcessor extends WorkerHost {
     private readonly searchIndex: SearchIndexPublisher,
     private readonly notifications: NotificationsService,
     private readonly storage: StorageService,
+    private readonly moderation: ModerationService,
   ) {
     super();
   }
@@ -42,6 +45,8 @@ export class LifecycleProcessor extends WorkerHost {
         return this.sweepOrphanMedia();
       case JOB_SWEEP_SESSIONS:
         return this.sweepSessions();
+      case JOB_LIFT_EXPIRED_SUSPENSIONS:
+        return this.moderation.liftExpiredSuspensions();
       case JOB_TRIM_RECENTLY_VIEWED:
         return this.trimRecentlyViewed();
       default:
