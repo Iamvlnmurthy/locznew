@@ -401,9 +401,7 @@ export class ListingsService {
       this.prisma.listing.findMany({
         where,
         include: LISTING_SUMMARY_INCLUDE,
-        // Featured placement outranks recency but never relevance filters — a paid
-        // boost moves a listing up the page, it does not put it in the wrong category.
-        orderBy: [{ isFeatured: 'desc' }, ...this.orderFor(query.sort)],
+        orderBy: this.orderFor(query.sort),
         skip: query.skip,
         take: query.limit,
       }),
@@ -873,17 +871,42 @@ export class ListingsService {
     return new Set(saved.map((entry) => entry.listingId));
   }
 
+  /**
+   * Ordering for the browse path.
+   *
+   * Featured placement is a tie-breaker within the default ordering, never a prefix to an
+   * explicit one. Someone who asks for "price: low to high" and is shown a ₹32,900 phone
+   * above a ₹4,500 table has been given the wrong answer to a question they asked
+   * precisely — and would reasonably conclude the sort is broken, which it was.
+   *
+   * This is the same rule the search index already follows: its ranking puts `sort` above
+   * `isFeatured:desc`, documented there as "paid placement moves a listing up among
+   * equally relevant results — it never outranks relevance itself". The two paths must
+   * agree, or the same query sorts differently depending on whether the user typed a
+   * keyword.
+   */
   private orderFor(sort: ListingSearchQueryDto['sort']): Prisma.ListingOrderByWithRelationInput[] {
     switch (sort) {
+      // Nulls last in both directions. A job or a service carries no price, and PostgreSQL
+      // would otherwise put those at the top of "price: high to low" — the same wrong
+      // answer as before, just inverted.
       case 'price_asc':
-        return [{ marketplace: { price: 'asc' } }];
+        return [
+          { marketplace: { price: { sort: 'asc', nulls: 'last' } } },
+          { publishedAt: 'desc' },
+        ];
       case 'price_desc':
-        return [{ marketplace: { price: 'desc' } }];
+        return [
+          { marketplace: { price: { sort: 'desc', nulls: 'last' } } },
+          { publishedAt: 'desc' },
+        ];
       case 'popular':
         return [{ viewCount: 'desc' }, { publishedAt: 'desc' }];
       case 'newest':
-      default:
         return [{ publishedAt: 'desc' }];
+      default:
+        // No explicit choice: featured listings surface first, then newest.
+        return [{ isFeatured: 'desc' }, { publishedAt: 'desc' }];
     }
   }
 

@@ -187,7 +187,10 @@ export class SearchQueryService {
       priceMin: query.priceMin,
       priceMax: query.priceMax,
       condition: query.condition,
-      sort: query.sort === 'relevance' ? 'newest' : query.sort,
+      // 'relevance' has no meaning without a keyword, and it must not become 'newest'
+      // either: an explicit "newest" is the user's choice, while no choice at all is what
+      // lets featured listings surface first. Leaving it undefined keeps that distinction.
+      sort: query.sort === 'relevance' ? undefined : query.sort,
     });
 
     void keywordFallback;

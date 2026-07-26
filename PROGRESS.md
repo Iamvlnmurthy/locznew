@@ -612,3 +612,37 @@ than guessing.
 
 **Four gates, 213 assertions**, plus 89 unit tests. One command each, all exiting non-zero
 on failure.
+
+## M21 — Sorting told the truth about price (2026-07-26)
+
+Extending the web gate to check that filters _actually filter_ — by comparing the
+rendered listing links against what the API returns for the same parameters — found a
+real defect on the first run.
+
+`sort=price_asc` returned ₹32,900 above ₹4,500. The browse path ordered
+`[isFeatured desc, …then the user's sort]`, so featured listings prefixed every ordering.
+Someone who asks for "price: low to high" and is shown the expensive phone first has been
+given the wrong answer to a precise question, and would reasonably conclude the sort is
+broken — because it was.
+
+Worse, the two search paths disagreed. The Meilisearch ranking already puts `sort` above
+`isFeatured:desc`, with the principle written next to it: _paid placement moves a listing
+up among equally relevant results — it never outranks relevance itself._ The database path
+violated the rule its sibling documented, so the same query sorted differently depending
+on whether the user had typed a keyword.
+
+Fixed so both paths agree:
+
+- featured placement is a tie-breaker in the **default** view only, never a prefix to an
+  explicit ordering — and the default view still leads with featured listings, asserted
+- `relevance` no longer collapses into `newest`. An explicit "newest" is a choice; no
+  choice at all is what earns a listing its boost, and the two were indistinguishable
+- price sorts put listings **without** a price last in both directions. A job carries no
+  price, and PostgreSQL would otherwise head "price: high to low" with all of them
+
+The gate now checks page-versus-API agreement for price, condition, type, pincode and
+sort, that each filter genuinely narrows the set, that an impossible filter returns
+nothing rather than everything, and all three ordering rules above. **87 assertions.**
+
+Worth stating plainly: the redesign of the search page did not cause this. It made it
+visible, and the equivalence check is what turned "looks fine" into a specific defect.

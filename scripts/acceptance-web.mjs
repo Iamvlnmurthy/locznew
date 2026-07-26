@@ -185,6 +185,103 @@ async function main() {
     await checkPage(label, path, 'LocZ');
   }
 
+  // ---------------------------------------------------------------- 1b. filters
+  step('1b. Filters actually filter');
+
+  /**
+   * The search page and the API must agree, exactly.
+   *
+   * A redesign can leave a filter chip that renders, reads correctly and changes the URL
+   * without ever reaching the query — and the page still looks right, because it shows
+   * results. Comparing the rendered listing links against what the API returns for the
+   * same parameters is the only check that can tell those apart.
+   */
+  async function agreesWithApi(label, query) {
+    const rendered = await page(`/search?${query}`);
+    const shown = [...rendered.html.matchAll(/href="\/ad\/([a-z0-9-]+)"/g)].map((match) => match[1]);
+
+    const expected = await api(`/search?${query}&limit=24`);
+    const expectedSlugs = expected.items.map((item) => item.slug);
+
+    const missing = expectedSlugs.filter((slug) => !shown.includes(slug));
+    const extra = [...new Set(shown)].filter((slug) => !expectedSlugs.includes(slug));
+
+    check(
+      `${label} — page matches the API`,
+      missing.length === 0 && extra.length === 0,
+      missing.length || extra.length
+        ? `${missing.length} missing, ${extra.length} unexpected (API returned ${expectedSlugs.length})`
+        : `${expectedSlugs.length} results`,
+    );
+
+    return expected;
+  }
+
+  const unfiltered = await api('/search?limit=24');
+
+  // Each filter has to actually narrow the set, or the assertion above is satisfied by
+  // two things being equally wrong.
+  const cheap = await agreesWithApi('price ceiling', 'priceMax=20000');
+  check(
+    'the price ceiling excludes dearer listings',
+    cheap.items.every((item) => item.price === null || item.price <= 20000),
+    `${cheap.total} of ${unfiltered.total} under ₹20,000`,
+  );
+
+  const good = await agreesWithApi('condition', 'condition=GOOD');
+  check('condition narrows the set', good.total <= unfiltered.total, `${good.total} in good condition`);
+
+  const products = await agreesWithApi('listing type', 'type=PRODUCT');
+  check(
+    'type narrows the set to products',
+    products.items.every((item) => item.type === 'PRODUCT'),
+    `${products.total} products`,
+  );
+
+  await agreesWithApi('pincode', 'pincode=500081');
+  await agreesWithApi('sorted by price', 'sort=price_asc');
+
+  // Featured placement used to prefix every ordering, so "price: low to high" opened with
+  // a ₹32,900 phone above a ₹4,500 table. A paid boost may break a tie; it may not answer
+  // a different question from the one the user asked.
+  const ascending = await api('/search?sort=price_asc&limit=24');
+  const prices = ascending.items.map((item) => item.price).filter((price) => price !== null);
+  check(
+    'price sort is actually ordered',
+    prices.every((price, index) => index === 0 || prices[index - 1] <= price),
+    prices.slice(0, 4).join(' ≤ '),
+  );
+
+  const descending = await api('/search?sort=price_desc&limit=24');
+  const descPrices = descending.items.map((item) => item.price);
+  const firstUnpriced = descPrices.indexOf(null);
+  check(
+    'the highest price leads, not the listings that have none',
+    descPrices[0] !== null &&
+      (firstUnpriced === -1 || descPrices.slice(firstUnpriced).every((price) => price === null)),
+    `${descPrices[0]} first`,
+  );
+
+  // The default view is where featured placement belongs: no question was asked, so a
+  // boost costs the user nothing.
+  const defaultOrder = await api('/search?limit=24');
+  check(
+    'featured listings still lead the default view',
+    defaultOrder.items[0]?.isFeatured === true,
+    defaultOrder.items[0]?.slug,
+  );
+
+  // A filter matching nothing must say so rather than quietly showing everything — the
+  // failure that turns a precise search into a wall of irrelevant results.
+  const impossible = await api('/search?priceMax=1&type=PRODUCT&limit=24');
+  const emptyPage = await page('/search?priceMax=1&type=PRODUCT');
+  const emptyShown = [...emptyPage.html.matchAll(/href="\/ad\/([a-z0-9-]+)"/g)];
+  check(
+    'an impossible filter returns nothing, not everything',
+    impossible.total === 0 && emptyShown.length === 0,
+    `${impossible.total} results, ${emptyShown.length} cards rendered`,
+  );
+
   // ---------------------------------------------------------------- 2. not found
   step('2. Missing things are missing, not broken');
   const ghost = await page('/ad/this-listing-does-not-exist-12345');
