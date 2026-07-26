@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useActionState, useState, type FormEvent } from 'react';
 import { useFormStatus } from 'react-dom';
 import type { Category, City } from '@locz/shared-types';
+import { CityCombobox } from '@/components/city-combobox';
 import { Icon } from '@/components/icons';
 import { updateBusinessAction, type BusinessUpdateState } from '../../actions';
 
@@ -209,14 +210,15 @@ export function BusinessManageForm({
             <div className="business-manager-grid">
               <label className={state.fieldErrors?.cityId ? 'field--error' : ''}>
                 <span>{m.city}</span>
-                <select name="cityId" defaultValue={selectedCity?.id ?? ''} required>
-                  <option value="">{m.chooseCity}</option>
-                  {cities.map((city) => (
-                    <option key={city.id} value={city.id}>
-                      {city.name}, {city.stateName}
-                    </option>
-                  ))}
-                </select>
+                <CityCombobox
+                  id="business-manage-city"
+                  cities={cities}
+                  defaultValue={selectedCity?.id}
+                  defaultLabel={business.cityName}
+                  placeholder={m.searchCity}
+                  noResultsLabel={m.noCityMatches}
+                  required
+                />
                 {state.fieldErrors?.cityId ? <small>{state.fieldErrors.cityId}</small> : null}
               </label>
               <label>

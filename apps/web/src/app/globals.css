@@ -569,6 +569,113 @@ img {
   margin: 0;
 }
 
+.city-combobox {
+  position: relative;
+}
+
+.city-combobox__control {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.city-combobox__control > svg {
+  position: absolute;
+  left: 0.9rem;
+  z-index: 1;
+  color: var(--locz-text-muted);
+  pointer-events: none;
+}
+
+.field .city-combobox__control input {
+  width: 100%;
+  padding-left: 2.7rem;
+  padding-right: 2.6rem;
+}
+
+.city-combobox__spinner {
+  position: absolute;
+  right: 0.95rem;
+  width: 1rem;
+  height: 1rem;
+  border: 2px solid color-mix(in srgb, var(--locz-primary) 20%, transparent);
+  border-top-color: var(--locz-primary);
+  border-radius: 50%;
+  animation: city-combobox-spin 650ms linear infinite;
+}
+
+.city-combobox__options {
+  position: absolute;
+  z-index: 30;
+  top: calc(100% + 0.4rem);
+  right: 0;
+  left: 0;
+  max-height: 17rem;
+  margin: 0;
+  padding: 0.35rem;
+  overflow-y: auto;
+  list-style: none;
+  background: var(--locz-surface);
+  border: 1px solid var(--locz-border);
+  border-radius: 0.9rem;
+  box-shadow: 0 18px 44px rgb(18 50 44 / 16%);
+}
+
+.city-combobox__options li {
+  display: flex;
+  min-height: 3.35rem;
+  padding: 0.65rem 0.75rem;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  border-radius: 0.65rem;
+  cursor: pointer;
+}
+
+.city-combobox__options li.is-active,
+.city-combobox__options li:hover {
+  background: var(--locz-primary-soft);
+}
+
+.city-combobox__options li[aria-selected='true'] {
+  color: var(--locz-primary);
+}
+
+.city-combobox__options li > span {
+  display: grid;
+  min-width: 0;
+  gap: 0.12rem;
+}
+
+.city-combobox__options strong,
+.city-combobox__options small {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.city-combobox__options small {
+  color: var(--locz-text-muted);
+  font-size: 0.78rem;
+}
+
+.city-combobox__options .city-combobox__empty {
+  color: var(--locz-text-muted);
+  cursor: default;
+}
+
+@keyframes city-combobox-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .city-combobox__spinner {
+    animation-duration: 1.4s;
+  }
+}
+
 .alert {
   padding: var(--locz-space-4);
   border-radius: var(--locz-radius-md);

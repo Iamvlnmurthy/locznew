@@ -35,14 +35,30 @@ export default async function ManageBusinessPage({ params }: { params: Promise<{
     apiSafe<BusinessStaff[]>(`/businesses/${id}/staff`, { auth: true }),
   ]);
   if (!business?.isOwner) notFound();
-  const labels = getMessageGroup(locale, 'businessManage');
+  let cityOptions = cities ?? [];
+  if (!cityOptions.some((city) => city.name === business.cityName)) {
+    const currentCity =
+      (await apiSafe<City[]>(
+        `/locations/cities?launchedOnly=true&limit=10&q=${encodeURIComponent(business.cityName)}`,
+        { revalidate: 3600 },
+      )) ?? [];
+    cityOptions = [
+      ...currentCity.filter((city) => city.name === business.cityName),
+      ...cityOptions,
+    ];
+  }
+  const labels = {
+    ...getMessageGroup(locale, 'businessManage'),
+    searchCity: getMessageGroup(locale, 'location').searchCity,
+    noCityMatches: getMessageGroup(locale, 'location').noCityMatches,
+  };
 
   return (
     <div className="business-owner-page">
       <BusinessManageForm
         business={business}
         categories={categories ?? []}
-        cities={cities ?? []}
+        cities={cityOptions}
         labels={labels}
       />
       <div className="container business-owner-trust">

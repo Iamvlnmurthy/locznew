@@ -33,8 +33,13 @@ export default async function NewBusinessPage() {
       categories={categories ?? []}
       cities={cities ?? []}
       defaultCityId={city?.id}
+      defaultCityLabel={city?.name}
       userId={user.id}
-      labels={getMessageGroup(locale, 'businessOnboarding')}
+      labels={{
+        ...getMessageGroup(locale, 'businessOnboarding'),
+        searchCity: getMessageGroup(locale, 'location').searchCity,
+        noCityMatches: getMessageGroup(locale, 'location').noCityMatches,
+      }}
     />
   );
 }

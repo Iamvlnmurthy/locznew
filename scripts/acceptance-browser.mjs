@@ -1351,13 +1351,24 @@ async function main() {
       `Boolean(document.querySelector('#business-city')?.closest('.business-step:not([hidden])'))`,
       'business location step',
     );
-    const cityId = await browser.evaluate(`document.querySelector('#business-city')?.value`);
-    if (!cityId) {
-      const firstCity = await browser.evaluate(
-        `document.querySelector('#business-city option:not([value=""])')?.value`,
-      );
-      await browser.select('#business-city', firstCity);
-    }
+    await browser.fill('#business-city', 'Srinagar');
+    await browser.waitFor(
+      `document.querySelector('[role="listbox"] [role="option"] strong')?.textContent === 'Srinagar'`,
+      'district outside the initial city window',
+    );
+    await browser.evaluate(`document.querySelector('#business-city')?.focus()`);
+    await browser.press('ArrowDown');
+    await browser.press('Enter');
+    const searchedCityId = await browser.waitFor(
+      `document.querySelector('input[type="hidden"][name="cityId"]')?.value`,
+      'keyboard-selected district id',
+    );
+    check(
+      'city search reaches and selects a district outside the initial 50',
+      Boolean(searchedCityId) &&
+        (await browser.evaluate(`document.querySelector('#business-city')?.value`)) ===
+          'Srinagar, Jammu & Kashmir',
+    );
     await browser.fill('#business-address', 'Acceptance Lane, Neighbourhood Centre');
     await browser.fill(
       '#business-description',

@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useActionState, useEffect, useState } from 'react';
 import { useFormStatus } from 'react-dom';
 import type { Category, City } from '@locz/shared-types';
+import { CityCombobox } from '@/components/city-combobox';
 import { categoryIconName, Icon } from '@/components/icons';
 import { createBusinessAction, type BusinessFormState } from '../actions';
 
@@ -58,12 +59,14 @@ export function BusinessForm({
   categories,
   cities,
   defaultCityId,
+  defaultCityLabel,
   userId,
   labels,
 }: {
   categories: Category[];
   cities: City[];
   defaultCityId?: string;
+  defaultCityLabel?: string;
   userId: string;
   labels: Record<string, string>;
 }) {
@@ -360,20 +363,17 @@ export function BusinessForm({
 
             <div className={`field${state.fieldErrors?.cityId ? ' field--error' : ''}`}>
               <label htmlFor="business-city">{l.city}</label>
-              <select
+              <CityCombobox
+                key={draftReady ? 'draft-ready' : 'draft-loading'}
                 id="business-city"
-                name="cityId"
+                cities={cities}
+                defaultValue={draft.cityId}
+                defaultLabel={defaultCityLabel}
+                onValueChange={(cityId) => updateDraft('cityId', cityId)}
+                placeholder={l.searchCity}
+                noResultsLabel={l.noCityMatches}
                 required
-                value={draft.cityId}
-                onChange={(event) => updateDraft('cityId', event.target.value)}
-              >
-                <option value="">{l.chooseCity}</option>
-                {cities.map((city) => (
-                  <option key={city.id} value={city.id}>
-                    {city.name}, {city.stateName}
-                  </option>
-                ))}
-              </select>
+              />
               {state.fieldErrors?.cityId ? (
                 <p className="field__error">{state.fieldErrors.cityId}</p>
               ) : null}

@@ -7,6 +7,7 @@ import type { Category, City, ListingType } from '@locz/shared-types';
 import { createListingAction, type PostAdState } from './actions';
 import { ListingTypeFields } from './listing-type-fields';
 import { PhotoUploader } from './photo-uploader';
+import { CityCombobox } from '@/components/city-combobox';
 import { Icon } from '@/components/icons';
 
 interface Labels {
@@ -17,6 +18,8 @@ interface Labels {
   fieldDescription: string;
   descriptionHint: string;
   fieldCity: string;
+  citySearch: string;
+  noCityMatches: string;
   fieldPincode: string;
   fieldPincodeHint: string;
   fieldCategory: string;
@@ -80,6 +83,7 @@ export function PostForm({
   categories,
   cities,
   defaultCityId,
+  defaultCityLabel,
   defaultPincode,
   defaultType,
   labels,
@@ -87,6 +91,7 @@ export function PostForm({
   categories: Category[];
   cities: City[];
   defaultCityId?: string;
+  defaultCityLabel?: string;
   defaultPincode?: string;
   defaultType?: ListingType;
   labels: Labels;
@@ -397,16 +402,15 @@ export function PostForm({
             <div className="post-field-row">
               <div className={`field${state.fieldErrors?.cityId ? ' field--error' : ''}`}>
                 <label htmlFor="cityId">{labels.fieldCity}</label>
-                <select id="cityId" name="cityId" required defaultValue={defaultCityId ?? ''}>
-                  <option value="" disabled>
-                    {w.cityPlaceholder}
-                  </option>
-                  {cities.map((city) => (
-                    <option key={city.id} value={city.id}>
-                      {city.name}
-                    </option>
-                  ))}
-                </select>
+                <CityCombobox
+                  id="cityId"
+                  cities={cities}
+                  defaultValue={defaultCityId}
+                  defaultLabel={defaultCityLabel}
+                  placeholder={labels.citySearch}
+                  noResultsLabel={labels.noCityMatches}
+                  required
+                />
                 {state.fieldErrors?.cityId ? (
                   <p className="field__error">{state.fieldErrors.cityId}</p>
                 ) : null}
