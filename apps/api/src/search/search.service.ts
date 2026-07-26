@@ -1,6 +1,6 @@
 import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { ListingStatus } from '@prisma/client';
-import { Index, Meilisearch } from 'meilisearch';
+import { Index, Meilisearch, type EnqueuedTaskPromise } from 'meilisearch';
 import { AppConfig } from '../config/config.module';
 import { PrismaService } from '../prisma/prisma.service';
 import { StorageService } from '../media/storage.service';
@@ -297,38 +297,72 @@ export class SearchService implements OnModuleInit {
   }
 
   /**
-   * Full rebuild, streamed in batches. Used after a settings change or to repair drift;
-   * because Postgres is the source of truth this is always safe to run.
+   * Full rebuild, streamed into a temporary index and swapped into place. Upserting into
+   * the live index is not a rebuild: documents deleted from PostgreSQL would survive there
+   * forever. The swap also avoids returning an empty search result while a large catalogue
+   * is being repopulated.
    */
   async reindexAll(batchSize = 500): Promise<{ indexed: number }> {
+    const replacementName = `${this.indexName}_rebuild_${Date.now()}`;
+    await this.waitForTask(
+      this.client.createIndex(replacementName, { primaryKey: 'id' }),
+      'create replacement search index',
+    );
+    await this.configureIndex(replacementName);
+    const replacement = this.client.index<ListingDocument>(replacementName);
+
     let cursor: string | undefined;
     let indexed = 0;
 
-    for (;;) {
-      const listings = await this.prisma.listing.findMany({
-        where: { status: ListingStatus.PUBLISHED, deletedAt: null, visibility: 'PUBLIC' },
-        select: { id: true },
-        orderBy: { id: 'asc' },
-        take: batchSize,
-        ...(cursor ? { skip: 1, cursor: { id: cursor } } : {}),
-      });
+    try {
+      for (;;) {
+        const listings = await this.prisma.listing.findMany({
+          where: { status: ListingStatus.PUBLISHED, deletedAt: null, visibility: 'PUBLIC' },
+          select: { id: true },
+          orderBy: { id: 'asc' },
+          take: batchSize,
+          ...(cursor ? { skip: 1, cursor: { id: cursor } } : {}),
+        });
 
-      if (listings.length === 0) break;
+        if (listings.length === 0) break;
 
-      const documents = (
-        await Promise.all(listings.map((listing) => this.buildDocument(listing.id)))
-      ).filter((document): document is ListingDocument => document !== null);
+        const documents = (
+          await Promise.all(listings.map((listing) => this.buildDocument(listing.id)))
+        ).filter((document): document is ListingDocument => document !== null);
 
-      if (documents.length > 0) {
-        await this.index.addDocuments(documents);
-        indexed += documents.length;
+        if (documents.length > 0) {
+          await this.waitForTask(
+            replacement.addDocuments(documents),
+            'populate replacement search index',
+          );
+          indexed += documents.length;
+        }
+
+        cursor = listings[listings.length - 1]!.id;
       }
 
-      cursor = listings[listings.length - 1]!.id;
-    }
+      await this.waitForTask(
+        this.client.swapIndexes([{ indexes: [this.indexName, replacementName], rename: false }]),
+        'activate replacement search index',
+      );
+      await this.waitForTask(this.client.deleteIndex(replacementName), 'remove stale search index');
 
-    this.logger.log(`Reindexed ${indexed} listings`);
-    return { indexed };
+      this.logger.log(`Reindexed ${indexed} listings`);
+      return { indexed };
+    } catch (error) {
+      await this.client
+        .deleteIndex(replacementName)
+        .waitTask()
+        .catch(() => undefined);
+      throw error;
+    }
+  }
+
+  private async waitForTask(task: EnqueuedTaskPromise, operation: string): Promise<void> {
+    const completed = await task.waitTask();
+    if (completed.status !== 'succeeded') {
+      throw new Error(`${operation} failed: ${completed.error?.message ?? completed.status}`);
+    }
   }
 
   async searchListings(params: {

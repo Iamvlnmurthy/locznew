@@ -25,6 +25,7 @@ import path from 'node:path';
 loadEnv({ path: path.resolve(__dirname, '..', '..', '..', '.env'), quiet: true });
 
 import { PrismaPg } from '@prisma/adapter-pg';
+import { Meilisearch } from 'meilisearch';
 import {
   ContactPreference,
   ItemCondition,
@@ -64,6 +65,10 @@ const WEB_ORIGIN = process.env.NEXT_PUBLIC_WEB_URL ?? 'http://localhost:3000';
 
 const prisma = new PrismaClient({
   adapter: new PrismaPg({ connectionString: process.env.DATABASE_URL }),
+});
+const meili = new Meilisearch({
+  host: process.env.MEILI_HOST ?? 'http://localhost:7700',
+  apiKey: process.env.MEILI_MASTER_KEY || undefined,
 });
 
 /** Every generated row carries this, so cleanup is exact rather than approximate. */
@@ -116,13 +121,29 @@ async function clean(): Promise<void> {
   const ids = listings.map((row) => row.id);
 
   if (ids.length > 0) {
-    // Details and attributes cascade from the listing; media never existed for these.
+    // Details, media and attributes cascade from the listing.
     for (let index = 0; index < ids.length; index += 1000) {
       const batch = ids.slice(index, index + 1000);
       await prisma.listing.deleteMany({ where: { id: { in: batch } } });
       process.stdout.write(`\r  ${Math.min(index + 1000, ids.length)} / ${ids.length}`);
     }
     console.log('');
+
+    // The generator writes directly to PostgreSQL, so ordinary listing lifecycle jobs do
+    // not know these rows were removed. Delete the same IDs from the derived search index;
+    // otherwise Meilisearch keeps reporting thousands of results that can no longer be
+    // hydrated from the source of truth.
+    const searchIndex = meili.index(process.env.MEILI_LISTINGS_INDEX ?? 'listings');
+    for (let index = 0; index < ids.length; index += 1000) {
+      const completed = await searchIndex
+        .deleteDocuments(ids.slice(index, index + 1000))
+        .waitTask();
+      if (completed.status !== 'succeeded') {
+        throw new Error(
+          `Search cleanup failed: ${completed.error?.message ?? completed.status}. Run the admin search rebuild.`,
+        );
+      }
+    }
   }
 
   const users = await prisma.user.deleteMany({ where: { bio: TAG } });

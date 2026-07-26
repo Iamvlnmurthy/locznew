@@ -105,9 +105,6 @@ async function browseAll(query) {
  * holds a handful of listings — few enough to enumerate, more than none.
  */
 async function chooseScope() {
-  const unscoped = await browseAll('');
-  if (unscoped.items.length === unscoped.total) return '';
-
   const seen = new Set();
   for (const prefix of ['5000', '5001', '4000', '1100', '6000', '7000', '3800', '2260']) {
     const matches = await api(`/locations/pincodes?q=${prefix}&limit=20`);
@@ -116,9 +113,11 @@ async function chooseScope() {
       if (seen.has(pincode.code)) continue;
       seen.add(pincode.code);
 
-      const candidate = await browseAll(`pincode=${pincode.code}&radiusKm=1`);
-      if (candidate.total > 0 && candidate.total <= 50) {
-        return `pincode=${pincode.code}&radiusKm=1`;
+      for (const radiusKm of [1, 5, 10]) {
+        const candidate = await browseAll(`pincode=${pincode.code}&radiusKm=${radiusKm}`);
+        if (candidate.total > 0 && candidate.total <= 50) {
+          return `pincode=${pincode.code}&radiusKm=${radiusKm}`;
+        }
       }
     }
   }
@@ -471,17 +470,20 @@ async function main() {
     `"car" ${carBrowse.meta.total} vs ${everythingBrowse.meta.total} unfiltered`,
   );
 
-  const wordStart = await listings('door');
-  const wordMiddle = await listings('oor');
+  // Use a seeded catalogue word rather than a load-generator title. The old `door` probe
+  // only existed while 50,000 performance rows polluted the development database, so a
+  // correct cleanup made this correctness gate fail for lack of its own precondition.
+  const wordStart = await listings('sams');
+  const wordMiddle = await listings('ams');
   check(
     'the database path matches the start of a word',
     wordStart.meta.total > 0,
-    `"door" returned ${wordStart.meta.total}`,
+    `"sams" returned ${wordStart.meta.total}`,
   );
   check(
     'and not the middle of one',
     wordMiddle.meta.total === 0,
-    `"oor" returned ${wordMiddle.meta.total}`,
+    `"ams" returned ${wordMiddle.meta.total}`,
   );
 
   // A keyword reaches PostgreSQL inside a LIKE pattern, where `%` and `_` are wildcards
