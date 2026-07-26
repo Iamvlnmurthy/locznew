@@ -18,7 +18,7 @@ const environmentArgument = process.argv.indexOf('--env');
 const environmentFile =
   environmentArgument >= 0 && process.argv[environmentArgument + 1]
     ? process.argv[environmentArgument + 1]
-    : 'infrastructure/docker/.env';
+    : '.env';
 const bundledNpmCli = resolve(
   dirname(process.execPath),
   'node_modules',
