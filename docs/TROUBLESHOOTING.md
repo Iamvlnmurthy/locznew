@@ -201,3 +201,35 @@ design, so a user in Delhi is not silently browsing Hyderabad. Seed more cities 
 In order: is `FCM_PROJECT_ID` set on the API; did the device register a token
 (`SELECT "pushToken" FROM devices`); has the user disabled that type in
 `notification_preferences`; and is the worker running — delivery is queued, not inline.
+
+## A server-rendered page says "could not load", but curl works
+
+The symptom is specific and misleading: one console or web page renders its fallback
+message while the API answers `200` from the command line, and the browser's network tab
+shows nothing wrong because the failing request never leaves the Next.js server.
+
+The admin log shows the real cause:
+
+```
+[probe] thrown: TypeError fetch failed
+```
+
+Node resolves `localhost` to `::1` before `127.0.0.1`, and the API listens on `0.0.0.0` —
+IPv4 only. A server-to-server call from Next to `http://localhost:4000` can therefore fail
+while every browser request succeeds, and it fails _intermittently_, which sends you
+looking at the page that happened to break rather than at DNS.
+
+Point the apps at the address rather than the name:
+
+```bash
+API_BASE_URL=http://127.0.0.1:4000
+NEXT_PUBLIC_API_BASE_URL=http://127.0.0.1:4000/api/v1
+NEXT_PUBLIC_ADMIN_API_BASE_URL=http://127.0.0.1:4000/api/v1
+```
+
+Restart the Next apps afterwards — these are read at boot.
+
+It is worth recognising the shape of this one, because the page-specific presentation
+invites a hunt through that page's permissions and error handling. `scripts/acceptance-admin.mjs`
+distinguishes them: if several unrelated pages lose their data at once, it is the
+connection, not the page.

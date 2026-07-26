@@ -1251,3 +1251,33 @@ it **while still opening everything else**, because protecting one corner must n
 platform around it.
 
 **241 unit tests. Security 99, admin 53, acceptance 67.**
+
+## M34 — The console had quietly lost its API (2026-07-26)
+
+Checking whether the newly seeded child-safety officer could actually reach their workspace
+— the concern being that a role which cannot load the console cannot work the queue — the
+page rendered but reported "Could not load restricted cases. Check the API connection."
+
+Three hypotheses died before the real one. It was not the synthetic session cookie: a
+genuine email login failed identically. It was not the officer's permissions: the same
+account got `200` from the endpoint directly. And it was not the error handling — I
+suspected `error instanceof ApiRequestError` was checking the wrong class, and checking
+showed `ApiRequestError` is an alias of `LoczApiError`, so the guard was correct all along.
+
+Temporary instrumentation gave the answer in one line: `TypeError: fetch failed`. Node
+resolves `localhost` to `::1` first, and the API listens on `0.0.0.0` — IPv4 only. Every
+browser request succeeded; the server-to-server call from Next did not, intermittently.
+
+**The admin gate had already caught it and I had not looked**: it dropped from 53/53 to
+50/3, and the three failures were "dashboard shows live data", "users shows live data",
+"audit log shows live data" — three unrelated pages losing their data at once, which is the
+signature of a connection rather than a page. That distinction is now written into
+`docs/TROUBLESHOOTING.md`, because the page-specific presentation invites a hunt through
+the wrong code.
+
+The local environment is pinned to `127.0.0.1`; `.env.example` keeps `localhost` and
+explains when it bites. Afterwards the officer's workspace renders, and the pages they
+should not reach say `Missing permission: listing:moderate` rather than a generic fallback
+— which is what the error handling was doing correctly the whole time.
+
+**241 unit tests. Admin 53, web 110, security 99.**
