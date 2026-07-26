@@ -268,6 +268,7 @@ function run(name, command, args, cwd = root, env = process.env) {
     durationMs,
     result.error instanceof Error ? result.error.message : null,
   );
+  return status === 0;
 }
 
 function runFlutter(name, args) {
@@ -384,19 +385,37 @@ run('patch integrity', 'git', ['diff', '--check']);
 if (!options.has('--skip-node')) {
   const auditArguments = [...npmPrefix, 'audit', '--omit=dev', '--audit-level=high'];
   const runNodeChecks = (candidate) => {
-    run('production dependency audit', npm, auditArguments, candidate);
-    run('workspace typecheck', npm, [...npmPrefix, 'run', 'typecheck'], candidate);
+    if (!run('production dependency audit', npm, auditArguments, candidate)) return false;
+    if (!run('workspace typecheck', npm, [...npmPrefix, 'run', 'typecheck'], candidate)) {
+      return false;
+    }
     // Needs no running stack, so it belongs in the default path rather than behind --stack.
-    run('translation coverage', npm, [...npmPrefix, 'run', 'check:i18n'], candidate);
-    run('automated tests', npm, [...npmPrefix, 'test'], candidate);
-    run('production builds', npm, [...npmPrefix, 'run', 'build'], candidate);
+    if (!run('translation coverage', npm, [...npmPrefix, 'run', 'check:i18n'], candidate)) {
+      return false;
+    }
+    if (!run('automated tests', npm, [...npmPrefix, 'test'], candidate)) return false;
+    return run('production builds', npm, [...npmPrefix, 'run', 'build'], candidate);
   };
 
   if (options.has('--skip-install')) {
     runNodeChecks(root);
   } else {
     inCandidateCheckout((candidate) => {
-      run('reproducible install', npm, [...npmPrefix, 'ci'], candidate);
+      if (!run('reproducible install', npm, [...npmPrefix, 'ci'], candidate)) return;
+      // Prisma's generated client is intentionally not committed. A clean checkout therefore
+      // has to create it after installation and before any compiler or test imports the API.
+      // Running this explicitly also keeps release correctness independent of install-script
+      // policy, which may suppress dependency lifecycle hooks in hardened environments.
+      if (
+        !run(
+          'Prisma client generation',
+          npm,
+          [...npmPrefix, 'run', 'db:generate', '-w', '@locz/api'],
+          candidate,
+        )
+      ) {
+        return;
+      }
       // Audited where the install happened, so the answer describes the tree the lockfile
       // actually produces rather than whatever this workspace has accumulated.
       runNodeChecks(candidate);
