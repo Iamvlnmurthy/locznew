@@ -211,3 +211,67 @@ export class PincodeParamDto {
   @Matches(/^\d{6}$/, { message: 'A pincode is exactly six digits' })
   code!: string;
 }
+
+/** One of the neighbouring codes offered when the nearest one might be wrong. */
+export class NearbyAreaDto {
+  @ApiProperty({ example: '500084' }) code!: string;
+  @ApiProperty({ example: 'Kondapur' }) name!: string;
+  @ApiProperty({ example: 'Hyderabad' }) districtName!: string;
+  @ApiProperty({ example: 2140 }) distanceMeters!: number;
+}
+
+/**
+ * Where somebody is, in the terms they would use themselves.
+ *
+ * The distance and the confidence are the honest part. A pincode centroid is the average of
+ * its post offices, so a match 400 m away describes the caller's own neighbourhood and one
+ * 9 km away is merely the nearest area we know of. An app that shows both can ask "is this
+ * right?" instead of asserting something a user in a boundary village knows to be wrong.
+ */
+export class AreaDto {
+  @ApiProperty({ type: PincodeDto }) pincode!: PincodeDto;
+  @ApiProperty({ example: 'Madhapur', description: 'The post office area' }) areaName!: string;
+  @ApiPropertyOptional({ example: 'Gachibowli', description: 'Finer than a pincode, where mapped' })
+  localityName!: string | null;
+  @ApiProperty({ example: 'Hyderabad' }) districtName!: string;
+  @ApiProperty({ example: 'Telangana' }) stateName!: string;
+  @ApiPropertyOptional() cityId!: string | null;
+  @ApiPropertyOptional({ example: 'Hyderabad' }) cityName!: string | null;
+  @ApiPropertyOptional({ example: 'hyderabad' }) citySlug!: string | null;
+  @ApiProperty({ example: 412, description: 'From the caller to the pincode centroid' })
+  distanceMeters!: number;
+  @ApiProperty({
+    enum: ['HIGH', 'MEDIUM', 'LOW'],
+    description: 'HIGH within 2 km, MEDIUM within 5 km, LOW beyond — how much to trust the match',
+  })
+  confidence!: 'HIGH' | 'MEDIUM' | 'LOW';
+  @ApiProperty({
+    example: false,
+    description:
+      'True when people standing near this point corrected the automatic answer and this is what they chose instead.',
+  })
+  correctedByNeighbours!: boolean;
+
+  @ApiProperty({ type: [NearbyAreaDto], description: 'Offer these when the caller says no' })
+  nearby!: NearbyAreaDto[];
+}
+
+export class CorrectAreaDto {
+  @ApiProperty({ example: 17.4483 })
+  @Type(() => Number)
+  @IsLatitude()
+  latitude!: number;
+
+  @ApiProperty({ example: 78.3915 })
+  @Type(() => Number)
+  @IsLongitude()
+  longitude!: number;
+
+  @ApiProperty({ example: '500081', description: 'What we suggested' })
+  @Matches(/^\d{6}$/, { message: 'A pincode is exactly six digits' })
+  detectedCode!: string;
+
+  @ApiProperty({ example: '500084', description: 'What it actually is' })
+  @Matches(/^\d{6}$/, { message: 'A pincode is exactly six digits' })
+  chosenCode!: string;
+}

@@ -5,15 +5,18 @@ import {
   Get,
   HttpCode,
   HttpStatus,
+  NotFoundException,
   Param,
   Post,
   Query,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { AuthenticatedUser, CurrentUser } from '../common/decorators/current-user.decorator';
-import { Public } from '../rbac/rbac.decorators';
+import { OptionalAuth, Public } from '../rbac/rbac.decorators';
 import {
+  AreaDto,
   CityDto,
+  CorrectAreaDto,
   PincodeAreaDto,
   PincodeDto,
   PincodeSearchQueryDto,
@@ -146,5 +149,44 @@ export class GeoController {
   @ApiOperation({ summary: 'Remove a saved location' })
   deleteSaved(@CurrentUser() user: AuthenticatedUser, @Param('id') id: string): Promise<void> {
     return this.geo.deleteSavedLocation(user.id, id);
+  }
+
+  @Post('resolve/area')
+  @Public()
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Where these coordinates are, in the terms a person would use',
+    description:
+      'Returns the area and pincode, the district and state, the city page it belongs to, how far the match is and how much to trust it, plus the neighbouring areas to offer if the caller says it is wrong. Available everywhere in India.',
+  })
+  @ApiResponse({ status: 200, type: AreaDto })
+  async resolveArea(@Body() dto: ResolveLocationDto): Promise<AreaDto> {
+    const area = await this.geo.resolveArea(dto.latitude, dto.longitude);
+    if (!area) {
+      throw new NotFoundException('No serviceable area within 25 km of that point');
+    }
+    return area;
+  }
+
+  @Post('resolve/area/correct')
+  @OptionalAuth()
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Tell us the detected area was wrong',
+    description:
+      'Recorded whether or not you are signed in, because a correction is a fact about a place rather than an opinion. Once two people near the same spot choose the same area, it becomes the answer everyone there is given.',
+  })
+  @ApiResponse({ status: 200, description: 'Correction recorded' })
+  correctArea(
+    @Body() dto: CorrectAreaDto,
+    @CurrentUser() user?: AuthenticatedUser,
+  ): Promise<{ recorded: true; agreeingNearby: number }> {
+    return this.geo.recordAreaCorrection(
+      dto.latitude,
+      dto.longitude,
+      dto.detectedCode,
+      dto.chosenCode,
+      user?.id,
+    );
   }
 }

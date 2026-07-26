@@ -1410,3 +1410,60 @@ list nobody acts on, so the aim was accuracy over completeness.
 It is **not** wired into the release gate yet. Failing a release on 448 pre-existing strings
 would only teach people to pass `--skip`, and the fix belongs with whoever is localising the
 wizard. It is a script to run and a number to drive down.
+
+## M39 — Every area in India, and a location that learns (2026-07-26)
+
+### The country was four cities
+
+`Listing.cityId` is required, eight cities existed, and 442 of 19,238 pincodes linked to
+one. A seller in Warangal or Kochi could browse by radius and **could not post at all** —
+there was no city to attach a listing to. The other 18,796 pincodes were places you could
+look at and not use.
+
+The fix was data, not schema. Every pincode already carries its district and state, so
+`db:activate-india` builds the geography those names imply: **35 states, 640 districts, 638
+places**, each with coordinates from the centroid of its own pincodes. **Every pincode in
+India now resolves to somewhere postable — 0 unlinked, 0 without a geo point.**
+
+The postable unit is the district, deliberately. Not the town — tens of thousands of rows,
+mostly hamlets nobody searches. Not the state — too coarse to mean anything locally. Every
+Indian address names a district. Precision still comes from the pincode: search is a radius
+around a centroid, and the district only decides which page a listing belongs to. The eight
+hand-seeded cities, with their real coordinates and translated names, are adopted rather
+than duplicated.
+
+Verified where it counts — **Srinagar, Aizawl, Port Blair and Gangtok all returned 201** on a post
+that would previously have been impossible.
+
+### Which immediately broke the pickers, as it should have
+
+Six pages fetch `/locations/cities?limit=50`. With eight cities that was the whole list;
+with 638 it is fifty arbitrary districts, and the picker opened on **Adilabad** with
+Hyderabad — where every listing actually is — buried alphabetically. PostgreSQL sorts nulls
+first on a descending order, and only the seeded cities carry a population.
+
+`nulls: 'last'` restores it: known cities lead, the rest follow alphabetically. **A list is
+still the wrong shape for 638 places** — those pickers want a search box, which is noted for
+whoever owns them.
+
+### Location that learns from being corrected
+
+`POST /locations/resolve/area` answers what a person actually needs from location access:
+the area name, district, state, the city page it belongs to, **how far the match is**, and
+how much to trust it. A centroid 400 m away describes your neighbourhood; one 9 km away is
+the nearest place we know of, which is a different claim. Neighbours come back with it, so
+asking costs one tap.
+
+There is no machine-learned model here and pretending otherwise would be worse than
+useless. What there is instead is memory: `POST /locations/resolve/area/correct` records
+what somebody standing there said the area actually was. **Two agreeing corrections within
+500 m outweigh the arithmetic** — one is a slip of the thumb, two is a fact about a place.
+Corrections are accepted from signed-out visitors too, because demanding an account would
+throw most of them away, and the chosen code is validated against the pincode table so the
+endpoint cannot be used to write arbitrary values into something that decides what others
+are shown.
+
+Verified end to end: one correction changed nothing, the second flipped 500081 → 500084 and
+raised confidence to HIGH.
+
+**250 unit tests; acceptance 67, filters 54, web 110, admin 53, jobs 25, performance 17.**

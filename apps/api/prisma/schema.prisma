@@ -35,6 +35,7 @@ enum RoleName {
   EMPLOYER
   SERVICE_PROVIDER
   MODERATOR
+  CHILD_SAFETY_OFFICER
   ADMINISTRATOR
   SUPER_ADMINISTRATOR
 }
@@ -148,7 +149,23 @@ enum MediaStatus {
   PROCESSING
   READY
   REJECTED
+  LEGAL_HOLD
   FAILED
+}
+
+enum MediaSafetyCaseStatus {
+  OPEN
+  REPORTED
+  RELEASED
+  CLOSED
+}
+
+enum MediaSafetyAccessAction {
+  CASE_VIEWED
+  EVIDENCE_PREVIEW
+  CASE_REPORTED
+  HOLD_RELEASED
+  CASE_CLOSED
 }
 
 enum ReportTargetType {
@@ -939,7 +956,8 @@ model ListingMedia {
   createdAt      DateTime    @default(now())
   updatedAt      DateTime    @updatedAt
 
-  listing Listing @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  listing    Listing          @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  safetyCase MediaSafetyCase?
 
   @@index([listingId, sortOrder])
   // Sweeper for uploads that were requested but never confirmed.
@@ -1280,6 +1298,34 @@ model ModeratorNote {
  * Both hash kinds are stored: SHA-256 catches the identical file, and the perceptual hash
  * catches the same picture re-cropped or re-saved, which is the usual evasion.
  */
+/**
+ * What people told us when the detected area was wrong.
+ * A pincode centroid is the average of its post offices, so on the edge of a code the
+ * nearest centroid is often not the area a person would name. Nobody knows that better
+ * than the person standing there — and when they correct it, that correction is a fact
+ * about a place rather than an opinion.
+ * Enough corrections around the same spot outweigh the arithmetic. This is not a model
+ * being trained; it is the app remembering what it was told, which is the honest version
+ * of the same idea and needs no inference to be useful.
+ */
+model AreaCorrection {
+  id           String                                 @id @db.Uuid
+  latitude     Decimal                                @db.Decimal(10, 7)
+  longitude    Decimal                                @db.Decimal(10, 7)
+  geo          Unsupported("geography(Point, 4326)")?
+  // What the arithmetic said, kept so the two can be compared.
+  detectedCode String                                 @db.VarChar(6)
+  // What the person standing there said instead.
+  chosenCode   String                                 @db.VarChar(6)
+  // Null for a signed-out visitor: a correction is worth having either way.
+  userId       String?                                @db.Uuid
+  createdAt    DateTime                               @default(now())
+
+  @@index([detectedCode])
+  @@index([chosenCode])
+  @@map("area_corrections")
+}
+
 model BlockedImageHash {
   id          String   @id @db.Uuid
   // 'SHA256' or 'PERCEPTUAL'
@@ -1295,6 +1341,50 @@ model BlockedImageHash {
   @@unique([kind, hash])
   @@index([kind])
   @@map("blocked_image_hashes")
+}
+
+/**
+ * Restricted case metadata for a protected-hash match.
+ * No image bytes, provider hash, or signed URL belongs here. The quarantined original
+ * remains in object storage; this row only records why ordinary moderation and deletion
+ * are no longer allowed to touch it.
+ */
+model MediaSafetyCase {
+  id                String                @id @db.Uuid
+  mediaId           String                @unique @db.Uuid
+  status            MediaSafetyCaseStatus @default(OPEN)
+  provider          String                @db.VarChar(60)
+  providerReference String?               @db.VarChar(200)
+  reasonCode        String                @db.VarChar(80)
+  reportReference   String?               @db.VarChar(200)
+  resolutionNote    String?               @db.VarChar(500)
+  openedAt          DateTime              @default(now())
+  reportedAt        DateTime?
+  releasedAt        DateTime?
+  closedAt          DateTime?
+  createdAt         DateTime              @default(now())
+  updatedAt         DateTime              @updatedAt
+
+  media      ListingMedia           @relation(fields: [mediaId], references: [id], onDelete: Restrict)
+  accessLogs MediaSafetyAccessLog[]
+
+  @@index([status, openedAt])
+  @@map("media_safety_cases")
+}
+
+model MediaSafetyAccessLog {
+  id            String                  @id @db.Uuid
+  caseId        String                  @db.Uuid
+  actorId       String                  @db.Uuid
+  action        MediaSafetyAccessAction
+  justification String                  @db.VarChar(500)
+  createdAt     DateTime                @default(now())
+
+  safetyCase MediaSafetyCase @relation(fields: [caseId], references: [id], onDelete: Restrict)
+
+  @@index([caseId, createdAt(sort: Desc)])
+  @@index([actorId, createdAt(sort: Desc)])
+  @@map("media_safety_access_logs")
 }
 
 model BannedKeyword {

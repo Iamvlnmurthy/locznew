@@ -4,6 +4,7 @@ import { v7 as uuid } from 'uuid';
 import { GeoRepository } from '../prisma/geo.repository';
 import { PrismaService } from '../prisma/prisma.service';
 import {
+  AreaDto,
   CityDto,
   PincodeAreaDto,
   PincodeDto,
@@ -21,6 +22,15 @@ type CityWithRelations = Prisma.CityGetPayload<{ include: { state: true; distric
 
 @Injectable()
 export class GeoService {
+  /**
+   * How many people have to disagree with the arithmetic before it is overruled.
+   *
+   * One is a slip of the thumb. Two, within half a kilometre of each other, is a fact
+   * about the place — and the cost of being wrong is small and self-correcting, since the
+   * app still shows the answer and still offers the neighbours.
+   */
+  private static readonly CORRECTIONS_TO_OVERRIDE = 2;
+
   constructor(
     private readonly prisma: PrismaService,
     private readonly geo: GeoRepository,
@@ -52,7 +62,16 @@ export class GeoService {
       include: { state: true, district: true },
       // Launched cities first, then by size — a user typing "vi" should see Vijayawada
       // and Visakhapatnam before a small town with a similar name.
-      orderBy: [{ isLaunched: 'desc' }, { population: 'desc' }, { name: 'asc' }],
+      // Nulls last is what keeps this list useful now that every district in India is a
+      // place. The eight cities seeded by hand carry a population; the 630 derived from the
+      // pincode dataset do not, and PostgreSQL puts nulls first on a descending sort — so
+      // without this the picker opened on Adilabad and buried Hyderabad, where the listings
+      // actually are.
+      orderBy: [
+        { isLaunched: 'desc' },
+        { population: { sort: 'desc', nulls: 'last' } },
+        { name: 'asc' },
+      ],
       take: query.limit,
     });
 
@@ -235,6 +254,124 @@ export class GeoService {
     });
 
     return pincode ? this.toPincodeDto(pincode) : null;
+  }
+
+  /**
+   * Everything about where somebody is standing.
+   *
+   * A pincode alone is a number. What a person needs to see before they trust it is the
+   * name of the area, the district and state it sits in, and — the part usually left out —
+   * how far away the answer actually is.
+   *
+   * A pincode centroid is the average of its post offices, so a match 400 m away is the
+   * area you are in and one 9 km away is the nearest area we know of, which is a different
+   * claim. Saying which is which lets the app ask rather than assert, and the neighbours
+   * are returned so that asking costs one tap.
+   */
+  async resolveArea(latitude: number, longitude: number): Promise<AreaDto | null> {
+    // 25 km rather than 50: past that the nearest centroid stops describing where anyone
+    // is. Six candidates is enough for a picker without becoming a list to read.
+    const nearby = await this.geo.findNearbyPincodes(latitude, longitude, 25_000, 6);
+    if (nearby.length === 0) return null;
+
+    const codes = nearby.map((row) => row.code);
+    const pincodes = await this.prisma.pincode.findMany({
+      where: { code: { in: codes } },
+      include: { city: { select: { id: true, name: true, slug: true } } },
+    });
+
+    const byCode = new Map(pincodes.map((row) => [row.code, row]));
+
+    // What people standing here have already told us. Two independent corrections
+    // outweigh the arithmetic: one person may have tapped the wrong row, but two making
+    // the same choice within half a kilometre are describing the place they live in.
+    const corrections = await this.geo.findAreaCorrections(latitude, longitude, 500);
+    const corrected = corrections.find(
+      (row) => row.votes >= GeoService.CORRECTIONS_TO_OVERRIDE && byCode.has(row.chosenCode),
+    );
+
+    const closest = corrected ? byCode.get(corrected.chosenCode)! : byCode.get(nearby[0]!.code);
+    if (!closest) return null;
+
+    const distance = Math.round(
+      nearby.find((row) => row.code === closest.code)?.distanceMeters ?? nearby[0]!.distanceMeters,
+    );
+
+    // A locality is finer than a pincode and only exists for places somebody has mapped by
+    // hand, so it is offered when available and never required.
+    const locality = closest.cityId
+      ? await this.geo.findNearbyLocalities(closest.cityId, latitude, longitude, 1)
+      : [];
+
+    return {
+      pincode: this.toPincodeDto(closest),
+      areaName: closest.name,
+      localityName: locality[0]?.name ?? null,
+      districtName: closest.districtName,
+      stateName: closest.stateName,
+      cityId: closest.city?.id ?? null,
+      cityName: closest.city?.name ?? null,
+      citySlug: closest.city?.slug ?? null,
+      distanceMeters: distance,
+      // Under two kilometres the centroid is describing the caller's own neighbourhood;
+      // beyond five it is the nearest place we know rather than where they are.
+      // A corrected answer is HIGH regardless of distance: somebody who was there said so,
+      // which beats a centroid however close it happens to sit.
+      confidence: corrected
+        ? 'HIGH'
+        : distance <= 2_000
+          ? 'HIGH'
+          : distance <= 5_000
+            ? 'MEDIUM'
+            : 'LOW',
+      correctedByNeighbours: Boolean(corrected),
+      nearby: nearby
+        .slice(1)
+        .map((row) => {
+          const match = byCode.get(row.code);
+          return match
+            ? {
+                code: match.code,
+                name: match.name,
+                districtName: match.districtName,
+                distanceMeters: Math.round(row.distanceMeters),
+              }
+            : null;
+        })
+        .filter((row): row is NonNullable<typeof row> => row !== null),
+    };
+  }
+
+  /**
+   * Records that the detected area was wrong, and what the right one is.
+   *
+   * Kept whether or not anyone is signed in: a correction is a fact about a place, and
+   * demanding an account before accepting it would throw away most of them. The chosen
+   * code is checked against the pincode table so this cannot be used to write arbitrary
+   * strings into a table that later influences what other people are shown.
+   */
+  async recordAreaCorrection(
+    latitude: number,
+    longitude: number,
+    detectedCode: string,
+    chosenCode: string,
+    userId?: string,
+  ): Promise<{ recorded: true; agreeingNearby: number }> {
+    const chosen = await this.prisma.pincode.findUnique({ where: { code: chosenCode } });
+    if (!chosen) throw new BadRequestException(`We do not recognise pincode ${chosenCode}`);
+
+    if (detectedCode === chosenCode) {
+      throw new BadRequestException('That is the area we already suggested');
+    }
+
+    await this.prisma.areaCorrection.create({
+      data: { id: uuid(), latitude, longitude, detectedCode, chosenCode, userId: userId ?? null },
+    });
+
+    const nearby = await this.geo.findAreaCorrections(latitude, longitude, 500);
+    const agreeing = nearby.find((row) => row.chosenCode === chosenCode)?.votes ?? 1;
+
+    return { recorded: true, agreeingNearby: agreeing };
   }
 
   async listSavedLocations(userId: string): Promise<SavedLocationDto[]> {

@@ -221,7 +221,12 @@ async function main() {
     `${businessByName.meta.total} matches`,
   );
 
-  const directoryCity = cities.find((entry) => entry.name === business.cityName);
+  // Looked up by name rather than found in the list above. Every district in India is now
+  // a place — 638 of them — so a business can easily belong to a city that a five-row
+  // fetch never contained.
+  const directoryCity =
+    cities.find((entry) => entry.name === business.cityName) ??
+    (await api(`/locations/cities?q=${encodeURIComponent(business.cityName)}&limit=1`))[0];
   const flatCategories = (list) =>
     list.flatMap((entry) => [entry, ...flatCategories(entry.children ?? [])]);
   const directoryCategory = flatCategories(categories).find(
