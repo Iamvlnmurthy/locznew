@@ -2,6 +2,14 @@ import { ExecutionContext, Injectable } from '@nestjs/common';
 import { ThrottlerGuard, ThrottlerLimitDetail } from '@nestjs/throttler';
 import { Response } from 'express';
 
+export function retryAfterSeconds(
+  detail: Pick<ThrottlerLimitDetail, 'timeToBlockExpire' | 'timeToExpire'>,
+): number {
+  // @nestjs/throttler's storage API already returns both values as whole seconds.
+  // Treating them as milliseconds turned a 60-second block into `Retry-After: 1`.
+  return Math.max(1, Math.ceil(detail.timeToBlockExpire || detail.timeToExpire || 0));
+}
+
 /**
  * The global rate limiter, made answerable.
  *
@@ -22,13 +30,7 @@ export class RetryAwareThrottlerGuard extends ThrottlerGuard {
   ): Promise<void> {
     const response = context.switchToHttp().getResponse<Response>();
 
-    // Milliseconds, and a blocked tracker waits out the block rather than the window.
-    // Rounded up, never below one second: "retry after 0 seconds" is an invitation to
-    // retry immediately, which is what the limit exists to prevent.
-    const waitMs = detail.timeToBlockExpire || detail.timeToExpire || 0;
-    const seconds = Math.max(1, Math.ceil(waitMs / 1000));
-
-    response.setHeader('Retry-After', String(seconds));
+    response.setHeader('Retry-After', String(retryAfterSeconds(detail)));
 
     return super.throwThrottlingException(context, detail);
   }

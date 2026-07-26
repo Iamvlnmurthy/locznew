@@ -3,6 +3,7 @@ import { AuditService } from '../src/audit/audit.service';
 import { paginate } from '../src/common/dto/pagination.dto';
 import { listingSlug, slugify } from '../src/common/utils/slug.util';
 import { TooManyRequestsException } from '../src/common/exceptions/too-many-requests.exception';
+import { retryAfterSeconds } from '../src/common/guards/retry-aware-throttler.guard';
 import { PrismaService } from '../src/prisma/prisma.service';
 import { makePrismaMock } from './factories';
 
@@ -72,6 +73,17 @@ describe('TooManyRequestsException', () => {
     expect(exception.getStatus()).toBe(HttpStatus.TOO_MANY_REQUESTS);
     expect(body.retryAfterSeconds).toBe(30);
     expect(body.error).toBe('TooManyRequests');
+  });
+});
+
+describe('RetryAwareThrottlerGuard', () => {
+  it('preserves the throttler storage values as seconds', () => {
+    expect(retryAfterSeconds({ timeToBlockExpire: 57, timeToExpire: 42 })).toBe(57);
+    expect(retryAfterSeconds({ timeToBlockExpire: 0, timeToExpire: 42 })).toBe(42);
+  });
+
+  it('never invites an immediate retry', () => {
+    expect(retryAfterSeconds({ timeToBlockExpire: 0, timeToExpire: 0 })).toBe(1);
   });
 });
 
