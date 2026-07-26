@@ -167,3 +167,19 @@ and removal from search.
 
 **Posting limits.** As a fresh account, post four listings — the fourth must be refused
 with the daily limit message.
+
+## Executable gates
+
+Two scripts replace most of the manual walkthrough above. Both talk HTTP only, and both
+exit non-zero on failure so they can gate a deploy.
+
+```bash
+node scripts/acceptance.mjs         # the buyer/seller flow — 61 assertions
+node scripts/acceptance-admin.mjs   # the admin console — 53 assertions
+```
+
+The admin gate checks authorisation with **negative** assertions — an ordinary account
+and an anonymous request must be refused by every `/admin/*` endpoint — and checks each
+console page for data that can only have come from the database. That second part
+matters more than it looks: a Next.js page whose API call failed still returns HTTP 200
+with an empty shell, so "the page loads" is not evidence of anything.

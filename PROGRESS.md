@@ -469,3 +469,25 @@ plain processes, so a reboot left nothing running and the recovery was four
 half-remembered commands. Now `dev-stack.ps1 start|stop|status`.
 
 Not yet done: iOS, which needs a Mac.
+
+## M17 — The admin console, exercised (2026-07-26)
+
+`scripts/acceptance-admin.mjs` — **53 assertions, 0 failures**. It asks two questions
+that fail independently:
+
+**Does the API refuse admin work to people who are not admins?** Eleven of the
+assertions are negative — an ordinary account and an anonymous request are each refused
+by every `/admin/*` endpoint, and a moderator is refused the user directory. A console
+that looks right while the API hands user records to any signed-in seller is worse than
+no console at all.
+
+One finding, and it was my own assumption rather than a defect: a moderator _can_ read
+the audit log. That is deliberate — moderation decisions are reviewable and the person
+making them can see the trail — so the suite now asserts it explicitly, which means a
+future permission change has to be a conscious one rather than a silent drift.
+
+**Does every page render real data?** A Next.js page whose API call failed still returns
+HTTP 200 with an empty shell, so "the page loads" proves nothing — exactly the trap that
+hid the `/feed?pincode=` 400 earlier. Each of the eight console pages is checked for a
+value that can only have come from the database (a user's display name, an audit action,
+the live user count) and for the absence of an error boundary.
