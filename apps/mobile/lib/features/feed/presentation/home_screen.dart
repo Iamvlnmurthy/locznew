@@ -18,6 +18,7 @@ class HomeScreen extends ConsumerWidget {
     final strings = Strings.of(context);
     final feed = ref.watch(feedProvider);
     final city = ref.watch(selectedCityProvider);
+    final textScale = MediaQuery.textScalerOf(context).scale(1);
 
     return Scaffold(
       appBar: AppBar(
@@ -25,25 +26,31 @@ class HomeScreen extends ConsumerWidget {
         title: InkWell(
           onTap: () => context.push('/location'),
           borderRadius: BorderRadius.circular(LoczRadius.full),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 4),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const Icon(Icons.location_on_outlined, size: 18),
-                const SizedBox(width: 4),
-                Flexible(
-                  child: Text(
-                    // Show the pincode back when that is what the user typed — the web
-                    // header does the same, and a chip that answers with something else
-                    // reads as though the app ignored them.
-                    city?.pincode ?? city?.name ?? strings('location.change'),
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(minHeight: 48),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 4),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(Icons.location_on_outlined, size: 18),
+                  const SizedBox(width: 4),
+                  Flexible(
+                    child: Text(
+                      // Show the pincode back when that is what the user typed — the web
+                      // header does the same, and a chip that answers with something else
+                      // reads as though the app ignored them.
+                      city?.pincode ?? city?.name ?? strings('location.change'),
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
                   ),
-                ),
-                const Icon(Icons.arrow_drop_down, size: 20),
-              ],
+                  const Icon(Icons.arrow_drop_down, size: 20),
+                ],
+              ),
             ),
           ),
         ),
@@ -86,13 +93,40 @@ class HomeScreen extends ConsumerWidget {
                       LoczSpacing.x4,
                       0,
                     ),
-                    child: SearchBar(
-                      hintText: strings('search.placeholder'),
-                      leading: const Icon(Icons.search),
-                      onTap: () => context.push('/search'),
-                      // Read-only: tapping opens the dedicated search screen rather
-                      // than typing inline, so results and filters share one place.
-                      onChanged: (_) {},
+                    child: Semantics(
+                      button: true,
+                      child: Material(
+                        color: Theme.of(context).colorScheme.surfaceContainerHigh,
+                        shape: const StadiumBorder(),
+                        clipBehavior: Clip.antiAlias,
+                        child: InkWell(
+                          onTap: () => context.push('/search'),
+                          child: ConstrainedBox(
+                            constraints: const BoxConstraints(minHeight: 56),
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: LoczSpacing.x4,
+                              ),
+                              child: Row(
+                                children: [
+                                  const Icon(Icons.search),
+                                  const SizedBox(width: LoczSpacing.x3),
+                                  Expanded(
+                                    child: Text(
+                                      strings('search.placeholder'),
+                                      style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                                            color: Theme.of(
+                                              context,
+                                            ).colorScheme.onSurfaceVariant,
+                                          ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
                     ),
                   ),
                 ),
@@ -104,7 +138,9 @@ class HomeScreen extends ConsumerWidget {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: LoczSpacing.x4),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: LoczSpacing.x4,
+                            ),
                             child: Text(
                               strings('feed.${section.key}'),
                               style: Theme.of(context).textTheme.titleMedium,
@@ -112,10 +148,12 @@ class HomeScreen extends ConsumerWidget {
                           ),
                           const SizedBox(height: LoczSpacing.x3),
                           SizedBox(
-                            height: 250,
+                            height: listingCardRailHeight(textScale),
                             child: ListView.separated(
                               scrollDirection: Axis.horizontal,
-                              padding: const EdgeInsets.symmetric(horizontal: LoczSpacing.x4),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: LoczSpacing.x4,
+                              ),
                               itemCount: section.items.length,
                               separatorBuilder: (_, __) => const SizedBox(width: LoczSpacing.x3),
                               itemBuilder: (context, index) {
@@ -132,7 +170,9 @@ class HomeScreen extends ConsumerWidget {
                       ),
                     ),
                   ),
-                const SliverToBoxAdapter(child: SizedBox(height: LoczSpacing.x8)),
+                const SliverToBoxAdapter(
+                  child: SizedBox(height: LoczSpacing.x8),
+                ),
               ],
             );
           },
@@ -143,7 +183,11 @@ class HomeScreen extends ConsumerWidget {
 }
 
 class _FeedError extends StatelessWidget {
-  const _FeedError({required this.message, required this.onRetry, required this.retryLabel});
+  const _FeedError({
+    required this.message,
+    required this.onRetry,
+    required this.retryLabel,
+  });
 
   final String message;
   final VoidCallback onRetry;
@@ -186,7 +230,11 @@ class _EmptyFeed extends StatelessWidget {
       padding: const EdgeInsets.all(LoczSpacing.x8),
       children: [
         const SizedBox(height: 80),
-        Text(slogan, textAlign: TextAlign.center, style: Theme.of(context).textTheme.headlineSmall),
+        Text(
+          slogan,
+          textAlign: TextAlign.center,
+          style: Theme.of(context).textTheme.headlineSmall,
+        ),
         const SizedBox(height: LoczSpacing.x3),
         Text(message, textAlign: TextAlign.center),
         const SizedBox(height: LoczSpacing.x4),

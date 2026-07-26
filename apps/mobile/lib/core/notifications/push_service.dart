@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
@@ -15,8 +17,13 @@ class PushService {
   final void Function(String route) _onOpenRoute;
 
   final _local = FlutterLocalNotificationsPlugin();
+  final List<StreamSubscription<dynamic>> _subscriptions = [];
+  bool _initialised = false;
 
   Future<void> initialise() async {
+    if (_initialised) return;
+    _initialised = true;
+
     await _local.initialize(
       const InitializationSettings(
         android: AndroidInitializationSettings('@mipmap/ic_launcher'),
@@ -49,14 +56,22 @@ class PushService {
     // as soon as it is available and refreshed whenever Firebase rotates it.
     final token = await FirebaseMessaging.instance.getToken();
     if (token != null) await _onToken(token);
-    FirebaseMessaging.instance.onTokenRefresh.listen(_onToken);
+    _subscriptions.add(FirebaseMessaging.instance.onTokenRefresh.listen(_onToken));
 
-    FirebaseMessaging.onMessage.listen(_showForeground);
-    FirebaseMessaging.onMessageOpenedApp.listen(_handleOpen);
+    _subscriptions.add(FirebaseMessaging.onMessage.listen(_showForeground));
+    _subscriptions.add(FirebaseMessaging.onMessageOpenedApp.listen(_handleOpen));
 
     // The notification that cold-started the app.
     final initial = await FirebaseMessaging.instance.getInitialMessage();
     if (initial != null) _handleOpen(initial);
+  }
+
+  Future<void> dispose() async {
+    for (final subscription in _subscriptions) {
+      await subscription.cancel();
+    }
+    _subscriptions.clear();
+    _initialised = false;
   }
 
   /// Call after a meaningful action, not at startup.

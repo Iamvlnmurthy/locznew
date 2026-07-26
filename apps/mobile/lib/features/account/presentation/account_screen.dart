@@ -63,7 +63,7 @@ class AccountScreen extends ConsumerWidget {
                 if (value == 'signout') {
                   await ref.read(authProvider.notifier).signOut();
                 } else if (value == 'language' && context.mounted) {
-                  showModalBottomSheet<void>(
+                  await showModalBottomSheet<void>(
                     context: context,
                     builder: (_) => const Padding(
                       padding: EdgeInsets.all(LoczSpacing.x4),
@@ -73,8 +73,14 @@ class AccountScreen extends ConsumerWidget {
                 }
               },
               itemBuilder: (context) => [
-                PopupMenuItem(value: 'language', child: Text(strings('account.language'))),
-                PopupMenuItem(value: 'signout', child: Text(strings('nav.signOut'))),
+                PopupMenuItem(
+                  value: 'language',
+                  child: Text(strings('account.language')),
+                ),
+                PopupMenuItem(
+                  value: 'signout',
+                  child: Text(strings('nav.signOut')),
+                ),
               ],
             ),
           ],
@@ -112,13 +118,19 @@ class _ListingsTab extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final listings = ref.watch(provider);
+    final textScale = MediaQuery.textScalerOf(context).scale(1);
 
     return RefreshIndicator(
       onRefresh: () async => ref.invalidate(provider),
       child: listings.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (error, _) => ListView(
-          children: [Padding(padding: const EdgeInsets.all(32), child: Text(error.toString()))],
+          children: [
+            Padding(
+              padding: const EdgeInsets.all(32),
+              child: Text(error.toString()),
+            ),
+          ],
         ),
         data: (items) {
           if (items.isEmpty) {
@@ -140,12 +152,7 @@ class _ListingsTab extends ConsumerWidget {
           if (!showActions) {
             return GridView.builder(
               padding: const EdgeInsets.all(LoczSpacing.x4),
-              gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-                maxCrossAxisExtent: 200,
-                mainAxisSpacing: LoczSpacing.x3,
-                crossAxisSpacing: LoczSpacing.x3,
-                childAspectRatio: 0.68,
-              ),
+              gridDelegate: listingCardGridDelegate(textScale),
               itemCount: items.length,
               itemBuilder: (context, index) => ListingCard(
                 listing: items[index],
@@ -198,7 +205,11 @@ class _OwnListingRow extends ConsumerWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(listing.title, maxLines: 2, overflow: TextOverflow.ellipsis),
+                        Text(
+                          listing.title,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
                         const SizedBox(height: 4),
                         Text(
                           '${listing.status.toLowerCase().replaceAll('_', ' ')} · '
@@ -232,7 +243,9 @@ class _OwnListingRow extends ConsumerWidget {
                             if (context.mounted) {
                               ScaffoldMessenger.of(
                                 context,
-                              ).showSnackBar(SnackBar(content: Text(error.message)));
+                              ).showSnackBar(
+                                SnackBar(content: Text(error.message)),
+                              );
                             }
                           }
                         },
@@ -256,23 +269,27 @@ class _LanguageSelector extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final current = ref.watch(localeProvider);
 
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        for (final option in AppLocaleOption.values)
-          RadioListTile<AppLocaleOption>(
-            value: option,
-            groupValue: current,
-            title: Text(switch (option) {
-              AppLocaleOption.en => 'English',
-              AppLocaleOption.te => 'తెలుగు',
-              AppLocaleOption.hi => 'हिन्दी',
-            }),
-            onChanged: (value) {
-              if (value != null) ref.read(localeProvider.notifier).select(value);
-            },
-          ),
-      ],
+    return RadioGroup<AppLocaleOption>(
+      groupValue: current,
+      onChanged: (value) {
+        if (value != null) ref.read(localeProvider.notifier).select(value);
+      },
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          for (final option in AppLocaleOption.values)
+            RadioListTile<AppLocaleOption>(
+              value: option,
+              title: Text(
+                switch (option) {
+                  AppLocaleOption.en => 'English',
+                  AppLocaleOption.te => 'తెలుగు',
+                  AppLocaleOption.hi => 'हिन्दी',
+                },
+              ),
+            ),
+        ],
+      ),
     );
   }
 }

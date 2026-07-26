@@ -12,6 +12,8 @@ COPY apps/${APP}/package.json apps/${APP}/
 COPY packages/shared-types/package.json packages/shared-types/
 COPY packages/ui-tokens/package.json packages/ui-tokens/
 COPY packages/config/package.json packages/config/
+COPY packages/validation/package.json packages/validation/
+COPY packages/api-client/package.json packages/api-client/
 
 RUN npm ci --workspace @locz/${APP} --include-workspace-root
 

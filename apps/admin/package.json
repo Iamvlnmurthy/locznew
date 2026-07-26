@@ -7,12 +7,13 @@
     "dev": "next dev --port 3001",
     "build": "next build",
     "start": "next start --port 3001",
-    "lint": "next lint",
+    "lint": "eslint . --max-warnings 0",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "@locz/shared-types": "*",
     "@locz/ui-tokens": "*",
+    "@vercel/speed-insights": "^2.0.0",
     "next": "^16.2.11",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",

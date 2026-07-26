@@ -4,7 +4,10 @@ import { Type } from 'class-transformer';
 import {
   ArrayMaxSize,
   IsArray,
+  IsBoolean,
   IsEmail,
+  IsEnum,
+  IsIn,
   IsInt,
   IsLatitude,
   IsLongitude,
@@ -19,6 +22,7 @@ import {
   MinLength,
   ValidateNested,
 } from 'class-validator';
+import { PaginationQueryDto } from '../../common/dto/pagination.dto';
 
 const INDIAN_PHONE = /^\+91[6-9]\d{9}$/;
 
@@ -128,6 +132,46 @@ export class BusinessSummaryDto {
   @ApiProperty({ enum: VerificationStatus }) verificationStatus!: VerificationStatus;
   @ApiProperty() listingCount!: number;
   @ApiProperty() viewCount!: number;
+  @ApiPropertyOptional() description!: string | null;
+  @ApiPropertyOptional() addressLine!: string | null;
+  @ApiProperty({ type: [BusinessHourDto] }) hours!: BusinessHourDto[];
+}
+
+export class BusinessSearchQueryDto extends PaginationQueryDto {
+  @ApiPropertyOptional({ description: 'Business name or description' })
+  @IsOptional()
+  @IsString()
+  @MaxLength(120)
+  q?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsUUID()
+  cityId?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsUUID()
+  categoryId?: string;
+
+  @ApiPropertyOptional({ description: 'Only administrator-verified businesses' })
+  @IsOptional()
+  @Type(() => Boolean)
+  @IsBoolean()
+  verifiedOnly?: boolean;
+
+  @ApiPropertyOptional({
+    enum: VerificationStatus,
+    description: 'Filter by verification workflow status',
+  })
+  @IsOptional()
+  @IsEnum(VerificationStatus)
+  verificationStatus?: VerificationStatus;
+
+  @ApiPropertyOptional({ enum: ['recommended', 'popular', 'newest'] })
+  @IsOptional()
+  @IsIn(['recommended', 'popular', 'newest'])
+  sort: 'recommended' | 'popular' | 'newest' = 'recommended';
 }
 
 export class BusinessStaffDto {
@@ -140,15 +184,12 @@ export class BusinessStaffDto {
 }
 
 export class BusinessDetailDto extends BusinessSummaryDto {
-  @ApiPropertyOptional() description!: string | null;
-  @ApiPropertyOptional() addressLine!: string | null;
   @ApiPropertyOptional() latitude!: number | null;
   @ApiPropertyOptional() longitude!: number | null;
   @ApiPropertyOptional() primaryPhone!: string | null;
   @ApiPropertyOptional() whatsappNumber!: string | null;
   @ApiPropertyOptional() email!: string | null;
   @ApiPropertyOptional() website!: string | null;
-  @ApiProperty({ type: [BusinessHourDto] }) hours!: BusinessHourDto[];
   @ApiProperty() isOwner!: boolean;
   @ApiProperty() createdAt!: Date;
 }

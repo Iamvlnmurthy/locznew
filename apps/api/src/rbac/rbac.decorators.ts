@@ -1,5 +1,5 @@
 import { SetMetadata } from '@nestjs/common';
-import { RoleName } from '@prisma/client';
+import { type RoleName } from '@prisma/client';
 
 export const IS_PUBLIC_KEY = 'locz:isPublic';
 export const PERMISSIONS_KEY = 'locz:permissions';

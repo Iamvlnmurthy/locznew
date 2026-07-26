@@ -73,7 +73,7 @@ export class NotificationsService {
         await this.queue.add(JOB_SEND_NOTIFICATION, { notificationId: queued.id });
       } catch (error) {
         this.logger.error(
-          `Could not queue ${channel} delivery for ${queued.id}: ${error instanceof Error ? error.message : error}`,
+          `Could not queue ${channel} delivery for ${queued.id}: ${error instanceof Error ? error.message : String(error)}`,
         );
       }
     }

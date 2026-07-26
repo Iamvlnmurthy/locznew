@@ -261,13 +261,29 @@ then falls over at five hundred thousand.
 
 `npm run gate:release` does not run these by default, because they need a live stack —
 API, web, admin, PostgreSQL, Redis, Meilisearch, object storage — and a build machine may
-have none of it. Pass `--stack` for any release that matters:
+have none of it. Pass `--stack` and point every configuration-sensitive gate at the same
+candidate environment for any release that matters:
 
 ```bash
-npm run gate:release -- --stack --dns --smoke
+npm run gate:release -- --stack --dns --smoke --env infrastructure/docker/.env
 ```
 
 Without it the gate records the stage as **skipped**, not passed, and says so in both the
 console summary and the evidence file. That distinction is the point: a report that cannot
 tell "we checked and it was fine" from "we did not check" is the kind of evidence that gets
 quoted in a post-mortem.
+
+`--stack` also makes the read-only child-safety readiness gate mandatory. It confirms
+current policy approval, the exact restricted role, officer continuity and a protected-hash
+provider compiled into the candidate. The reversible API workflow changes local fixture
+state, so it requires a second explicit decision:
+
+```bash
+npm run gate:release -- --stack --safety-development --synthetic-safety --env .env
+```
+
+That rehearsal is restricted to a local non-production database and restores its case,
+audit rows, media state and login device. `--safety-development` permits the known
+unconfigured-provider warning for local development only; it cannot be combined with
+`--smoke` and is forbidden for final sign-off. Without `--synthetic-safety`, the evidence
+record names the workflow as skipped rather than pretending it passed.

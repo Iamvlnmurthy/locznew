@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { getTranslator, type Locale } from '@/i18n';
+import { apiSafe } from '@/lib/api';
 import { getCurrentUser, getSelectedCity } from '@/lib/session';
 import { LocationChip } from './location-chip';
 import { LocaleSwitcher } from './locale-switcher';
@@ -12,6 +13,9 @@ import { Icon } from './icons';
 export async function Header({ locale }: { locale: Locale }) {
   const t = getTranslator(locale);
   const [user, city] = await Promise.all([getCurrentUser(), getSelectedCity()]);
+  const unreadNotifications = user
+    ? await apiSafe<{ count: number }>('/notifications/unread-count', { auth: true })
+    : null;
 
   return (
     <header className="header">
@@ -57,9 +61,27 @@ export async function Header({ locale }: { locale: Locale }) {
           <LocaleSwitcher current={locale} label={t('nav.language')} />
 
           {user ? (
-            <Link href="/dashboard" className="btn btn--ghost">
-              {t('nav.myAds')}
-            </Link>
+            <>
+              <Link
+                href="/notifications"
+                className="header__notification"
+                aria-label={
+                  unreadNotifications?.count
+                    ? `${unreadNotifications.count} unread notifications`
+                    : 'Notifications'
+                }
+              >
+                <Icon name="bell" />
+                {unreadNotifications?.count ? (
+                  <strong>
+                    {unreadNotifications.count > 9 ? '9+' : unreadNotifications.count}
+                  </strong>
+                ) : null}
+              </Link>
+              <Link href="/dashboard" className="btn btn--ghost">
+                {t('nav.myAds')}
+              </Link>
+            </>
           ) : (
             <Link href="/signin" className="btn btn--ghost">
               {t('nav.signIn')}
@@ -72,7 +94,7 @@ export async function Header({ locale }: { locale: Locale }) {
         </div>
       </div>
 
-      <nav className="mobile-dock" aria-label="Primary navigation">
+      <nav className="mobile-dock" aria-label={t('nav.primary')}>
         <Link href="/">
           <Icon name="home" />
           <span>{t('nav.home')}</span>
@@ -91,9 +113,12 @@ export async function Header({ locale }: { locale: Locale }) {
           <Icon name="heart" />
           <span>{t('nav.saved')}</span>
         </Link>
-        <Link href={user ? '/dashboard' : '/signin'}>
-          <Icon name="user" />
-          <span>{user ? t('nav.account') : t('nav.signIn')}</span>
+        <Link href={user ? '/notifications' : '/signin'}>
+          <span className="mobile-dock__notification">
+            <Icon name={user ? 'bell' : 'user'} />
+            {unreadNotifications?.count ? <strong>{unreadNotifications.count}</strong> : null}
+          </span>
+          <span>{user ? 'Alerts' : t('nav.signIn')}</span>
         </Link>
       </nav>
     </header>

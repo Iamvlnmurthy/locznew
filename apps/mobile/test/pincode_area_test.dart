@@ -18,7 +18,9 @@ void main() {
 
   group('PincodeArea', () {
     test('parses the API payload', () {
-      final area = PincodeArea.fromJson(payload(cityId: 'city-1', cityName: 'Hyderabad'));
+      final area = PincodeArea.fromJson(
+        payload(cityId: 'city-1', cityName: 'Hyderabad'),
+      );
 
       expect(area.code, '500081');
       expect(area.latitude, closeTo(17.4411, 0.0001));
@@ -27,7 +29,9 @@ void main() {
     });
 
     test('labels a linked pincode with its city', () {
-      final area = PincodeArea.fromJson(payload(cityId: 'city-1', cityName: 'Hyderabad'));
+      final area = PincodeArea.fromJson(
+        payload(cityId: 'city-1', cityName: 'Hyderabad'),
+      );
 
       expect(area.label, 'Madhapur, Hyderabad');
     });

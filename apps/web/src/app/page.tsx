@@ -4,7 +4,7 @@ import { ListingCard } from '@/components/listing-card';
 import { Icon, categoryImageName } from '@/components/icons';
 import { getTranslator } from '@/i18n';
 import { apiSafe } from '@/lib/api';
-import { getLocale, getSelectedCity } from '@/lib/session';
+import { getCurrentUser, getLocale, getSelectedCity } from '@/lib/session';
 
 interface FeedSection {
   key: string;
@@ -24,9 +24,12 @@ interface Feed {
 export const dynamic = 'force-dynamic';
 
 export default async function HomePage() {
-  const locale = await getLocale();
+  const [locale, city, user] = await Promise.all([
+    getLocale(),
+    getSelectedCity(),
+    getCurrentUser(),
+  ]);
   const t = getTranslator(locale);
-  const city = await getSelectedCity();
 
   const query = new URLSearchParams({ limit: '12' });
   if (city?.id) query.set('cityId', city.id);
@@ -43,6 +46,11 @@ export default async function HomePage() {
   ]);
 
   const topCategories = (categories ?? []).slice(0, 12);
+  const feedCity = feed?.cityName ?? city?.name ?? t('home.yourCity');
+  const uniqueListings = feed
+    ? new Set(feed.sections.flatMap((section) => section.items.map((item) => item.id))).size
+    : 0;
+  const firstName = user?.displayName.split(' ')[0];
 
   return (
     <>
@@ -50,10 +58,10 @@ export default async function HomePage() {
         <div className="container home-hero__inner">
           <div className="home-hero__copy">
             <span className="eyebrow">
-              <i /> {t('home.eyebrow')}
+              <i /> {firstName ? t('home.personalEyebrow', { name: firstName }) : t('home.eyebrow')}
             </span>
             <h1>{t('home.title')}</h1>
-            <p>{t('home.subtitle')}</p>
+            <p>{firstName ? t('home.personalSubtitle', { city: feedCity }) : t('home.subtitle')}</p>
 
             <form className="hero-search" action="/search" method="get" role="search">
               <Icon name="search" width="21" height="21" />
@@ -64,13 +72,21 @@ export default async function HomePage() {
                 id="hero-search"
                 name="q"
                 type="search"
-                placeholder={t('search.placeholder')}
+                placeholder={t('home.searchPlaceholder', { city: feedCity })}
                 autoComplete="off"
               />
               <button type="submit">
                 {t('search.submit')} <Icon name="arrow" width="17" height="17" />
               </button>
             </form>
+
+            <div className="hero-popular" aria-label={t('home.popularAria')}>
+              <span>{t('home.popularNow')}</span>
+              <Link href="/search?q=iPhone">iPhone</Link>
+              <Link href="/search?type=JOB">{t('home.popularJobs')}</Link>
+              <Link href="/search?type=RENTAL">{t('home.popularRooms')}</Link>
+              <Link href="/search?type=SERVICE&q=electrician">{t('home.popularElectrician')}</Link>
+            </div>
 
             <div className="hero-trust" aria-label={t('home.trustLabel')}>
               <span>
@@ -104,6 +120,52 @@ export default async function HomePage() {
       </section>
 
       <div className="container">
+        <section className="home-intents" aria-labelledby="home-intents-title">
+          <div className="home-intents__intro">
+            <span className="section-kicker">{t('home.intentsKicker')}</span>
+            <h2 id="home-intents-title">{t('home.intentsTitle')}</h2>
+          </div>
+          <div className="home-intents__grid">
+            {[
+              {
+                href: '/search?type=PRODUCT',
+                icon: 'tag',
+                title: t('home.intentFindTitle'),
+                text: t('home.intentFindBody'),
+              },
+              {
+                href: '/post',
+                icon: 'plus',
+                title: t('home.intentSellTitle'),
+                text: t('home.intentSellBody'),
+              },
+              {
+                href: '/search?type=JOB',
+                icon: 'briefcase',
+                title: t('home.intentWorkTitle'),
+                text: t('home.intentWorkBody'),
+              },
+              {
+                href: '/business',
+                icon: 'tools',
+                title: t('home.intentHelpTitle'),
+                text: t('home.intentHelpBody'),
+              },
+            ].map((intent) => (
+              <Link key={intent.title} href={intent.href} className="home-intent">
+                <span>
+                  <Icon name={intent.icon} />
+                </span>
+                <div>
+                  <strong>{intent.title}</strong>
+                  <p>{intent.text}</p>
+                </div>
+                <Icon name="arrow" />
+              </Link>
+            ))}
+          </div>
+        </section>
+
         {topCategories.length > 0 ? (
           <section className="category-section">
             <div className="section__head">
@@ -156,43 +218,139 @@ export default async function HomePage() {
           </div>
         ) : (
           <>
-            {/* The slogan is the page's h1: it states what LocZ is for in four words,
-              and it is what a search engine shows under the title. */}
-            <h1 className="home-hero">
-              <span className="home-hero__slogan">{t('brand.tagline')}</span>
-              <span className="home-hero__city">{feed.cityName}</span>
-            </h1>
+            <section className="home-feed-intro">
+              <div>
+                <span className="section-kicker">{t('home.feedKicker')}</span>
+                <h2>{t('home.feedTitle', { city: feed.cityName })}</h2>
+                <p>{t('home.feedBody')}</p>
+              </div>
+              <div className="home-feed-intro__pulse" aria-label={t('home.activityAria')}>
+                <span>
+                  <strong>{uniqueListings}</strong>
+                  {t('home.freshFinds')}
+                </span>
+                <i aria-hidden="true" />
+                <span>
+                  <strong>{feed.sections.length}</strong>
+                  {t('home.usefulCollections')}
+                </span>
+                <Link href="/location">
+                  <Icon name="location" />
+                  {t('home.changeArea')}
+                </Link>
+              </div>
+            </section>
 
-            {feed.sections.map((section) => (
-              <section key={section.key} className="section">
-                <div className="section__head">
-                  <div>
-                    <span className="section-kicker">{t('home.freshNearby')}</span>
-                    <h2>{t(`feed.sections.${section.key}`)}</h2>
-                  </div>
-                  {section.seeAllHref ? (
-                    <Link
-                      href={section.seeAllHref}
-                      style={{ color: 'var(--locz-primary)', fontWeight: 600 }}
-                      className="section-link"
-                    >
-                      {t('feed.seeAll')} <Icon name="arrow" />
-                    </Link>
+            {feed.sections.map((section, index) => {
+              const meta = feedSectionMeta(section.key, feed.cityName, t);
+              return (
+                <div key={section.key}>
+                  <section
+                    className={`section home-feed-section home-feed-section--${section.key}`}
+                  >
+                    <div className="section__head">
+                      <div className="home-feed-section__title">
+                        <span className="home-feed-section__icon">
+                          <Icon name={meta.icon} />
+                        </span>
+                        <div>
+                          <span className="section-kicker">{meta.kicker}</span>
+                          <h2>{t(`feed.sections.${section.key}`)}</h2>
+                          <p>{meta.description}</p>
+                        </div>
+                      </div>
+                      {section.seeAllHref ? (
+                        <Link href={section.seeAllHref} className="section-link">
+                          {t('feed.seeAll')} <Icon name="arrow" />
+                        </Link>
+                      ) : null}
+                    </div>
+
+                    <div className="card-rail">
+                      {section.items.map((listing) => (
+                        <ListingCard key={listing.id} listing={listing} t={t} />
+                      ))}
+                    </div>
+                  </section>
+
+                  {index === 1 ? (
+                    <aside className="home-post-invitation">
+                      <span className="home-post-invitation__icon">
+                        <Icon name="plus" />
+                      </span>
+                      <div>
+                        <span className="section-kicker">{t('home.postKicker')}</span>
+                        <h2>{t('home.postTitle')}</h2>
+                        <p>{t('home.postBody')}</p>
+                      </div>
+                      <Link href="/post" className="btn btn--primary">
+                        {t('home.postFree')} <Icon name="arrow" />
+                      </Link>
+                    </aside>
                   ) : null}
                 </div>
-
-                {/* Rails keep the home screen scannable on a phone; search uses a grid. */}
-                <div className="card-rail">
-                  {section.items.map((listing) => (
-                    <ListingCard key={listing.id} listing={listing} t={t} />
-                  ))}
-                </div>
-              </section>
-            ))}
+              );
+            })}
           </>
         )}
       </div>
     </>
+  );
+}
+
+function feedSectionMeta(
+  key: string,
+  cityName: string,
+  t: ReturnType<typeof getTranslator>,
+): { kicker: string; description: string; icon: string } {
+  const meta: Record<string, { kicker: string; description: string; icon: string }> = {
+    nearby: {
+      kicker: t('home.sectionNearbyKicker'),
+      description: t('home.sectionNearbyBody', { city: cityName }),
+      icon: 'location',
+    },
+    recommended: {
+      kicker: t('home.sectionRecommendedKicker'),
+      description: t('home.sectionRecommendedBody'),
+      icon: 'sparkles',
+    },
+    latest_products: {
+      kicker: t('home.sectionProductsKicker'),
+      description: t('home.sectionProductsBody'),
+      icon: 'tag',
+    },
+    offers: {
+      kicker: t('home.sectionOffersKicker'),
+      description: t('home.sectionOffersBody'),
+      icon: 'store',
+    },
+    jobs: {
+      kicker: t('home.sectionJobsKicker'),
+      description: t('home.sectionJobsBody'),
+      icon: 'briefcase',
+    },
+    services: {
+      kicker: t('home.sectionServicesKicker'),
+      description: t('home.sectionServicesBody'),
+      icon: 'tools',
+    },
+    requirements: {
+      kicker: t('home.sectionRequirementsKicker'),
+      description: t('home.sectionRequirementsBody'),
+      icon: 'message',
+    },
+    recently_viewed: {
+      kicker: t('home.sectionRecentKicker'),
+      description: t('home.sectionRecentBody'),
+      icon: 'clock',
+    },
+  };
+  return (
+    meta[key] ?? {
+      kicker: t('home.sectionFallbackKicker'),
+      description: t('home.sectionFallbackBody', { city: cityName }),
+      icon: 'sparkles',
+    }
   );
 }
 

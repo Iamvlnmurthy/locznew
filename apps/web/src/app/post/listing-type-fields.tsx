@@ -12,6 +12,7 @@ import type { ListingType } from '@locz/shared-types';
 
 interface FieldProps {
   errors?: Record<string, string>;
+  labels: Record<string, string>;
 }
 
 function fieldClass(errors: Record<string, string> | undefined, name: string): string {
@@ -22,95 +23,95 @@ function FieldError({ errors, name }: { errors?: Record<string, string>; name: s
   return errors?.[name] ? <p className="field__error">{errors[name]}</p> : null;
 }
 
-export function ListingTypeFields({ type, errors }: FieldProps & { type: ListingType }) {
+export function ListingTypeFields({ type, errors, labels }: FieldProps & { type: ListingType }) {
   switch (type) {
     case 'JOB':
-      return <JobFields errors={errors} />;
+      return <JobFields errors={errors} labels={labels} />;
     case 'OFFER':
-      return <OfferFields errors={errors} />;
+      return <OfferFields errors={errors} labels={labels} />;
     case 'SERVICE':
-      return <ServiceFields errors={errors} />;
+      return <ServiceFields errors={errors} labels={labels} />;
     case 'RENTAL':
-      return <RentalFields errors={errors} />;
+      return <RentalFields errors={errors} labels={labels} />;
     case 'EVENT':
-      return <EventFields errors={errors} />;
+      return <EventFields errors={errors} labels={labels} />;
     case 'BUYER_REQUIREMENT':
-      return <BuyerRequirementFields errors={errors} />;
+      return <BuyerRequirementFields errors={errors} labels={labels} />;
     default:
-      return <MarketplaceFields errors={errors} />;
+      return <MarketplaceFields errors={errors} labels={labels} />;
   }
 }
 
-function MarketplaceFields({ errors }: FieldProps) {
+function MarketplaceFields({ errors, labels: l }: FieldProps) {
   return (
     <>
       <div className={fieldClass(errors, 'price')}>
-        <label htmlFor="price">Price (₹)</label>
+        <label htmlFor="price">{l.price}</label>
         <input id="price" name="price" type="number" min="0" inputMode="numeric" placeholder="0" />
         <FieldError errors={errors} name="price" />
 
         <label style={{ display: 'flex', gap: 8, alignItems: 'center', fontWeight: 400 }}>
           <input type="checkbox" name="isFree" style={{ width: 'auto', minHeight: 'auto' }} />
-          I&rsquo;m giving this away free
+          {l.giveAwayFree}
         </label>
         <label style={{ display: 'flex', gap: 8, alignItems: 'center', fontWeight: 400 }}>
           <input type="checkbox" name="isNegotiable" style={{ width: 'auto', minHeight: 'auto' }} />
-          Price is negotiable
+          {l.negotiable}
         </label>
       </div>
 
       <div className="field">
-        <label htmlFor="condition">Condition</label>
+        <label htmlFor="condition">{l.condition}</label>
         <select id="condition" name="condition" defaultValue="GOOD">
-          <option value="NEW">New</option>
-          <option value="LIKE_NEW">Like new</option>
-          <option value="GOOD">Good</option>
-          <option value="FAIR">Fair</option>
-          <option value="FOR_PARTS">For parts</option>
+          <option value="NEW">{l.conditionNew}</option>
+          <option value="LIKE_NEW">{l.conditionLikeNew}</option>
+          <option value="GOOD">{l.conditionGood}</option>
+          <option value="FAIR">{l.conditionFair}</option>
+          <option value="FOR_PARTS">{l.conditionParts}</option>
         </select>
       </div>
 
       <div className="field">
-        <label htmlFor="brand">Brand (optional)</label>
+        <label htmlFor="brand">{l.brandOptional}</label>
         <input id="brand" name="brand" type="text" maxLength={120} />
       </div>
     </>
   );
 }
 
-function JobFields({ errors }: FieldProps) {
+function JobFields({ errors, labels: l }: FieldProps) {
   return (
     <>
       <div className={fieldClass(errors, 'companyName')}>
-        <label htmlFor="companyName">Company name</label>
+        <label htmlFor="companyName">{l.companyName}</label>
         <input id="companyName" name="companyName" type="text" required maxLength={180} />
         <FieldError errors={errors} name="companyName" />
       </div>
 
       <div className="field">
-        <label htmlFor="employmentType">Employment type</label>
+        <label htmlFor="employmentType">{l.employmentType}</label>
         <select id="employmentType" name="employmentType" defaultValue="FULL_TIME">
-          <option value="FULL_TIME">Full-time</option>
-          <option value="PART_TIME">Part-time</option>
-          <option value="CONTRACT">Contract</option>
-          <option value="INTERNSHIP">Internship</option>
-          <option value="FREELANCE">Freelance</option>
-          <option value="TEMPORARY">Temporary</option>
-          <option value="DAILY_WAGE">Daily wage</option>
+          <option value="FULL_TIME">{l.fullTime}</option>
+          <option value="PART_TIME">{l.partTime}</option>
+          <option value="CONTRACT">{l.contract}</option>
+          <option value="INTERNSHIP">{l.internship}</option>
+          <option value="FREELANCE">{l.freelance}</option>
+          <option value="TEMPORARY">{l.temporary}</option>
+          <option value="DAILY_WAGE">{l.dailyWage}</option>
         </select>
       </div>
 
       <div className="field">
-        <label htmlFor="workplaceType">Where is the work?</label>
+        <label htmlFor="workplaceType">{l.workplaceType}</label>
         <select id="workplaceType" name="workplaceType" defaultValue="ON_SITE">
-          <option value="ON_SITE">On-site</option>
-          <option value="HYBRID">Hybrid</option>
-          <option value="REMOTE">Remote</option>
+          <option value="ON_SITE">{l.onSite}</option>
+          <option value="HYBRID">{l.hybrid}</option>
+          <option value="REMOTE">{l.remote}</option>
         </select>
       </div>
 
       <div className={fieldClass(errors, 'salaryMax')}>
-        <label htmlFor="salaryMin">Salary range (₹ per month)</label>
+        <label htmlFor="salaryMin">{l.salaryRange}</label>
         <div style={{ display: 'flex', gap: 8 }}>
           <input
             id="salaryMin"
@@ -118,23 +119,21 @@ function JobFields({ errors }: FieldProps) {
             type="number"
             min="0"
             inputMode="numeric"
-            placeholder="Minimum"
+            placeholder={l.minimum}
           />
           <input
             name="salaryMax"
             type="number"
             min="0"
             inputMode="numeric"
-            placeholder="Maximum"
-            aria-label="Maximum salary"
+            placeholder={l.maximum}
+            aria-label={l.maximumSalary}
           />
         </div>
         <FieldError errors={errors} name="salaryMax" />
         {/* Stated rather than assumed: hidden salaries measurably reduce applications,
             so the default is to show it and the opt-out is explicit. */}
-        <p className="field__hint">
-          Jobs that show a salary get far more applicants. Untick only if you must.
-        </p>
+        <p className="field__hint">{l.salaryHint}</p>
         <label style={{ display: 'flex', gap: 8, alignItems: 'center', fontWeight: 400 }}>
           <input
             type="checkbox"
@@ -142,12 +141,12 @@ function JobFields({ errors }: FieldProps) {
             defaultChecked
             style={{ width: 'auto', minHeight: 'auto' }}
           />
-          Show the salary on the listing
+          {l.showSalary}
         </label>
       </div>
 
       <div className="field">
-        <label htmlFor="openings">Number of openings</label>
+        <label htmlFor="openings">{l.openings}</label>
         <input
           id="openings"
           name="openings"
@@ -159,24 +158,24 @@ function JobFields({ errors }: FieldProps) {
       </div>
 
       <div className={fieldClass(errors, 'externalApplyUrl')}>
-        <label htmlFor="applyMethod">How should people apply?</label>
+        <label htmlFor="applyMethod">{l.applyMethod}</label>
         <select id="applyMethod" name="applyMethod" defaultValue="IN_APP">
-          <option value="IN_APP">Message me on LocZ</option>
-          <option value="WALK_IN">Walk in</option>
-          <option value="PHONE">Call me</option>
-          <option value="EXTERNAL_LINK">Apply on our website</option>
+          <option value="IN_APP">{l.applyInApp}</option>
+          <option value="WALK_IN">{l.applyWalkIn}</option>
+          <option value="PHONE">{l.applyPhone}</option>
+          <option value="EXTERNAL_LINK">{l.applyWebsite}</option>
         </select>
         <input
           name="externalApplyUrl"
           type="url"
-          placeholder="https://… (only for website applications)"
+          placeholder={l.websitePlaceholder}
           style={{ marginTop: 8 }}
         />
         <FieldError errors={errors} name="externalApplyUrl" />
         <textarea
           name="walkInDetails"
           rows={2}
-          placeholder="Walk-in address and timings (only for walk-in)"
+          placeholder={l.walkInPlaceholder}
           style={{ marginTop: 8 }}
         />
       </div>
@@ -184,13 +183,13 @@ function JobFields({ errors }: FieldProps) {
   );
 }
 
-function OfferFields({ errors }: FieldProps) {
+function OfferFields({ errors, labels: l }: FieldProps) {
   const today = new Date().toISOString().slice(0, 10);
 
   return (
     <>
       <div className={fieldClass(errors, 'offerPrice')}>
-        <label htmlFor="originalPrice">Prices (₹)</label>
+        <label htmlFor="originalPrice">{l.prices}</label>
         <div style={{ display: 'flex', gap: 8 }}>
           <input
             id="originalPrice"
@@ -198,127 +197,127 @@ function OfferFields({ errors }: FieldProps) {
             type="number"
             min="0"
             inputMode="numeric"
-            placeholder="Usual price"
+            placeholder={l.usualPrice}
           />
           <input
             name="offerPrice"
             type="number"
             min="0"
             inputMode="numeric"
-            placeholder="Offer price"
-            aria-label="Offer price"
+            placeholder={l.offerPrice}
+            aria-label={l.offerPrice}
           />
         </div>
         <FieldError errors={errors} name="offerPrice" />
         {/* The discount is computed by the API from these two numbers, so a listing can
             never advertise a percentage its own prices contradict. */}
-        <p className="field__hint">The discount percentage is worked out from these.</p>
+        <p className="field__hint">{l.discountHint}</p>
       </div>
 
       <div className={fieldClass(errors, 'endsAt')}>
-        <label htmlFor="startsAt">Valid from / until</label>
+        <label htmlFor="startsAt">{l.validDates}</label>
         <div style={{ display: 'flex', gap: 8 }}>
           <input id="startsAt" name="startsAt" type="date" required defaultValue={today} />
-          <input name="endsAt" type="date" required aria-label="Offer end date" />
+          <input name="endsAt" type="date" required aria-label={l.offerEndDate} />
         </div>
         <FieldError errors={errors} name="endsAt" />
       </div>
 
       <div className="field">
-        <label htmlFor="couponCode">Coupon code (optional)</label>
+        <label htmlFor="couponCode">{l.couponOptional}</label>
         <input id="couponCode" name="couponCode" type="text" maxLength={40} placeholder="LOCZ30" />
       </div>
 
       <div className="field">
-        <label htmlFor="redemptionInstructions">How do people claim it?</label>
+        <label htmlFor="redemptionInstructions">{l.claimMethod}</label>
         <textarea
           id="redemptionInstructions"
           name="redemptionInstructions"
           rows={2}
           maxLength={1000}
-          placeholder="Show this ad at the counter"
+          placeholder={l.claimPlaceholder}
         />
       </div>
     </>
   );
 }
 
-function ServiceFields({ errors }: FieldProps) {
+function ServiceFields({ errors, labels: l }: FieldProps) {
   return (
     <>
       <div className="field">
-        <label htmlFor="serviceType">What service do you provide?</label>
+        <label htmlFor="serviceType">{l.serviceType}</label>
         <input
           id="serviceType"
           name="serviceType"
           type="text"
           maxLength={120}
-          placeholder="Plumbing, tuition, catering…"
+          placeholder={l.servicePlaceholder}
         />
       </div>
 
       <div className={fieldClass(errors, 'priceFrom')}>
-        <label htmlFor="priceFrom">Charges (₹)</label>
+        <label htmlFor="priceFrom">{l.charges}</label>
         <div style={{ display: 'flex', gap: 8 }}>
-          <input id="priceFrom" name="priceFrom" type="number" min="0" placeholder="From" />
+          <input id="priceFrom" name="priceFrom" type="number" min="0" placeholder={l.from} />
           <input
             name="priceTo"
             type="number"
             min="0"
-            placeholder="To"
-            aria-label="Maximum charge"
+            placeholder={l.to}
+            aria-label={l.maximumCharge}
           />
         </div>
         <input
           name="pricingUnit"
           type="text"
           maxLength={40}
-          placeholder="per visit / per hour / per month"
+          placeholder={l.pricingUnit}
           style={{ marginTop: 8 }}
         />
         <FieldError errors={errors} name="priceFrom" />
       </div>
 
       <div className="field">
-        <label htmlFor="experienceYears">Years of experience</label>
+        <label htmlFor="experienceYears">{l.experienceYears}</label>
         <input id="experienceYears" name="experienceYears" type="number" min="0" max="60" />
       </div>
 
       <div className="field">
-        <label htmlFor="availability">When are you available?</label>
+        <label htmlFor="availability">{l.availability}</label>
         <input
           id="availability"
           name="availability"
           type="text"
           maxLength={180}
-          placeholder="Mon–Sat, 8am–8pm"
+          placeholder={l.availabilityPlaceholder}
         />
         <label style={{ display: 'flex', gap: 8, alignItems: 'center', fontWeight: 400 }}>
           <input type="checkbox" name="servesAtHome" style={{ width: 'auto', minHeight: 'auto' }} />
-          I visit the customer
+          {l.visitCustomer}
         </label>
       </div>
     </>
   );
 }
 
-function RentalFields({ errors }: FieldProps) {
+function RentalFields({ errors, labels: l }: FieldProps) {
   return (
     <>
       <div className="field">
-        <label htmlFor="propertyType">Property type</label>
+        <label htmlFor="propertyType">{l.propertyType}</label>
         <select id="propertyType" name="propertyType" defaultValue="FLAT">
-          <option value="ROOM">Room</option>
-          <option value="FLAT">Flat</option>
-          <option value="HOUSE">House</option>
-          <option value="PG">PG / hostel</option>
-          <option value="SHOP">Shop</option>
-          <option value="OFFICE">Office</option>
+          <option value="ROOM">{l.room}</option>
+          <option value="FLAT">{l.flat}</option>
+          <option value="HOUSE">{l.house}</option>
+          <option value="PG">{l.pgHostel}</option>
+          <option value="SHOP">{l.shop}</option>
+          <option value="OFFICE">{l.office}</option>
         </select>
       </div>
 
       <div className={fieldClass(errors, 'rentAmount')}>
-        <label htmlFor="rentAmount">Rent and deposit (₹)</label>
+        <label htmlFor="rentAmount">{l.rentDeposit}</label>
         <div style={{ display: 'flex', gap: 8 }}>
           <input
             id="rentAmount"
@@ -326,84 +325,91 @@ function RentalFields({ errors }: FieldProps) {
             type="number"
             min="0"
             inputMode="numeric"
-            placeholder="Monthly rent"
+            placeholder={l.monthlyRent}
           />
           <input
             name="depositAmount"
             type="number"
             min="0"
             inputMode="numeric"
-            placeholder="Deposit"
-            aria-label="Deposit"
+            placeholder={l.deposit}
+            aria-label={l.deposit}
           />
         </div>
         <FieldError errors={errors} name="rentAmount" />
       </div>
 
       <div className="field">
-        <label htmlFor="bedrooms">Bedrooms / bathrooms / area</label>
+        <label htmlFor="bedrooms">{l.bedBathArea}</label>
         <div style={{ display: 'flex', gap: 8 }}>
-          <input id="bedrooms" name="bedrooms" type="number" min="0" max="20" placeholder="Beds" />
+          <input
+            id="bedrooms"
+            name="bedrooms"
+            type="number"
+            min="0"
+            max="20"
+            placeholder={l.beds}
+          />
           <input
             name="bathrooms"
             type="number"
             min="0"
             max="20"
-            placeholder="Baths"
-            aria-label="Bathrooms"
+            placeholder={l.baths}
+            aria-label={l.bathrooms}
           />
           <input
             name="areaSqft"
             type="number"
             min="1"
-            placeholder="sq ft"
-            aria-label="Area in square feet"
+            placeholder={l.squareFeet}
+            aria-label={l.areaSquareFeet}
           />
         </div>
       </div>
 
       <div className="field">
-        <label htmlFor="furnishing">Furnishing</label>
+        <label htmlFor="furnishing">{l.furnishing}</label>
         <select id="furnishing" name="furnishing" defaultValue="UNFURNISHED">
-          <option value="UNFURNISHED">Unfurnished</option>
-          <option value="SEMI">Semi-furnished</option>
-          <option value="FULL">Fully furnished</option>
+          <option value="UNFURNISHED">{l.unfurnished}</option>
+          <option value="SEMI">{l.semiFurnished}</option>
+          <option value="FULL">{l.fullyFurnished}</option>
         </select>
       </div>
 
       <div className="field">
-        <label htmlFor="preferredTenant">Preferred tenant</label>
+        <label htmlFor="preferredTenant">{l.preferredTenant}</label>
         <input
           id="preferredTenant"
           name="preferredTenant"
           type="text"
           maxLength={60}
-          placeholder="Family / bachelors / anyone"
+          placeholder={l.tenantPlaceholder}
         />
       </div>
     </>
   );
 }
 
-function EventFields({ errors }: FieldProps) {
+function EventFields({ errors, labels: l }: FieldProps) {
   return (
     <>
       <div className={fieldClass(errors, 'startsAt')}>
-        <label htmlFor="startsAt">Starts / ends</label>
+        <label htmlFor="startsAt">{l.startsEnds}</label>
         <div style={{ display: 'flex', gap: 8 }}>
           <input id="startsAt" name="startsAt" type="datetime-local" required />
-          <input name="endsAt" type="datetime-local" aria-label="Event end" />
+          <input name="endsAt" type="datetime-local" aria-label={l.eventEnd} />
         </div>
         <FieldError errors={errors} name="startsAt" />
       </div>
 
       <div className="field">
-        <label htmlFor="venueName">Venue</label>
+        <label htmlFor="venueName">{l.venue}</label>
         <input id="venueName" name="venueName" type="text" maxLength={180} />
       </div>
 
       <div className="field">
-        <label htmlFor="ticketPrice">Entry</label>
+        <label htmlFor="ticketPrice">{l.entry}</label>
         <label style={{ display: 'flex', gap: 8, alignItems: 'center', fontWeight: 400 }}>
           <input
             type="checkbox"
@@ -411,56 +417,56 @@ function EventFields({ errors }: FieldProps) {
             defaultChecked
             style={{ width: 'auto', minHeight: 'auto' }}
           />
-          Free entry
+          {l.freeEntry}
         </label>
         <input
           id="ticketPrice"
           name="ticketPrice"
           type="number"
           min="0"
-          placeholder="Ticket price (₹)"
+          placeholder={l.ticketPrice}
           style={{ marginTop: 8 }}
         />
       </div>
 
       <div className="field">
-        <label htmlFor="organiser">Organiser</label>
+        <label htmlFor="organiser">{l.organiser}</label>
         <input id="organiser" name="organiser" type="text" maxLength={180} />
       </div>
     </>
   );
 }
 
-function BuyerRequirementFields({ errors }: FieldProps) {
+function BuyerRequirementFields({ errors, labels: l }: FieldProps) {
   return (
     <>
       <div className={fieldClass(errors, 'budgetMax')}>
-        <label htmlFor="budgetMin">Your budget (₹)</label>
+        <label htmlFor="budgetMin">{l.yourBudget}</label>
         <div style={{ display: 'flex', gap: 8 }}>
-          <input id="budgetMin" name="budgetMin" type="number" min="0" placeholder="From" />
+          <input id="budgetMin" name="budgetMin" type="number" min="0" placeholder={l.from} />
           <input
             name="budgetMax"
             type="number"
             min="0"
-            placeholder="Up to"
-            aria-label="Maximum budget"
+            placeholder={l.upTo}
+            aria-label={l.maximumBudget}
           />
         </div>
         <FieldError errors={errors} name="budgetMax" />
       </div>
 
       <div className="field">
-        <label htmlFor="requiredBy">Needed by (optional)</label>
+        <label htmlFor="requiredBy">{l.neededByOptional}</label>
         <input id="requiredBy" name="requiredBy" type="date" />
       </div>
 
       <div className="field">
-        <label htmlFor="preferredCondition">Condition you would accept</label>
+        <label htmlFor="preferredCondition">{l.acceptedCondition}</label>
         <select id="preferredCondition" name="preferredCondition" defaultValue="GOOD">
-          <option value="NEW">New only</option>
-          <option value="LIKE_NEW">Like new or better</option>
-          <option value="GOOD">Good or better</option>
-          <option value="FAIR">Anything working</option>
+          <option value="NEW">{l.newOnly}</option>
+          <option value="LIKE_NEW">{l.likeNewBetter}</option>
+          <option value="GOOD">{l.goodBetter}</option>
+          <option value="FAIR">{l.anythingWorking}</option>
         </select>
       </div>
     </>

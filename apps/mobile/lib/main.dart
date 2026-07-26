@@ -1,22 +1,138 @@
+import 'dart:async';
+import 'dart:ui';
+
+import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'core/config/env.dart';
 import 'core/i18n/strings.dart';
+import 'core/notifications/firebase_config.dart';
+import 'core/notifications/push_service.dart';
+import 'core/notifications/push_token_registrar.dart';
+import 'core/observability/mobile_error_reporter.dart';
 import 'core/providers.dart';
 import 'core/router/app_router.dart';
 import 'core/theme/app_theme.dart';
 
 Future<void> main() async {
-  WidgetsFlutterBinding.ensureInitialized();
+  final reporter = MobileErrorReporter();
 
-  // Firebase is intentionally *not* initialised here. It requires
-  // google-services.json / GoogleService-Info.plist, which are not committed, so the app
-  // must run without them. PushService is started from the account screen once a project
-  // is configured — see docs/MOBILE_SETUP.md.
+  await runZonedGuarded(
+    () async {
+      WidgetsFlutterBinding.ensureInitialized();
+      FlutterError.onError = (details) {
+        FlutterError.presentError(details);
+        unawaited(
+          reporter.capture(
+            details.exception,
+            details.stack ?? StackTrace.current,
+            mechanism: 'flutter_framework',
+          ),
+        );
+      };
+      PlatformDispatcher.instance.onError = (error, stack) {
+        unawaited(
+          reporter.capture(error, stack, mechanism: 'platform_dispatcher'),
+        );
+        return true;
+      };
 
-  runApp(const ProviderScope(child: LoczApp()));
+      final firebaseReady = await LoczFirebaseConfig.initialise();
+      if (firebaseReady) {
+        FirebaseMessaging.onBackgroundMessage(
+          _firebaseMessagingBackgroundHandler,
+        );
+      }
+
+      runApp(
+        ProviderScope(
+          child: PushBootstrap(
+            enabled: firebaseReady,
+            child: const LoczApp(),
+          ),
+        ),
+      );
+    },
+    (error, stack) {
+      unawaited(reporter.capture(error, stack, mechanism: 'dart_zone'));
+    },
+  );
+}
+
+@pragma('vm:entry-point')
+Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
+  final options = LoczFirebaseConfig.currentPlatform;
+  if (options != null && Firebase.apps.isEmpty) {
+    await Firebase.initializeApp(options: options);
+  }
+}
+
+class PushBootstrap extends ConsumerStatefulWidget {
+  const PushBootstrap({
+    required this.enabled,
+    required this.child,
+    super.key,
+  });
+
+  final bool enabled;
+  final Widget child;
+
+  @override
+  ConsumerState<PushBootstrap> createState() => _PushBootstrapState();
+}
+
+class _PushBootstrapState extends ConsumerState<PushBootstrap> {
+  late final PushTokenRegistrar _registrar;
+  ProviderSubscription<AuthState>? _authSubscription;
+  PushService? _service;
+
+  @override
+  void initState() {
+    super.initState();
+    _registrar = PushTokenRegistrar(
+      (token) => ref.read(authRepositoryProvider).updatePushToken(token),
+    );
+    _authSubscription = ref.listenManual<AuthState>(
+      authProvider,
+      (_, next) => unawaited(_registrar.setSignedIn(next.isSignedIn)),
+      fireImmediately: true,
+    );
+
+    if (widget.enabled) {
+      final service = PushService(
+        _registrar.receiveToken,
+        _openRoute,
+      );
+      _service = service;
+      ref.read(pushPermissionProvider.notifier).attach(service);
+      unawaited(service.initialise());
+    }
+  }
+
+  void _openRoute(String route) {
+    if (!mounted) return;
+    final safeRoute = route.startsWith('/') ? route : '/notifications';
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) ref.read(routerProvider).go(safeRoute);
+    });
+  }
+
+  @override
+  void dispose() {
+    _authSubscription?.close();
+    final service = _service;
+    if (service != null) {
+      ref.read(pushPermissionProvider.notifier).detach(service);
+      unawaited(service.dispose());
+    }
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) => widget.child;
 }
 
 class LoczApp extends ConsumerWidget {

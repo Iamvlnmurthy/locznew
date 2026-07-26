@@ -12,7 +12,9 @@ class ChatRepository {
   Future<List<ConversationSummary>> conversations() async {
     final json = await _api.get<Map<String, dynamic>>('/conversations', query: {'limit': 50});
     return (json['items'] as List<dynamic>)
-        .map((entry) => ConversationSummary.fromJson(entry as Map<String, dynamic>))
+        .map(
+          (entry) => ConversationSummary.fromJson(entry as Map<String, dynamic>),
+        )
         .toList();
   }
 
@@ -48,7 +50,7 @@ class ChatRepository {
   }
 
   Future<void> block(String userId, {String? reason}) => _api.post<void>(
-    '/conversations/block',
-    body: {'userId': userId, if (reason != null) 'reason': reason},
-  );
+        '/conversations/block',
+        body: {'userId': userId, if (reason != null) 'reason': reason},
+      );
 }

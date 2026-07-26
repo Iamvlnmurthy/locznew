@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
@@ -137,6 +138,8 @@ class _PostAdScreenState extends ConsumerState<PostAdScreen> {
       if (!mounted) return;
       ref.invalidate(myListingsProvider);
       ref.invalidate(feedProvider);
+      // Ask only after publishing, when moderation and enquiry updates have context.
+      unawaited(ref.read(pushPermissionProvider.notifier).request());
       setState(() => _submitting = false);
     } on ApiException catch (error) {
       if (mounted) {
@@ -162,7 +165,10 @@ class _PostAdScreenState extends ConsumerState<PostAdScreen> {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Text(strings('post.loginRequired'), textAlign: TextAlign.center),
+                Text(
+                  strings('post.loginRequired'),
+                  textAlign: TextAlign.center,
+                ),
                 const SizedBox(height: LoczSpacing.x4),
                 FilledButton(
                   onPressed: () => context.push('/signin?next=/post'),
@@ -193,7 +199,10 @@ class _PostAdScreenState extends ConsumerState<PostAdScreen> {
         child: ListView(
           padding: const EdgeInsets.all(LoczSpacing.x4),
           children: [
-            Text(strings('post.subtitle'), style: Theme.of(context).textTheme.bodyMedium),
+            Text(
+              strings('post.subtitle'),
+              style: Theme.of(context).textTheme.bodyMedium,
+            ),
             const SizedBox(height: LoczSpacing.x4),
             if (_error != null)
               Container(
@@ -203,7 +212,10 @@ class _PostAdScreenState extends ConsumerState<PostAdScreen> {
                   color: LoczColors.dangerSurface,
                   borderRadius: BorderRadius.circular(LoczRadius.md),
                 ),
-                child: Text(_error!, style: const TextStyle(color: LoczColors.danger)),
+                child: Text(
+                  _error!,
+                  style: const TextStyle(color: LoczColors.danger),
+                ),
               ),
             TextFormField(
               controller: _titleController,
@@ -224,7 +236,12 @@ class _PostAdScreenState extends ConsumerState<PostAdScreen> {
                     options.add(MapEntry(category.id, category.name));
                   } else {
                     for (final child in category.children) {
-                      options.add(MapEntry(child.id, '${category.name} › ${child.name}'));
+                      options.add(
+                        MapEntry(
+                          child.id,
+                          '${category.name} › ${child.name}',
+                        ),
+                      );
                     }
                   }
                 }
@@ -237,7 +254,10 @@ class _PostAdScreenState extends ConsumerState<PostAdScreen> {
                       .map(
                         (option) => DropdownMenuItem(
                           value: option.key,
-                          child: Text(option.value, overflow: TextOverflow.ellipsis),
+                          child: Text(
+                            option.value,
+                            overflow: TextOverflow.ellipsis,
+                          ),
                         ),
                       )
                       .toList(),
@@ -260,7 +280,10 @@ class _PostAdScreenState extends ConsumerState<PostAdScreen> {
               enabled: !_isFree,
               keyboardType: TextInputType.number,
               inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-              decoration: InputDecoration(labelText: strings('post.fieldPrice'), prefixText: '₹ '),
+              decoration: InputDecoration(
+                labelText: strings('post.fieldPrice'),
+                prefixText: '₹ ',
+              ),
             ),
             CheckboxListTile(
               value: _isFree,
@@ -295,7 +318,12 @@ class _PostAdScreenState extends ConsumerState<PostAdScreen> {
                 isExpanded: true,
                 decoration: InputDecoration(labelText: strings('post.fieldCity')),
                 items: list
-                    .map((city) => DropdownMenuItem(value: city.id, child: Text(city.name)))
+                    .map(
+                      (city) => DropdownMenuItem(
+                        value: city.id,
+                        child: Text(city.name),
+                      ),
+                    )
                     .toList(),
                 onChanged: (value) => setState(() => _cityId = value),
                 validator: (value) => value == null ? strings('common.error') : null,
@@ -307,15 +335,30 @@ class _PostAdScreenState extends ConsumerState<PostAdScreen> {
               isExpanded: true,
               decoration: const InputDecoration(labelText: 'Contact preference'),
               items: const [
-                DropdownMenuItem(value: 'IN_APP_ONLY', child: Text('Messages on LocZ only')),
-                DropdownMenuItem(value: 'PHONE_AND_IN_APP', child: Text('Phone and messages')),
-                DropdownMenuItem(value: 'PHONE', child: Text('Show my phone number')),
+                DropdownMenuItem(
+                  value: 'IN_APP_ONLY',
+                  child: Text('Messages on LocZ only'),
+                ),
+                DropdownMenuItem(
+                  value: 'PHONE_AND_IN_APP',
+                  child: Text('Phone and messages'),
+                ),
+                DropdownMenuItem(
+                  value: 'PHONE',
+                  child: Text('Show my phone number'),
+                ),
               ],
               onChanged: (value) => setState(() => _contactPreference = value ?? 'IN_APP_ONLY'),
             ),
             const SizedBox(height: LoczSpacing.x6),
-            Text(strings('post.photos'), style: Theme.of(context).textTheme.titleMedium),
-            Text(strings('post.photosHint'), style: Theme.of(context).textTheme.labelSmall),
+            Text(
+              strings('post.photos'),
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
+            Text(
+              strings('post.photosHint'),
+              style: Theme.of(context).textTheme.labelSmall,
+            ),
             const SizedBox(height: LoczSpacing.x3),
             SizedBox(
               height: 96,
@@ -329,7 +372,12 @@ class _PostAdScreenState extends ConsumerState<PostAdScreen> {
                         children: [
                           ClipRRect(
                             borderRadius: BorderRadius.circular(LoczRadius.md),
-                            child: Image.file(image.file, width: 96, height: 96, fit: BoxFit.cover),
+                            child: Image.file(
+                              image.file,
+                              width: 96,
+                              height: 96,
+                              fit: BoxFit.cover,
+                            ),
                           ),
                           if (_submitting && image.progress < 1 && !image.failed)
                             Positioned.fill(
@@ -348,7 +396,10 @@ class _PostAdScreenState extends ConsumerState<PostAdScreen> {
                             const Positioned.fill(
                               child: ColoredBox(
                                 color: Colors.black45,
-                                child: Icon(Icons.error_outline, color: Colors.white),
+                                child: Icon(
+                                  Icons.error_outline,
+                                  color: Colors.white,
+                                ),
                               ),
                             ),
                           if (!_submitting)
@@ -360,7 +411,11 @@ class _PostAdScreenState extends ConsumerState<PostAdScreen> {
                                 child: const CircleAvatar(
                                   radius: 12,
                                   backgroundColor: Colors.black54,
-                                  child: Icon(Icons.close, size: 14, color: Colors.white),
+                                  child: Icon(
+                                    Icons.close,
+                                    size: 14,
+                                    color: Colors.white,
+                                  ),
                                 ),
                               ),
                             ),
@@ -375,7 +430,9 @@ class _PostAdScreenState extends ConsumerState<PostAdScreen> {
                         height: 96,
                         decoration: BoxDecoration(
                           borderRadius: BorderRadius.circular(LoczRadius.md),
-                          border: Border.all(color: Theme.of(context).colorScheme.outline),
+                          border: Border.all(
+                            color: Theme.of(context).colorScheme.outline,
+                          ),
                         ),
                         child: const Icon(Icons.add_a_photo_outlined),
                       ),
@@ -386,7 +443,9 @@ class _PostAdScreenState extends ConsumerState<PostAdScreen> {
             const SizedBox(height: LoczSpacing.x8),
             FilledButton(
               onPressed: _submitting ? null : _submit,
-              child: Text(_submitting ? strings('post.publishing') : strings('post.publish')),
+              child: Text(
+                _submitting ? strings('post.publishing') : strings('post.publish'),
+              ),
             ),
             const SizedBox(height: LoczSpacing.x8),
           ],
@@ -397,7 +456,11 @@ class _PostAdScreenState extends ConsumerState<PostAdScreen> {
 }
 
 class _SuccessScreen extends StatelessWidget {
-  const _SuccessScreen({required this.published, required this.slug, required this.strings});
+  const _SuccessScreen({
+    required this.published,
+    required this.slug,
+    required this.strings,
+  });
 
   final bool published;
   final String slug;

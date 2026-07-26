@@ -45,7 +45,7 @@ export function matchesKeyword(text: string, keyword: string): boolean {
     .toLowerCase()
     .split(/\s+/)
     .filter(Boolean)
-    .map((word) => word.replace(/[.*+?^${}()|[\]\\]/g, '\$&'));
+    .map((word) => word.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
 
   if (words.length === 0) return false;
 

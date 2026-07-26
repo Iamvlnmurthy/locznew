@@ -145,8 +145,9 @@ vendor response:
 None of the restricted read, evidence, or transition permissions is assigned to moderator
 or administrator roles. `CHILD_SAFETY_OFFICER` is provisioned with exactly those five
 permissions and no ordinary moderation or platform-administration powers. Assign it only to
-named, trained officers through the approved access procedure; the super-administrator
-wildcard remains the emergency bootstrap path.
+named, trained officers through the approved access procedure. The super-administrator
+wildcard explicitly does not confer any `safety:*` permission; an administrator who must
+assist needs the same deliberate role grant and audit boundary as every other officer.
 
 Closing a case is not evidence deletion. This implementation intentionally has no timed
 purge for legal-hold objects: the reporting authority, retention period, release criteria,
@@ -173,6 +174,43 @@ not architectural: production must use a vetted PhotoDNA or Thorn Safer account 
 the deliberately unavailable placeholder provider, and named officers need an approved
 reporting and retention procedure. Production preflight refuses the placeholder so this gap
 cannot silently become a launch configuration.
+
+The live API and database workflow can be regression-checked locally without illegal material
+or a fabricated provider response:
+
+```bash
+ALLOW_SYNTHETIC_SAFETY_VERIFICATION=1 npm run verify:safety
+```
+
+The command refuses production and non-local databases, labels its harmless seed case
+`SYNTHETIC_VERIFICATION`, and restores every touched row even when a check fails.
+
+### Protected-hash provider onboarding gate
+
+Do not add a provider name to `PROTECTED_HASH_PROVIDER` until all of these are true:
+
+1. The organization has completed the provider's vetting and accepted its purpose and
+   audit terms.
+2. Engineering has the subscriber-only API schema and maps it into only `NO_MATCH`,
+   `MATCH`, or `UNAVAILABLE`. Raw provider hashes and vendor payloads must not cross the
+   adapter boundary.
+3. A confirmed match includes a bounded provider name, reason code, and opaque reference.
+   A malformed response, timeout, throttle, or authentication error must become
+   `UNAVAILABLE`, never `NO_MATCH`.
+4. The provider's benign integration environment proves no-match, simulated match,
+   malformed-response, timeout, and throttling behavior without possessing illegal
+   material.
+5. Security verifies secret storage, rotation, least privilege, log redaction, quotas,
+   regional data flow, retention, and incident contacts.
+6. Legal and the named child-safety officer approve the reporting and evidence-retention
+   procedure for every launch jurisdiction.
+
+Microsoft states that PhotoDNA access and detailed API material follow vetting, provides a
+benign integration environment for simulated hits, and does not retain submitted images.
+See the official [PhotoDNA documentation](https://www.microsoft.com/en-us/PhotoDNA/Documentation)
+and [FAQ](https://www.microsoft.com/en-us/PhotoDNA/FAQ). Thorn describes Safer Match as an
+API-based known-material hashing and matching service; its vendor-specific contract must
+likewise come from the approved customer documentation, not assumptions in this repository.
 
 ---
 

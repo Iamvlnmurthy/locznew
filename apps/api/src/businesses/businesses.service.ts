@@ -5,16 +5,25 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { ListingStatus, Prisma, RoleName, VerificationStatus } from '@prisma/client';
+import {
+  ListingStatus,
+  NotificationType,
+  Prisma,
+  RoleName,
+  VerificationStatus,
+} from '@prisma/client';
 import { v7 as uuid } from 'uuid';
 import { AuditService } from '../audit/audit.service';
+import { paginate, PaginatedDto } from '../common/dto/pagination.dto';
 import { slugify } from '../common/utils/slug.util';
 import { PrismaService } from '../prisma/prisma.service';
 import { RbacService } from '../rbac/rbac.service';
 import { StorageService } from '../media/storage.service';
+import { NotificationsService } from '../notifications/notifications.service';
 import {
   AddStaffDto,
   BusinessDetailDto,
+  BusinessSearchQueryDto,
   BusinessStaffDto,
   BusinessSummaryDto,
   CreateBusinessDto,
@@ -31,6 +40,7 @@ const STAFF_PERMISSIONS: Record<string, string[]> = {
 const BUSINESS_INCLUDE = {
   category: { select: { name: true } },
   city: { select: { name: true } },
+  address: { select: { line1: true } },
   hours: true,
   _count: { select: { listings: true } },
 } satisfies Prisma.BusinessInclude;
@@ -51,7 +61,57 @@ export class BusinessesService {
     private readonly rbac: RbacService,
     private readonly audit: AuditService,
     private readonly storage: StorageService,
+    private readonly notifications: NotificationsService,
   ) {}
+
+  async listPublic(query: BusinessSearchQueryDto): Promise<PaginatedDto<BusinessSummaryDto>> {
+    const term = query.q?.trim();
+    const where: Prisma.BusinessWhereInput = {
+      deletedAt: null,
+      isActive: true,
+      ...(query.cityId ? { cityId: query.cityId } : {}),
+      ...(query.categoryId ? { categoryId: query.categoryId } : {}),
+      ...(query.verificationStatus
+        ? { verificationStatus: query.verificationStatus }
+        : query.verifiedOnly
+          ? { verificationStatus: VerificationStatus.VERIFIED }
+          : {}),
+      ...(term
+        ? {
+            OR: [
+              { name: { contains: term, mode: 'insensitive' } },
+              { description: { contains: term, mode: 'insensitive' } },
+              { category: { name: { contains: term, mode: 'insensitive' } } },
+            ],
+          }
+        : {}),
+    };
+
+    const orderBy: Prisma.BusinessOrderByWithRelationInput[] =
+      query.sort === 'newest'
+        ? [{ createdAt: 'desc' }]
+        : query.sort === 'popular'
+          ? [{ viewCount: 'desc' }, { createdAt: 'desc' }]
+          : [{ listings: { _count: 'desc' } }, { viewCount: 'desc' }, { createdAt: 'desc' }];
+
+    const [businesses, total] = await Promise.all([
+      this.prisma.business.findMany({
+        where,
+        include: BUSINESS_INCLUDE,
+        orderBy,
+        skip: query.skip,
+        take: query.limit,
+      }),
+      this.prisma.business.count({ where }),
+    ]);
+
+    return paginate(
+      businesses.map((business) => this.toSummary(business)),
+      total,
+      query.page,
+      query.limit,
+    );
+  }
 
   async create(userId: string, dto: CreateBusinessDto): Promise<BusinessDetailDto> {
     const [category, city] = await Promise.all([
@@ -71,40 +131,55 @@ export class BusinessesService {
     }
 
     const slug = await this.uniqueSlug(dto.name, city.name);
+    const addressId = dto.addressLine?.trim() ? uuid() : undefined;
+    const business = await this.prisma.$transaction(async (transaction) => {
+      if (addressId) {
+        await transaction.address.create({
+          data: {
+            id: addressId,
+            line1: dto.addressLine?.trim(),
+            cityId: dto.cityId,
+            latitude: dto.latitude ?? city.latitude,
+            longitude: dto.longitude ?? city.longitude,
+          },
+        });
+      }
 
-    const business = await this.prisma.business.create({
-      data: {
-        id: uuid(),
-        ownerId: userId,
-        name: dto.name.trim(),
-        slug,
-        categoryId: dto.categoryId,
-        cityId: dto.cityId,
-        description: dto.description,
-        // The `geo` column is derived from these by trigger (ADR-0009).
-        latitude: dto.latitude ?? city.latitude,
-        longitude: dto.longitude ?? city.longitude,
-        primaryPhone: dto.primaryPhone,
-        whatsappNumber: dto.whatsappNumber,
-        email: dto.email,
-        website: dto.website,
-        ...(dto.hours && dto.hours.length > 0
-          ? {
-              hours: {
-                createMany: {
-                  data: dto.hours.map((hour) => ({
-                    id: uuid(),
-                    dayOfWeek: hour.dayOfWeek,
-                    opensAt: hour.opensAt,
-                    closesAt: hour.closesAt,
-                    isClosed: hour.isClosed ?? false,
-                  })),
+      return transaction.business.create({
+        data: {
+          id: uuid(),
+          ownerId: userId,
+          name: dto.name.trim(),
+          slug,
+          categoryId: dto.categoryId,
+          cityId: dto.cityId,
+          addressId,
+          description: dto.description,
+          // The `geo` column is derived from these by trigger (ADR-0009).
+          latitude: dto.latitude ?? city.latitude,
+          longitude: dto.longitude ?? city.longitude,
+          primaryPhone: dto.primaryPhone,
+          whatsappNumber: dto.whatsappNumber,
+          email: dto.email,
+          website: dto.website,
+          ...(dto.hours && dto.hours.length > 0
+            ? {
+                hours: {
+                  createMany: {
+                    data: dto.hours.map((hour) => ({
+                      id: uuid(),
+                      dayOfWeek: hour.dayOfWeek,
+                      opensAt: hour.opensAt,
+                      closesAt: hour.closesAt,
+                      isClosed: hour.isClosed ?? false,
+                    })),
+                  },
                 },
-              },
-            }
-          : {}),
-      },
-      include: BUSINESS_INCLUDE,
+              }
+            : {}),
+        },
+        include: BUSINESS_INCLUDE,
+      });
     });
 
     // Registering a business is what makes someone a business owner — the role is
@@ -129,10 +204,13 @@ export class BusinessesService {
     });
     if (!business) throw new NotFoundException('Business not found');
 
-    // Best-effort view counter — a failure here must not break the page.
-    await this.prisma.business
-      .update({ where: { id: business.id }, data: { viewCount: { increment: 1 } } })
-      .catch(() => undefined);
+    // An owner opening their workspace is maintenance, not customer interest.
+    // Best-effort for real visitors — a counter failure must never break the profile.
+    if (viewerId !== business.ownerId) {
+      await this.prisma.business
+        .update({ where: { id: business.id }, data: { viewCount: { increment: 1 } } })
+        .catch(() => undefined);
+    }
 
     return this.toDetail(business, viewerId);
   }
@@ -157,6 +235,32 @@ export class BusinessesService {
     dto: UpdateBusinessDto,
   ): Promise<BusinessDetailDto> {
     const existing = await this.requireManageAccess(businessId, userId);
+    let newAddressId: string | undefined;
+
+    if (dto.addressLine !== undefined) {
+      if (existing.addressId) {
+        await this.prisma.address.update({
+          where: { id: existing.addressId },
+          data: {
+            line1: dto.addressLine.trim() || null,
+            cityId: dto.cityId,
+            latitude: dto.latitude,
+            longitude: dto.longitude,
+          },
+        });
+      } else if (dto.addressLine.trim()) {
+        const address = await this.prisma.address.create({
+          data: {
+            id: uuid(),
+            line1: dto.addressLine.trim(),
+            cityId: dto.cityId ?? existing.cityId,
+            latitude: dto.latitude ?? existing.latitude,
+            longitude: dto.longitude ?? existing.longitude,
+          },
+        });
+        newAddressId = address.id;
+      }
+    }
 
     const updated = await this.prisma.business.update({
       where: { id: businessId },
@@ -171,6 +275,7 @@ export class BusinessesService {
         website: dto.website,
         categoryId: dto.categoryId,
         cityId: dto.cityId,
+        ...(newAddressId ? { addressId: newAddressId } : {}),
         // Editing contact details or address invalidates a verification that was granted
         // against the old ones.
         ...(dto.name || dto.primaryPhone || dto.addressLine
@@ -313,6 +418,44 @@ export class BusinessesService {
     });
   }
 
+  async requestVerification(businessId: string, ownerId: string): Promise<void> {
+    const business = await this.prisma.business.findFirst({
+      where: { id: businessId, ownerId, deletedAt: null },
+      include: { hours: true },
+    });
+    if (!business) throw new NotFoundException('Business not found');
+    if (business.verificationStatus === VerificationStatus.VERIFIED) {
+      throw new ConflictException('This business is already verified');
+    }
+    if (business.verificationStatus === VerificationStatus.PENDING) {
+      throw new ConflictException('Verification is already under review');
+    }
+
+    const missing = [
+      !business.description?.trim() ? 'description' : null,
+      !business.addressId ? 'address' : null,
+      !business.primaryPhone ? 'business phone' : null,
+      business.hours.length === 0 ? 'opening hours' : null,
+    ].filter(Boolean);
+    if (missing.length > 0) {
+      throw new BadRequestException(
+        `Complete ${missing.join(', ')} before requesting verification`,
+      );
+    }
+
+    await this.prisma.business.update({
+      where: { id: businessId },
+      data: { verificationStatus: VerificationStatus.PENDING },
+    });
+    await this.audit.record({
+      action: 'business.verification_request',
+      entityType: 'Business',
+      entityId: businessId,
+      actorId: ownerId,
+      changes: { from: business.verificationStatus, to: VerificationStatus.PENDING },
+    });
+  }
+
   /** Administrator action — verification is a trust signal, never self-service. */
   async setVerification(
     businessId: string,
@@ -340,6 +483,23 @@ export class BusinessesService {
       actorId: adminId,
       actorRole: 'ADMINISTRATOR',
       changes: { from: business.verificationStatus, to: status, note: note ?? null },
+    });
+
+    const outcome =
+      status === VerificationStatus.VERIFIED
+        ? 'verified'
+        : status === VerificationStatus.REJECTED
+          ? 'not approved'
+          : status.toLowerCase();
+    await this.notifications.create({
+      userId: business.ownerId,
+      type: NotificationType.BUSINESS_VERIFICATION_UPDATE,
+      title: `Business verification ${outcome}`,
+      body:
+        status === VerificationStatus.VERIFIED
+          ? `${business.name} now shows the verified business badge.`
+          : `${business.name} verification is ${outcome}.${note ? ` ${note}` : ''}`,
+      data: { entityId: business.id, slug: business.slug, status },
     });
   }
 
@@ -423,6 +583,14 @@ export class BusinessesService {
       verificationStatus: business.verificationStatus,
       listingCount: business._count.listings,
       viewCount: business.viewCount,
+      description: business.description,
+      addressLine: business.address?.line1 ?? null,
+      hours: business.hours.map((hour) => ({
+        dayOfWeek: hour.dayOfWeek,
+        opensAt: hour.opensAt,
+        closesAt: hour.closesAt,
+        isClosed: hour.isClosed,
+      })),
     };
   }
 
@@ -430,7 +598,7 @@ export class BusinessesService {
     return {
       ...this.toSummary(business),
       description: business.description,
-      addressLine: null,
+      addressLine: business.address?.line1 ?? null,
       latitude: business.latitude ? Number(business.latitude) : null,
       longitude: business.longitude ? Number(business.longitude) : null,
       primaryPhone: business.primaryPhone,

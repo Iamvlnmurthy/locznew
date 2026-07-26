@@ -9,12 +9,11 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 /// credential the app holds.
 class TokenStorage {
   TokenStorage([FlutterSecureStorage? storage])
-    : _storage =
-          storage ??
-          const FlutterSecureStorage(
-            aOptions: AndroidOptions(encryptedSharedPreferences: true),
-            iOptions: IOSOptions(accessibility: KeychainAccessibility.first_unlock),
-          );
+      : _storage = storage ??
+            const FlutterSecureStorage(
+              aOptions: AndroidOptions(encryptedSharedPreferences: true),
+              iOptions: IOSOptions(accessibility: KeychainAccessibility.first_unlock),
+            );
 
   final FlutterSecureStorage _storage;
 
@@ -26,7 +25,10 @@ class TokenStorage {
   Future<String?> readAccessToken() => _storage.read(key: _accessKey);
   Future<String?> readRefreshToken() => _storage.read(key: _refreshKey);
 
-  Future<void> saveTokens({required String accessToken, required String refreshToken}) async {
+  Future<void> saveTokens({
+    required String accessToken,
+    required String refreshToken,
+  }) async {
     await _storage.write(key: _accessKey, value: accessToken);
     await _storage.write(key: _refreshKey, value: refreshToken);
   }
@@ -57,8 +59,10 @@ class TokenStorage {
     return generated;
   }
 
-  static String _random() =>
-      List.generate(8, (_) => '0123456789abcdef'[DateTime.now().microsecond % 16]).join();
+  static String _random() => List.generate(
+        8,
+        (_) => '0123456789abcdef'[DateTime.now().microsecond % 16],
+      ).join();
 
   Future<void> clear() async {
     await _storage.delete(key: _accessKey);

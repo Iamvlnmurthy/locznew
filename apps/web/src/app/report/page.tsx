@@ -18,7 +18,12 @@ export const metadata: Metadata = {
 export default async function ReportPage({
   searchParams,
 }: {
-  searchParams: Promise<{ listing?: string; business?: string; user?: string }>;
+  searchParams: Promise<{
+    listing?: string;
+    business?: string;
+    user?: string;
+    conversation?: string;
+  }>;
 }) {
   const [params, locale, currentUser] = await Promise.all([
     searchParams,
@@ -26,13 +31,23 @@ export default async function ReportPage({
     getCurrentUser(),
   ]);
 
-  const targetId = params.listing ?? params.business ?? params.user;
-  const targetType = params.listing ? 'LISTING' : params.business ? 'BUSINESS' : 'USER';
+  const targetId = params.listing ?? params.business ?? params.user ?? params.conversation;
+  const targetType = params.listing
+    ? 'LISTING'
+    : params.business
+      ? 'BUSINESS'
+      : params.conversation
+        ? 'MESSAGE'
+        : 'USER';
 
   if (!targetId) redirect('/');
   if (!currentUser) {
     redirect(
-      `/signin?next=${encodeURIComponent(`/report?${targetType.toLowerCase()}=${targetId}`)}`,
+      `/signin?next=${encodeURIComponent(
+        params.conversation
+          ? `/report?conversation=${targetId}`
+          : `/report?${targetType.toLowerCase()}=${targetId}`,
+      )}`,
     );
   }
 

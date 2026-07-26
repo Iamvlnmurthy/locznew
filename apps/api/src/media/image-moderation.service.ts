@@ -144,7 +144,7 @@ export class ImageModerationService {
         )
         .catch((error: unknown) => {
           this.logger.error(
-            `Could not remove ${listing.id} from the index: ${error instanceof Error ? error.message : error}`,
+            `Could not remove ${listing.id} from the index: ${error instanceof Error ? error.message : String(error)}`,
           );
         });
     }

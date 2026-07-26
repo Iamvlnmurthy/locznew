@@ -8,15 +8,18 @@ import {
   Param,
   Patch,
   Post,
+  Query,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { VerificationStatus } from '@prisma/client';
 import { AuthenticatedUser, CurrentUser } from '../common/decorators/current-user.decorator';
+import { PaginatedDto } from '../common/dto/pagination.dto';
 import { OptionalAuth, Public, RequirePermissions } from '../rbac/rbac.decorators';
 import { BusinessesService } from './businesses.service';
 import {
   AddStaffDto,
   BusinessDetailDto,
+  BusinessSearchQueryDto,
   BusinessStaffDto,
   BusinessSummaryDto,
   CreateBusinessDto,
@@ -27,6 +30,14 @@ import {
 @Controller('businesses')
 export class BusinessesController {
   constructor(private readonly businesses: BusinessesService) {}
+
+  @Public()
+  @Get()
+  @ApiOperation({ summary: 'Browse active local businesses' })
+  @ApiResponse({ status: 200, type: [BusinessSummaryDto] })
+  listPublic(@Query() query: BusinessSearchQueryDto): Promise<PaginatedDto<BusinessSummaryDto>> {
+    return this.businesses.listPublic(query);
+  }
 
   @Post()
   @ApiBearerAuth()
@@ -92,7 +103,6 @@ export class BusinessesController {
 
   @Post(':id/staff')
   @ApiBearerAuth()
-  @RequirePermissions('staff:manage')
   @ApiOperation({
     summary: 'Add a staff member by phone number',
     description: 'They must already have a LocZ account — this never sends an SMS invitation.',
@@ -109,7 +119,6 @@ export class BusinessesController {
   @Delete(':id/staff/:staffId')
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiBearerAuth()
-  @RequirePermissions('staff:manage')
   @ApiOperation({ summary: 'Remove a staff member' })
   removeStaff(
     @Param('id') id: string,
@@ -117,6 +126,21 @@ export class BusinessesController {
     @CurrentUser() user: AuthenticatedUser,
   ): Promise<void> {
     return this.businesses.removeStaff(id, user.id, staffId);
+  }
+
+  @Post(':id/verification-request')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary: 'Request administrator verification for an owned business',
+    description:
+      'Requires a description, address, phone number and opening hours. Repeated pending requests are rejected.',
+  })
+  requestVerification(
+    @Param('id') id: string,
+    @CurrentUser() user: AuthenticatedUser,
+  ): Promise<void> {
+    return this.businesses.requestVerification(id, user.id);
   }
 
   @Post(':id/verification')

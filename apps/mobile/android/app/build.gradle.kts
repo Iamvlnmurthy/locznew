@@ -1,9 +1,29 @@
+import java.util.Properties
+
 plugins {
     id("com.android.application")
     id("kotlin-android")
     // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.
     id("dev.flutter.flutter-gradle-plugin")
 }
+
+val signingProperties = Properties()
+val signingPropertiesFile = rootProject.file("key.properties")
+if (signingPropertiesFile.exists()) {
+    signingPropertiesFile.inputStream().use(signingProperties::load)
+}
+
+fun releaseSigningValue(property: String, environment: String): String? =
+    providers.environmentVariable(environment).orNull
+        ?: signingProperties.getProperty(property)
+
+val releaseStoreFile = releaseSigningValue("storeFile", "LOCZ_UPLOAD_STORE_FILE")
+val releaseStorePassword = releaseSigningValue("storePassword", "LOCZ_UPLOAD_STORE_PASSWORD")
+val releaseKeyAlias = releaseSigningValue("keyAlias", "LOCZ_UPLOAD_KEY_ALIAS")
+val releaseKeyPassword = releaseSigningValue("keyPassword", "LOCZ_UPLOAD_KEY_PASSWORD")
+val hasReleaseSigning =
+    listOf(releaseStoreFile, releaseStorePassword, releaseKeyAlias, releaseKeyPassword)
+        .all { !it.isNullOrBlank() }
 
 android {
     namespace = "com.locz.app"
@@ -33,12 +53,47 @@ android {
         versionName = flutter.versionName
     }
 
+    signingConfigs {
+        if (hasReleaseSigning) {
+            create("release") {
+                storeFile = rootProject.file(releaseStoreFile!!)
+                storePassword = releaseStorePassword
+                keyAlias = releaseKeyAlias
+                keyPassword = releaseKeyPassword
+            }
+        }
+    }
+
     buildTypes {
         release {
-            // Debug keys until the Play upload key exists — a release build must not be
-            // shipped from this configuration.
-            signingConfig = signingConfigs.getByName("debug")
+            // A store artifact must never be signed with Flutter's shared debug key.
+            if (hasReleaseSigning) {
+                signingConfig = signingConfigs.getByName("release")
+            }
         }
+    }
+}
+
+val verifyReleaseSigning by tasks.registering {
+    group = "verification"
+    description = "Fails release packaging when the LocZ upload-key configuration is absent."
+    doLast {
+        if (!hasReleaseSigning) {
+            throw GradleException(
+                "Release signing is not configured. Copy key.properties.example to " +
+                    "key.properties or set the four LOCZ_UPLOAD_* environment variables.",
+            )
+        }
+        val configuredStore = rootProject.file(releaseStoreFile!!)
+        if (!configuredStore.isFile) {
+            throw GradleException("Release keystore does not exist: ${configuredStore.absolutePath}")
+        }
+    }
+}
+
+tasks.configureEach {
+    if (name == "assembleRelease" || name == "bundleRelease" || name == "packageRelease") {
+        dependsOn(verifyReleaseSigning)
     }
 }
 

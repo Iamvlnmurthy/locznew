@@ -86,5 +86,8 @@ export async function clearSession(): Promise<void> {
 /** Convenience for rendering — the API remains the authority on every request. */
 export function hasPermission(user: DisplayUser | null, permission: string): boolean {
   if (!user) return false;
+  // Child-safety access is explicit even for a super administrator. This mirrors the
+  // API guard: a wildcard must never turn a platform credential into evidence access.
+  if (permission.startsWith('safety:')) return user.permissions.includes(permission);
   return user.permissions.includes('*') || user.permissions.includes(permission);
 }

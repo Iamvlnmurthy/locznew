@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -40,7 +42,12 @@ class ChatsScreen extends ConsumerWidget {
         child: conversations.when(
           loading: () => const Center(child: CircularProgressIndicator()),
           error: (error, _) => ListView(
-            children: [Padding(padding: const EdgeInsets.all(32), child: Text(error.toString()))],
+            children: [
+              Padding(
+                padding: const EdgeInsets.all(32),
+                child: Text(error.toString()),
+              ),
+            ],
           ),
           data: (items) {
             if (items.isEmpty) {
@@ -68,7 +75,9 @@ class ChatsScreen extends ConsumerWidget {
                             fit: BoxFit.cover,
                           ),
                         )
-                      : const CircleAvatar(child: Icon(Icons.chat_bubble_outline)),
+                      : const CircleAvatar(
+                          child: Icon(Icons.chat_bubble_outline),
+                        ),
                   title: Text(conversation.otherPartyName),
                   subtitle: Text(
                     conversation.listingTitle ?? conversation.lastMessagePreview ?? '',
@@ -138,6 +147,8 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
       await ref.read(chatRepositoryProvider).send(widget.conversationId, body);
       ref.invalidate(_messagesProvider(widget.conversationId));
       ref.invalidate(conversationsProvider);
+      // The value is now obvious: permission means seeing the other person's reply.
+      unawaited(ref.read(pushPermissionProvider.notifier).request());
     } on ApiException catch (error) {
       if (!mounted) return;
       // Put the text back so a failed send does not lose what was typed.
@@ -199,7 +210,6 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
               ),
             ),
           ),
-
           SafeArea(
             top: false,
             child: Padding(
@@ -209,7 +219,9 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                   Expanded(
                     child: TextField(
                       controller: _controller,
-                      decoration: InputDecoration(hintText: strings('chats.messageHint')),
+                      decoration: InputDecoration(
+                        hintText: strings('chats.messageHint'),
+                      ),
                       textInputAction: TextInputAction.send,
                       onSubmitted: (_) => _send(),
                       maxLines: 4,

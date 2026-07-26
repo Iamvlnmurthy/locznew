@@ -116,7 +116,7 @@ export class ErrorReporter {
       signal: AbortSignal.timeout(3000),
     }).catch((sendError: unknown) => {
       this.logger.debug(
-        `Could not report error: ${sendError instanceof Error ? sendError.message : sendError}`,
+        `Could not report error: ${sendError instanceof Error ? sendError.message : String(sendError)}`,
       );
     });
   }

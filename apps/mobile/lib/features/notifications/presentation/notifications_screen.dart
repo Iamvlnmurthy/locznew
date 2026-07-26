@@ -74,7 +74,9 @@ class NotificationsScreen extends ConsumerWidget {
         child: notifications.when(
           loading: () => const Center(child: CircularProgressIndicator()),
           error: (error, _) => ListView(
-            children: [Padding(padding: const EdgeInsets.all(32), child: Text('$error'))],
+            children: [
+              Padding(padding: const EdgeInsets.all(32), child: Text('$error')),
+            ],
           ),
           data: (items) {
             if (items.isEmpty) {
@@ -99,7 +101,11 @@ class NotificationsScreen extends ConsumerWidget {
                       : Theme.of(context).colorScheme.primary.withValues(alpha: 0.05),
                   leading: Icon(_iconFor(notification.type)),
                   title: Text(notification.title),
-                  subtitle: Text(notification.body, maxLines: 2, overflow: TextOverflow.ellipsis),
+                  subtitle: Text(
+                    notification.body,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
                   trailing: Text(
                     DateFormat.MMMd().format(notification.createdAt),
                     style: Theme.of(context).textTheme.labelSmall,
@@ -108,7 +114,7 @@ class NotificationsScreen extends ConsumerWidget {
                     await api.post<void>('/notifications/${notification.id}/read');
                     ref.invalidate(notificationsProvider);
                     if (notification.route != null && context.mounted) {
-                      context.push(notification.route!);
+                      await context.push(notification.route!);
                     }
                   },
                 );

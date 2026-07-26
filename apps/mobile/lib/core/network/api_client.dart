@@ -34,7 +34,9 @@ class ApiClient {
         onRequest: (options, handler) async {
           if (options.extra['skipAuth'] != true) {
             final token = await _tokens.readAccessToken();
-            if (token != null) options.headers['Authorization'] = 'Bearer $token';
+            if (token != null) {
+              options.headers['Authorization'] = 'Bearer $token';
+            }
           }
           handler.next(options);
         },
@@ -51,21 +53,35 @@ class ApiClient {
   /// Called when refresh fails — the app routes to sign-in.
   void Function()? onSessionExpired;
 
-  Future<T> get<T>(String path, {Map<String, dynamic>? query, bool auth = true}) =>
-      _send<T>(() => _dio.get(path, queryParameters: query, options: _options(auth)), auth);
+  Future<T> get<T>(
+    String path, {
+    Map<String, dynamic>? query,
+    bool auth = true,
+  }) =>
+      _send<T>(
+        () => _dio.get(path, queryParameters: query, options: _options(auth)),
+        auth,
+      );
 
-  Future<T> post<T>(String path, {Object? body, bool auth = true}) =>
-      _send<T>(() => _dio.post(path, data: body, options: _options(auth)), auth);
+  Future<T> post<T>(String path, {Object? body, bool auth = true}) => _send<T>(
+        () => _dio.post(path, data: body, options: _options(auth)),
+        auth,
+      );
 
-  Future<T> patch<T>(String path, {Object? body}) =>
-      _send<T>(() => _dio.patch(path, data: body, options: _options(true)), true);
+  Future<T> patch<T>(String path, {Object? body}) => _send<T>(
+        () => _dio.patch(path, data: body, options: _options(true)),
+        true,
+      );
 
   Future<T> delete<T>(String path) =>
       _send<T>(() => _dio.delete(path, options: _options(true)), true);
 
   Options _options(bool auth) => Options(extra: {'skipAuth': !auth});
 
-  Future<T> _send<T>(Future<Response<dynamic>> Function() request, bool auth) async {
+  Future<T> _send<T>(
+    Future<Response<dynamic>> Function() request,
+    bool auth,
+  ) async {
     Response<dynamic> response;
     try {
       response = await request();

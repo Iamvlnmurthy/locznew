@@ -7,8 +7,9 @@
  * report or printed by this orchestrator.
  */
 
-import { existsSync, mkdirSync, writeFileSync } from 'node:fs';
-import { dirname, resolve } from 'node:path';
+import { existsSync, mkdirSync, mkdtempSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { dirname, join, resolve } from 'node:path';
 import { spawnSync } from 'node:child_process';
 
 const root = resolve(import.meta.dirname, '..');
@@ -61,6 +62,7 @@ const evidence = {
     browser: !options.has('--skip-browser'),
     preflight: !options.has('--skip-preflight'),
     stack: options.has('--stack'),
+    httpAcceptance: options.has('--stack') && !options.has('--skip-http'),
     safetyDevelopment: options.has('--safety-development'),
     syntheticSafety: options.has('--synthetic-safety'),
     dns: options.has('--dns'),
@@ -119,6 +121,65 @@ function recordSkip(name, command, note) {
   evidence.steps.push({ name, command, status: 0, durationMs: 0, skipped: true, note });
   console.log(`
 SKIP ${name} — ${note}`);
+}
+
+/**
+ * Runs a step against a throwaway checkout of the candidate commit.
+ *
+ * `npm ci` deletes `node_modules` and rebuilds it. Run in the live workspace — which is what
+ * this gate used to do — that is destructive in two ways on Windows. It removes the generated
+ * Prisma client, so typecheck, lint and six test suites start failing with
+ * `Cannot find module '.prisma/client/default'`, which reads as a code defect rather than a
+ * missing build step. And the API, web and admin servers hold native modules open, so the
+ * delete half-succeeds and leaves a `node_modules` that is neither the old tree nor the new
+ * one. Both happened here, an hour apart, and cost more time to diagnose than the install
+ * saved by being convenient.
+ *
+ * A `git worktree` at the candidate commit gives a clean tree containing exactly the tracked
+ * files, with no `node_modules` to fight over and nothing shared with the running stack. It
+ * also makes the check stricter than it was: the install is verified against what is
+ * *committed*, so an uncommitted file that the workspace happens to have cannot make a broken
+ * lockfile look fine.
+ *
+ * The checkout is removed afterwards. `--keep-candidate` leaves it in place, because when an
+ * install genuinely fails the tree is the evidence.
+ */
+function inCandidateCheckout(steps) {
+  const commit = evidence.candidate ?? 'HEAD';
+  const directory = mkdtempSync(join(tmpdir(), 'locz-release-candidate-'));
+
+  // mkdtemp created it, and `git worktree add` insists on making the directory itself.
+  const target = join(directory, 'candidate');
+  const added = spawnSync('git', ['worktree', 'add', '--detach', target, commit], {
+    cwd: root,
+    encoding: 'utf8',
+  });
+
+  if (added.status !== 0) {
+    console.log(`\n${'='.repeat(72)}\nisolated candidate checkout\n${'='.repeat(72)}`);
+    console.log(added.stderr ?? added.stdout ?? '');
+    recordStep(
+      'isolated candidate checkout',
+      'git',
+      ['worktree', 'add', '--detach', '<temp>', commit],
+      added.status ?? 1,
+      0,
+      'Could not create an isolated checkout of the candidate commit',
+    );
+    return;
+  }
+
+  console.log(`\nCandidate checked out in isolation at ${target}`);
+
+  try {
+    steps(target);
+  } finally {
+    if (options.has('--keep-candidate')) {
+      console.log(`\nLeaving the candidate checkout in place: ${target}`);
+    } else {
+      spawnSync('git', ['worktree', 'remove', '--force', target], { cwd: root });
+    }
+  }
 }
 
 function run(name, command, args, cwd = root, env = process.env) {
@@ -254,13 +315,18 @@ if (
 }
 run('patch integrity', 'git', ['diff', '--check']);
 if (!options.has('--skip-node')) {
-  if (!options.has('--skip-install')) run('reproducible install', npm, [...npmPrefix, 'ci']);
-  run('production dependency audit', npm, [
-    ...npmPrefix,
-    'audit',
-    '--omit=dev',
-    '--audit-level=high',
-  ]);
+  const auditArguments = [...npmPrefix, 'audit', '--omit=dev', '--audit-level=high'];
+
+  if (options.has('--skip-install')) {
+    run('production dependency audit', npm, auditArguments);
+  } else {
+    inCandidateCheckout((candidate) => {
+      run('reproducible install', npm, [...npmPrefix, 'ci'], candidate);
+      // Audited where the install happened, so the answer describes the tree the lockfile
+      // actually produces rather than whatever this workspace has accumulated.
+      run('production dependency audit', npm, auditArguments, candidate);
+    });
+  }
   run('workspace typecheck', npm, [...npmPrefix, 'run', 'typecheck']);
   // Needs no running stack, so it belongs in the default path rather than behind --stack.
   run('translation coverage', npm, [...npmPrefix, 'run', 'check:i18n']);
@@ -277,6 +343,19 @@ if (!options.has('--skip-browser')) {
     'run',
     'acceptance:browser',
   ]);
+  // The localized journey is a separate gate because it asserts something the English run
+  // cannot: that Telugu and Hindi survive contact with a real browser — translated chrome,
+  // no horizontal overflow at 430px, and WCAG contrast on text that is not English.
+  //
+  // It existed as an npm script that nothing invoked, which is the same as not having it:
+  // the first time it was run against a candidate the whole suite reported green, it found
+  // a real colour-contrast failure in the Hindi enquiry composer.
+  run('localized browser journey', npm, [...npmPrefix, 'run', 'acceptance:localized-browser']);
+  // Search is the one surface where the API can be right and the page still wrong, because
+  // result counts, singular copy and the empty state are all rendered rather than returned.
+  // Added here rather than left as an npm script: two earlier gates sat unreferenced in
+  // package.json, and an unreferenced gate is one nobody runs until it has already rotted.
+  run('search browser journey', npm, [...npmPrefix, 'run', 'acceptance:search-browser']);
 }
 if (!options.has('--skip-preflight')) {
   run('production configuration preflight', npm, [
@@ -318,7 +397,15 @@ if (options.has('--stack')) {
       'pass --synthetic-safety to authorize reversible local fixture creation',
     );
   }
-  run('http acceptance suites', npm, [...npmPrefix, 'run', 'acceptance:all']);
+  if (options.has('--skip-http')) {
+    recordSkip(
+      'http acceptance suites',
+      'npm run acceptance:all',
+      '--skip-http was supplied for a diagnostic run',
+    );
+  } else {
+    run('http acceptance suites', npm, [...npmPrefix, 'run', 'acceptance:all']);
+  }
 } else {
   recordSkip(
     'child-safety readiness',

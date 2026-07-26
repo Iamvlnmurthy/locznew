@@ -286,6 +286,16 @@ export class ListingDetailDto extends ListingSummaryDto {
 }
 
 export class ListingSearchQueryDto extends PaginationQueryDto {
+  /**
+   * Keyword, used only when the search index is unavailable and the database has to answer
+   * a keyword search itself. Browse callers leave it unset; `SearchQueryService` supplies it
+   * on the fallback path so an outage narrows the results instead of ignoring the word.
+   */
+  @ApiPropertyOptional({ description: 'Keyword; matched against title, brand and category' })
+  @IsOptional()
+  @IsString()
+  q?: string;
+
   @ApiPropertyOptional({ enum: ListingType })
   @IsOptional()
   @IsEnum(ListingType)
@@ -337,6 +347,19 @@ export class ListingSearchQueryDto extends PaginationQueryDto {
   @IsOptional()
   @IsEnum(ItemCondition)
   condition?: ItemCondition;
+
+  @ApiPropertyOptional({ description: 'Only listings from verified businesses' })
+  @IsOptional()
+  @Type(() => Boolean)
+  @IsBoolean()
+  verifiedOnly?: boolean;
+
+  @ApiPropertyOptional({ description: 'Posted within the last N days' })
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  postedWithinDays?: number;
 
   @ApiPropertyOptional({
     enum: ['newest', 'price_asc', 'price_desc', 'popular', 'distance'],

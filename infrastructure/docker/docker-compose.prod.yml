@@ -17,6 +17,15 @@ services:
       - ./certbot/conf:/etc/letsencrypt:ro
       - ./certbot/www:/var/www/certbot:ro
 
+  # Explicit maintenance profile: used for the first certificate and renewals, never
+  # started as a long-running application dependency.
+  certbot:
+    image: certbot/certbot:v5.3.1
+    profiles: [maintenance]
+    volumes:
+      - ./certbot/conf:/etc/letsencrypt
+      - ./certbot/www:/var/www/certbot
+
   # Runs to completion before the API starts, so a container can never serve traffic
   # against a schema older than its code.
   migrate:

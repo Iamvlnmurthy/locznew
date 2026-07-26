@@ -43,3 +43,6 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+
+# Local Firebase build identifiers. Use firebase.example.json as the template.
+/firebase.json

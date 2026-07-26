@@ -54,6 +54,35 @@ export function getTranslator(locale: Locale): Translator {
   };
 }
 
+/**
+ * Returns one flat catalogue group for a client component.
+ *
+ * Server Components use this instead of importing every locale into the browser bundle.
+ * English remains the structural fallback, while the locale catalogue overrides each
+ * translated string.
+ */
+export function getMessageGroup(locale: Locale, key: string): Record<string, string> {
+  const path = key.split('.');
+  const readGroup = (source: unknown): Record<string, string> => {
+    let current = source;
+    for (const segment of path) {
+      if (typeof current !== 'object' || current === null) return {};
+      current = (current as Record<string, unknown>)[segment];
+    }
+    if (typeof current !== 'object' || current === null) return {};
+    return Object.fromEntries(
+      Object.entries(current).filter((entry): entry is [string, string] => {
+        return typeof entry[1] === 'string';
+      }),
+    );
+  };
+
+  return {
+    ...readGroup(MESSAGES[DEFAULT_LOCALE]),
+    ...readGroup(MESSAGES[locale]),
+  };
+}
+
 export function isLocale(value: string | undefined): value is Locale {
   return value !== undefined && (LOCALES as readonly string[]).includes(value);
 }

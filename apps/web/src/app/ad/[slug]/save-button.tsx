@@ -2,6 +2,7 @@
 
 import { useRouter } from 'next/navigation';
 import { useState, useTransition } from 'react';
+import { Icon } from '@/components/icons';
 import { toggleSaveAction } from './actions';
 
 /**
@@ -18,10 +19,11 @@ export function SaveButton({
   listingId: string;
   initialSaved: boolean;
   isSignedIn: boolean;
-  labels: { save: string; saved: string };
+  labels: Record<string, string>;
 }) {
   const router = useRouter();
   const [saved, setSaved] = useState(initialSaved);
+  const [failed, setFailed] = useState(false);
   const [isPending, startTransition] = useTransition();
 
   function onClick() {
@@ -33,23 +35,27 @@ export function SaveButton({
 
     const next = !saved;
     setSaved(next);
+    setFailed(false);
 
     startTransition(async () => {
       const result = await toggleSaveAction(listingId, next);
-      if (!result.ok) setSaved(!next);
+      if (!result.ok) {
+        setSaved(!next);
+        setFailed(true);
+      }
     });
   }
 
   return (
     <button
       type="button"
-      className={`btn ${saved ? 'btn--primary' : 'btn--outline'} btn--block`}
+      className={`detail-action${saved ? ' is-saved' : ''}`}
       onClick={onClick}
       disabled={isPending}
       aria-pressed={saved}
     >
-      <span aria-hidden="true">{saved ? '♥' : '♡'}</span>
-      {saved ? labels.saved : labels.save}
+      <Icon name="heart" />
+      <span>{failed ? labels.tryAgain : saved ? labels.saved : labels.save}</span>
     </button>
   );
 }

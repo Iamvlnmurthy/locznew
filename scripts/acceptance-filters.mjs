@@ -427,6 +427,141 @@ async function main() {
     remote.items.length ? `farthest ${Math.max(...remote.items.map((item) => item.distanceMeters ?? 0))} m` : 'none nearby',
   );
 
+  step('6. A keyword matches words, not fragments of them');
+
+  // The defect this guards against: searching `car` returned an iPhone, because Meilisearch
+  // prefix-matches the last query word and the phone's description said it had been
+  // "carefully used for two years". Prefix matching is right for a title — `iph` should find
+  // every iPhone — and wrong for 2000 characters of prose.
+  //
+  // Both paths are checked, because they fail differently. The index path is asked whether it
+  // still finds real prefixes while rejecting coincidences. The database path is asked
+  // whether it applies the keyword at all: it used to drop it silently, so an outage turned a
+  // search for `car` into the entire catalogue presented as results.
+
+  const search = async (q) => api(`/search?q=${encodeURIComponent(q)}&limit=5`);
+  const listings = async (q) => api(`/listings?q=${encodeURIComponent(q)}&limit=5`);
+
+  const carSearch = await search('car');
+  check(
+    'the index does not match a word fragment buried in a description',
+    carSearch.total === 0,
+    `"car" returned ${carSearch.total}${carSearch.items[0] ? `: ${carSearch.items[0].title}` : ''}`,
+  );
+
+  const prefixSearch = await search('iph');
+  check(
+    'but search-as-you-type still works on titles',
+    prefixSearch.total > 0,
+    `"iph" returned ${prefixSearch.total}`,
+  );
+
+  const wholeWord = await search('carefully');
+  check(
+    'and a whole word in a description is still a match',
+    wholeWord.total > 0,
+    `"carefully" returned ${wholeWord.total}`,
+  );
+
+  const carBrowse = await listings('car');
+  const everythingBrowse = await listings('');
+  check(
+    'the database path applies the keyword rather than ignoring it',
+    carBrowse.meta.total < everythingBrowse.meta.total,
+    `"car" ${carBrowse.meta.total} vs ${everythingBrowse.meta.total} unfiltered`,
+  );
+
+  const wordStart = await listings('door');
+  const wordMiddle = await listings('oor');
+  check(
+    'the database path matches the start of a word',
+    wordStart.meta.total > 0,
+    `"door" returned ${wordStart.meta.total}`,
+  );
+  check(
+    'and not the middle of one',
+    wordMiddle.meta.total === 0,
+    `"oor" returned ${wordMiddle.meta.total}`,
+  );
+
+  // A keyword reaches PostgreSQL inside a LIKE pattern, where `%` and `_` are wildcards
+  // rather than characters. Unescaped, searching for a single `%` returned every listing in
+  // the database and made the planner scan the whole table to do it.
+  const wildcard = await listings('%');
+  check(
+    'a percent sign is a character, not a wildcard matching everything',
+    wildcard.meta.total < everythingBrowse.meta.total,
+    `"%" returned ${wildcard.meta.total} of ${everythingBrowse.meta.total}`,
+  );
+
+  const underscore = await listings('_');
+  check(
+    'and an underscore does not match any single character',
+    underscore.meta.total < everythingBrowse.meta.total,
+    `"_" returned ${underscore.meta.total}`,
+  );
+
+  // Meilisearch's default strategy drops query terms from the end until something matches,
+  // so it never answers "nothing". A nonsense hyphenated identifier came back with 12,377
+  // listings, and `iphone 13 madhapur` came back with 4,171 by ignoring the last two words —
+  // all presented as results for what the user typed. Every word has to count.
+  const nonsense = 'no-such-local-item-03f5af74-e340-4115-8697-2ce2336094f6';
+  const nonsenseSearch = await search(nonsense);
+  const nonsenseBrowse = await listings(nonsense);
+  check(
+    'a nonsense query returns nothing rather than something',
+    nonsenseSearch.total === 0,
+    `index returned ${nonsenseSearch.total}`,
+  );
+  check(
+    'and both paths agree that it matches nothing',
+    nonsenseSearch.total === nonsenseBrowse.meta.total,
+    `index ${nonsenseSearch.total}, database ${nonsenseBrowse.meta.total}`,
+  );
+
+  const narrow = await search('excellent condition');
+  const broad = await search('excellent');
+  check(
+    'adding a word narrows the results rather than being ignored',
+    narrow.total <= broad.total,
+    `"excellent" ${broad.total} → "excellent condition" ${narrow.total}`,
+  );
+
+  step('7. Every page the API promises actually has something on it');
+
+  // Meilisearch stops at `maxTotalHits` however many documents matched. The count came from
+  // the match and the results came from the ceiling, so a search reporting 4,117 results went
+  // blank after page 100 and offered a hundred empty pages after it — and the same query
+  // served from the database, which has no ceiling, kept returning rows. Whether result 2,001
+  // existed depended on whether the search index happened to be up.
+  //
+  // Stated as a rule rather than as a number: the last page a total implies must not be empty.
+  // That holds whichever path answered and whatever the ceiling is changed to later.
+
+  const pageSize = 20;
+
+  for (const [label, path] of [
+    ['the index path', '/search?q=fridge&sort=price_asc'],
+    ['the database path', '/listings?q=fridge'],
+  ]) {
+    const first = await api(`${path}&limit=${pageSize}&page=1`);
+    const total = first.total ?? first.meta.total;
+    const lastPage = Math.ceil(total / pageSize);
+
+    if (lastPage <= 1) {
+      check(`${label} advertises a reachable last page`, true, 'single page');
+      continue;
+    }
+
+    const last = await api(`${path}&limit=${pageSize}&page=${lastPage}`);
+    const items = last.items ?? [];
+    check(
+      `${label} can serve the last page it advertises`,
+      items.length > 0,
+      `${total} results implies page ${lastPage}, which returned ${items.length}`,
+    );
+  }
+
   console.log(`\n${'='.repeat(60)}`);
   console.log(`${passed} passed, ${failed} failed`);
   if (failed > 0) {

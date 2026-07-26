@@ -146,15 +146,17 @@ npm run build -w @locz/api && node apps/api/dist/worker.js
 
 Created by the seed. **Development only** — the seed skips them when `NODE_ENV=production`.
 
-| Role                      | Phone (OTP)   | Email (password)    |
-| ------------------------- | ------------- | ------------------- |
-| Super administrator       | +919000000001 | super@locz.test     |
-| Administrator             | +919000000002 | admin@locz.test     |
-| Moderator                 | +919000000003 | moderator@locz.test |
-| Seller                    | +919000000004 | seller@locz.test    |
-| Buyer                     | +919000000005 | buyer@locz.test     |
-| Business owner / employer | +919000000006 | business@locz.test  |
-| Service provider          | +919000000007 | provider@locz.test  |
+| Role                         | Phone (OTP)   | Email (password)             |
+| ---------------------------- | ------------- | ---------------------------- |
+| Super administrator          | +919000000001 | super@locz.test              |
+| Administrator                | +919000000002 | admin@locz.test              |
+| Moderator                    | +919000000003 | moderator@locz.test          |
+| Seller                       | +919000000004 | seller@locz.test             |
+| Buyer                        | +919000000005 | buyer@locz.test              |
+| Business owner / employer    | +919000000006 | business@locz.test           |
+| Service provider             | +919000000007 | provider@locz.test           |
+| Primary child-safety officer | +919000000008 | childsafety@locz.test        |
+| Backup child-safety officer  | +919000000009 | childsafety.backup@locz.test |
 
 Password for every account: `LocZ@dev1234`
 
@@ -163,7 +165,7 @@ Password for every account: `LocZ@dev1234`
 
 ## Seed data
 
-- 9 roles with permission sets
+- 10 roles with permission sets
 - India → Telangana + Andhra Pradesh → 8 cities (5 launched) → 8 Hyderabad localities,
   each with Telugu and Hindi names
 - 30 categories with dynamic attribute definitions (brand, condition, RAM, fuel type…)

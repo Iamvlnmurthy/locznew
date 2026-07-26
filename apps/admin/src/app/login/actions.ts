@@ -44,14 +44,20 @@ export async function loginAction(_prev: LoginState, formData: FormData): Promis
   const canUseConsole =
     session.user.permissions.includes('*') ||
     session.user.permissions.includes('listing:moderate') ||
-    session.user.permissions.includes('metrics:read');
+    session.user.permissions.includes('metrics:read') ||
+    session.user.permissions.includes('safety:case:read');
 
   if (!canUseConsole) {
     return { error: 'This account does not have access to the admin console' };
   }
 
   await storeSession(session);
-  redirect('/');
+  const safetyOnly =
+    session.user.permissions.includes('safety:case:read') &&
+    !session.user.permissions.includes('*') &&
+    !session.user.permissions.includes('metrics:read') &&
+    !session.user.permissions.includes('listing:moderate');
+  redirect(safetyOnly ? '/safety' : '/');
 }
 
 export async function logoutAction(): Promise<void> {

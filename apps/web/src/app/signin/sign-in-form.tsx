@@ -1,7 +1,8 @@
 'use client';
 
-import { useActionState } from 'react';
+import { useActionState, useEffect, useState } from 'react';
 import { useFormStatus } from 'react-dom';
+import { Icon } from '@/components/icons';
 import { requestCodeAction, verifyCodeAction, type SignInState } from './actions';
 
 interface Labels {
@@ -19,13 +20,22 @@ interface Labels {
   changeNumber: string;
   invalidPhone: string;
   devCodeNotice: string;
+  name: string;
+  nameHint: string;
+  optional: string;
+  codeHint: string;
+  noPassword: string;
+  accountNote: string;
+  privacyNote: string;
+  resend: string;
 }
 
 function Submit({ idle, busy }: { idle: string; busy: string }) {
   const { pending } = useFormStatus();
   return (
-    <button type="submit" className="btn btn--primary btn--block" disabled={pending}>
-      {pending ? busy : idle}
+    <button type="submit" className="btn btn--primary signin-form__submit" disabled={pending}>
+      <span>{pending ? busy : idle}</span>
+      <Icon name="arrow" width="17" height="17" />
     </button>
   );
 }
@@ -36,21 +46,45 @@ export function SignInForm({ labels, next }: { labels: Labels; next: string }) {
   });
   const [verifyState, verifyCode] = useActionState<SignInState, FormData>(verifyCodeAction, {
     step: 'code',
-    phone: requestState.phone,
   });
+  const [editingPhone, setEditingPhone] = useState(false);
+  const [deviceKey, setDeviceKey] = useState('');
 
-  const onCodeStep = requestState.step === 'code';
+  useEffect(() => {
+    const storageKey = 'locz_device_key';
+    let resolvedDeviceKey: string;
+    try {
+      const existing = window.localStorage.getItem(storageKey);
+      if (existing) {
+        resolvedDeviceKey = existing;
+      } else {
+        resolvedDeviceKey = `web-${window.crypto.randomUUID()}`;
+        window.localStorage.setItem(storageKey, resolvedDeviceKey);
+      }
+    } catch {
+      // Privacy-restricted browsers can disable storage; the session still works,
+      // it simply receives a fresh device identifier for this sign-in.
+      resolvedDeviceKey = `web-${window.crypto.randomUUID()}`;
+    }
+    queueMicrotask(() => setDeviceKey(resolvedDeviceKey));
+  }, []);
+
+  const onCodeStep = requestState.step === 'code' && !editingPhone;
   const phone = requestState.phone ?? verifyState.phone;
   const error = onCodeStep ? verifyState.error : requestState.error;
+  const nationalPhone = phone?.replace(/^\+91/, '') ?? '';
 
   return (
-    <div className="form-card">
-      <h1 style={{ marginTop: 0, fontSize: '1.375rem' }}>
-        {onCodeStep ? labels.codeTitle : labels.signInTitle}
-      </h1>
-      <p className="field__hint" style={{ marginBottom: 24 }}>
-        {onCodeStep && phone ? labels.codeSentTo.replace('{phone}', phone) : labels.signInSubtitle}
-      </p>
+    <div className="signin-form">
+      <div className="signin-form__heading">
+        <span className="signin-form__step">{onCodeStep ? '02' : '01'} / 02</span>
+        <h2>{onCodeStep ? labels.codeTitle : labels.signInTitle}</h2>
+        <p>
+          {onCodeStep && phone
+            ? labels.codeSentTo.replace('{phone}', formatPhone(phone))
+            : labels.signInSubtitle}
+        </p>
+      </div>
 
       {error ? (
         <div className="alert alert--error" role="alert">
@@ -58,28 +92,29 @@ export function SignInForm({ labels, next }: { labels: Labels; next: string }) {
         </div>
       ) : null}
 
-      {/* The mock provider returns the code in development so the whole flow can be
-          completed without an SMS gateway. Production never populates this. */}
       {onCodeStep && requestState.devCode ? (
-        <div className="alert alert--info">
-          {labels.devCodeNotice.replace('{code}', requestState.devCode)}
+        <div className="signin-form__dev-code" role="status">
+          <span>
+            <Icon name="sparkles" width="17" height="17" />
+          </span>
+          <div>
+            <small>{labels.devCodeNotice.replace('{code}', '')}</small>
+            <strong>{requestState.devCode}</strong>
+          </div>
         </div>
       ) : null}
 
       {!onCodeStep ? (
-        <form action={requestCode}>
+        <form
+          action={requestCode}
+          onSubmit={() => setEditingPhone(false)}
+          className="signin-form__fields"
+        >
           <div className="field">
             <label htmlFor="phone">{labels.phone}</label>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <span
-                style={{
-                  padding: '12px 14px',
-                  border: '1px solid var(--locz-border-strong)',
-                  borderRadius: 'var(--locz-radius-md)',
-                  background: 'var(--locz-surface-muted)',
-                  fontWeight: 600,
-                }}
-              >
+            <div className="signin-phone">
+              <span>
+                <span aria-hidden="true">🇮🇳</span>
                 +91
               </span>
               <input
@@ -89,37 +124,75 @@ export function SignInForm({ labels, next }: { labels: Labels; next: string }) {
                 inputMode="numeric"
                 autoComplete="tel-national"
                 maxLength={10}
+                minLength={10}
                 required
-                placeholder="9876543210"
+                placeholder="98765 43210"
+                defaultValue={nationalPhone}
                 autoFocus
               />
             </div>
             <p className="field__hint">{labels.phoneHint}</p>
           </div>
           <Submit idle={labels.sendCode} busy={labels.sending} />
+          <p className="signin-form__account-note">{labels.accountNote}</p>
         </form>
       ) : (
-        <form action={verifyCode}>
+        <form action={verifyCode} className="signin-form__fields">
           <input type="hidden" name="phone" value={phone ?? ''} />
           <input type="hidden" name="next" value={next} />
+          <input type="hidden" name="deviceKey" value={deviceKey} />
+
           <div className="field">
-            <label htmlFor="code">{labels.code}</label>
+            <div className="signin-field-label">
+              <label htmlFor="code">{labels.code}</label>
+              <button type="button" onClick={() => setEditingPhone(true)}>
+                {labels.changeNumber}
+              </button>
+            </div>
             <input
+              className="signin-code"
               id="code"
               name="code"
               type="text"
               inputMode="numeric"
-              // Lets both Android and iOS auto-fill the code straight from the SMS.
+              pattern="[0-9]*"
               autoComplete="one-time-code"
               maxLength={6}
+              minLength={4}
               required
               autoFocus
-              style={{ letterSpacing: '0.4em', fontSize: '1.25rem', textAlign: 'center' }}
+              placeholder="••••••"
+            />
+            <p className="field__hint">{labels.codeHint}</p>
+          </div>
+
+          <div className="field">
+            <div className="signin-field-label">
+              <label htmlFor="displayName">{labels.name}</label>
+              <span>{labels.optional}</span>
+            </div>
+            <input
+              id="displayName"
+              name="displayName"
+              type="text"
+              autoComplete="name"
+              maxLength={120}
+              placeholder={labels.nameHint}
             />
           </div>
+
           <Submit idle={labels.verify} busy={labels.verifying} />
+          <button className="signin-form__resend" type="submit" formAction={requestCode}>
+            {labels.resend}
+          </button>
+          <p className="signin-form__account-note">{labels.noPassword}</p>
         </form>
       )}
     </div>
   );
+}
+
+function formatPhone(phone: string): string {
+  const national = phone.replace(/^\+91/, '');
+  return `+91 ${national.slice(0, 5)} ${national.slice(5)}`;
 }

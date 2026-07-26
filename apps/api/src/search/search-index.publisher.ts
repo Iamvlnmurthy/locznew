@@ -31,7 +31,7 @@ export class SearchIndexPublisher {
       );
     } catch (error) {
       this.logger.error(
-        `Could not enqueue indexing for ${listingId}: ${error instanceof Error ? error.message : error}`,
+        `Could not enqueue indexing for ${listingId}: ${error instanceof Error ? error.message : String(error)}`,
       );
     }
   }
@@ -45,7 +45,7 @@ export class SearchIndexPublisher {
       );
     } catch (error) {
       this.logger.error(
-        `Could not enqueue removal for ${listingId}: ${error instanceof Error ? error.message : error}`,
+        `Could not enqueue removal for ${listingId}: ${error instanceof Error ? error.message : String(error)}`,
       );
     }
   }

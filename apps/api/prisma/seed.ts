@@ -892,13 +892,19 @@ const TEST_ACCOUNTS: Array<{
     language: Language.EN,
   },
   {
-    // Someone has to be able to work the restricted queue, or it is a queue with no
-    // reader. The role existed with no holder, which in production means an image held as
-    // evidence sits there and nobody can act on it — including making the report that
-    // POCSO ss19-20 makes mandatory.
+    // Two independent development identities make continuity and access-isolation
+    // rehearsals possible. Production skips all test accounts and must provision real,
+    // trained officers through the approved access process.
     phone: '+919000000008',
     email: 'childsafety@locz.test',
-    name: 'Designated Child Safety Officer',
+    name: 'Primary Child Safety Officer',
+    roles: [RoleName.CHILD_SAFETY_OFFICER, RoleName.REGISTERED_USER],
+    language: Language.EN,
+  },
+  {
+    phone: '+919000000009',
+    email: 'childsafety.backup@locz.test',
+    name: 'Backup Child Safety Officer',
     roles: [RoleName.CHILD_SAFETY_OFFICER, RoleName.REGISTERED_USER],
     language: Language.EN,
   },

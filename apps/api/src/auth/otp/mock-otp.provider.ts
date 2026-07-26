@@ -12,8 +12,8 @@ export class MockOtpProvider implements OtpProvider {
   readonly name = 'mock';
   private readonly logger = new Logger(MockOtpProvider.name);
 
-  async send(phoneE164: string, code: string, purpose: string): Promise<OtpSendResult> {
+  send(phoneE164: string, code: string, purpose: string): Promise<OtpSendResult> {
     this.logger.log(`[MOCK OTP] ${purpose} code for ${phoneE164}: ${code}`);
-    return { messageId: `mock-${randomUUID()}`, debugCode: code };
+    return Promise.resolve({ messageId: `mock-${randomUUID()}`, debugCode: code });
   }
 }

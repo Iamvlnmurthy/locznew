@@ -112,7 +112,10 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
             const SizedBox(height: LoczSpacing.x2),
             Text(
               _codeSent
-                  ? strings('auth.codeSentTo', {'phone': '+91 ${_phoneController.text}'})
+                  ? strings(
+                      'auth.codeSentTo',
+                      {'phone': '+91 ${_phoneController.text}'},
+                    )
                   : strings('auth.signInSubtitle'),
               style: theme.textTheme.bodyMedium,
             ),
@@ -126,7 +129,10 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
                   color: LoczColors.dangerSurface,
                   borderRadius: BorderRadius.circular(LoczRadius.md),
                 ),
-                child: Text(_error!, style: const TextStyle(color: LoczColors.danger)),
+                child: Text(
+                  _error!,
+                  style: const TextStyle(color: LoczColors.danger),
+                ),
               ),
 
             // The mock provider returns the code in development so the flow is
@@ -177,7 +183,10 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
                 // Lets Android and iOS auto-fill the code straight from the SMS.
                 autofillHints: const [AutofillHints.oneTimeCode],
                 inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                decoration: InputDecoration(labelText: strings('auth.code'), counterText: ''),
+                decoration: InputDecoration(
+                  labelText: strings('auth.code'),
+                  counterText: '',
+                ),
                 onSubmitted: (_) => _verify(),
               ),
               const SizedBox(height: LoczSpacing.x4),

@@ -3,23 +3,6 @@
 import type { City } from '@locz/shared-types';
 import { apiSafe } from '@/lib/api';
 
-/**
- * Resolves device coordinates to a launched city. Returns `city: null` when the visitor
- * is outside every launched area — the picker then asks them to choose rather than
- * snapping them to a city hundreds of kilometres away.
- */
-export async function resolveCoordinatesAction(
-  latitude: number,
-  longitude: number,
-): Promise<{ city: City | null }> {
-  const result = await apiSafe<{ city: City | null }>('/locations/resolve', {
-    method: 'POST',
-    body: { latitude, longitude },
-  });
-
-  return { city: result?.city ?? null };
-}
-
 export interface ResolvedPincode {
   code: string;
   name: string;
@@ -29,7 +12,33 @@ export interface ResolvedPincode {
   longitude: number;
   cityId: string | null;
   cityName: string | null;
-  listingCount: number;
+  listingCount?: number;
+}
+
+/**
+ * Resolves device coordinates to a launched city. Returns `city: null` when the visitor
+ * is outside every launched area — the picker then asks them to choose rather than
+ * snapping them to a city hundreds of kilometres away.
+ */
+export async function resolveCoordinatesAction(
+  latitude: number,
+  longitude: number,
+): Promise<{ city: City | null; pincode: ResolvedPincode | null }> {
+  const [result, pincodeResult] = await Promise.all([
+    apiSafe<{ city: City | null }>('/locations/resolve', {
+      method: 'POST',
+      body: { latitude, longitude },
+    }),
+    apiSafe<{ pincode: ResolvedPincode | null }>('/locations/resolve/pincode', {
+      method: 'POST',
+      body: { latitude, longitude },
+    }),
+  ]);
+
+  return {
+    city: result?.city ?? null,
+    pincode: pincodeResult?.pincode ?? null,
+  };
 }
 
 /**

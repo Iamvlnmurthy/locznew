@@ -17,6 +17,38 @@ const paths: Record<string, React.ReactNode> = {
     </>
   ),
   plus: <path d="M12 5v14M5 12h14" />,
+  check: <path d="m5 12 4 4L19 6" />,
+  image: (
+    <>
+      <rect x="3" y="4" width="18" height="16" rx="2" />
+      <circle cx="8.5" cy="9" r="1.5" />
+      <path d="m4 17 5-5 4 4 2-2 5 5" />
+    </>
+  ),
+  sparkles: (
+    <>
+      <path d="m12 3 1.2 3.8L17 8l-3.8 1.2L12 13l-1.2-3.8L7 8l3.8-1.2L12 3Z" />
+      <path d="m19 14 .7 2.3L22 17l-2.3.7L19 20l-.7-2.3L16 17l2.3-.7L19 14Z" />
+      <path d="m5 13 .7 2.3L8 16l-2.3.7L5 19l-.7-2.3L2 16l2.3-.7L5 13Z" />
+    </>
+  ),
+  message: (
+    <>
+      <path d="M21 15a4 4 0 0 1-4 4H8l-5 3 1.5-4A7 7 0 0 1 3 13V8a4 4 0 0 1 4-4h10a4 4 0 0 1 4 4v7Z" />
+      <path d="M8 10h8M8 14h5" />
+    </>
+  ),
+  bell: (
+    <>
+      <path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9Z" />
+      <path d="M10 21h4" />
+    </>
+  ),
+  chart: (
+    <>
+      <path d="M4 20V10M10 20V4M16 20v-7M22 20H2" />
+    </>
+  ),
   user: (
     <>
       <circle cx="12" cy="8" r="4" />
@@ -102,6 +134,42 @@ const paths: Record<string, React.ReactNode> = {
       <path d="M16 3v4M8 3v4M3 10h18" />
     </>
   ),
+  clock: (
+    <>
+      <circle cx="12" cy="12" r="9" />
+      <path d="M12 7v5l3 2" />
+    </>
+  ),
+  share: (
+    <>
+      <circle cx="18" cy="5" r="3" />
+      <circle cx="6" cy="12" r="3" />
+      <circle cx="18" cy="19" r="3" />
+      <path d="m8.6 10.5 6.8-4M8.6 13.5l6.8 4" />
+    </>
+  ),
+  expand: (
+    <>
+      <path d="M8 3H3v5M16 3h5v5M8 21H3v-5M16 21h5v-5" />
+    </>
+  ),
+  chevronLeft: <path d="m15 18-6-6 6-6" />,
+  chevronRight: <path d="m9 18 6-6-6-6" />,
+  lock: (
+    <>
+      <rect x="5" y="10" width="14" height="11" rx="2" />
+      <path d="M8 10V7a4 4 0 0 1 8 0v3" />
+    </>
+  ),
+  sliders: (
+    <>
+      <path d="M4 6h10M18 6h2M4 12h3M11 12h9M4 18h8M16 18h4" />
+      <circle cx="16" cy="6" r="2" />
+      <circle cx="9" cy="12" r="2" />
+      <circle cx="14" cy="18" r="2" />
+    </>
+  ),
+  sort: <path d="M8 6h10M8 12h7M8 18h4M4 4v16" />,
   box: (
     <>
       <path d="m4 7 8-4 8 4-8 4-8-4Z" />

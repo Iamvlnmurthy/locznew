@@ -57,11 +57,15 @@ class AppTheme {
         bodyMedium: TextStyle(
           fontSize: LoczTypography.sm,
           height: LoczTypography.leadingNormal,
-          color: isDark ? LoczColors.neutral300 : LoczColors.neutral600,
+          // Leave headroom for glyph anti-aliasing, which lowers the contrast of
+          // rendered 12–14 px text compared with the raw token pair.
+          color: isDark ? LoczColors.neutral300 : LoczColors.neutral700,
         ),
         labelSmall: TextStyle(
           fontSize: LoczTypography.xs,
-          color: isDark ? LoczColors.neutral400 : LoczColors.neutral500,
+          // Small metadata needs the stronger neutral to clear WCAG 4.5:1 on the
+          // warm scaffold surface after glyph anti-aliasing.
+          color: isDark ? LoczColors.neutral400 : LoczColors.neutral700,
         ),
       ),
 
@@ -87,15 +91,22 @@ class AppTheme {
         style: FilledButton.styleFrom(
           // 48dp: these are tapped one-handed on a phone.
           minimumSize: const Size.fromHeight(48),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(LoczRadius.full)),
-          textStyle: const TextStyle(fontSize: LoczTypography.base, fontWeight: FontWeight.w600),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(LoczRadius.full),
+          ),
+          textStyle: const TextStyle(
+            fontSize: LoczTypography.base,
+            fontWeight: FontWeight.w600,
+          ),
         ),
       ),
 
       outlinedButtonTheme: OutlinedButtonThemeData(
         style: OutlinedButton.styleFrom(
           minimumSize: const Size.fromHeight(48),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(LoczRadius.full)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(LoczRadius.full),
+          ),
         ),
       ),
 
@@ -121,7 +132,9 @@ class AppTheme {
       ),
 
       chipTheme: ChipThemeData(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(LoczRadius.full)),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(LoczRadius.full),
+        ),
         side: BorderSide(color: scheme.outline),
       ),
 

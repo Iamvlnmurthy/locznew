@@ -15,12 +15,23 @@ export function formatDistance(meters: number, t: Translator): string {
   return t('common.away', { distance: value });
 }
 
-export function ListingCard({ listing, t }: { listing: ListingSummary; t: Translator }) {
+export function ListingCard({
+  listing,
+  t,
+  variant = 'standard',
+}: {
+  listing: ListingSummary;
+  t: Translator;
+  variant?: 'standard' | 'wide';
+}) {
   const isFree = listing.price === 0;
   const isSold = listing.status === 'SOLD';
 
   return (
-    <Link href={`/ad/${listing.slug}`} className="listing-card">
+    <Link
+      href={`/ad/${listing.slug}`}
+      className={`listing-card${variant === 'wide' ? ' listing-card--wide' : ''}`}
+    >
       <div className="listing-card__media">
         {listing.thumbUrl ? (
           // Plain <img> rather than next/image: listing photos come from R2 with a
@@ -40,7 +51,7 @@ export function ListingCard({ listing, t }: { listing: ListingSummary; t: Transl
 
         {listing.isFeatured ? (
           <span className="badge badge--featured" style={{ position: 'absolute', top: 8, left: 8 }}>
-            ★
+            <span aria-hidden="true">★</span> {t('searchUi.featured')}
           </span>
         ) : null}
         {isSold ? (

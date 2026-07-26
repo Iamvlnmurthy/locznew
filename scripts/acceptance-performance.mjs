@@ -3,7 +3,6 @@
  * Performance gate.
  *
  *   npm run db:generate-load -w @locz/api -- 50000    # once, to make the numbers mean something
- *   LOCZ_PSQL=/path/to/psql node scripts/acceptance-performance.mjs
  *
  * Two things are checked, because a fast response can hide a bad plan and a good plan can
  * still be slow:
@@ -25,9 +24,10 @@
 
 import { execFileSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
 
 const API = process.env.LOCZ_API ?? 'http://127.0.0.1:4000/api/v1';
-const PSQL = process.env.LOCZ_PSQL ?? 'psql';
+const SQL_RUNNER = fileURLToPath(new URL('./lib/sql-runner.mjs', import.meta.url));
 const MIN_ROWS = Number(process.env.LOCZ_PERF_MIN_ROWS ?? 10_000);
 
 let passed = 0;
@@ -49,28 +49,32 @@ function step(title) {
   console.log(`\n${title}`);
 }
 
-/** Credentials through the environment, never argv — a password in a process list is a leak. */
-function psqlEnvironment() {
+/** The same DATABASE_URL the application reads, so the gate cannot test a different database. */
+function databaseUrl() {
+  if (process.env.DATABASE_URL) return process.env.DATABASE_URL;
+
   const file = readFileSync(new URL('../.env', import.meta.url), 'utf8');
   const match = /^DATABASE_URL=(.+)$/m.exec(file);
-  const raw = process.env.DATABASE_URL ?? match?.[1].trim().replace(/^"|"$/g, '');
+  const raw = match?.[1].trim().replace(/^"|"$/g, '');
   if (!raw) throw new Error('DATABASE_URL not found in the environment or .env');
-
-  const url = new URL(raw);
-  return {
-    ...process.env,
-    PGHOST: url.hostname,
-    PGPORT: url.port || '5432',
-    PGUSER: decodeURIComponent(url.username),
-    PGPASSWORD: decodeURIComponent(url.password),
-    PGDATABASE: url.pathname.slice(1),
-  };
+  return raw;
 }
 
+/**
+ * One statement, run through the same `pg` driver the application uses.
+ *
+ * This used to shell out to `psql`. A machine without the PostgreSQL client tools installed
+ * aborted the whole suite with `spawnSync psql ENOENT`, which looks like a broken gate
+ * rather than a missing package — so the gate no longer asks the machine for a binary it
+ * cannot guarantee. Output and exit behaviour match `psql -tAc` exactly; see the runner.
+ *
+ * Still synchronous, because the assertions below read top to bottom and are far easier to
+ * follow that way than as a chain of awaits.
+ */
 function sql(statement) {
-  return execFileSync(PSQL, ['-tAc', statement], {
+  return execFileSync(process.execPath, [SQL_RUNNER, statement], {
     encoding: 'utf8',
-    env: psqlEnvironment(),
+    env: { ...process.env, DATABASE_URL: databaseUrl() },
     maxBuffer: 8 * 1024 * 1024,
   });
 }

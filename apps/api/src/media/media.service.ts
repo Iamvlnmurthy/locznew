@@ -1,5 +1,6 @@
 import {
   BadRequestException,
+  ConflictException,
   ForbiddenException,
   Injectable,
   Logger,
@@ -9,11 +10,16 @@ import { ListingMedia, MediaStatus } from '@prisma/client';
 import sharp from 'sharp';
 import { fingerprintImage } from './image-fingerprint';
 import { ImageModerationService } from './image-moderation.service';
+import { ImageScanService } from './image-scan.service';
+import { MediaSafetyService } from './media-safety.service';
+import { ProtectedHashService } from './protected-hash.service';
 import { v7 as uuid } from 'uuid';
 import { AppConfig } from '../config/config.module';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateUploadUrlDto, MediaDto, UploadUrlDto } from './dto/media.dto';
 import { StorageService } from './storage.service';
+
+class RejectedImageError extends Error {}
 
 /** Rendition widths. Named sizes rather than arbitrary ones so clients can cache predictably. */
 const RENDITIONS = [
@@ -47,6 +53,9 @@ export class MediaService {
     private readonly storage: StorageService,
     private readonly config: AppConfig,
     private readonly imageModeration: ImageModerationService,
+    private readonly imageScanner: ImageScanService,
+    private readonly protectedHash: ProtectedHashService,
+    private readonly mediaSafety: MediaSafetyService,
   ) {}
 
   /**
@@ -91,7 +100,8 @@ export class MediaService {
 
     const mediaId = uuid();
     const extension = dto.mimeType.split('/')[1] ?? 'bin';
-    const storageKey = `listings/${listingId}/originals/${mediaId}.${extension}`;
+    // Originals always remain private; only sanitized renditions can be promoted later.
+    const storageKey = `quarantine/listings/${listingId}/originals/${mediaId}.${extension}`;
 
     await this.prisma.listingMedia.create({
       data: {
@@ -124,11 +134,18 @@ export class MediaService {
     if (media.listing.ownerId !== userId) {
       throw new ForbiddenException('You can only confirm your own uploads');
     }
-    if (media.status === MediaStatus.READY) return this.toDto(media);
+    if (
+      media.status === MediaStatus.READY ||
+      media.status === MediaStatus.REVIEW_REQUIRED ||
+      media.status === MediaStatus.REJECTED ||
+      media.status === MediaStatus.LEGAL_HOLD
+    ) {
+      return this.toDto(media);
+    }
 
     await this.prisma.listingMedia.update({
       where: { id: mediaId },
-      data: { status: MediaStatus.PROCESSING },
+      data: { status: MediaStatus.QUARANTINED },
     });
 
     try {
@@ -138,9 +155,15 @@ export class MediaService {
       const reason = error instanceof Error ? error.message : 'Processing failed';
       this.logger.error(`Media ${mediaId} failed: ${reason}`);
 
+      const rejected = error instanceof RejectedImageError;
       const failed = await this.prisma.listingMedia.update({
         where: { id: mediaId },
-        data: { status: MediaStatus.FAILED, failureReason: reason.slice(0, 300) },
+        data: {
+          status: rejected ? MediaStatus.REJECTED : MediaStatus.FAILED,
+          failureReason: rejected
+            ? 'This image cannot be used because it violates our content policy.'
+            : reason.slice(0, 300),
+        },
       });
       // Never leave an unusable object behind.
       await this.storage.delete(media.storageKey);
@@ -177,10 +200,50 @@ export class MediaService {
     const fingerprint = await fingerprintImage(original);
     const blocked = await this.imageModeration.findBlock(fingerprint);
     if (blocked) {
-      // The reason is the moderator's own words, so the uploader is told something they
-      // can act on rather than "processing failed".
-      throw new Error(`This image was previously removed: ${blocked.reason}`);
+      // Do not return the matching category or a moderator's private notes to the uploader.
+      throw new RejectedImageError('Image matches previously removed content');
     }
+
+    const scanning = await this.prisma.listingMedia.update({
+      where: { id: media.id },
+      data: {
+        status: MediaStatus.SCANNING,
+        width: metadata.width ?? null,
+        height: metadata.height ?? null,
+        sha256: fingerprint.sha256,
+        perceptualHash: fingerprint.perceptual,
+        failureReason: null,
+      },
+    });
+    const scanSubject = {
+      mediaId: media.id,
+      mimeType: detected.mime,
+      bytes: original,
+      sha256: fingerprint.sha256,
+    };
+    const protectedMatch = await this.protectedHash.match(scanSubject);
+    if (protectedMatch.status === 'MATCH') {
+      // No rendition is created. The private original becomes restricted evidence and
+      // ordinary moderation never receives a preview URL for it.
+      return this.mediaSafety.placeLegalHold(scanning, protectedMatch);
+    }
+
+    const scannerVerdict = await this.imageScanner.scan(scanSubject);
+    if (scannerVerdict.decision === 'REJECT') {
+      throw new RejectedImageError('Image safety provider rejected the upload');
+    }
+
+    const requiredReasons = [
+      ...(protectedMatch.status === 'UNAVAILABLE'
+        ? [protectedMatch.reasonCode ?? 'PROTECTED_HASH_PROVIDER_UNAVAILABLE']
+        : []),
+      ...(scannerVerdict.decision === 'REVIEW' ? scannerVerdict.reasons : []),
+    ];
+    const moderation = await this.imageModeration.reviewOnUpload(
+      scanning,
+      fingerprint,
+      requiredReasons,
+    );
 
     const keys: Record<string, string> = {};
     for (const rendition of RENDITIONS) {
@@ -190,40 +253,93 @@ export class MediaService {
         .webp({ quality: rendition.name === 'thumb' ? 70 : 82 })
         .toBuffer();
 
-      const key = `public/listings/${media.listingId}/${media.id}-${rendition.name}.webp`;
+      const prefix = moderation.decision === 'APPROVE' ? 'public' : 'quarantine';
+      const key = `${prefix}/listings/${media.listingId}/${media.id}-${rendition.name}.webp`;
       await this.storage.putObject(key, buffer, 'image/webp');
       keys[rendition.name] = key;
     }
 
-    const stored = await this.prisma.listingMedia.update({
+    return this.prisma.listingMedia.update({
       where: { id: media.id },
       data: {
-        status: MediaStatus.READY,
+        status: moderation.decision === 'APPROVE' ? MediaStatus.READY : MediaStatus.REVIEW_REQUIRED,
         thumbKey: keys.thumb,
         cardKey: keys.card,
         fullKey: keys.full,
-        width: metadata.width ?? null,
-        height: metadata.height ?? null,
-        sha256: fingerprint.sha256,
-        perceptualHash: fingerprint.perceptual,
-        failureReason: null,
+        failureReason:
+          moderation.decision === 'REVIEW' ? 'This image is awaiting a safety review.' : null,
       },
     });
-
-    // Moderation runs when a listing is submitted, and images arrive afterwards — so
-    // whatever was decided about the words was decided before anyone could see the
-    // pictures. This is the only point at which an image can affect that.
-    await this.imageModeration.reviewOnUpload(stored, fingerprint);
-
-    return stored;
   }
 
   async listForListing(listingId: string): Promise<MediaDto[]> {
     const media = await this.prisma.listingMedia.findMany({
-      where: { listingId, status: { in: [MediaStatus.READY, MediaStatus.PROCESSING] } },
+      // This is a public endpoint: no quarantine or in-flight key may escape it.
+      where: { listingId, status: MediaStatus.READY },
       orderBy: { sortOrder: 'asc' },
     });
     return media.map((entry) => this.toDto(entry));
+  }
+
+  /**
+   * Promote sanitized renditions after a human approves the listing.
+   *
+   * Copy-before-update makes a failed promotion safe to retry: the database continues to
+   * say REVIEW_REQUIRED until every public object exists.
+   */
+  async approveForListing(listingId: string): Promise<number> {
+    const held = await this.prisma.listingMedia.count({
+      where: { listingId, status: MediaStatus.LEGAL_HOLD },
+    });
+    if (held > 0) {
+      throw new ConflictException('This listing has a restricted safety case');
+    }
+
+    const pending = await this.prisma.listingMedia.findMany({
+      where: { listingId, status: MediaStatus.REVIEW_REQUIRED },
+      orderBy: { sortOrder: 'asc' },
+    });
+
+    for (const media of pending) {
+      const promoted: Record<'thumbKey' | 'cardKey' | 'fullKey', string | null> = {
+        thumbKey: null,
+        cardKey: null,
+        fullKey: null,
+      };
+
+      for (const field of ['thumbKey', 'cardKey', 'fullKey'] as const) {
+        const source = media[field];
+        if (!source) continue;
+        const destination = source.replace(/^quarantine\//, 'public/');
+        await this.storage.copy(source, destination);
+        promoted[field] = destination;
+      }
+
+      await this.prisma.listingMedia.update({
+        where: { id: media.id },
+        data: {
+          status: MediaStatus.READY,
+          ...promoted,
+          failureReason: null,
+        },
+      });
+
+      for (const field of ['thumbKey', 'cardKey', 'fullKey'] as const) {
+        const source = media[field];
+        if (source) await this.storage.delete(source);
+      }
+    }
+
+    return pending.length;
+  }
+
+  async moderationPreview(mediaId: string): Promise<{ url: string; expiresInSeconds: number }> {
+    const media = await this.prisma.listingMedia.findUnique({ where: { id: mediaId } });
+    if (!media) throw new NotFoundException('Image not found');
+    if (media.status !== MediaStatus.REVIEW_REQUIRED) {
+      throw new BadRequestException('This image is not awaiting review');
+    }
+    return this.storage.createDownloadUrlWithExpiry(media.fullKey ?? media.storageKey);
   }
 
   async reorder(listingId: string, userId: string, mediaIds: string[]): Promise<MediaDto[]> {
@@ -262,6 +378,9 @@ export class MediaService {
     });
     if (!media) throw new NotFoundException('Image not found');
     if (media.listing.ownerId !== userId) throw new ForbiddenException('This is not your image');
+    if (media.status === MediaStatus.LEGAL_HOLD) {
+      throw new ForbiddenException('This image cannot be deleted while a safety hold is active');
+    }
 
     await this.prisma.listingMedia.delete({ where: { id: mediaId } });
 
@@ -284,12 +403,13 @@ export class MediaService {
   }
 
   toDto(media: ListingMedia): MediaDto {
+    const isPublic = media.status === MediaStatus.READY;
     return {
       id: media.id,
       status: media.status,
-      thumbUrl: media.thumbKey ? this.storage.publicUrl(media.thumbKey) : null,
-      cardUrl: media.cardKey ? this.storage.publicUrl(media.cardKey) : null,
-      fullUrl: media.fullKey ? this.storage.publicUrl(media.fullKey) : null,
+      thumbUrl: isPublic && media.thumbKey ? this.storage.publicUrl(media.thumbKey) : null,
+      cardUrl: isPublic && media.cardKey ? this.storage.publicUrl(media.cardKey) : null,
+      fullUrl: isPublic && media.fullKey ? this.storage.publicUrl(media.fullKey) : null,
       blurhash: media.blurhash,
       sortOrder: media.sortOrder,
       isPrimary: media.isPrimary,

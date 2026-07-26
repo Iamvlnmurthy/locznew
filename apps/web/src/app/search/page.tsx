@@ -3,9 +3,11 @@ import Link from 'next/link';
 import type { Category, ListingSummary } from '@locz/shared-types';
 import { ListingCard } from '@/components/listing-card';
 import { Icon } from '@/components/icons';
-import { getTranslator } from '@/i18n';
+import { getMessageGroup, getTranslator } from '@/i18n';
 import { apiSafe } from '@/lib/api';
 import { getLocale, getSelectedCity } from '@/lib/session';
+import { SearchFilters } from './search-filters';
+import { SearchSort } from './search-sort';
 
 interface SearchResult {
   items: ListingSummary[];
@@ -30,6 +32,7 @@ export default async function SearchPage({
   const params = await searchParams;
   const locale = await getLocale();
   const t = getTranslator(locale);
+  const s = getMessageGroup(locale, 'searchUi');
   const city = await getSelectedCity();
 
   const page = Math.max(1, Number(params.page ?? '1') || 1);
@@ -43,6 +46,8 @@ export default async function SearchPage({
     'priceMin',
     'priceMax',
     'condition',
+    'postedWithinDays',
+    'verifiedOnly',
     'sort',
   ] as const) {
     if (params[key]) query.set(key, params[key]!);
@@ -68,17 +73,26 @@ export default async function SearchPage({
   ]);
 
   const totalPages = result ? Math.max(1, Math.ceil(result.total / result.limit)) : 1;
+  const activeFilters = buildActiveFilters(params, categories ?? [], s);
+  const resultCount = result?.total ?? 0;
+  const visibleResultCount = result?.items.length ?? 0;
+  const isSparse = visibleResultCount > 0 && visibleResultCount <= 2;
+  const resultHeading = params.q
+    ? (resultCount === 1 ? s.resultForOne : s.resultsForMany)
+        .replace('{count}', String(resultCount))
+        .replace('{query}', params.q)
+    : t('search.placeholder');
+  const localMatchHeading = (resultCount === 1 ? s.localMatchOne : s.localMatchesMany).replace(
+    '{count}',
+    String(resultCount),
+  );
 
   return (
     <>
       <section className="search-page__hero">
         <div className="container">
           <span className="section-kicker">{city?.name ?? t('location.nearby')}</span>
-          <h1>
-            {params.q
-              ? t('search.resultsFor', { count: result?.total ?? 0, query: params.q })
-              : t('search.placeholder')}
-          </h1>
+          <h1>{resultHeading}</h1>
 
           <form className="search-page__query" action="/search" method="get" role="search">
             <Icon name="search" width="21" height="21" />
@@ -98,20 +112,21 @@ export default async function SearchPage({
             </button>
           </form>
 
-          <nav className="search-type-tabs" aria-label="Listing type">
+          <nav className="search-type-tabs" aria-label={s.listingType}>
             {[
-              ['', 'Everything'],
-              ['PRODUCT', 'For sale'],
-              ['JOB', 'Jobs'],
-              ['OFFER', 'Offers'],
-              ['SERVICE', 'Services'],
-              ['RENTAL', 'Rentals'],
-            ].map(([value, label]) => (
+              ['', s.everything, 'sparkles'],
+              ['PRODUCT', s.forSale, 'tag'],
+              ['JOB', s.jobs, 'briefcase'],
+              ['OFFER', s.offers, 'store'],
+              ['SERVICE', s.services, 'tools'],
+              ['RENTAL', s.rentals, 'homeCategory'],
+            ].map(([value, label, icon]) => (
               <Link
                 key={value}
                 href={buildFilterHref(params, 'type', value)}
                 className={params.type === value || (!params.type && !value) ? 'is-active' : ''}
               >
+                <Icon name={icon} />
                 {label}
               </Link>
             ))}
@@ -120,99 +135,51 @@ export default async function SearchPage({
       </section>
 
       <div className="container">
+        {activeFilters.length ? (
+          <div className="search-active-filters" aria-label={s.activeFilters}>
+            <span>{s.refinedBy}</span>
+            <div>
+              {activeFilters.map((filter) => (
+                <Link key={filter.key} href={buildFilterHref(params, filter.key, '')}>
+                  {filter.label} <span aria-hidden="true">×</span>
+                </Link>
+              ))}
+            </div>
+            <Link href={clearRefinementsHref(params)}>{s.clearFilters}</Link>
+          </div>
+        ) : null}
+
         <div className="results-layout">
-          <aside className="search-filters">
-            <form className="panel" action="/search" method="get">
-              <div className="search-filters__head">
-                <h2>{t('search.filters')}</h2>
-                <Link href="/search">{t('search.clearFilters')}</Link>
-              </div>
+          <SearchFilters
+            categories={categories ?? []}
+            values={{
+              q: params.q,
+              type: params.type,
+              categoryId: params.categoryId,
+              priceMin: params.priceMin,
+              priceMax: params.priceMax,
+              condition: params.condition,
+              radiusKm: params.radiusKm,
+              postedWithinDays: params.postedWithinDays,
+              verifiedOnly: params.verifiedOnly,
+            }}
+            labels={s}
+          />
 
-              {params.q ? <input type="hidden" name="q" value={params.q} /> : null}
-              {params.type ? <input type="hidden" name="type" value={params.type} /> : null}
-
-              <div className="field">
-                <label htmlFor="categoryId">{t('search.filter.category')}</label>
-                <select id="categoryId" name="categoryId" defaultValue={params.categoryId ?? ''}>
-                  <option value="">—</option>
-                  {(categories ?? []).map((category) => (
-                    <option key={category.id} value={category.id}>
-                      {category.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div className="field">
-                <label htmlFor="priceMin">{t('search.filter.price')}</label>
-                <div style={{ display: 'flex', gap: 8 }}>
-                  <input
-                    id="priceMin"
-                    name="priceMin"
-                    type="number"
-                    min="0"
-                    inputMode="numeric"
-                    placeholder={t('search.filter.minPrice')}
-                    defaultValue={params.priceMin ?? ''}
-                  />
-                  <input
-                    name="priceMax"
-                    type="number"
-                    min="0"
-                    inputMode="numeric"
-                    placeholder={t('search.filter.maxPrice')}
-                    defaultValue={params.priceMax ?? ''}
-                    aria-label={t('search.filter.maxPrice')}
-                  />
-                </div>
-              </div>
-
-              <div className="field">
-                <label htmlFor="radiusKm">{t('search.filter.distance')}</label>
-                <select id="radiusKm" name="radiusKm" defaultValue={params.radiusKm ?? ''}>
-                  <option value="">{t('location.entireCity')}</option>
-                  {[1, 3, 5, 10, 25, 50].map((km) => (
-                    <option key={km} value={km}>
-                      {t('location.within', { distance: km })}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div className="field">
-                <label htmlFor="sort">{t('search.sort.label')}</label>
-                <select id="sort" name="sort" defaultValue={params.sort ?? 'relevance'}>
-                  <option value="relevance">{t('search.sort.relevance')}</option>
-                  <option value="newest">{t('search.sort.newest')}</option>
-                  <option value="price_asc">{t('search.sort.priceAsc')}</option>
-                  <option value="price_desc">{t('search.sort.priceDesc')}</option>
-                  <option value="popular">{t('search.sort.popular')}</option>
-                  <option value="distance">{t('search.sort.distance')}</option>
-                </select>
-              </div>
-
-              <button type="submit" className="btn btn--primary btn--block">
-                Show {result?.total ?? 0} results
-              </button>
-            </form>
-          </aside>
-
-          <div className="search-results">
+          <div className={`search-results${isSparse ? ' search-results--sparse' : ''}`}>
             <div className="search-results__toolbar">
               <div>
-                <strong>{result?.total ?? 0} local matches</strong>
+                <strong>{localMatchHeading}</strong>
                 <span>
-                  {city?.name ? `Around ${city.name}` : 'Across available locations'}
-                  {result?.usedSearchIndex ? ' · Best match' : ' · Latest first'}
+                  {city?.name ? s.aroundCity.replace('{city}', city.name) : s.availableLocations}
+                  {result?.usedSearchIndex ? ` · ${s.bestMatch}` : ` · ${s.latestFirst}`}
                 </span>
               </div>
-              <span className="search-results__promise">
-                <Icon name="shield" /> Safer local discovery
-              </span>
+              <SearchSort value={params.sort ?? 'relevance'} labels={s} />
             </div>
 
             {!result || result.items.length === 0 ? (
-              <div className="empty-state">
+              <div className="empty-state search-empty">
                 <img
                   className="empty-state__art"
                   src="/illustrations/empty-neighbourhood.webp"
@@ -220,29 +187,51 @@ export default async function SearchPage({
                   width="280"
                   height="230"
                 />
-                <p style={{ fontSize: '1.125rem', fontWeight: 600 }}>{t('search.noResults')}</p>
+                <span className="section-kicker">{s.noExactMatch}</span>
+                <h2>{t('search.noResults')}</h2>
                 <p>{t('search.noResultsHint')}</p>
+                <div>
+                  <Link href={clearRefinementsHref(params)} className="btn btn--primary">
+                    {s.widenSearch}
+                  </Link>
+                  <Link href="/post" className="btn btn--outline">
+                    {s.postNeed}
+                  </Link>
+                </div>
               </div>
             ) : (
               <>
-                <div className="card-grid">
+                <div className="search-results__reassurance">
+                  <Icon name="shield" />
+                  <p>
+                    <strong>{s.safetyTitle}</strong> {s.safetyBody}
+                  </p>
+                  <Link href="/safety">
+                    {s.safetyTips} <Icon name="arrow" />
+                  </Link>
+                </div>
+                <div className={`card-grid${isSparse ? ' card-grid--sparse' : ''}`}>
                   {result.items.map((listing) => (
-                    <ListingCard key={listing.id} listing={listing} t={t} />
+                    <ListingCard
+                      key={listing.id}
+                      listing={listing}
+                      t={t}
+                      variant={isSparse ? 'wide' : 'standard'}
+                    />
                   ))}
                 </div>
 
                 {totalPages > 1 ? (
-                  <nav
-                    style={{ display: 'flex', gap: 12, alignItems: 'center', marginTop: 32 }}
-                    aria-label="Pagination"
-                  >
+                  <nav className="search-pagination" aria-label={s.pagination}>
                     {page > 1 ? (
                       <Link className="btn btn--outline" href={buildPageHref(params, page - 1)}>
                         ← {t('common.back')}
                       </Link>
                     ) : null}
-                    <span style={{ color: 'var(--locz-text-muted)', fontSize: '0.875rem' }}>
-                      {page} / {totalPages}
+                    <span>
+                      {s.pageOf
+                        .replace('{page}', String(page))
+                        .replace('{total}', String(totalPages))}
                     </span>
                     {page < totalPages ? (
                       <Link className="btn btn--outline" href={buildPageHref(params, page + 1)}>
@@ -280,4 +269,61 @@ function buildPageHref(params: Record<string, string | undefined>, page: number)
   }
   next.set('page', String(page));
   return `/search?${next.toString()}`;
+}
+
+function buildActiveFilters(
+  params: Record<string, string | undefined>,
+  categories: Category[],
+  labels: Record<string, string>,
+): Array<{ key: string; label: string }> {
+  const filters: Array<{ key: string; label: string }> = [];
+  if (params.categoryId) {
+    filters.push({
+      key: 'categoryId',
+      label:
+        categories.find((category) => category.id === params.categoryId)?.name ?? labels.category,
+    });
+  }
+  if (params.priceMin)
+    filters.push({ key: 'priceMin', label: labels.fromPrice.replace('{price}', params.priceMin) });
+  if (params.priceMax)
+    filters.push({ key: 'priceMax', label: labels.upToPrice.replace('{price}', params.priceMax) });
+  if (params.condition) {
+    filters.push({ key: 'condition', label: humaniseFilter(params.condition, labels) });
+  }
+  if (params.radiusKm)
+    filters.push({ key: 'radiusKm', label: labels.withinKm.replace('{km}', params.radiusKm) });
+  if (params.postedWithinDays) {
+    const postedLabels: Record<string, string> = {
+      '1': labels.postedToday,
+      '7': labels.postedWeek,
+      '30': labels.postedMonth,
+    };
+    filters.push({
+      key: 'postedWithinDays',
+      label: postedLabels[params.postedWithinDays] ?? labels.recentlyPosted,
+    });
+  }
+  if (params.verifiedOnly === 'true') {
+    filters.push({ key: 'verifiedOnly', label: labels.verifiedBusinesses });
+  }
+  return filters;
+}
+
+function clearRefinementsHref(params: Record<string, string | undefined>): string {
+  const next = new URLSearchParams();
+  if (params.q) next.set('q', params.q);
+  if (params.type) next.set('type', params.type);
+  return `/search?${next.toString()}`;
+}
+
+function humaniseFilter(value: string, labels: Record<string, string>): string {
+  const conditions: Record<string, string> = {
+    NEW: labels.conditionNew,
+    LIKE_NEW: labels.conditionLikeNew,
+    GOOD: labels.conditionGood,
+    FAIR: labels.conditionFair,
+    FOR_PARTS: labels.conditionParts,
+  };
+  return conditions[value] ?? value;
 }

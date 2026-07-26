@@ -1,8 +1,9 @@
 import type { Metadata } from 'next';
 import { redirect } from 'next/navigation';
 import type { Category, City } from '@locz/shared-types';
+import { getMessageGroup } from '@/i18n';
 import { apiSafe } from '@/lib/api';
-import { getCurrentUser, getSelectedCity } from '@/lib/session';
+import { getCurrentUser, getLocale, getSelectedCity } from '@/lib/session';
 import { BusinessForm } from './business-form';
 
 export const metadata: Metadata = {
@@ -15,7 +16,11 @@ export const metadata: Metadata = {
 };
 
 export default async function NewBusinessPage() {
-  const [user, city] = await Promise.all([getCurrentUser(), getSelectedCity()]);
+  const [user, city, locale] = await Promise.all([
+    getCurrentUser(),
+    getSelectedCity(),
+    getLocale(),
+  ]);
   if (!user) redirect('/signin?next=%2Fbusiness%2Fnew');
 
   const [categories, cities] = await Promise.all([
@@ -24,8 +29,12 @@ export default async function NewBusinessPage() {
   ]);
 
   return (
-    <div className="container">
-      <BusinessForm categories={categories ?? []} cities={cities ?? []} defaultCityId={city?.id} />
-    </div>
+    <BusinessForm
+      categories={categories ?? []}
+      cities={cities ?? []}
+      defaultCityId={city?.id}
+      userId={user.id}
+      labels={getMessageGroup(locale, 'businessOnboarding')}
+    />
   );
 }

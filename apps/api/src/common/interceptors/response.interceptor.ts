@@ -23,7 +23,7 @@ export class ResponseInterceptor<T> implements NestInterceptor<T, SuccessRespons
     return next.handle().pipe(
       map((data) => {
         // 204 and streamed responses have nothing to wrap.
-        if (data === undefined || data === null) return data as T;
+        if (data === undefined || data === null) return data;
         return { success: true, data, correlationId: request.correlationId };
       }),
     );

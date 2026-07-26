@@ -1,5 +1,7 @@
 import type { Metadata, Viewport } from 'next';
 import Link from 'next/link';
+import { Analytics } from '@vercel/analytics/next';
+import { SpeedInsights } from '@vercel/speed-insights/next';
 import { Header } from '@/components/header';
 import { getTranslator } from '@/i18n';
 import { SITE_URL } from '@/lib/api';
@@ -62,14 +64,15 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   return (
     // `lang` is set from the user's locale so screen readers pronounce Telugu and Hindi
     // correctly instead of reading them as accented English.
-    <html lang={locale} data-theme="light">
+    <html lang={locale} data-theme="light" data-scroll-behavior="smooth">
       <body>
         <Header locale={locale} />
         <main id="main">{children}</main>
 
         <footer className="footer">
           <div className="container">
-            <nav className="footer__links" aria-label="Footer">
+            <nav className="footer__links" aria-label={t('footer.aria')}>
+              <Link href="/business">{t('footer.businesses')}</Link>
               <Link href="/business/new">{t('nav.listBusiness')}</Link>
               <Link href="/about">{t('footer.about')}</Link>
               <Link href="/help">{t('footer.help')}</Link>
@@ -83,6 +86,8 @@ export default async function RootLayout({ children }: { children: React.ReactNo
             <p style={{ margin: 0 }}>{t('footer.postFree')}</p>
           </div>
         </footer>
+        <Analytics />
+        <SpeedInsights />
       </body>
     </html>
   );

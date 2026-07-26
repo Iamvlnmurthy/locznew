@@ -36,24 +36,58 @@ const SUITES = [
 
 const results = [];
 
-for (const [label, script] of SUITES) {
-  console.log(`\n${'━'.repeat(64)}\n  ${label}\n${'━'.repeat(64)}`);
-
+/**
+ * One retry, and only for the one cause worth retrying.
+ *
+ * A suite that dies with "fetch failed" has almost always met a neighbouring dev server
+ * mid-restart, triggered by somebody editing a page while this runs. That is not a defect,
+ * and reporting it as one teaches people to disbelieve the gate — which costs more than
+ * the noise saves.
+ *
+ * A retry is not a pass, though. The summary says which suites needed one, because a suite
+ * that needs a retry every time is saying something about the environment that a silent
+ * second attempt would bury.
+ */
+function runSuite(script) {
   const started = Date.now();
   const run = spawnSync(process.execPath, [join(here, script)], {
-    stdio: 'inherit',
+    encoding: 'utf8',
     env: process.env,
   });
-  const seconds = Math.round((Date.now() - started) / 1000);
 
-  results.push({ label, script, status: run.status ?? 1, seconds });
+  process.stdout.write(run.stdout ?? '');
+  process.stderr.write(run.stderr ?? '');
+
+  return {
+    status: run.status ?? 1,
+    seconds: Math.round((Date.now() - started) / 1000),
+    transient: /fetch failed|ECONNREFUSED|socket hang up/i.test(
+      `${run.stdout ?? ''}${run.stderr ?? ''}`,
+    ),
+  };
+}
+
+for (const [label, script] of SUITES) {
+  console.log(`\n${'\u2501'.repeat(64)}\n  ${label}\n${'\u2501'.repeat(64)}`);
+
+  let attempt = runSuite(script);
+  let retried = false;
+
+  if (attempt.status !== 0 && attempt.transient) {
+    console.log('\n  A service restarted mid-run. Trying once more...\n');
+    retried = true;
+    attempt = runSuite(script);
+  }
+
+  results.push({ label, script, status: attempt.status, seconds: attempt.seconds, retried });
 }
 
 console.log(`\n${'═'.repeat(64)}\n  Summary\n${'═'.repeat(64)}`);
 
 for (const result of results) {
   const mark = result.status === 0 ? '✓' : '✗';
-  console.log(`  ${mark} ${result.label.padEnd(34)} ${String(result.seconds).padStart(4)}s`);
+  const note = result.retried ? '  (passed on retry after a restart)' : '';
+  console.log(`  ${mark} ${result.label.padEnd(34)} ${String(result.seconds).padStart(4)}s${note}`);
 }
 
 const failed = results.filter((result) => result.status !== 0);

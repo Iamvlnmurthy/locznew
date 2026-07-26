@@ -14,18 +14,17 @@
  *
  * One deliberate exception to the HTTP-only rule: making a listing *expire* means moving
  * its expiry into the past, and no API exposes that (correctly — nothing in the product
- * should let a client backdate a record). That single UPDATE goes through psql, and is
- * the only direct database access here.
+ * should let a client backdate a record). That single UPDATE goes straight to the database,
+ * and is the only direct database access here.
  */
 
 import { execFileSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
 import { getSession } from './lib/session.mjs';
 
 const API = process.env.LOCZ_API ?? 'http://127.0.0.1:4000/api/v1';
-// `psql` on PATH is the normal case; LOCZ_PSQL covers a portable install that was never
-// added to it — which is exactly how this project's own PostgreSQL was set up.
-const PSQL = process.env.LOCZ_PSQL ?? 'psql';
+const SQL_RUNNER = fileURLToPath(new URL('./lib/sql-runner.mjs', import.meta.url));
 
 let passed = 0;
 let failed = 0;
@@ -47,35 +46,33 @@ function step(title) {
 }
 
 /**
- * Connection details for psql, taken from the same DATABASE_URL the application uses.
+ * The same DATABASE_URL the application reads, so the gate cannot test a different database.
  *
- * Passed through the environment rather than as an argument: a URL on the command line
- * puts the database password into the process list and into any error message that
- * echoes argv. The Prisma-only query parameters (schema, connection_limit, pool_timeout)
- * are dropped — psql rejects them outright.
+ * Passed through the environment rather than as an argument: a URL on the command line puts
+ * the database password into the process list and into any error message that echoes argv.
  */
-function psqlEnvironment() {
+function databaseUrl() {
+  if (process.env.DATABASE_URL) return process.env.DATABASE_URL;
+
   const file = readFileSync(new URL('../.env', import.meta.url), 'utf8');
   const match = /^DATABASE_URL=(.+)$/m.exec(file);
-
-  const raw = process.env.DATABASE_URL ?? match?.[1].trim().replace(/^"|"$/g, '');
+  const raw = match?.[1].trim().replace(/^"|"$/g, '');
   if (!raw) throw new Error('DATABASE_URL not found in the environment or .env');
-
-  const url = new URL(raw);
-  return {
-    ...process.env,
-    PGHOST: url.hostname,
-    PGPORT: url.port || '5432',
-    PGUSER: decodeURIComponent(url.username),
-    PGPASSWORD: decodeURIComponent(url.password),
-    PGDATABASE: url.pathname.slice(1),
-  };
+  return raw;
 }
 
+/**
+ * One statement, run through the same `pg` driver the application uses.
+ *
+ * This used to shell out to `psql`. A machine without the PostgreSQL client tools installed
+ * aborted the whole suite with `spawnSync psql ENOENT`, which reads like a broken gate
+ * rather than a missing package — so the gate no longer asks the machine for a binary it
+ * cannot guarantee. Output and exit behaviour match `psql -tAc`; see the runner.
+ */
 function sql(statement) {
-  return execFileSync(PSQL, ['-tAc', statement], {
+  return execFileSync(process.execPath, [SQL_RUNNER, statement], {
     encoding: 'utf8',
-    env: psqlEnvironment(),
+    env: { ...process.env, DATABASE_URL: databaseUrl() },
   }).trim();
 }
 

@@ -13,6 +13,20 @@ import '../../features/notifications/presentation/notifications_screen.dart';
 import '../../features/post/presentation/post_ad_screen.dart';
 import '../i18n/strings.dart';
 
+/// Converts the compact campaign URI `locz://ad/<slug>` into the same path used by
+/// verified web links. Keeping this pure makes the platform boundary easy to test.
+Uri normalizeLoczDeepLink(Uri uri) {
+  if (uri.scheme != 'locz' || uri.host != 'ad' || uri.pathSegments.isEmpty) {
+    return uri;
+  }
+
+  return uri.replace(
+    scheme: '',
+    host: '',
+    path: '/ad/${uri.pathSegments.join('/')}',
+  );
+}
+
 /// Routes.
 ///
 /// Paths mirror the web app (`/ad/<slug>`, `/search`, `/post`) so one deep link works
@@ -20,6 +34,10 @@ import '../i18n/strings.dart';
 final routerProvider = Provider<GoRouter>((ref) {
   return GoRouter(
     initialLocation: '/',
+    redirect: (_, state) {
+      final normalized = normalizeLoczDeepLink(state.uri);
+      return normalized == state.uri ? null : normalized.toString();
+    },
     routes: [
       // The tabbed shell keeps the bottom bar mounted across tab switches, so scroll
       // position and in-flight requests survive navigation.
@@ -27,16 +45,30 @@ final routerProvider = Provider<GoRouter>((ref) {
         builder: (context, state, navigationShell) => _TabScaffold(shell: navigationShell),
         branches: [
           StatefulShellBranch(
-            routes: [GoRoute(path: '/', builder: (_, __) => const HomeScreen())],
+            routes: [
+              GoRoute(path: '/', builder: (_, __) => const HomeScreen()),
+            ],
           ),
           StatefulShellBranch(
-            routes: [GoRoute(path: '/search', builder: (_, __) => const SearchScreen())],
+            routes: [
+              GoRoute(
+                path: '/search',
+                builder: (_, __) => const SearchScreen(),
+              ),
+            ],
           ),
           StatefulShellBranch(
-            routes: [GoRoute(path: '/chats', builder: (_, __) => const ChatsScreen())],
+            routes: [
+              GoRoute(path: '/chats', builder: (_, __) => const ChatsScreen()),
+            ],
           ),
           StatefulShellBranch(
-            routes: [GoRoute(path: '/account', builder: (_, __) => const AccountScreen())],
+            routes: [
+              GoRoute(
+                path: '/account',
+                builder: (_, __) => const AccountScreen(),
+              ),
+            ],
           ),
         ],
       ),
@@ -49,7 +81,10 @@ final routerProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(path: '/post', builder: (_, __) => const PostAdScreen()),
       GoRoute(path: '/location', builder: (_, __) => const CityPickerScreen()),
-      GoRoute(path: '/notifications', builder: (_, __) => const NotificationsScreen()),
+      GoRoute(
+        path: '/notifications',
+        builder: (_, __) => const NotificationsScreen(),
+      ),
       GoRoute(
         path: '/chats/:id',
         builder: (context, state) => ChatScreen(conversationId: state.pathParameters['id']!),

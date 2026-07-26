@@ -218,12 +218,12 @@ export class CategoriesService {
         }
         if (definition.minValue && numeric < Number(definition.minValue)) {
           throw new BadRequestException(
-            `${definition.label} must be at least ${definition.minValue}`,
+            `${definition.label} must be at least ${String(definition.minValue)}`,
           );
         }
         if (definition.maxValue && numeric > Number(definition.maxValue)) {
           throw new BadRequestException(
-            `${definition.label} must be at most ${definition.maxValue}`,
+            `${definition.label} must be at most ${String(definition.maxValue)}`,
           );
         }
         return { valueNumber: new Prisma.Decimal(numeric) };

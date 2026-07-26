@@ -42,7 +42,7 @@ export class AllExceptionsFilter implements ExceptionFilter {
 
     const { status, code, message, details } = this.translate(exception);
 
-    if (status >= HttpStatus.INTERNAL_SERVER_ERROR) {
+    if (status >= 500) {
       this.logger.error(
         `${request.method} ${request.url} → ${status} [${request.correlationId ?? '-'}]`,
         exception instanceof Error ? exception.stack : String(exception),
@@ -71,7 +71,7 @@ export class AllExceptionsFilter implements ExceptionFilter {
     // necessary. The value comes from whichever limiter rejected the request: the OTP
     // and posting limiters know their own window, and the global throttler exposes
     // its reset through this header already.
-    if (status === HttpStatus.TOO_MANY_REQUESTS) {
+    if (status === 429) {
       const retryAfter = this.retryAfterFor(exception, response);
       if (retryAfter !== undefined) response.setHeader('Retry-After', String(retryAfter));
     }
@@ -99,14 +99,17 @@ export class AllExceptionsFilter implements ExceptionFilter {
       // are returned as details so a form can highlight every invalid field.
       const message = Array.isArray(rawMessage)
         ? String(rawMessage[0])
-        : String(rawMessage ?? exception.message);
+        : typeof rawMessage === 'string'
+          ? rawMessage
+          : exception.message;
+      const rawCode = record.error;
 
       return {
         status,
         // Normalised: Nest's built-in exceptions emit human-readable strings such as
         // "Not Found", while ours emit "NotFound". Clients switch on this value, so it
         // must not depend on which layer threw.
-        code: this.normaliseCode(String(record.error ?? this.codeFor(status))),
+        code: this.normaliseCode(typeof rawCode === 'string' ? rawCode : this.codeFor(status)),
         message,
         details: Array.isArray(rawMessage) ? rawMessage : record.details,
       };
@@ -160,7 +163,7 @@ export class AllExceptionsFilter implements ExceptionFilter {
     if (exception instanceof HttpException) {
       const payload = exception.getResponse();
       if (typeof payload === 'object' && payload !== null && 'retryAfterSeconds' in payload) {
-        const seconds = Number((payload as { retryAfterSeconds: unknown }).retryAfterSeconds);
+        const seconds = Number(payload.retryAfterSeconds);
         if (Number.isFinite(seconds) && seconds > 0) return Math.ceil(seconds);
       }
     }

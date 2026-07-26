@@ -7,6 +7,7 @@ import '../features/listings/data/listing_repository.dart';
 import '../features/listings/domain/models.dart';
 import 'i18n/strings.dart';
 import 'network/api_client.dart';
+import 'notifications/push_service.dart';
 import 'storage/token_storage.dart';
 
 /// Composition root. Every dependency is resolved here so widgets never construct a
@@ -22,7 +23,10 @@ final Provider<ApiClient> apiClientProvider = Provider<ApiClient>((ref) {
 });
 
 final Provider<AuthRepository> authRepositoryProvider = Provider<AuthRepository>(
-  (ref) => AuthRepository(ref.watch(apiClientProvider), ref.watch(tokenStorageProvider)),
+  (ref) => AuthRepository(
+    ref.watch(apiClientProvider),
+    ref.watch(tokenStorageProvider),
+  ),
 );
 
 final listingRepositoryProvider = Provider<ListingRepository>(
@@ -199,6 +203,34 @@ class LocaleNotifier extends StateNotifier<AppLocaleOption> {
 
 final localeProvider = StateNotifierProvider<LocaleNotifier, AppLocaleOption>(
   (ref) => LocaleNotifier(),
+);
+
+// ---------------------------------------------------------------------------
+// Push permission — attached only when Firebase was configured successfully
+// ---------------------------------------------------------------------------
+
+class PushPermissionNotifier extends StateNotifier<bool?> {
+  PushPermissionNotifier() : super(null);
+
+  PushService? _service;
+
+  void attach(PushService service) => _service = service;
+
+  void detach(PushService service) {
+    if (identical(_service, service)) _service = null;
+  }
+
+  Future<bool> request() async {
+    final service = _service;
+    if (service == null) return false;
+    final granted = await service.requestPermission();
+    state = granted;
+    return granted;
+  }
+}
+
+final pushPermissionProvider = StateNotifierProvider<PushPermissionNotifier, bool?>(
+  (ref) => PushPermissionNotifier(),
 );
 
 // ---------------------------------------------------------------------------

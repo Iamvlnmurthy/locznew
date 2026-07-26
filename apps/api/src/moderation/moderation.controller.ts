@@ -1,5 +1,6 @@
 import { Body, Controller, Get, HttpCode, HttpStatus, Param, Post, Query } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { MediaSafetyCaseStatus } from '@prisma/client';
 import { AuthenticatedUser, CurrentUser } from '../common/decorators/current-user.decorator';
 import { PaginatedDto, paginate } from '../common/dto/pagination.dto';
 import { RequirePermissions } from '../rbac/rbac.decorators';
@@ -9,9 +10,15 @@ import {
   ModerationQueueQueryDto,
   RejectListingDto,
   BlockImageDto,
+  ReportSafetyCaseDto,
+  ResolveSafetyCaseDto,
+  SafetyCaseDetailDto,
+  SafetyEvidenceAccessDto,
   SuspendUserDto,
 } from './dto/moderation.dto';
 import { ImageModerationService } from '../media/image-moderation.service';
+import { MediaSafetyService } from '../media/media-safety.service';
+import { MediaService } from '../media/media.service';
 import { ModerationService } from './moderation.service';
 
 @ApiTags('moderation')
@@ -21,6 +28,8 @@ export class ModerationController {
   constructor(
     private readonly moderation: ModerationService,
     private readonly images: ImageModerationService,
+    private readonly media: MediaService,
+    private readonly mediaSafety: MediaSafetyService,
   ) {}
 
   @Get('queue')
@@ -47,8 +56,106 @@ export class ModerationController {
     @Body() dto: ApproveListingDto,
     @CurrentUser() user: AuthenticatedUser,
   ): Promise<{ id: string; status: string }> {
+    // A listing cannot enter search until every reviewed rendition has been promoted.
+    await this.media.approveForListing(id);
     const listing = await this.moderation.approveListing(id, user.id, dto.note);
     return { id: listing.id, status: listing.status };
+  }
+
+  @Get('media/:id/preview')
+  @RequirePermissions('listing:moderate')
+  @ApiOperation({
+    summary: 'Create a short-lived private preview for an image awaiting review',
+  })
+  moderationPreview(@Param('id') id: string): Promise<{ url: string; expiresInSeconds: number }> {
+    return this.media.moderationPreview(id);
+  }
+
+  @Get('safety/cases')
+  @RequirePermissions('safety:case:read')
+  @ApiOperation({
+    summary: 'Restricted child-safety case queue without image content',
+  })
+  safetyCases(): ReturnType<MediaSafetyService['listOpenCases']> {
+    return this.mediaSafety.listOpenCases();
+  }
+
+  @Get('safety/cases/:id')
+  @RequirePermissions('safety:case:read')
+  @ApiOperation({
+    summary: 'Restricted safety-case metadata and prior access history',
+    description:
+      'Returns no image, storage key, hash, or URL. Viewing the detail is itself recorded in the restricted audit log.',
+  })
+  @ApiResponse({ status: 200, type: SafetyCaseDetailDto })
+  safetyCaseDetail(
+    @Param('id') id: string,
+    @CurrentUser() user: AuthenticatedUser,
+  ): Promise<SafetyCaseDetailDto> {
+    return this.mediaSafety.getCaseDetail(id, user.id);
+  }
+
+  @Post('safety/cases/:id/evidence-preview')
+  @HttpCode(HttpStatus.OK)
+  @RequirePermissions('safety:evidence:read')
+  @ApiOperation({
+    summary: 'Issue an audited, short-lived preview for held evidence',
+    description:
+      'Not available to ordinary moderators. The justification is recorded before storage signs the URL.',
+  })
+  safetyEvidencePreview(
+    @Param('id') id: string,
+    @Body() dto: SafetyEvidenceAccessDto,
+    @CurrentUser() user: AuthenticatedUser,
+  ): Promise<{ url: string; expiresInSeconds: number }> {
+    return this.mediaSafety.evidencePreview(id, user.id, dto.justification);
+  }
+
+  @Post('safety/cases/:id/report')
+  @HttpCode(HttpStatus.OK)
+  @RequirePermissions('safety:case:report')
+  @ApiOperation({
+    summary: 'Record a safety case as reported through the approved channel',
+    description:
+      'Only an open case can be reported. The external acknowledgement and actor justification are retained as restricted metadata.',
+  })
+  reportSafetyCase(
+    @Param('id') id: string,
+    @Body() dto: ReportSafetyCaseDto,
+    @CurrentUser() user: AuthenticatedUser,
+  ): Promise<{ id: string; status: MediaSafetyCaseStatus }> {
+    return this.mediaSafety.markReported(id, user.id, dto.reportReference, dto.justification);
+  }
+
+  @Post('safety/cases/:id/release')
+  @HttpCode(HttpStatus.OK)
+  @RequirePermissions('safety:case:release')
+  @ApiOperation({
+    summary: 'Release a false-positive hold back to ordinary human review',
+    description:
+      'Does not publish the image or listing. The quarantined media returns to REVIEW_REQUIRED.',
+  })
+  releaseSafetyCase(
+    @Param('id') id: string,
+    @Body() dto: ResolveSafetyCaseDto,
+    @CurrentUser() user: AuthenticatedUser,
+  ): Promise<{ id: string; status: MediaSafetyCaseStatus }> {
+    return this.mediaSafety.releaseHold(id, user.id, dto.justification);
+  }
+
+  @Post('safety/cases/:id/close')
+  @HttpCode(HttpStatus.OK)
+  @RequirePermissions('safety:case:close')
+  @ApiOperation({
+    summary: 'Close a reported safety case while preserving its legal hold',
+    description: 'Closing ends active handling; it does not delete evidence or release held media.',
+  })
+  closeSafetyCase(
+    @Param('id') id: string,
+    @Body() dto: ResolveSafetyCaseDto,
+    @CurrentUser() user: AuthenticatedUser,
+  ): Promise<{ id: string; status: MediaSafetyCaseStatus }> {
+    return this.mediaSafety.closeCase(id, user.id, dto.justification);
   }
 
   @Post('listings/:id/reject')

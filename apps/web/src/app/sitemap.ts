@@ -25,7 +25,15 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
   // Information pages. Low priority but genuinely indexable — "is locz safe" is a real
   // query, and the safety page is the honest answer to it.
-  for (const path of ['/business/new', '/about', '/help', '/safety', '/terms', '/privacy']) {
+  for (const path of [
+    '/business',
+    '/business/new',
+    '/about',
+    '/help',
+    '/safety',
+    '/terms',
+    '/privacy',
+  ]) {
     entries.push({
       url: `${SITE_URL}${path}`,
       lastModified: now,

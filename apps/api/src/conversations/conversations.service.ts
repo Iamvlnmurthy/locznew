@@ -72,7 +72,19 @@ export class ConversationsService {
       throw new BadRequestException('This listing is no longer accepting enquiries');
     }
 
-    const recipientId = listing?.ownerId;
+    const business = dto.businessId
+      ? await this.prisma.business.findFirst({
+          where: { id: dto.businessId, deletedAt: null },
+          select: { id: true, ownerId: true, isActive: true },
+        })
+      : null;
+
+    if (dto.businessId && !business) throw new NotFoundException('Business not found');
+    if (business && !business.isActive) {
+      throw new BadRequestException('This business is no longer accepting enquiries');
+    }
+
+    const recipientId = listing?.ownerId ?? business?.ownerId;
     if (!recipientId) throw new BadRequestException('Could not determine who to contact');
     if (recipientId === userId) {
       throw new BadRequestException('You cannot send an enquiry about your own listing');
@@ -81,8 +93,9 @@ export class ConversationsService {
     await this.assertNotBlocked(userId, recipientId);
     await this.assertEnquiryRateLimit(userId);
 
-    const context =
-      listing?.type === ListingType.JOB
+    const context = business
+      ? ConversationContext.BUSINESS_ENQUIRY
+      : listing?.type === ListingType.JOB
         ? ConversationContext.JOB_ENQUIRY
         : ConversationContext.LISTING_ENQUIRY;
 
@@ -93,7 +106,12 @@ export class ConversationsService {
           where: { listingId_initiatorId: { listingId: dto.listingId, initiatorId: userId } },
           include: CONVERSATION_INCLUDE,
         })
-      : null;
+      : dto.businessId
+        ? await this.prisma.conversation.findFirst({
+            where: { businessId: dto.businessId, initiatorId: userId, isClosed: false },
+            include: CONVERSATION_INCLUDE,
+          })
+        : null;
 
     const conversation =
       existing ??
@@ -180,7 +198,9 @@ export class ConversationsService {
       userId: recipientId,
       type: isFirstMessage ? NotificationType.NEW_ENQUIRY : NotificationType.NEW_MESSAGE,
       title: isFirstMessage
-        ? `New enquiry about "${conversation.listing?.title ?? 'your listing'}"`
+        ? conversation.context === ConversationContext.BUSINESS_ENQUIRY
+          ? 'New enquiry about your business'
+          : `New enquiry about "${conversation.listing?.title ?? 'your listing'}"`
         : `New message from ${sender.displayName}`,
       body: trimmed.slice(0, 140),
       data: {

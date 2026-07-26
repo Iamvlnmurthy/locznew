@@ -30,7 +30,11 @@ class ApiException implements Exception {
       case DioExceptionType.connectionTimeout:
       case DioExceptionType.sendTimeout:
       case DioExceptionType.receiveTimeout:
-        return const ApiException('The connection timed out. Check your network.', 0, 'Timeout');
+        return const ApiException(
+          'The connection timed out. Check your network.',
+          0,
+          'Timeout',
+        );
       case DioExceptionType.connectionError:
         return const ApiException('No internet connection.', 0, 'Offline');
       default:

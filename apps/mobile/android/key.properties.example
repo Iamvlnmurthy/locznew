@@ -1,0 +1,6 @@
+# Copy this file to key.properties. The real file and keystore are gitignored.
+# Paths are relative to apps/mobile/android unless an absolute path is supplied.
+storeFile=C:/secure/location/locz-upload-key.jks
+storePassword=replace-with-a-secret
+keyAlias=locz-upload
+keyPassword=replace-with-a-secret

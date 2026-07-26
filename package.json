@@ -17,9 +17,13 @@
     "acceptance:admin": "node scripts/acceptance-admin.mjs",
     "acceptance:all": "node scripts/acceptance-all.mjs",
     "acceptance:browser": "node scripts/acceptance-browser.mjs",
+    "acceptance:business-safety": "node scripts/acceptance-browser.mjs --business-safety",
     "acceptance:filters": "node scripts/acceptance-filters.mjs",
     "acceptance:jobs": "node scripts/acceptance-jobs.mjs",
+    "acceptance:localized-browser": "node scripts/acceptance-localized-browser.mjs",
     "acceptance:performance": "node scripts/acceptance-performance.mjs",
+    "acceptance:responsive": "node scripts/acceptance-responsive.mjs",
+    "acceptance:search-browser": "node scripts/acceptance-search-browser.mjs",
     "acceptance:security": "node scripts/acceptance-security.mjs",
     "acceptance:web": "node scripts/acceptance-web.mjs",
     "build": "npm run build --workspaces --if-present",
@@ -46,11 +50,16 @@
     "verify:safety-readiness": "node scripts/child-safety-readiness.mjs"
   },
   "devDependencies": {
+    "@eslint/js": "^9.39.5",
     "axe-core": "^4.12.1",
+    "eslint": "^9.39.5",
+    "eslint-config-next": "^16.2.12",
+    "eslint-config-prettier": "^10.1.8",
     "husky": "^9.1.7",
     "lint-staged": "^17.2.0",
     "prettier": "^3.9.6",
-    "typescript": "^6.0.3"
+    "typescript": "^6.0.3",
+    "typescript-eslint": "^8.65.0"
   },
   "lint-staged": {
     "apps/api/**/*.ts": [

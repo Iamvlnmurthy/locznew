@@ -1,6 +1,8 @@
 'use server';
 
 import { api } from '@/lib/api';
+import { getTranslator } from '@/i18n';
+import { getLocale } from '@/lib/session';
 
 export async function toggleSaveAction(
   listingId: string,
@@ -32,8 +34,9 @@ export async function sendEnquiryAction(
 ): Promise<EnquiryState> {
   const listingId = String(formData.get('listingId') ?? '');
   const message = String(formData.get('message') ?? '').trim();
+  const t = getTranslator(await getLocale());
 
-  if (message.length < 2) return { error: 'Write a short message first' };
+  if (message.length < 2) return { error: t('listing.writeMessageFirst') };
 
   try {
     await api('/conversations', {
@@ -41,8 +44,8 @@ export async function sendEnquiryAction(
       auth: true,
       body: { listingId, message },
     });
-  } catch (error) {
-    return { error: error instanceof Error ? error.message : 'Could not send the message' };
+  } catch {
+    return { error: t('listing.sendFailed') };
   }
 
   return { sent: true };

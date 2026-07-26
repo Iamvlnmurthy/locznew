@@ -1416,6 +1416,238 @@
         "tags": ["moderation"]
       }
     },
+    "/api/moderation/media/{id}/preview": {
+      "get": {
+        "operationId": "ModerationController_moderationPreview",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Create a short-lived private preview for an image awaiting review",
+        "tags": ["moderation"]
+      }
+    },
+    "/api/moderation/safety/cases": {
+      "get": {
+        "operationId": "ModerationController_safetyCases",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Restricted child-safety case queue without image content",
+        "tags": ["moderation"]
+      }
+    },
+    "/api/moderation/safety/cases/{id}": {
+      "get": {
+        "description": "Returns no image, storage key, hash, or URL. Viewing the detail is itself recorded in the restricted audit log.",
+        "operationId": "ModerationController_safetyCaseDetail",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SafetyCaseDetailDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Restricted safety-case metadata and prior access history",
+        "tags": ["moderation"]
+      }
+    },
+    "/api/moderation/safety/cases/{id}/evidence-preview": {
+      "post": {
+        "description": "Not available to ordinary moderators. The justification is recorded before storage signs the URL.",
+        "operationId": "ModerationController_safetyEvidencePreview",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SafetyEvidenceAccessDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Issue an audited, short-lived preview for held evidence",
+        "tags": ["moderation"]
+      }
+    },
+    "/api/moderation/safety/cases/{id}/report": {
+      "post": {
+        "description": "Only an open case can be reported. The external acknowledgement and actor justification are retained as restricted metadata.",
+        "operationId": "ModerationController_reportSafetyCase",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReportSafetyCaseDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Record a safety case as reported through the approved channel",
+        "tags": ["moderation"]
+      }
+    },
+    "/api/moderation/safety/cases/{id}/release": {
+      "post": {
+        "description": "Does not publish the image or listing. The quarantined media returns to REVIEW_REQUIRED.",
+        "operationId": "ModerationController_releaseSafetyCase",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ResolveSafetyCaseDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Release a false-positive hold back to ordinary human review",
+        "tags": ["moderation"]
+      }
+    },
+    "/api/moderation/safety/cases/{id}/close": {
+      "post": {
+        "description": "Closing ends active handling; it does not delete evidence or release held media.",
+        "operationId": "ModerationController_closeSafetyCase",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ResolveSafetyCaseDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Close a reported safety case while preserving its legal hold",
+        "tags": ["moderation"]
+      }
+    },
     "/api/moderation/listings/{id}/reject": {
       "post": {
         "description": "The reason is shown to the poster, so it must be written for them, not for internal notes.",
@@ -1488,6 +1720,120 @@
           }
         ],
         "summary": "Remove a listing that is already published",
+        "tags": ["moderation"]
+      }
+    },
+    "/api/moderation/users/{id}/suspend": {
+      "post": {
+        "description": "Takes effect immediately: every session is revoked, so the account cannot keep acting on a token it already holds. Listings are left alone, because hiding the content of an account is a separate decision with its own trail.",
+        "operationId": "ModerationController_suspendUser",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SuspendUserDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Account suspended"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Suspend an account",
+        "tags": ["moderation"]
+      }
+    },
+    "/api/moderation/users/{id}/reinstate": {
+      "post": {
+        "description": "The account signs in again; revoked sessions are not restored.",
+        "operationId": "ModerationController_reinstateUser",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SuspendUserDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Lift a suspension",
+        "tags": ["moderation"]
+      }
+    },
+    "/api/moderation/media/{id}/block": {
+      "post": {
+        "description": "Removing a listing does not stop the same photograph being uploaded again a minute later. Blocking records both an exact and a perceptual hash, so a re-crop or a re-save of the same picture is refused too.",
+        "operationId": "ModerationController_blockImage",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BlockImageDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Image blocked"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Refuse this image from now on",
         "tags": ["moderation"]
       }
     },
@@ -1630,6 +1976,24 @@
             "schema": {
               "type": "string",
               "enum": ["NEW", "LIKE_NEW", "GOOD", "FAIR", "FOR_PARTS"]
+            }
+          },
+          {
+            "name": "verifiedOnly",
+            "required": false,
+            "in": "query",
+            "description": "Only listings from verified businesses",
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "postedWithinDays",
+            "required": false,
+            "in": "query",
+            "description": "Posted within the last N days",
+            "schema": {
+              "type": "number"
             }
           },
           {
@@ -2367,6 +2731,16 @@
             }
           },
           {
+            "name": "pincode",
+            "required": false,
+            "in": "query",
+            "description": "The visitor’s pincode. Its centroid becomes the coordinates the feed is built around, so someone who never granted location still gets a local feed.",
+            "schema": {
+              "example": "500081",
+              "type": "string"
+            }
+          },
+          {
             "name": "latitude",
             "required": false,
             "in": "query",
@@ -2620,6 +2994,102 @@
       }
     },
     "/api/businesses": {
+      "get": {
+        "operationId": "BusinessesController_listPublic",
+        "parameters": [
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "minimum": 1,
+              "default": 1,
+              "type": "number"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "minimum": 1,
+              "maximum": 50,
+              "default": 20,
+              "type": "number"
+            }
+          },
+          {
+            "name": "q",
+            "required": false,
+            "in": "query",
+            "description": "Business name or description",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "cityId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "categoryId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "verifiedOnly",
+            "required": false,
+            "in": "query",
+            "description": "Only administrator-verified businesses",
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "verificationStatus",
+            "required": false,
+            "in": "query",
+            "description": "Filter by verification workflow status",
+            "schema": {
+              "type": "string",
+              "enum": ["UNVERIFIED", "PENDING", "VERIFIED", "REJECTED"]
+            }
+          },
+          {
+            "name": "sort",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": ["recommended", "popular", "newest"]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/BusinessSummaryDto"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "summary": "Browse active local businesses",
+        "tags": ["businesses"]
+      },
       "post": {
         "description": "Free and immediate — no approval step. Verification is a separate signal an administrator grants later.",
         "operationId": "BusinessesController_create",
@@ -2888,6 +3358,34 @@
           }
         ],
         "summary": "Remove a staff member",
+        "tags": ["businesses"]
+      }
+    },
+    "/api/businesses/{id}/verification-request": {
+      "post": {
+        "description": "Requires a description, address, phone number and opening hours. Repeated pending requests are rejected.",
+        "operationId": "BusinessesController_requestVerification",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Request administrator verification for an owned business",
         "tags": ["businesses"]
       }
     },
@@ -3380,6 +3878,34 @@
           }
         ],
         "summary": "Background queue depth",
+        "tags": ["admin"]
+      }
+    },
+    "/api/admin/jobs/{name}/run": {
+      "post": {
+        "description": "Every one of these already runs on a schedule; this only removes the wait. They are idempotent — each re-reads current state rather than trusting its payload — so an early or repeated run is safe.",
+        "operationId": "AdminController_runJob",
+        "parameters": [
+          {
+            "name": "name",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "202": {
+            "description": "Job queued"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Run a maintenance job now (admin)",
         "tags": ["admin"]
       }
     },
@@ -4423,7 +4949,18 @@
           },
           "status": {
             "type": "string",
-            "enum": ["PENDING_UPLOAD", "UPLOADED", "PROCESSING", "READY", "FAILED"]
+            "enum": [
+              "PENDING_UPLOAD",
+              "UPLOADED",
+              "QUARANTINED",
+              "SCANNING",
+              "REVIEW_REQUIRED",
+              "PROCESSING",
+              "READY",
+              "REJECTED",
+              "LEGAL_HOLD",
+              "FAILED"
+            ]
           },
           "thumbUrl": {
             "type": "object",
@@ -4643,12 +5180,197 @@
           }
         }
       },
+      "SafetyCaseAccessLogDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "actorId": {
+            "type": "string"
+          },
+          "action": {
+            "type": "string",
+            "enum": [
+              "CASE_VIEWED",
+              "EVIDENCE_PREVIEW",
+              "CASE_REPORTED",
+              "HOLD_RELEASED",
+              "CASE_CLOSED"
+            ]
+          },
+          "justification": {
+            "type": "string"
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "required": ["id", "actorId", "action", "justification", "createdAt"]
+      },
+      "SafetyCaseDetailDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "mediaId": {
+            "type": "string"
+          },
+          "listingId": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": ["OPEN", "REPORTED", "RELEASED", "CLOSED"]
+          },
+          "mediaStatus": {
+            "type": "string",
+            "enum": [
+              "PENDING_UPLOAD",
+              "UPLOADED",
+              "QUARANTINED",
+              "SCANNING",
+              "REVIEW_REQUIRED",
+              "PROCESSING",
+              "READY",
+              "REJECTED",
+              "LEGAL_HOLD",
+              "FAILED"
+            ]
+          },
+          "provider": {
+            "type": "string"
+          },
+          "providerReference": {
+            "type": "object",
+            "nullable": true
+          },
+          "reasonCode": {
+            "type": "string"
+          },
+          "reportReference": {
+            "type": "object",
+            "nullable": true
+          },
+          "resolutionNote": {
+            "type": "object",
+            "nullable": true
+          },
+          "openedAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "reportedAt": {
+            "type": "object",
+            "nullable": true
+          },
+          "releasedAt": {
+            "type": "object",
+            "nullable": true
+          },
+          "closedAt": {
+            "type": "object",
+            "nullable": true
+          },
+          "accessHistory": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SafetyCaseAccessLogDto"
+            }
+          }
+        },
+        "required": [
+          "id",
+          "mediaId",
+          "listingId",
+          "status",
+          "mediaStatus",
+          "provider",
+          "reasonCode",
+          "openedAt",
+          "accessHistory"
+        ]
+      },
+      "SafetyEvidenceAccessDto": {
+        "type": "object",
+        "properties": {
+          "justification": {
+            "type": "string",
+            "example": "Verify provider match before statutory report 2026-07-26/04",
+            "description": "Written to the restricted access log before a preview URL is issued. Never include image details."
+          }
+        },
+        "required": ["justification"]
+      },
+      "ReportSafetyCaseDto": {
+        "type": "object",
+        "properties": {
+          "reportReference": {
+            "type": "string",
+            "example": "REPORT-2026-07-26-004",
+            "description": "Opaque acknowledgement from the approved reporting channel. Do not include image details."
+          },
+          "justification": {
+            "type": "string",
+            "example": "Submitted by the named safety officer through the approved reporting channel",
+            "description": "Recorded in the restricted case access log."
+          }
+        },
+        "required": ["reportReference", "justification"]
+      },
+      "ResolveSafetyCaseDto": {
+        "type": "object",
+        "properties": {
+          "justification": {
+            "type": "string",
+            "example": "Confirmed false positive after the approved specialist review",
+            "description": "Recorded in the restricted case access log. Never include image details or provider hashes."
+          }
+        },
+        "required": ["justification"]
+      },
       "RejectListingDto": {
         "type": "object",
         "properties": {
           "reason": {
             "type": "string",
             "example": "Contact details in the description instead of the contact fields"
+          }
+        },
+        "required": ["reason"]
+      },
+      "SuspendUserDto": {
+        "type": "object",
+        "properties": {
+          "reason": {
+            "type": "string",
+            "example": "Repeated fake listings after two warnings",
+            "description": "Recorded in the audit trail — the reason is what makes the action reviewable"
+          },
+          "durationDays": {
+            "type": "number",
+            "example": 7,
+            "description": "Days to suspend for. Omit for indefinite — but most suspensions should not be: a fortnight is a correction, a permanent ban for a first offence is a decision to lose a user rather than teach one.",
+            "minimum": 1,
+            "maximum": 365
+          }
+        },
+        "required": ["reason"]
+      },
+      "BlockImageDto": {
+        "type": "object",
+        "properties": {
+          "reason": {
+            "type": "string",
+            "example": "Photograph of ivory carving, listed as an antique bangle",
+            "description": "Shown to the uploader if they try again, so it has to say something useful"
+          },
+          "category": {
+            "type": "string",
+            "example": "WILDLIFE",
+            "description": "Matches the banned-keyword categories, so image and text refusals report together"
           }
         },
         "required": ["reason"]
@@ -5788,6 +6510,62 @@
         },
         "required": ["dayOfWeek", "opensAt", "closesAt"]
       },
+      "BusinessSummaryDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "slug": {
+            "type": "string"
+          },
+          "categoryName": {
+            "type": "string"
+          },
+          "cityName": {
+            "type": "string"
+          },
+          "logoUrl": {
+            "type": "object"
+          },
+          "verificationStatus": {
+            "type": "string",
+            "enum": ["UNVERIFIED", "PENDING", "VERIFIED", "REJECTED"]
+          },
+          "listingCount": {
+            "type": "number"
+          },
+          "viewCount": {
+            "type": "number"
+          },
+          "description": {
+            "type": "object"
+          },
+          "addressLine": {
+            "type": "object"
+          },
+          "hours": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/BusinessHourDto"
+            }
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "slug",
+          "categoryName",
+          "cityName",
+          "verificationStatus",
+          "listingCount",
+          "viewCount",
+          "hours"
+        ]
+      },
       "CreateBusinessDto": {
         "type": "object",
         "properties": {
@@ -5875,6 +6653,12 @@
           "addressLine": {
             "type": "object"
           },
+          "hours": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/BusinessHourDto"
+            }
+          },
           "latitude": {
             "type": "object"
           },
@@ -5892,12 +6676,6 @@
           },
           "website": {
             "type": "object"
-          },
-          "hours": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/BusinessHourDto"
-            }
           },
           "isOwner": {
             "type": "boolean"
@@ -5919,49 +6697,6 @@
           "hours",
           "isOwner",
           "createdAt"
-        ]
-      },
-      "BusinessSummaryDto": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string"
-          },
-          "name": {
-            "type": "string"
-          },
-          "slug": {
-            "type": "string"
-          },
-          "categoryName": {
-            "type": "string"
-          },
-          "cityName": {
-            "type": "string"
-          },
-          "logoUrl": {
-            "type": "object"
-          },
-          "verificationStatus": {
-            "type": "string",
-            "enum": ["UNVERIFIED", "PENDING", "VERIFIED", "REJECTED"]
-          },
-          "listingCount": {
-            "type": "number"
-          },
-          "viewCount": {
-            "type": "number"
-          }
-        },
-        "required": [
-          "id",
-          "name",
-          "slug",
-          "categoryName",
-          "cityName",
-          "verificationStatus",
-          "listingCount",
-          "viewCount"
         ]
       },
       "UpdateBusinessDto": {

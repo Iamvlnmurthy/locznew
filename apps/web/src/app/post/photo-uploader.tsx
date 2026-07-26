@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { Icon } from '@/components/icons';
 import { confirmUploadAction, requestUploadUrlAction } from './actions';
 
 interface Upload {
@@ -10,6 +11,17 @@ interface Upload {
   thumbUrl?: string | null;
   error?: string;
   progress: number;
+}
+
+interface PhotoUploaderLabels {
+  choosePhotos: string;
+  formats: string;
+  preparing: string;
+  ready: string;
+  remove: string;
+  processError: string;
+  uploadFailed: string;
+  networkError: string;
 }
 
 /**
@@ -24,10 +36,12 @@ export function PhotoUploader({
   listingId,
   label,
   hint,
+  labels,
 }: {
   listingId: string;
   label: string;
   hint: string;
+  labels: PhotoUploaderLabels;
 }) {
   const [uploads, setUploads] = useState<Upload[]>([]);
 
@@ -64,16 +78,19 @@ export function PhotoUploader({
             key,
             confirmed.ok
               ? { status: 'ready', thumbUrl: confirmed.thumbUrl }
-              : { status: 'failed', error: 'Could not process this image' },
+              : { status: 'failed', error: labels.processError },
           );
         } else {
-          patch(key, { status: 'failed', error: `Upload failed (${request.status})` });
+          patch(key, {
+            status: 'failed',
+            error: labels.uploadFailed.replace('{status}', String(request.status)),
+          });
         }
         resolve();
       };
 
       request.onerror = () => {
-        patch(key, { status: 'failed', error: 'Network error' });
+        patch(key, { status: 'failed', error: labels.networkError });
         resolve();
       };
 
@@ -106,10 +123,10 @@ export function PhotoUploader({
   }
 
   return (
-    <div className="field">
-      <label htmlFor="photos">{label}</label>
+    <div className="photo-uploader">
       <input
         id="photos"
+        className="sr-only"
         type="file"
         accept="image/jpeg,image/png,image/webp,image/heic"
         multiple
@@ -117,73 +134,49 @@ export function PhotoUploader({
         // upload afterwards, and forcing the camera hides the gallery.
         onChange={onSelect}
       />
-      <p className="field__hint">{hint}</p>
+      <label htmlFor="photos" className="photo-uploader__dropzone">
+        <span className="photo-uploader__icon">
+          <Icon name="image" />
+        </span>
+        <strong>{label}</strong>
+        <span>{labels.choosePhotos}</span>
+        <small>{labels.formats}</small>
+      </label>
+      <p className="photo-uploader__hint">{hint}</p>
 
       {uploads.length > 0 ? (
-        <ul style={{ listStyle: 'none', padding: 0, margin: '12px 0 0', display: 'grid', gap: 8 }}>
+        <ul className="photo-uploader__list">
           {uploads.map((upload) => (
-            <li
-              key={upload.key}
-              style={{ display: 'flex', gap: 12, alignItems: 'center', fontSize: '0.875rem' }}
-            >
+            <li key={upload.key}>
               {upload.thumbUrl ? (
-                <img
-                  src={upload.thumbUrl}
-                  alt=""
-                  width={44}
-                  height={44}
-                  style={{ borderRadius: 6, objectFit: 'cover' }}
-                />
+                <img src={upload.thumbUrl} alt="" width={44} height={44} />
               ) : (
-                <div
-                  style={{
-                    width: 44,
-                    height: 44,
-                    borderRadius: 6,
-                    background: 'var(--locz-surface-muted)',
-                  }}
-                />
+                <span className="photo-uploader__placeholder">
+                  <Icon name="image" />
+                </span>
               )}
 
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                  {upload.name}
-                </div>
+              <div className="photo-uploader__status">
+                <strong>{upload.name}</strong>
 
                 {upload.status === 'uploading' ? (
-                  <div
-                    style={{
-                      height: 4,
-                      background: 'var(--locz-surface-muted)',
-                      borderRadius: 999,
-                      marginTop: 4,
-                    }}
-                  >
-                    <div
-                      style={{
-                        width: `${upload.progress}%`,
-                        height: '100%',
-                        background: 'var(--locz-primary)',
-                        borderRadius: 999,
-                      }}
-                    />
+                  <div className="photo-uploader__progress">
+                    <span style={{ width: `${upload.progress}%` }} />
                   </div>
                 ) : null}
 
-                {upload.status === 'processing' ? (
-                  <span style={{ color: 'var(--locz-text-muted)' }}>…</span>
-                ) : null}
+                {upload.status === 'processing' ? <span>{labels.preparing}</span> : null}
                 {upload.status === 'ready' ? (
-                  <span style={{ color: 'var(--locz-success)' }}>✓</span>
+                  <span className="is-ready">{labels.ready}</span>
                 ) : null}
                 {upload.status === 'failed' ? (
-                  <span style={{ color: 'var(--locz-danger)' }}>{upload.error}</span>
+                  <span className="is-failed">{upload.error}</span>
                 ) : null}
               </div>
 
               {upload.status === 'failed' ? (
                 <button type="button" className="btn btn--ghost" onClick={() => retry(upload)}>
-                  ×
+                  {labels.remove}
                 </button>
               ) : null}
             </li>

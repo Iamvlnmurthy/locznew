@@ -4,6 +4,7 @@ build/
 .next/
 out/
 coverage/
+artifacts/
 *.tsbuildinfo
 
 # env — never commit real secrets

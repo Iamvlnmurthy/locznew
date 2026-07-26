@@ -30,7 +30,7 @@ class _ListingDetailScreenState extends ConsumerState<ListingDetailScreen> {
   Future<void> _toggleSave(ListingDetail listing) async {
     final auth = ref.read(authProvider);
     if (!auth.isSignedIn) {
-      context.push('/signin?next=/ad/${widget.slug}');
+      await context.push('/signin?next=/ad/${widget.slug}');
       return;
     }
 
@@ -53,7 +53,7 @@ class _ListingDetailScreenState extends ConsumerState<ListingDetailScreen> {
     final strings = Strings.of(context);
 
     if (!ref.read(authProvider).isSignedIn) {
-      context.push('/signin?next=/ad/${widget.slug}');
+      await context.push('/signin?next=/ad/${widget.slug}');
       return;
     }
 
@@ -92,12 +92,11 @@ class _ListingDetailScreenState extends ConsumerState<ListingDetailScreen> {
     if (message == null || message.isEmpty || !mounted) return;
 
     try {
-      final conversationId = await ref
-          .read(chatRepositoryProvider)
-          .startEnquiry(listing.summary.id, message);
+      final conversationId =
+          await ref.read(chatRepositoryProvider).startEnquiry(listing.summary.id, message);
       if (!mounted) return;
       ref.invalidate(conversationsProvider);
-      context.push('/chats/$conversationId');
+      await context.push('/chats/$conversationId');
     } on ApiException catch (error) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(error.message)));
@@ -133,7 +132,11 @@ class _ListingDetailScreenState extends ConsumerState<ListingDetailScreen> {
     );
   }
 
-  Widget _buildDetail(BuildContext context, ListingDetail listing, Strings strings) {
+  Widget _buildDetail(
+    BuildContext context,
+    ListingDetail listing,
+    Strings strings,
+  ) {
     final theme = Theme.of(context);
     final summary = listing.summary;
     final isSaved = _savedOverride ?? summary.isSaved ?? false;
@@ -165,8 +168,10 @@ class _ListingDetailScreenState extends ConsumerState<ListingDetailScreen> {
                       PageView.builder(
                         itemCount: images.length,
                         onPageChanged: (index) => setState(() => _galleryIndex = index),
-                        itemBuilder: (context, index) =>
-                            CachedNetworkImage(imageUrl: images[index].fullUrl!, fit: BoxFit.cover),
+                        itemBuilder: (context, index) => CachedNetworkImage(
+                          imageUrl: images[index].fullUrl!,
+                          fit: BoxFit.cover,
+                        ),
                       ),
                       if (images.length > 1)
                         Positioned(
@@ -195,7 +200,6 @@ class _ListingDetailScreenState extends ConsumerState<ListingDetailScreen> {
                   ),
           ),
         ),
-
         SliverPadding(
           padding: const EdgeInsets.all(LoczSpacing.x4),
           sliver: SliverList(
@@ -206,18 +210,20 @@ class _ListingDetailScreenState extends ConsumerState<ListingDetailScreen> {
                   style: theme.textTheme.headlineSmall,
                 ),
               if (summary.isNegotiable && !summary.isFree)
-                Text(strings('listing.negotiable'), style: theme.textTheme.bodyMedium),
-
+                Text(
+                  strings('listing.negotiable'),
+                  style: theme.textTheme.bodyMedium,
+                ),
               const SizedBox(height: LoczSpacing.x2),
               Text(summary.title, style: theme.textTheme.titleMedium),
-
               const SizedBox(height: LoczSpacing.x2),
               Text(
                 '${summary.localityName ?? ''}${summary.localityName != null ? ', ' : ''}'
-                '${summary.cityName} · ${strings('listing.views', {'count': summary.viewCount})}',
+                '${summary.cityName} · ${strings('listing.views', {
+                      'count': summary.viewCount,
+                    })}',
                 style: theme.textTheme.labelSmall,
               ),
-
               if (summary.isSold) ...[
                 const SizedBox(height: LoczSpacing.x4),
                 Container(
@@ -229,12 +235,13 @@ class _ListingDetailScreenState extends ConsumerState<ListingDetailScreen> {
                   child: Text(strings('listing.sold')),
                 ),
               ],
-
               const SizedBox(height: LoczSpacing.x6),
-              Text(strings('listing.description'), style: theme.textTheme.titleMedium),
+              Text(
+                strings('listing.description'),
+                style: theme.textTheme.titleMedium,
+              ),
               const SizedBox(height: LoczSpacing.x2),
               Text(listing.description, style: theme.textTheme.bodyLarge),
-
               if (listing.attributes.isNotEmpty) ...[
                 const SizedBox(height: LoczSpacing.x6),
                 Wrap(
@@ -242,23 +249,27 @@ class _ListingDetailScreenState extends ConsumerState<ListingDetailScreen> {
                   runSpacing: LoczSpacing.x2,
                   children: listing.attributes.entries
                       .map(
-                        (entry) =>
-                            Chip(label: Text('${entry.key.replaceAll('_', ' ')}: ${entry.value}')),
+                        (entry) => Chip(
+                          label: Text(
+                            '${entry.key.replaceAll('_', ' ')}: ${entry.value}',
+                          ),
+                        ),
                       )
                       .toList(),
                 ),
               ],
-
               const SizedBox(height: LoczSpacing.x6),
               Card(
                 child: ListTile(
                   leading: const CircleAvatar(child: Icon(Icons.person_outline)),
                   title: Text(listing.owner.displayName),
-                  subtitle: Text(strings('listing.report'), style: theme.textTheme.labelSmall),
+                  subtitle: Text(
+                    strings('listing.report'),
+                    style: theme.textTheme.labelSmall,
+                  ),
                   onTap: () => context.push('/report?listing=${summary.id}'),
                 ),
               ),
-
               const SizedBox(height: 100),
             ]),
           ),
@@ -343,7 +354,9 @@ class _ContactBar extends StatelessWidget {
                   child: OutlinedButton.icon(
                     onPressed: phoneRevealed ? onCall : onRevealPhone,
                     icon: const Icon(Icons.phone_outlined),
-                    label: Text(phoneRevealed ? phone! : strings('listing.showPhone')),
+                    label: Text(
+                      phoneRevealed ? phone! : strings('listing.showPhone'),
+                    ),
                   ),
                 ),
                 const SizedBox(width: LoczSpacing.x2),

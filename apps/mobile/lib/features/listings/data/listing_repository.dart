@@ -150,7 +150,12 @@ class ListingRepository {
     await Dio().put<void>(
       signed['uploadUrl'] as String,
       data: file.openRead(),
-      options: Options(headers: {'Content-Type': mimeType, Headers.contentLengthHeader: length}),
+      options: Options(
+        headers: {
+          'Content-Type': mimeType,
+          Headers.contentLengthHeader: length,
+        },
+      ),
       onSendProgress: (sent, total) {
         if (total > 0) onProgress?.call(sent / total);
       },

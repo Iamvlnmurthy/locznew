@@ -68,6 +68,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
   @override
   Widget build(BuildContext context) {
     final strings = Strings.of(context);
+    final textScale = MediaQuery.textScalerOf(context).scale(1);
 
     return Scaffold(
       appBar: AppBar(
@@ -115,13 +116,25 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                     _run();
                   },
                   itemBuilder: (context) => const [
-                    PopupMenuItem(value: 'relevance', child: Text('Best match')),
+                    PopupMenuItem(
+                      value: 'relevance',
+                      child: Text('Best match'),
+                    ),
                     PopupMenuItem(value: 'newest', child: Text('Newest')),
-                    PopupMenuItem(value: 'price_asc', child: Text('Price: low to high')),
-                    PopupMenuItem(value: 'price_desc', child: Text('Price: high to low')),
+                    PopupMenuItem(
+                      value: 'price_asc',
+                      child: Text('Price: low to high'),
+                    ),
+                    PopupMenuItem(
+                      value: 'price_desc',
+                      child: Text('Price: high to low'),
+                    ),
                     PopupMenuItem(value: 'distance', child: Text('Nearest')),
                   ],
-                  child: const Chip(avatar: Icon(Icons.sort, size: 16), label: Text('Sort')),
+                  child: const Chip(
+                    avatar: Icon(Icons.sort, size: 16),
+                    label: Text('Sort'),
+                  ),
                 ),
               ],
             ),
@@ -141,9 +154,15 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Text('${snapshot.error}', textAlign: TextAlign.center),
+                          Text(
+                            '${snapshot.error}',
+                            textAlign: TextAlign.center,
+                          ),
                           const SizedBox(height: LoczSpacing.x4),
-                          OutlinedButton(onPressed: _run, child: Text(strings('common.retry'))),
+                          OutlinedButton(
+                            onPressed: _run,
+                            child: Text(strings('common.retry')),
+                          ),
                         ],
                       ),
                     ),
@@ -176,12 +195,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
 
                 return GridView.builder(
                   padding: const EdgeInsets.all(LoczSpacing.x4),
-                  gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-                    maxCrossAxisExtent: 200,
-                    mainAxisSpacing: LoczSpacing.x3,
-                    crossAxisSpacing: LoczSpacing.x3,
-                    childAspectRatio: 0.68,
-                  ),
+                  gridDelegate: listingCardGridDelegate(textScale),
                   itemCount: items.length,
                   itemBuilder: (context, index) => ListingCard(
                     listing: items[index],

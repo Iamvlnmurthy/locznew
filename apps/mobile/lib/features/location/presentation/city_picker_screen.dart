@@ -101,13 +101,19 @@ class _CityPickerScreenState extends ConsumerState<CityPickerScreen> {
         return;
       }
 
-      await ref
-          .read(selectedCityProvider.notifier)
-          .select(city, latitude: position.latitude, longitude: position.longitude);
+      await ref.read(selectedCityProvider.notifier).select(
+            city,
+            latitude: position.latitude,
+            longitude: position.longitude,
+          );
 
       if (mounted) context.pop();
     } catch (_) {
-      if (mounted) setState(() => _status = Strings.of(context)('location.permissionDenied'));
+      if (mounted) {
+        setState(
+          () => _status = Strings.of(context)('location.permissionDenied'),
+        );
+      }
     } finally {
       if (mounted) setState(() => _locating = false);
     }
@@ -162,10 +168,14 @@ class _CityPickerScreenState extends ConsumerState<CityPickerScreen> {
                           errorText: _pincodeError,
                         ),
                         onChanged: (value) {
-                          if (_pincodeError != null) setState(() => _pincodeError = null);
+                          if (_pincodeError != null) {
+                            setState(() => _pincodeError = null);
+                          }
                         },
                         onSubmitted: (_) {
-                          if (_pincodeController.text.trim().length == 6) _applyPincode();
+                          if (_pincodeController.text.trim().length == 6) {
+                            _applyPincode();
+                          }
                         },
                       ),
                     ),
@@ -215,7 +225,9 @@ class _CityPickerScreenState extends ConsumerState<CityPickerScreen> {
                     )
                     .toList()
                   // Launched cities first; the rest stay visible but clearly secondary.
-                  ..sort((a, b) => (b.isLaunched ? 1 : 0).compareTo(a.isLaunched ? 1 : 0));
+                  ..sort(
+                    (a, b) => (b.isLaunched ? 1 : 0).compareTo(a.isLaunched ? 1 : 0),
+                  );
 
                 return ListView.builder(
                   itemCount: filtered.length,
@@ -226,7 +238,10 @@ class _CityPickerScreenState extends ConsumerState<CityPickerScreen> {
                       subtitle: Text(city.stateName),
                       trailing: city.isLaunched
                           ? (selected?.id == city.id ? const Icon(Icons.check) : null)
-                          : const Chip(label: Text('soon'), visualDensity: VisualDensity.compact),
+                          : const Chip(
+                              label: Text('soon'),
+                              visualDensity: VisualDensity.compact,
+                            ),
                       onTap: () async {
                         await ref.read(selectedCityProvider.notifier).select(city);
                         if (context.mounted) context.pop();

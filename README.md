@@ -57,19 +57,23 @@ Full instructions, test accounts and seed contents: **[docs/SETUP.md](docs/SETUP
 
 ## Documentation
 
-| Document                                           | Contents                                                   |
-| -------------------------------------------------- | ---------------------------------------------------------- |
-| [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)       | System map, modules, data shape, security model            |
-| [docs/SETUP.md](docs/SETUP.md)                     | Local setup, test accounts, commands                       |
-| [docs/MOBILE_SETUP.md](docs/MOBILE_SETUP.md)       | Flutter setup, permissions, Firebase, release builds       |
-| [docs/ACCEPTANCE.md](docs/ACCEPTANCE.md)           | The end-to-end Phase 1 acceptance run                      |
-| [docs/TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md) | Symptom → cause → fix                                      |
-| [DECISIONS.md](DECISIONS.md)                       | Architecture decision log (ADR-0001…0009)                  |
-| [PROGRESS.md](PROGRESS.md)                         | Per-milestone status, and what is verified versus authored |
+| Document                                                                                   | Contents                                                   |
+| ------------------------------------------------------------------------------------------ | ---------------------------------------------------------- |
+| [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)                                               | System map, modules, data shape, security model            |
+| [docs/SETUP.md](docs/SETUP.md)                                                             | Local setup, test accounts, commands                       |
+| [docs/MOBILE_SETUP.md](docs/MOBILE_SETUP.md)                                               | Flutter setup, permissions, Firebase, release builds       |
+| [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md)                                                   | Production preflight, TLS bootstrap, deploy and rollback   |
+| [docs/LAUNCH_RUNBOOK.md](docs/LAUNCH_RUNBOOK.md)                                           | Go/no-go gates, ownership, rehearsal and launch sign-off   |
+| [docs/CHILD_SAFETY_OPERATIONS.md](docs/CHILD_SAFETY_OPERATIONS.md)                         | Restricted-case operations, approvals and readiness        |
+| [docs/PROTECTED_HASH_PROVIDER_APPLICATION.md](docs/PROTECTED_HASH_PROVIDER_APPLICATION.md) | Provider application facts, questions and benign test gate |
+| [docs/ACCEPTANCE.md](docs/ACCEPTANCE.md)                                                   | The end-to-end Phase 1 acceptance run                      |
+| [docs/TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md)                                         | Symptom → cause → fix                                      |
+| [DECISIONS.md](DECISIONS.md)                                                               | Architecture decision log (ADR-0001…0009)                  |
+| [PROGRESS.md](PROGRESS.md)                                                                 | Per-milestone status, and what is verified versus authored |
 
 ## What Phase 1 delivers
 
-Mobile-OTP authentication with rotating refresh tokens · role-based access with nine
+Mobile-OTP authentication with rotating refresh tokens · role-based access with ten
 roles · PostGIS location system with radius search from 1–50 km · a unified listing
 engine with per-type extensions and admin-defined dynamic attributes · direct-to-storage
 media with EXIF stripping and WebP renditions · rules-based moderation with a review
@@ -81,15 +85,17 @@ Hindi) · SEO-ready public pages with structured data.
 
 Read [PROGRESS.md](PROGRESS.md) before trusting any part of this. In summary:
 
-- ✅ **Verified here:** all seven workspaces typecheck; **75 tests pass across 6 suites**
-  (unit, DI-graph and an HTTP-contract e2e suite); the API builds both `dist/main.js` and
-  `dist/worker.js`; web (18 routes) and admin (10 routes) both `next build` clean; the
-  Prisma schema validates; the OpenAPI export and the Dart token generator both run.
-- 🟡 **Authored, not executed:** everything requiring Docker (migrations, seeds, every
-  database query) and everything requiring the Flutter SDK (the whole mobile app).
+- ✅ **Verified here:** all workspaces typecheck; **89 API tests** pass; the six core
+  acceptance gates cover 337 assertions, with a separate 51-assertion attacker gate;
+  API, web and admin production builds are clean. Flutter reports zero analyzer issues,
+  passes 4 unit tests and an authenticated Android integration journey, builds an APK,
+  and runs against the live local API on Android 16.
+- 🟡 **Authored, not executed:** production Docker image/Compose rehearsal, real SMS and
+  push delivery, signed store builds, physical-device coverage and iOS compilation.
 
-The workstation this was built on has Node and npm but no Docker and no Flutter. Nothing
-has been marked done on the strength of looking right.
+Docker remains unavailable on this workstation. `npm run preflight:production` records
+that limitation along with missing production credentials and TLS instead of allowing a
+partially configured release.
 
 ## Contributing rules
 

@@ -7,6 +7,7 @@ import { BusinessesModule } from './businesses/businesses.module';
 import { AuthModule } from './auth/auth.module';
 import { AllExceptionsFilter } from './common/filters/all-exceptions.filter';
 import { IdempotencyInterceptor } from './common/interceptors/idempotency.interceptor';
+import { RequestLoggingInterceptor } from './common/interceptors/request-logging.interceptor';
 import { ResponseInterceptor } from './common/interceptors/response.interceptor';
 import { ErrorReporter } from './common/monitoring/error-reporter';
 import { CorrelationIdMiddleware } from './common/middleware/correlation-id.middleware';
@@ -74,6 +75,7 @@ import { UsersModule } from './users/users.module';
     // Idempotency runs before the response envelope so what is replayed is the
     // domain payload, not a re-wrapped envelope.
     { provide: APP_INTERCEPTOR, useClass: IdempotencyInterceptor },
+    { provide: APP_INTERCEPTOR, useClass: RequestLoggingInterceptor },
     { provide: APP_INTERCEPTOR, useClass: ResponseInterceptor },
     { provide: APP_FILTER, useClass: AllExceptionsFilter },
     ErrorReporter,

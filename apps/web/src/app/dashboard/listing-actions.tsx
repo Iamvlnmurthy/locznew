@@ -15,7 +15,7 @@ export function ListingActions({
 }: {
   listingId: string;
   status: string;
-  labels: Record<'pause' | 'resume' | 'markSold' | 'republish' | 'delete', string>;
+  labels: Record<'pause' | 'resume' | 'markSold' | 'republish' | 'delete' | 'failed', string>;
 }) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
@@ -29,7 +29,7 @@ export function ListingActions({
       if (result.ok) {
         router.refresh();
       } else {
-        setError(result.error ?? 'Action failed');
+        setError(result.error ?? labels.failed);
       }
     });
   }
@@ -54,13 +54,12 @@ export function ListingActions({
 
   return (
     <>
-      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+      <div className="dashboard-listing-actions">
         {available.map((action) => (
           <button
             key={action.command}
             type="button"
-            className="btn btn--outline"
-            style={{ minHeight: 40, padding: '8px 16px', fontSize: '0.875rem' }}
+            className={`btn btn--outline${action.command === 'delete' ? ' is-danger' : ''}`}
             disabled={isPending}
             onClick={() => run(action.command, action.confirm)}
           >

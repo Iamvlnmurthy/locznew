@@ -26,6 +26,7 @@ import { GeoRepository } from '../prisma/geo.repository';
 import { PrismaService } from '../prisma/prisma.service';
 import { RbacService } from '../rbac/rbac.service';
 import { SearchIndexPublisher } from '../search/search-index.publisher';
+import { SearchKeyword } from './search-keyword';
 import { ListingDetailsBuilder } from './listing-details.builder';
 import {
   CreateListingDto,
@@ -36,8 +37,23 @@ import {
   UpdateListingDto,
 } from './dto/listing.dto';
 
-/** Listing types that carry marketplace pricing details. */
-const MARKETPLACE_TYPES: ListingType[] = [ListingType.PRODUCT, ListingType.CLASSIFIED];
+/**
+ * The last word in every ordering.
+ *
+ * Without it, rows that tie on every sort key come back in whatever order PostgreSQL
+ * finds convenient — and that order changes between identical queries, because a parallel
+ * scan does not promise to assemble its workers' output the same way twice. Ties are not
+ * rare here: thousands of listings share a price, and a whole day's postings share a
+ * publication date.
+ *
+ * The user-visible cost is silent and specific. Page one ends at row 24 and page two
+ * begins at row 25 of a *different* arrangement, so a listing appears on both pages while
+ * another is never shown at all. Nobody reports that as a bug; they conclude the search
+ * is unreliable.
+ *
+ * Ids are UUIDv7, so this also sorts roughly by creation time rather than at random.
+ */
+const TIE_BREAKER = { id: 'asc' } as const;
 
 const LISTING_SUMMARY_INCLUDE = {
   city: { select: { name: true } },
@@ -329,27 +345,38 @@ export class ListingsService {
     // Radius search resolves ids through PostGIS first, then hydrates through Prisma so
     // one mapping and one visibility rule serve both paths.
     if (wantsNearby) {
-      const rows = await this.geo.findNearbyListings({
+      const nearbyFilters = {
         latitude: query.latitude!,
         longitude: query.longitude!,
         radiusMeters: query.radiusKm! * 1000,
         types: query.type ? [query.type] : undefined,
         categoryIds: query.categoryId ? [query.categoryId] : undefined,
+        cityId: query.cityId,
+        localityId: query.localityId,
+        businessId: query.businessId,
+        priceMin: query.priceMin,
+        priceMax: query.priceMax,
+        condition: query.condition,
+        verifiedOnly: query.verifiedOnly,
+        publishedAfter: query.postedWithinDays
+          ? new Date(Date.now() - query.postedWithinDays * 24 * 60 * 60 * 1000)
+          : undefined,
+        sort: query.sort,
+      };
+      const rows = await this.geo.findNearbyListings({
+        ...nearbyFilters,
         limit: query.limit,
         offset: query.skip,
       });
 
       const distanceById = new Map(rows.map((row) => [row.id, row.distanceMeters]));
+      const orderById = new Map(rows.map((row, index) => [row.id, index]));
       const listings = await this.prisma.listing.findMany({
         where: { id: { in: rows.map((row) => row.id) } },
         include: LISTING_SUMMARY_INCLUDE,
       });
 
-      const total = await this.geo.countNearbyListings(
-        query.latitude!,
-        query.longitude!,
-        query.radiusKm! * 1000,
-      );
+      const total = await this.geo.countNearbyListings(nearbyFilters);
 
       const savedIds = await this.savedIdsFor(
         viewerId,
@@ -360,42 +387,14 @@ export class ListingsService {
           ...this.toSummaryDto(listing, savedIds),
           distanceMeters: Math.round(distanceById.get(listing.id) ?? 0),
         }))
-        .sort((a, b) => (a.distanceMeters ?? 0) - (b.distanceMeters ?? 0));
+        // An IN query does not retain the raw query's order. Restore it so explicit price,
+        // recency and popularity sorts survive hydration just as distance already did.
+        .sort((a, b) => (orderById.get(a.id) ?? 0) - (orderById.get(b.id) ?? 0));
 
       return paginate(items, total, query.page, query.limit);
     }
 
-    const where: Prisma.ListingWhereInput = {
-      status: ListingStatus.PUBLISHED,
-      deletedAt: null,
-      visibility: 'PUBLIC',
-      ...(query.type ? { type: query.type } : {}),
-      ...(query.cityId ? { cityId: query.cityId } : {}),
-      ...(query.localityId ? { localityId: query.localityId } : {}),
-      ...(query.businessId ? { businessId: query.businessId } : {}),
-      ...(query.categoryId
-        ? { OR: [{ categoryId: query.categoryId }, { subcategoryId: query.categoryId }] }
-        : {}),
-      ...(query.priceMin !== undefined || query.priceMax !== undefined || query.condition
-        ? {
-            marketplace: {
-              ...(query.condition ? { condition: query.condition } : {}),
-              ...(query.priceMin !== undefined || query.priceMax !== undefined
-                ? {
-                    price: {
-                      ...(query.priceMin !== undefined
-                        ? { gte: new Prisma.Decimal(query.priceMin) }
-                        : {}),
-                      ...(query.priceMax !== undefined
-                        ? { lte: new Prisma.Decimal(query.priceMax) }
-                        : {}),
-                    },
-                  }
-                : {}),
-            },
-          }
-        : {}),
-    };
+    const where = this.whereFor(query);
 
     const [listings, total] = await Promise.all([
       this.prisma.listing.findMany({
@@ -872,6 +871,69 @@ export class ListingsService {
   }
 
   /**
+   * Every filter, in one place.
+   *
+   * Both browse paths use this. They used to build their own conditions — the radius
+   * branch in SQL, the plain branch in Prisma — and price and condition were added to
+   * only one of them, so a buyer who set a budget *and* a location was quietly shown
+   * everything. Two dialects of the same rule is how that happens; one builder is the
+   * fix, not a longer review.
+   */
+  private whereFor(query: ListingSearchQueryDto): Prisma.ListingWhereInput {
+    return {
+      status: ListingStatus.PUBLISHED,
+      deletedAt: null,
+      visibility: 'PUBLIC',
+      ...(query.type ? { type: query.type } : {}),
+      ...(query.cityId ? { cityId: query.cityId } : {}),
+      ...(query.localityId ? { localityId: query.localityId } : {}),
+      ...(query.businessId ? { businessId: query.businessId } : {}),
+      ...(query.verifiedOnly
+        ? {
+            business: {
+              verificationStatus: 'VERIFIED',
+              isActive: true,
+              deletedAt: null,
+            },
+          }
+        : {}),
+      ...(query.postedWithinDays
+        ? {
+            publishedAt: {
+              gte: new Date(Date.now() - query.postedWithinDays * 24 * 60 * 60 * 1000),
+            },
+          }
+        : {}),
+      ...(query.categoryId
+        ? { OR: [{ categoryId: query.categoryId }, { subcategoryId: query.categoryId }] }
+        : {}),
+      // `AND` rather than a second `OR`: the category filter above already owns the `OR`
+      // key, and adding another would replace it outright — quietly widening the search to
+      // every category instead of narrowing it by keyword.
+      ...(query.q?.trim() ? { AND: [SearchKeyword.filter(query.q.trim())] } : {}),
+      ...(query.priceMin !== undefined || query.priceMax !== undefined || query.condition
+        ? {
+            marketplace: {
+              ...(query.condition ? { condition: query.condition } : {}),
+              ...(query.priceMin !== undefined || query.priceMax !== undefined
+                ? {
+                    price: {
+                      ...(query.priceMin !== undefined
+                        ? { gte: new Prisma.Decimal(query.priceMin) }
+                        : {}),
+                      ...(query.priceMax !== undefined
+                        ? { lte: new Prisma.Decimal(query.priceMax) }
+                        : {}),
+                    },
+                  }
+                : {}),
+            },
+          }
+        : {}),
+    };
+  }
+
+  /**
    * Ordering for the browse path.
    *
    * Featured placement is a tie-breaker within the default ordering, never a prefix to an
@@ -894,19 +956,21 @@ export class ListingsService {
         return [
           { marketplace: { price: { sort: 'asc', nulls: 'last' } } },
           { publishedAt: 'desc' },
+          TIE_BREAKER,
         ];
       case 'price_desc':
         return [
           { marketplace: { price: { sort: 'desc', nulls: 'last' } } },
           { publishedAt: 'desc' },
+          TIE_BREAKER,
         ];
       case 'popular':
-        return [{ viewCount: 'desc' }, { publishedAt: 'desc' }];
+        return [{ viewCount: 'desc' }, { publishedAt: 'desc' }, TIE_BREAKER];
       case 'newest':
-        return [{ publishedAt: 'desc' }];
+        return [{ publishedAt: 'desc' }, TIE_BREAKER];
       default:
         // No explicit choice: featured listings surface first, then newest.
-        return [{ isFeatured: 'desc' }, { publishedAt: 'desc' }];
+        return [{ isFeatured: 'desc' }, { publishedAt: 'desc' }, TIE_BREAKER];
     }
   }
 

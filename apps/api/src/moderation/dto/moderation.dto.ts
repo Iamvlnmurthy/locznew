@@ -1,4 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { MediaSafetyAccessAction, MediaSafetyCaseStatus, MediaStatus } from '@prisma/client';
 import { Type } from 'class-transformer';
 import { IsInt, IsOptional, IsString, Max, MaxLength, Min, MinLength } from 'class-validator';
 import { PaginationQueryDto } from '../../common/dto/pagination.dto';
@@ -84,4 +85,76 @@ export class BlockImageDto {
   @IsString()
   @MaxLength(60)
   category?: string;
+}
+
+export class SafetyEvidenceAccessDto {
+  @ApiProperty({
+    example: 'Verify provider match before statutory report 2026-07-26/04',
+    description:
+      'Written to the restricted access log before a preview URL is issued. Never include image details.',
+  })
+  @IsString()
+  @MinLength(15)
+  @MaxLength(500)
+  justification!: string;
+}
+
+export class ReportSafetyCaseDto {
+  @ApiProperty({
+    example: 'REPORT-2026-07-26-004',
+    description:
+      'Opaque acknowledgement from the approved reporting channel. Do not include image details.',
+  })
+  @IsString()
+  @MinLength(5)
+  @MaxLength(200)
+  reportReference!: string;
+
+  @ApiProperty({
+    example: 'Submitted by the named safety officer through the approved reporting channel',
+    description: 'Recorded in the restricted case access log.',
+  })
+  @IsString()
+  @MinLength(15)
+  @MaxLength(500)
+  justification!: string;
+}
+
+export class ResolveSafetyCaseDto {
+  @ApiProperty({
+    example: 'Confirmed false positive after the approved specialist review',
+    description:
+      'Recorded in the restricted case access log. Never include image details or provider hashes.',
+  })
+  @IsString()
+  @MinLength(15)
+  @MaxLength(500)
+  justification!: string;
+}
+
+export class SafetyCaseAccessLogDto {
+  @ApiProperty() id!: string;
+  @ApiProperty() actorId!: string;
+  @ApiProperty({ enum: MediaSafetyAccessAction }) action!: MediaSafetyAccessAction;
+  @ApiProperty() justification!: string;
+  @ApiProperty() createdAt!: Date;
+}
+
+export class SafetyCaseDetailDto {
+  @ApiProperty() id!: string;
+  @ApiProperty() mediaId!: string;
+  @ApiProperty() listingId!: string;
+  @ApiProperty({ enum: MediaSafetyCaseStatus }) status!: MediaSafetyCaseStatus;
+  @ApiProperty({ enum: MediaStatus }) mediaStatus!: MediaStatus;
+  @ApiProperty() provider!: string;
+  @ApiPropertyOptional({ nullable: true }) providerReference!: string | null;
+  @ApiProperty() reasonCode!: string;
+  @ApiPropertyOptional({ nullable: true }) reportReference!: string | null;
+  @ApiPropertyOptional({ nullable: true }) resolutionNote!: string | null;
+  @ApiProperty() openedAt!: Date;
+  @ApiPropertyOptional({ nullable: true }) reportedAt!: Date | null;
+  @ApiPropertyOptional({ nullable: true }) releasedAt!: Date | null;
+  @ApiPropertyOptional({ nullable: true }) closedAt!: Date | null;
+  @ApiProperty({ type: [SafetyCaseAccessLogDto] })
+  accessHistory!: SafetyCaseAccessLogDto[];
 }

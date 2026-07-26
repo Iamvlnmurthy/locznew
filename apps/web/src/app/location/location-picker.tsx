@@ -4,15 +4,29 @@ import { useRouter } from 'next/navigation';
 import { useMemo, useState, useTransition } from 'react';
 import type { City } from '@locz/shared-types';
 import { selectCityAction } from '@/app/actions';
+import { Icon } from '@/components/icons';
 import { resolveCoordinatesAction, resolvePincodeAction } from './actions';
 
-/**
- * City chooser.
- *
- * Precise location is offered, never required — a large share of users decline the
- * browser permission, and city-level browsing has to be a first-class path rather than
- * a fallback. Manual selection is therefore the default view, with GPS as one button.
- */
+interface LocationLabels {
+  useCurrent: string;
+  searchCity: string;
+  detecting: string;
+  permissionDenied: string;
+  outsideLaunchArea: string;
+  pincodeLabel: string;
+  pincodePlaceholder: string;
+  pincodeApply: string;
+  pincodeUnknown: string;
+  gpsHint: string;
+  pincodeHint: string;
+  citiesLabel: string;
+  liveNow: string;
+  comingSoon: string;
+  selected: string;
+  noCityMatches: string;
+  openingArea: string;
+}
+
 export function LocationPicker({
   cities,
   currentCityId,
@@ -20,23 +34,14 @@ export function LocationPicker({
 }: {
   cities: City[];
   currentCityId: string | null;
-  labels: {
-    useCurrent: string;
-    searchCity: string;
-    detecting: string;
-    permissionDenied: string;
-    outsideLaunchArea: string;
-    pincodeLabel: string;
-    pincodePlaceholder: string;
-    pincodeApply: string;
-    pincodeUnknown: string;
-  };
+  labels: LocationLabels;
 }) {
   const router = useRouter();
   const [query, setQuery] = useState('');
   const [pincode, setPincode] = useState('');
   const [pincodeError, setPincodeError] = useState<string | null>(null);
   const [status, setStatus] = useState<string | null>(null);
+  const [activeChoice, setActiveChoice] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
 
   const filtered = useMemo(() => {
@@ -49,11 +54,17 @@ export function LocationPicker({
             city.nameHi?.includes(query),
         )
       : cities;
-    // Launched cities first — the rest are visible but clearly secondary.
-    return [...matches].sort((a, b) => Number(b.isLaunched) - Number(a.isLaunched));
-  }, [cities, query]);
+    return [...matches].sort((a, b) => {
+      if (a.id === currentCityId) return -1;
+      if (b.id === currentCityId) return 1;
+      return Number(b.isLaunched) - Number(a.isLaunched);
+    });
+  }, [cities, currentCityId, query]);
 
   function choose(city: City) {
+    if (!city.isLaunched) return;
+    setActiveChoice(city.id);
+    setStatus(`${labels.openingArea} ${city.name}…`);
     startTransition(async () => {
       await selectCityAction({
         id: city.id,
@@ -62,38 +73,34 @@ export function LocationPicker({
         latitude: city.latitude,
         longitude: city.longitude,
       });
-      router.push('/');
+      router.replace('/');
     });
   }
 
-  /**
-   * A pincode is the location most people can state without hesitating, and it costs no
-   * browser permission. The code resolves to its centroid, and the area around that point
-   * — not the code's own boundary — is what gets browsed.
-   */
   function applyPincode() {
     const code = pincode.trim();
 
+    setActiveChoice('pincode');
+    setStatus(null);
     startTransition(async () => {
       const resolved = await resolvePincodeAction(code);
-
       if (!resolved) {
         setPincodeError(labels.pincodeUnknown);
+        setActiveChoice(null);
         return;
       }
 
       setPincodeError(null);
+      const resolvedCity = cities.find((city) => city.id === resolved.cityId);
       await selectCityAction({
-        // A pincode outside every launched city still browses fine by radius, so the city
-        // fields stay empty rather than snapping to somewhere hundreds of kilometres away.
         id: resolved.cityId ?? '',
         name: resolved.cityName ?? `${resolved.name}, ${resolved.districtName}`,
-        slug: '',
+        slug: resolvedCity?.slug ?? '',
         latitude: resolved.latitude,
         longitude: resolved.longitude,
         pincode: resolved.code,
       });
-      router.push('/');
+      router.replace('/');
     });
   }
 
@@ -103,8 +110,8 @@ export function LocationPicker({
       return;
     }
 
+    setActiveChoice('gps');
     setStatus(labels.detecting);
-
     navigator.geolocation.getCurrentPosition(
       (position) => {
         startTransition(async () => {
@@ -115,6 +122,7 @@ export function LocationPicker({
 
           if (!result.city) {
             setStatus(labels.outsideLaunchArea);
+            setActiveChoice(null);
             return;
           }
 
@@ -124,35 +132,51 @@ export function LocationPicker({
             slug: result.city.slug,
             latitude: position.coords.latitude,
             longitude: position.coords.longitude,
+            pincode: result.pincode?.code,
           });
-          router.push('/');
+          router.replace('/');
         });
       },
-      () => setStatus(labels.permissionDenied),
+      () => {
+        setStatus(labels.permissionDenied);
+        setActiveChoice(null);
+      },
       { enableHighAccuracy: false, timeout: 8000, maximumAge: 300000 },
     );
   }
 
   return (
-    <div style={{ maxWidth: 520 }}>
+    <div className="location-picker">
       <button
         type="button"
-        className="btn btn--primary btn--block"
+        className="location-picker__gps"
         onClick={useCurrentLocation}
         disabled={isPending}
+        aria-busy={isPending && activeChoice === 'gps'}
       >
-        📍 {labels.useCurrent}
+        <span>
+          <Icon name="location" width="21" height="21" />
+        </span>
+        <span>
+          <strong>{labels.useCurrent}</strong>
+          <small>{isPending && activeChoice === 'gps' ? labels.detecting : labels.gpsHint}</small>
+        </span>
+        <Icon name="arrow" width="18" height="18" />
       </button>
 
       {status ? (
-        <p className="field__hint" style={{ marginTop: 8 }} role="status">
+        <p className="location-picker__status" role="status">
           {status}
         </p>
       ) : null}
 
-      <div className="field" style={{ marginTop: 20 }}>
-        <label htmlFor="pincode">{labels.pincodeLabel}</label>
-        <div style={{ display: 'flex', gap: 8 }}>
+      <div className="location-picker__divider">
+        <span>{labels.pincodeLabel}</span>
+      </div>
+
+      <div className="location-picker__pincode">
+        <label className="location-picker__input" htmlFor="pincode">
+          <Icon name="location" width="18" height="18" />
           <input
             id="pincode"
             type="text"
@@ -161,78 +185,103 @@ export function LocationPicker({
             maxLength={6}
             placeholder={labels.pincodePlaceholder}
             value={pincode}
-            // Digits only: a numeric keypad still allows paste, and a stray letter would
-            // fail server-side for no reason the user can see.
             onChange={(event) => {
               setPincode(event.target.value.replace(/\D/g, '').slice(0, 6));
               setPincodeError(null);
+              setStatus(null);
             }}
             onKeyDown={(event) => {
               if (event.key === 'Enter' && pincode.length === 6) applyPincode();
             }}
-            style={{ flex: 1 }}
           />
-          <button
-            type="button"
-            className="btn btn--secondary"
-            onClick={applyPincode}
-            disabled={isPending || pincode.length !== 6}
-          >
-            {labels.pincodeApply}
-          </button>
-        </div>
-        {pincodeError ? (
-          <p className="field__error" role="alert">
-            {pincodeError}
-          </p>
-        ) : null}
+        </label>
+        <button
+          type="button"
+          className="btn btn--secondary"
+          onClick={applyPincode}
+          disabled={isPending || pincode.length !== 6}
+          aria-busy={isPending && activeChoice === 'pincode'}
+        >
+          {isPending && activeChoice === 'pincode' ? `${labels.openingArea}…` : labels.pincodeApply}
+        </button>
+      </div>
+      <p className="location-picker__privacy">
+        <Icon name="shield" width="13" height="13" /> {labels.pincodeHint}
+      </p>
+      {pincodeError ? (
+        <p className="field__error" role="alert">
+          {pincodeError}
+        </p>
+      ) : null}
+
+      <div className="location-picker__cities-head">
+        <strong>{labels.citiesLabel}</strong>
+        <span>
+          {cities.filter((city) => city.isLaunched).length} {labels.liveNow}
+        </span>
       </div>
 
-      <div className="field" style={{ marginTop: 24 }}>
-        <label htmlFor="city-search">{labels.searchCity}</label>
+      <label className="location-picker__city-search" htmlFor="city-search">
+        <Icon name="search" width="18" height="18" />
         <input
           id="city-search"
           type="search"
           value={query}
           onChange={(event) => setQuery(event.target.value)}
           autoComplete="off"
+          placeholder={labels.searchCity}
         />
-      </div>
+      </label>
 
-      <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'grid', gap: 4 }}>
-        {filtered.map((city) => (
-          <li key={city.id}>
-            <button
-              type="button"
-              onClick={() => choose(city)}
-              disabled={isPending}
-              style={{
-                width: '100%',
-                textAlign: 'left',
-                padding: '12px 16px',
-                border: '1px solid var(--locz-border)',
-                borderRadius: 'var(--locz-radius-md)',
-                background:
-                  city.id === currentCityId ? 'var(--locz-primary-soft)' : 'var(--locz-surface)',
-                font: 'inherit',
-                cursor: 'pointer',
-                minHeight: 48,
-                color: 'var(--locz-text)',
-              }}
-            >
-              <span style={{ fontWeight: 600 }}>{city.name}</span>
-              <span style={{ color: 'var(--locz-text-muted)', fontSize: '0.875rem' }}>
-                {' '}
-                · {city.stateName}
-              </span>
-              {!city.isLaunched ? (
-                <span className="badge badge--status" style={{ marginLeft: 8 }}>
-                  soon
-                </span>
-              ) : null}
-            </button>
+      <ul className="location-picker__city-list" aria-live="polite">
+        {filtered.length === 0 ? (
+          <li className="location-picker__empty">
+            <Icon name="search" width="21" height="21" />
+            <span>{labels.noCityMatches}</span>
           </li>
-        ))}
+        ) : (
+          filtered.map((city) => (
+            <li key={city.id}>
+              <button
+                type="button"
+                onClick={() => choose(city)}
+                disabled={isPending || !city.isLaunched}
+                className={[
+                  city.id === currentCityId ? 'is-selected' : '',
+                  !city.isLaunched ? 'is-upcoming' : '',
+                ]
+                  .filter(Boolean)
+                  .join(' ')}
+                aria-label={`${city.name}, ${city.stateName} — ${
+                  city.id === currentCityId
+                    ? labels.selected
+                    : city.isLaunched
+                      ? labels.liveNow
+                      : labels.comingSoon
+                }`}
+              >
+                <span className="location-picker__city-avatar" aria-hidden="true">
+                  {city.name.slice(0, 1)}
+                </span>
+                <span className="location-picker__city-copy">
+                  <strong>{city.name}</strong>
+                  <small>{city.stateName}</small>
+                </span>
+                <span className={`location-picker__city-state${city.isLaunched ? ' is-live' : ''}`}>
+                  {city.id === currentCityId ? (
+                    <>
+                      <Icon name="check" width="11" height="11" /> {labels.selected}
+                    </>
+                  ) : city.isLaunched ? (
+                    labels.liveNow
+                  ) : (
+                    labels.comingSoon
+                  )}
+                </span>
+              </button>
+            </li>
+          ))
+        )}
       </ul>
     </div>
   );

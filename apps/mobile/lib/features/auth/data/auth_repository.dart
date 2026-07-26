@@ -19,20 +19,20 @@ class AuthUser {
   final List<String> permissions;
 
   factory AuthUser.fromJson(Map<String, dynamic> json) => AuthUser(
-    id: json['id'] as String,
-    displayName: json['displayName'] as String,
-    phone: json['phone'] as String,
-    roles: (json['roles'] as List<dynamic>? ?? []).cast<String>(),
-    permissions: (json['permissions'] as List<dynamic>? ?? []).cast<String>(),
-  );
+        id: json['id'] as String,
+        displayName: json['displayName'] as String,
+        phone: json['phone'] as String,
+        roles: (json['roles'] as List<dynamic>? ?? []).cast<String>(),
+        permissions: (json['permissions'] as List<dynamic>? ?? []).cast<String>(),
+      );
 
   Map<String, dynamic> toJson() => {
-    'id': id,
-    'displayName': displayName,
-    'phone': phone,
-    'roles': roles,
-    'permissions': permissions,
-  };
+        'id': id,
+        'displayName': displayName,
+        'phone': phone,
+        'roles': roles,
+        'permissions': permissions,
+      };
 }
 
 class OtpRequestResult {
@@ -67,10 +67,18 @@ class AuthRepository {
     );
   }
 
-  Future<AuthUser> verifyOtp(String nationalNumber, String code, {String? pushToken}) async {
+  Future<AuthUser> verifyOtp(
+    String nationalNumber,
+    String code, {
+    String? pushToken,
+  }) async {
     final json = await _api.post<Map<String, dynamic>>(
       '/auth/otp/verify',
-      body: {'phone': toE164(nationalNumber), 'code': code, 'device': await _deviceInfo(pushToken)},
+      body: {
+        'phone': toE164(nationalNumber),
+        'code': code,
+        'device': await _deviceInfo(pushToken),
+      },
       auth: false,
     );
 
@@ -90,24 +98,25 @@ class AuthRepository {
   }
 
   Future<Map<String, dynamic>> _deviceInfo(String? pushToken) async => {
-    'deviceKey': await _tokens.deviceKey(),
-    'platform': Platform.isIOS ? 'IOS' : 'ANDROID',
-    'name': Platform.operatingSystemVersion,
-    if (pushToken != null) 'pushToken': pushToken,
-  };
+        'deviceKey': await _tokens.deviceKey(),
+        'platform': Platform.isIOS ? 'IOS' : 'ANDROID',
+        'name': Platform.operatingSystemVersion,
+        if (pushToken != null) 'pushToken': pushToken,
+      };
 
   /// Registers or refreshes the FCM token on an already-signed-in device. Firebase
   /// rotates tokens without warning, so this runs at every launch and on every
   /// `onTokenRefresh`. A failure here costs notifications, not the session, so it is
   /// logged rather than surfaced.
-  Future<void> updatePushToken(String pushToken) async {
+  Future<bool> updatePushToken(String pushToken) async {
     try {
       await _api.post<void>(
         '/users/me/push-token',
         body: {'deviceKey': await _tokens.deviceKey(), 'pushToken': pushToken},
       );
+      return true;
     } catch (_) {
-      // Ignored deliberately — see above.
+      return false;
     }
   }
 

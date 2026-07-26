@@ -46,6 +46,8 @@ export async function verifyCodeAction(
 ): Promise<SignInState> {
   const phone = String(formData.get('phone') ?? prev.phone ?? '');
   const code = String(formData.get('code') ?? '').replace(/\D/g, '');
+  const displayName = String(formData.get('displayName') ?? '').trim();
+  const submittedDeviceKey = String(formData.get('deviceKey') ?? '').trim();
   const next = String(formData.get('next') ?? '/');
 
   if (!phone) return { step: 'phone', error: 'invalidPhone' };
@@ -58,9 +60,17 @@ export async function verifyCodeAction(
       body: {
         phone,
         code,
-        // A stable per-browser key so signing in again replaces the device record
-        // instead of accumulating one per visit.
-        device: { deviceKey: `web-${phone}`, platform: 'WEB', name: 'Web browser' },
+        // The client persists one random identifier per browser. The fallback keeps
+        // non-browser clients compatible without accepting an unbounded value.
+        device: {
+          deviceKey:
+            submittedDeviceKey.length >= 8 && submittedDeviceKey.length <= 128
+              ? submittedDeviceKey
+              : `web-${phone}`,
+          platform: 'WEB',
+          name: 'Web browser',
+        },
+        displayName: displayName.length >= 2 ? displayName.slice(0, 120) : undefined,
       },
     });
   } catch (error) {

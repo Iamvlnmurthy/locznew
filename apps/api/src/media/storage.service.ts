@@ -87,7 +87,7 @@ export class StorageService {
     } catch (error) {
       // A failed delete leaves an orphan object, not a broken user flow — log and move on.
       this.logger.warn(
-        `Could not delete ${key}: ${error instanceof Error ? error.message : error}`,
+        `Could not delete ${key}: ${error instanceof Error ? error.message : String(error)}`,
       );
     }
   }

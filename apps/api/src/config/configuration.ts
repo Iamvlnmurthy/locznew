@@ -51,6 +51,8 @@ export const envSchema = z.object({
   MSG91_SENDER_ID: z.string().optional(),
   MSG91_TEMPLATE_ID: z.string().optional(),
   TWILIO_ACCOUNT_SID: z.string().optional(),
+  TWILIO_API_KEY_SID: z.string().optional(),
+  TWILIO_API_KEY_SECRET: z.string().optional(),
   TWILIO_AUTH_TOKEN: z.string().optional(),
   TWILIO_FROM_NUMBER: z.string().optional(),
 
@@ -69,6 +71,18 @@ export const envSchema = z.object({
     .default(10 * 1024 * 1024),
   MEDIA_ALLOWED_MIME: csv,
   MEDIA_MAX_IMAGES_PER_LISTING: z.coerce.number().int().positive().default(12),
+  IMAGE_SCANNER_TIMEOUT_MS: z.coerce.number().int().positive().max(60_000).default(5_000),
+  IMAGE_SCANNER_MAX_ATTEMPTS: z.coerce.number().int().min(1).max(5).default(2),
+  IMAGE_SCANNER_PROVIDER: z.enum(['quarantine', 'rekognition']).default('quarantine'),
+  AWS_REKOGNITION_REGION: z.string().default('ap-south-1'),
+  AWS_REKOGNITION_ACCESS_KEY_ID: z.string().optional(),
+  AWS_REKOGNITION_SECRET_ACCESS_KEY: z.string().optional(),
+  AWS_REKOGNITION_MIN_CONFIDENCE: z.coerce.number().min(50).max(100).default(50),
+  AWS_REKOGNITION_REVIEW_CONFIDENCE: z.coerce.number().min(50).max(100).default(60),
+  AWS_REKOGNITION_REJECT_CONFIDENCE: z.coerce.number().min(50).max(100).default(90),
+  PROTECTED_HASH_PROVIDER: z.enum(['unconfigured']).default('unconfigured'),
+  PROTECTED_HASH_TIMEOUT_MS: z.coerce.number().int().positive().max(60_000).default(5_000),
+  PROTECTED_HASH_MAX_ATTEMPTS: z.coerce.number().int().min(1).max(5).default(2),
 
   MEILI_HOST: z.string().url().default('http://localhost:7700'),
   MEILI_MASTER_KEY: z.string().default(''),
@@ -106,6 +120,52 @@ export function validateEnv(raw: Record<string, unknown>): Env {
       .map((issue) => `  ${issue.path.join('.')}: ${issue.message}`)
       .join('\n');
     throw new Error(`Invalid environment configuration:\n${details}`);
+  }
+
+  const configured = (value: string | undefined): boolean => Boolean(value?.trim());
+  const requireKeys = (provider: string, keys: (keyof Env)[]): void => {
+    const missing = keys.filter((key) => !configured(result.data[key] as string | undefined));
+    if (missing.length > 0) {
+      throw new Error(
+        `${provider} is selected but required configuration is missing: ${missing.join(', ')}`,
+      );
+    }
+  };
+
+  if (result.data.OTP_PROVIDER === 'msg91') {
+    requireKeys('OTP_PROVIDER=msg91', ['MSG91_AUTH_KEY', 'MSG91_SENDER_ID', 'MSG91_TEMPLATE_ID']);
+  }
+
+  if (result.data.OTP_PROVIDER === 'twilio') {
+    requireKeys('OTP_PROVIDER=twilio', ['TWILIO_ACCOUNT_SID', 'TWILIO_FROM_NUMBER']);
+    const hasApiKey =
+      configured(result.data.TWILIO_API_KEY_SID) && configured(result.data.TWILIO_API_KEY_SECRET);
+    const hasAuthToken = configured(result.data.TWILIO_AUTH_TOKEN);
+    if (!hasApiKey && !hasAuthToken) {
+      throw new Error(
+        'OTP_PROVIDER=twilio requires TWILIO_API_KEY_SID and TWILIO_API_KEY_SECRET, or TWILIO_AUTH_TOKEN',
+      );
+    }
+  }
+
+  const fcmKeys: (keyof Env)[] = ['FCM_PROJECT_ID', 'FCM_CLIENT_EMAIL', 'FCM_PRIVATE_KEY'];
+  const configuredFcm = fcmKeys.filter((key) => configured(result.data[key] as string | undefined));
+  if (configuredFcm.length > 0 && configuredFcm.length !== fcmKeys.length) {
+    throw new Error('FCM configuration is partial; set all three FCM variables or none');
+  }
+
+  const hasRekognitionAccessKey = configured(result.data.AWS_REKOGNITION_ACCESS_KEY_ID);
+  const hasRekognitionSecret = configured(result.data.AWS_REKOGNITION_SECRET_ACCESS_KEY);
+  if (hasRekognitionAccessKey !== hasRekognitionSecret) {
+    throw new Error(
+      'AWS Rekognition credentials are partial; set both access-key variables or neither',
+    );
+  }
+  if (
+    result.data.AWS_REKOGNITION_MIN_CONFIDENCE > result.data.AWS_REKOGNITION_REVIEW_CONFIDENCE ||
+    result.data.AWS_REKOGNITION_REVIEW_CONFIDENCE > result.data.AWS_REKOGNITION_REJECT_CONFIDENCE
+  ) {
+    throw new Error('AWS Rekognition confidence values must satisfy min <= review <= reject');
   }
 
   // Development convenience must never leak into production.

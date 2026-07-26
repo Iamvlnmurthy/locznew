@@ -63,7 +63,7 @@ export class SearchQueryService {
       // Search being down degrades quality, not availability: fall back to the database
       // rather than returning an error to someone trying to buy a fridge.
       this.logger.error(
-        `Meilisearch query failed, falling back to the database: ${error instanceof Error ? error.message : error}`,
+        `Meilisearch query failed, falling back to the database: ${error instanceof Error ? error.message : String(error)}`,
       );
 
       const result = await this.listings.search(this.toBrowseQuery(query, true), viewerId);
@@ -187,13 +187,18 @@ export class SearchQueryService {
       priceMin: query.priceMin,
       priceMax: query.priceMax,
       condition: query.condition,
+      verifiedOnly: query.verifiedOnly,
+      postedWithinDays: query.postedWithinDays,
       // 'relevance' has no meaning without a keyword, and it must not become 'newest'
       // either: an explicit "newest" is the user's choice, while no choice at all is what
       // lets featured listings surface first. Leaving it undefined keeps that distinction.
       sort: query.sort === 'relevance' ? undefined : query.sort,
+      // Only the fallback carries the keyword. A browse request has no keyword to begin
+      // with, and passing one here when the index is healthy would apply the database's
+      // narrower matching on top of Meilisearch's, hiding results it correctly found.
+      ...(keywordFallback && query.q?.trim() ? { q: query.q.trim() } : {}),
     });
 
-    void keywordFallback;
     return browse;
   }
 

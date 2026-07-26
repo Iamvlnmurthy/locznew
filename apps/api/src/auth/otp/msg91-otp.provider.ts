@@ -24,9 +24,9 @@ export class Msg91OtpProvider implements OtpProvider {
     const templateId = this.config.get('MSG91_TEMPLATE_ID');
     const senderId = this.config.get('MSG91_SENDER_ID');
 
-    if (!authKey || !templateId) {
+    if (!authKey || !templateId || !senderId) {
       throw new InternalServerErrorException(
-        'MSG91 is selected as the OTP provider but MSG91_AUTH_KEY or MSG91_TEMPLATE_ID is not set',
+        'MSG91 is selected as the OTP provider but its credentials are incomplete',
       );
     }
 

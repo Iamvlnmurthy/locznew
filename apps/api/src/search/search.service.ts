@@ -40,6 +40,85 @@ export interface ListingDocument {
   _geo?: { lat: number; lng: number };
 }
 
+/**
+ * Attributes where matching part of a word is a real signal rather than a coincidence.
+ *
+ * Meilisearch prefix-matches the last word of a query, which is what makes search-as-you-type
+ * work: `iph` finds every iPhone. That is obviously right for a title, a brand or a category,
+ * because those name the thing being sold and a shopper types the beginning of the name.
+ *
+ * It is obviously wrong for a description. A description is up to 2000 characters of ordinary
+ * prose, so the chance that some unrelated word merely *starts with* what you typed is high
+ * and grows with the length of the text — which is how `car` came to return an iPhone whose
+ * description said the phone had been "carefully used for two years".
+ */
+const IDENTITY_ATTRIBUTES = new Set(['title', 'brand', 'categoryName', 'localityName', 'cityName']);
+
+/**
+ * How many hits to read past the page being served, so that discarding a coincidence still
+ * leaves a full page. Bounded because the work is proportional to it and the coincidences
+ * this removes are rare — the common query drops nothing and pays only for a wider read.
+ */
+const OVERFETCH = 4;
+const MAX_WINDOW = 200;
+
+/**
+ * The deepest result Meilisearch will return, and therefore the largest total we may claim.
+ *
+ * Meilisearch stops at `maxTotalHits` no matter what the query matched. With this set to 2000
+ * and a page size of 20, page 100 was the last page with anything on it — while the response
+ * still reported 4,117 results, so the hundred pages after it existed in the interface and
+ * were empty in reality.
+ *
+ * Reporting a reachable total instead is the honest fix: the count becomes "2000" rather than
+ * a number the product cannot deliver. The database path has no such ceiling and keeps its
+ * true count, which is not an inconsistency to paper over — each path now reports what it can
+ * actually serve, and `usedSearchIndex` already tells the caller which one answered.
+ *
+ * Shared with `configureIndex` so the ceiling and the setting cannot drift apart, which is
+ * exactly how this kind of defect survives a settings change.
+ */
+const MAX_TOTAL_HITS = 2000;
+
+/** Letters and digits in every script, so this behaves the same in Telugu as in English. */
+const WORD_CHARACTER = /[\p{L}\p{N}]/u;
+
+/**
+ * The character on one side of a match, given a **byte** offset.
+ *
+ * Meilisearch reports `_matchesPosition` in bytes, not characters — verified against this
+ * index, where "excellent" in `iPhone 13, 128 GB — excellent condition` is reported at 22
+ * while its character index is 20, the two differing by the em dash's extra bytes. Reading
+ * those offsets as character indices happens to work for pure ASCII and then quietly breaks
+ * on the first accented or non-Latin character, which in this product means it would break
+ * on Telugu and Hindi listings while every English test kept passing.
+ *
+ * Slicing a few bytes and decoding can land mid-character at the far end; taking the
+ * adjacent character from the decoded edge avoids that, and anything undecodable is treated
+ * as a boundary, which errs towards keeping the result.
+ */
+function adjacentCharacter(
+  text: string,
+  byteOffset: number,
+  direction: 'before' | 'after',
+): string {
+  const bytes = Buffer.from(text, 'utf8');
+  if (direction === 'after') {
+    if (byteOffset >= bytes.length) return '';
+    return [...bytes.subarray(byteOffset, byteOffset + 4).toString('utf8')][0] ?? '';
+  }
+  if (byteOffset <= 0) return '';
+  const decoded = [...bytes.subarray(Math.max(0, byteOffset - 4), byteOffset).toString('utf8')];
+  return decoded[decoded.length - 1] ?? '';
+}
+
+/** Whether a match covers a whole word rather than the beginning of a longer one. */
+export function isWholeWord(text: string, start: number, length: number): boolean {
+  const before = adjacentCharacter(text, start, 'before');
+  const after = adjacentCharacter(text, start + length, 'after');
+  return !WORD_CHARACTER.test(before) && !WORD_CHARACTER.test(after);
+}
+
 @Injectable()
 export class SearchService implements OnModuleInit {
   private readonly logger = new Logger(SearchService.name);
@@ -68,7 +147,7 @@ export class SearchService implements OnModuleInit {
     // nightly rebuild repairs an index that was configured late.
     void this.configureIndex().catch((error: unknown) => {
       this.logger.warn(
-        `Could not configure the search index at boot: ${error instanceof Error ? error.message : error}`,
+        `Could not configure the search index at boot: ${error instanceof Error ? error.message : String(error)}`,
       );
     });
   }
@@ -129,7 +208,7 @@ export class SearchService implements OnModuleInit {
         enabled: true,
         minWordSizeForTypos: { oneTypo: 5, twoTypos: 9 },
       },
-      pagination: { maxTotalHits: 2000 },
+      pagination: { maxTotalHits: MAX_TOTAL_HITS },
     });
   }
 
@@ -268,19 +347,92 @@ export class SearchService implements OnModuleInit {
       filter.push(`_geoRadius(${params.latitude}, ${params.longitude}, ${params.radiusKm * 1000})`);
     }
 
+    const offset = (params.page - 1) * params.limit;
+    const window = Math.min(params.limit * OVERFETCH, MAX_WINDOW);
+
     const result = await this.index.search(params.query, {
       filter: filter.length > 0 ? filter : undefined,
       sort: params.sort,
-      offset: (params.page - 1) * params.limit,
-      limit: params.limit,
+      offset,
+      limit: window,
+      // Needed to tell a real match from a coincidence; see `isRelevant`.
+      showMatchesPosition: true,
+      // Every word the user typed has to appear.
+      //
+      // Meilisearch's default is `last`, which drops query terms from the end until something
+      // matches. It never returns nothing, and that is the problem: `iphone 13 madhapur`
+      // returned 4,171 listings by ignoring both "13" and "madhapur", and a nonsense
+      // hyphenated identifier returned 12,377 by ignoring nearly all of it. The user is told
+      // these are results for what they typed.
+      //
+      // `all` makes the words mean something: the same queries return 1 and 0. It also brings
+      // the index in line with the database path, which already required every word — the two
+      // were answering the same question differently, which is not a difference a user can see
+      // or predict.
+      //
+      // Measured before changing: single-word queries are unaffected (`iphone` 4,171 either
+      // way) and a natural phrase barely moves (`samsung double door fridge` 4,117 → 4,114),
+      // so the recall this gives up is recall that was never relevant.
+      matchingStrategy: 'all',
     });
 
-    const documents = result.hits as ListingDocument[];
+    const hits = result.hits;
+    const relevant = hits.filter((hit) => this.isRelevant(hit));
+    const discarded = hits.length - relevant.length;
+
+    if (discarded > 0) {
+      this.logger.debug(
+        `Discarded ${discarded} coincidental match(es) for "${params.query}" — ` +
+          'matched only part of a word in a description',
+      );
+    }
+
+    const documents = relevant.slice(0, params.limit);
+
+    // The engine counted the coincidences, so the count has to lose them too. Anything else
+    // shows "1 result" above an empty page. `estimatedTotalHits` was already an estimate;
+    // subtracting what this window proved wrong makes it a better one, and the case that
+    // matters most — every hit discarded, as with `car` — becomes exactly zero.
+    const estimated = result.estimatedTotalHits ?? hits.length;
+    // Clamped to what the engine will actually hand out; see MAX_TOTAL_HITS.
+    const total = Math.min(Math.max(0, estimated - discarded), MAX_TOTAL_HITS);
+
     return {
       ids: documents.map((document) => document.id),
-      total: result.estimatedTotalHits ?? documents.length,
+      total,
       documents,
     };
+  }
+
+  /**
+   * Whether a hit is a real answer to the query or an accident of prefix matching.
+   *
+   * A hit qualifies if it matched any identity attribute — title, brand, category, place —
+   * where matching the start of a word is exactly what a shopper means. A hit that matched
+   * *only* the description qualifies only if it matched a whole word there.
+   *
+   * Deliberately generous in every uncertain case: a hit with no reported positions is kept,
+   * because the alternative is silently hiding listings when Meilisearch changes how it
+   * reports matches. This removes coincidences, and it is not a relevance ranker.
+   */
+  private isRelevant(
+    hit: ListingDocument & { _matchesPosition?: Record<string, unknown> },
+  ): boolean {
+    const positions = hit._matchesPosition;
+    if (!positions) return true;
+
+    const matchedAttributes = Object.keys(positions);
+    if (matchedAttributes.length === 0) return true;
+    if (matchedAttributes.some((attribute) => IDENTITY_ATTRIBUTES.has(attribute))) return true;
+
+    const description = positions.description;
+    if (!Array.isArray(description)) return true;
+
+    return description.some((match) => {
+      const { start, length } = match as { start?: number; length?: number };
+      if (typeof start !== 'number' || typeof length !== 'number') return true;
+      return isWholeWord(hit.description ?? '', start, length);
+    });
   }
 
   async health(): Promise<{ available: boolean; documents?: number }> {

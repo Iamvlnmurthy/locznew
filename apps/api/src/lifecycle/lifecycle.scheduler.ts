@@ -41,7 +41,7 @@ export class LifecycleScheduler implements OnModuleInit {
     // must not stop the API booting. A missed registration is recovered on the next boot.
     void this.register().catch((error: unknown) => {
       this.logger.error(
-        `Could not register scheduled jobs: ${error instanceof Error ? error.message : error}`,
+        `Could not register scheduled jobs: ${error instanceof Error ? error.message : String(error)}`,
       );
     });
   }

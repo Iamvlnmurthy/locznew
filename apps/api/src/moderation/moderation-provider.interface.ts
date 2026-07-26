@@ -1,4 +1,4 @@
-import { ModerationDecision } from '@prisma/client';
+import { type ModerationDecision } from '@prisma/client';
 
 export const MODERATION_PROVIDER = Symbol('MODERATION_PROVIDER');
 

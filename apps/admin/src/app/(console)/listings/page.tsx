@@ -1,4 +1,4 @@
-import type { ListingStatus, ListingSummary, Paginated } from '@locz/shared-types';
+import type { ListingStatus, ListingSummary } from '@locz/shared-types';
 import { ApiRequestError, api } from '@/lib/api';
 
 export const dynamic = 'force-dynamic';
