@@ -229,12 +229,24 @@ function inCandidateCheckout(steps) {
       // leaving the tree on disk — that is exactly how two abandoned candidates accumulated
       // in the temp folder unnoticed. A retry covers the Windows case where a file is still
       // held for a moment after the process that opened it exited.
-      if (existsSync(directory)) {
-        rmSync(directory, { recursive: true, force: true, maxRetries: 5, retryDelay: 250 });
+      // The removal itself is wrapped, because it is the step most likely to throw: Windows
+      // answers EBUSY for a file another process still holds, and this runs inside a
+      // `finally`, where an escaping error would replace whatever the gate was actually
+      // reporting. A leftover directory should be recorded as a failed cleanup, not raised as
+      // a crash on the way out.
+      try {
+        if (existsSync(directory)) {
+          rmSync(directory, { recursive: true, force: true, maxRetries: 5, retryDelay: 250 });
+        }
+      } catch (error) {
+        cleanupError = error instanceof Error ? error.message : String(error);
       }
+
       if (existsSync(directory)) {
         cleanupStatus = cleanupStatus || 1;
-        cleanupError = `${directory} still exists after cleanup`;
+        cleanupError = `${directory} still exists after cleanup${cleanupError ? `: ${cleanupError}` : ''}`;
+        // Left registered, git would keep believing in a worktree that is half-deleted.
+        spawnSync('git', ['worktree', 'prune'], { cwd: root, windowsHide: true });
       }
 
       recordStep(
