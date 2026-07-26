@@ -132,12 +132,23 @@ Latest same-state evidence:
 - Claude has since cut candidate `0e63386` with the synchronized project state. Existing
   JSON evidence predates that commit, so the new candidate still requires an isolated
   install/audit run before it can inherit any release claim.
-- The isolated worktree is removed correctly, but its empty `locz-release-candidate-*`
-  parent directory remains. Claude should remove the verified temp parent after
-  `git worktree remove` unless `--keep-candidate` is set.
+- The isolated worktree registration is removed, but the `locz-release-candidate-*`
+  directory can remain with an untracked `node_modules` tree. Claude should verify
+  `git worktree remove` succeeded and remove the generated temp parent unless
+  `--keep-candidate` is set.
 - Recovery checks prove those downstream failures were environmental rather than source
   regressions: all seven TypeScript workspaces pass, all 25 API suites pass with 276/276
   tests, and optimized API, web and admin production builds complete successfully.
+- Follow-up evidence in `artifacts/release-gate-2026-07-26T16-13-33.750Z.json` proves
+  candidate `8e19df7` passes isolated `npm ci`, production dependency audit, workspace
+  typecheck, translations and all 276 tests. The command wrapper then timed out during
+  builds and caused an `EPIPE`; that failure is external, not a source regression.
+- Two release-gate defects remain before another integrated run: web/admin builds rewrite
+  tracked `next-env.d.ts` in the active checkout, so candidate stability fails, and
+  `git worktree remove --force` failures are ignored, leaving full candidate directories
+  with `node_modules` under the OS temp folder. Claude should run mutating build phases
+  inside the isolated candidate, verify cleanup exit status, and remove the generated temp
+  parent unless `--keep-candidate` is set.
 
 ## Definition of complete
 
