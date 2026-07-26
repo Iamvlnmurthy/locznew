@@ -35,3 +35,11 @@ apps/mobile/ios/Pods/
 apps/mobile/android/.gradle/
 apps/mobile/android/local.properties
 apps/mobile/**/GeneratedPluginRegistrant.*
+
+# Next.js writes this file itself, and writes it differently depending on which command ran
+# last: `next dev` points it at .next/dev/types, `next build` points it at .next/types. Tracking
+# it therefore makes a clean worktree impossible while the development stack is running, which
+# is exactly when the release gate needs one — the gate's own stack-dependent stages guaranteed
+# the immutability check it runs alongside them would fail. Nothing needs it committed: the
+# typecheck passes without it and every build recreates it.
+next-env.d.ts
