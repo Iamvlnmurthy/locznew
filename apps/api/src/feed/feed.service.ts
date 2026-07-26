@@ -149,7 +149,12 @@ export class FeedService {
       (await this.prisma.city.findUnique({ where: { slug } })) ??
       (await this.prisma.city.findFirst({
         where: { isLaunched: true },
-        orderBy: { population: 'desc' },
+        // Nulls last, or this returns a district somewhere alphabetical. Every one of the
+        // 638 places derived from the pincode dataset has a null population, and
+        // PostgreSQL sorts nulls first on a descending order — so a missing
+        // `feed.defaultCity` setting would land a visitor in Adilabad rather than the
+        // largest city we actually serve.
+        orderBy: { population: { sort: 'desc', nulls: 'last' } },
       }));
 
     if (!fallback) throw new NotFoundException('No launched city is configured');
