@@ -12,6 +12,7 @@
  * passes for a real client too.
  */
 
+import { randomUUID } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import sharp from 'sharp';
 import { getSession } from './lib/session.mjs';
@@ -136,13 +137,14 @@ async function main() {
   const sellerPhone = `+9198${String(Math.floor(10_000_000 + Math.random() * 89_999_999))}`;
   const seller = await signIn(sellerPhone, 'acceptance-seller');
   check('account created on first verify', seller.user.isNewUser === true, sellerPhone);
-  check('registered-user role granted', seller.user.roles.includes('REGISTERED_USER'), seller.user.roles.join(','));
+  check(
+    'registered-user role granted',
+    seller.user.roles.includes('REGISTERED_USER'),
+    seller.user.roles.join(','),
+  );
   // The bug this catches: listing:create used to live only on INDIVIDUAL_SELLER, which is
   // granted inside the create handler — after the guard. No new account could ever post.
-  check(
-    'a brand-new account may post',
-    seller.user.permissions.includes('listing:create'),
-  );
+  check('a brand-new account may post', seller.user.permissions.includes('listing:create'));
   const sellerToken = seller.tokens.accessToken;
 
   const me = await call('/users/me', { token: sellerToken });
@@ -174,19 +176,39 @@ async function main() {
   check('pincode lookup by place name', byName.length > 0, `${byName.length} matches`);
 
   const area = await call('/locations/pincodes/500081');
-  check('pincode carries a centroid', area.latitude !== null, `${area.latitude}, ${area.longitude}`);
+  check(
+    'pincode carries a centroid',
+    area.latitude !== null,
+    `${area.latitude}, ${area.longitude}`,
+  );
   check('pincode knows its state', area.stateName.length > 0, area.stateName);
-  check('pincode linked to its launched city', area.cityName === 'Hyderabad', area.cityName ?? 'unlinked');
-  check('neighbouring codes returned', area.nearbyPincodes.length > 0, `${area.nearbyPincodes.length} nearby`);
+  check(
+    'pincode linked to its launched city',
+    area.cityName === 'Hyderabad',
+    area.cityName ?? 'unlinked',
+  );
+  check(
+    'neighbouring codes returned',
+    area.nearbyPincodes.length > 0,
+    `${area.nearbyPincodes.length} nearby`,
+  );
 
   const fromCoords = await call('/locations/resolve/pincode', {
     method: 'POST',
     body: { latitude: 17.4483, longitude: 78.3915 },
   });
-  check('coordinates resolve to a pincode', /^\d{6}$/.test(fromCoords.pincode?.code ?? ''), fromCoords.pincode?.code);
+  check(
+    'coordinates resolve to a pincode',
+    /^\d{6}$/.test(fromCoords.pincode?.code ?? ''),
+    fromCoords.pincode?.code,
+  );
 
   const unknownPincode = await call('/locations/pincodes/999999', { expect: 404 });
-  check('a non-existent pincode 404s', unknownPincode.error.code === 'NotFound', unknownPincode.error.code);
+  check(
+    'a non-existent pincode 404s',
+    unknownPincode.error.code === 'NotFound',
+    unknownPincode.error.code,
+  );
 
   // ---------------------------------------------------------------- 3. create
   step('3. Create a marketplace listing');
@@ -221,9 +243,32 @@ async function main() {
 
   // ---------------------------------------------------------------- 3b. media
   step('3b. Image upload (direct to object storage)');
-  const photo = readFileSync(TEST_PHOTO);
-  const sourceMeta = await sharp(photo).metadata();
+  const sourcePhoto = readFileSync(TEST_PHOTO);
+  const sourceMeta = await sharp(sourcePhoto).metadata();
   check('test photo carries EXIF to begin with', Boolean(sourceMeta.exif));
+
+  // Give each run different visible pixels while preserving source metadata. The security
+  // gate permanently blocks the image it probes; sharing one immutable fixture between
+  // suites made a valid upload depend on which suite ran first.
+  const nonce = randomUUID().replaceAll('-', '');
+  const width = sourceMeta.width ?? 1200;
+  const height = sourceMeta.height ?? 900;
+  const blocks = Array.from({ length: 10 }, (_, index) => {
+    const offset = index * 3;
+    const value = Number.parseInt(nonce.slice(offset, offset + 3), 16);
+    return {
+      input: Buffer.from(
+        `<svg width="160" height="120" xmlns="http://www.w3.org/2000/svg"><rect width="160" height="120" rx="18" fill="rgb(${value % 256},${(value * 3) % 256},${(value * 7) % 256})"/><path d="M0 ${value % 120} L160 ${(value * 5) % 120}" stroke="white" stroke-width="16"/></svg>`,
+      ),
+      left: value % Math.max(width - 160, 1),
+      top: (value * 11) % Math.max(height - 120, 1),
+    };
+  });
+  const photo = await sharp(sourcePhoto)
+    .composite(blocks)
+    .withMetadata()
+    .jpeg({ quality: 90 })
+    .toBuffer();
 
   const upload = await call(`/listings/${listing.id}/media/upload-url`, {
     method: 'POST',
@@ -382,7 +427,11 @@ async function main() {
     `/listings?latitude=17.4483&longitude=78.3915&radiusKm=5&categoryId=${leaf.id}&limit=50`,
   );
   const found = nearby.items.find((item) => item.id === listing.id);
-  check('listing found within 5 km', Boolean(found), `${nearby.meta.total} nearby in this category`);
+  check(
+    'listing found within 5 km',
+    Boolean(found),
+    `${nearby.meta.total} nearby in this category`,
+  );
   check(
     'distance is plausible',
     found !== undefined && found.distanceMeters !== undefined && found.distanceMeters < 5000,
@@ -440,7 +489,10 @@ async function main() {
   check('saving twice is idempotent', savedAgain.saveCount === saved.saveCount);
 
   const savedList = await call('/listings/saved', { token: buyerToken });
-  check('appears in saved list', savedList.items.some((item) => item.id === listing.id));
+  check(
+    'appears in saved list',
+    savedList.items.some((item) => item.id === listing.id),
+  );
 
   // ---------------------------------------------------------------- 10. enquiry
   step('10. Enquiry');

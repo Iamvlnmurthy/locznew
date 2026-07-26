@@ -16,7 +16,7 @@ import { randomUUID } from 'node:crypto';
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import { tmpdir } from 'node:os';
-import { join, resolve } from 'node:path';
+import { extname, join, resolve } from 'node:path';
 import { spawn } from 'node:child_process';
 import { pathToFileURL } from 'node:url';
 import dotenv from 'dotenv';
@@ -52,8 +52,17 @@ const WEB = process.env.LOCZ_WEB ?? 'http://localhost:3000';
 const EMAIL = process.env.LOCZ_BROWSER_EMAIL ?? 'buyer@locz.test';
 const FIXTURE_OWNER_EMAIL = process.env.LOCZ_BROWSER_FIXTURE_OWNER_EMAIL ?? 'seller@locz.test';
 const PASSWORD = process.env.LOCZ_BROWSER_PASSWORD ?? 'LocZ@dev1234';
-const TEST_PHOTO = process.env.LOCZ_TEST_PHOTO ?? 'C:/Users/USER/locz-stack/test-photo.jpg';
+const TEST_PHOTO =
+  process.env.LOCZ_BROWSER_TEST_PHOTO ??
+  resolve(root, 'apps', 'web', 'public', 'seed', 'listings', 'iphone-13-blue.webp');
 const SCREENSHOT_DIR = process.env.LOCZ_SCREENSHOT_DIR;
+
+function imageMimeType(path) {
+  const extension = extname(path).toLowerCase();
+  if (extension === '.webp') return 'image/webp';
+  if (extension === '.png') return 'image/png';
+  return 'image/jpeg';
+}
 /**
  * How long a single navigation may take before it counts as a failure.
  *
@@ -596,14 +605,15 @@ export async function createPublicFixtures(ownerToken, fixture) {
   });
 
   const photo = readFileSync(TEST_PHOTO);
+  const photoMimeType = imageMimeType(TEST_PHOTO);
   const upload = await api(`/listings/${fixture.listing.id}/media/upload-url`, {
     method: 'POST',
     token: fixture.ownerToken,
-    body: { mimeType: 'image/jpeg', sizeBytes: photo.length },
+    body: { mimeType: photoMimeType, sizeBytes: photo.length },
   });
   const uploaded = await fetch(upload.uploadUrl, {
     method: 'PUT',
-    headers: { 'Content-Type': 'image/jpeg' },
+    headers: { 'Content-Type': photoMimeType },
     body: photo,
   });
   if (!uploaded.ok) {
@@ -649,6 +659,48 @@ export async function cleanupPublicFixtures(_token, fixture) {
       method: 'DELETE',
       token: ownerToken,
     }).catch(() => undefined);
+  }
+
+  // Product deletion is intentionally soft, but these rows are synthetic test setup.
+  // Leaving them behind makes the real 24-hour posting cap accumulate across otherwise
+  // clean runs. Hard-delete only the exact IDs this run created, only against a local DB,
+  // and retain name/title guards so a bad fixture object cannot remove a real record.
+  if (process.env.DATABASE_URL && (fixture.listing?.id || fixture.business?.id)) {
+    const databaseUrl = new URL(process.env.DATABASE_URL);
+    const apiUrl = new URL(API);
+    if (
+      process.env.NODE_ENV === 'production' ||
+      !localHosts.has(databaseUrl.hostname) ||
+      !localHosts.has(apiUrl.hostname)
+    ) {
+      throw new Error('Hard cleanup of browser fixtures is restricted to the local stack.');
+    }
+
+    const db = new Client({ connectionString: process.env.DATABASE_URL });
+    await db.connect();
+    try {
+      await db.query('begin');
+      if (fixture.listing?.id) {
+        await db.query(
+          `delete from listings
+           where id = $1 and title like 'Browser fixture phone %'`,
+          [fixture.listing.id],
+        );
+      }
+      if (fixture.business?.id) {
+        await db.query(
+          `delete from businesses
+           where id = $1 and name like 'Browser Fixture Studio %'`,
+          [fixture.business.id],
+        );
+      }
+      await db.query('commit');
+    } catch (error) {
+      await db.query('rollback').catch(() => undefined);
+      throw error;
+    } finally {
+      await db.end();
+    }
   }
 }
 
@@ -1147,8 +1199,66 @@ async function main() {
         await browser.evaluate(`!document.body.classList.contains('has-gallery-lightbox')`),
       );
 
+      await browser.viewport(390, 844);
+      await browser.navigate(`/ad/${listing.slug}`);
+      await browser.waitFor(
+        `Boolean(document.querySelector('.listing-gallery__image img'))`,
+        'mobile listing detail',
+      );
+      await browser.waitFor(
+        `(() => {
+          const image = document.querySelector('.listing-gallery__image img');
+          return Boolean(image?.complete && image.naturalWidth > 0);
+        })()`,
+        'decoded mobile listing photo',
+        20_000,
+      );
+      check(
+        'mobile listing renders its approved photo',
+        await browser.evaluate(`(() => {
+          const image = document.querySelector('.listing-gallery__image img');
+          return Boolean(image?.complete && image.naturalWidth > 0 && image.naturalHeight > 0);
+        })()`),
+      );
+      check(
+        'mobile listing keeps the full photo visible without consuming the viewport',
+        await browser.evaluate(`(() => {
+          const image = document.querySelector('.listing-gallery__image img');
+          if (!image) return false;
+          const style = getComputedStyle(image);
+          const rect = image.getBoundingClientRect();
+          return style.objectFit === 'contain' && rect.height <= 300;
+        })()`),
+      );
+      check(
+        'mobile message, save and share actions all fit without overlap',
+        await browser.evaluate(`(() => {
+          const buttons = [
+            document.querySelector('.contact-panel__trigger'),
+            ...document.querySelectorAll('.detail__secondary-actions .detail-action'),
+          ];
+          if (buttons.length !== 3 || buttons.some((button) => !button)) return false;
+          const rects = buttons.map((button) => button.getBoundingClientRect());
+          const inside = rects.every((rect) => rect.left >= 0 && rect.right <= innerWidth);
+          const separate = rects.every((rect, index) =>
+            rects.slice(index + 1).every((other) => rect.right <= other.left || other.right <= rect.left)
+          );
+          return inside && separate;
+        })()`),
+      );
+      check(
+        'mobile listing has no horizontal overflow',
+        await browser.evaluate(
+          `document.documentElement.scrollWidth <= document.documentElement.clientWidth`,
+        ),
+      );
+      await checkAccessibility(browser, 'mobile listing passes automated WCAG A/AA checks');
+      await browser.screenshot('listing-detail-mobile.png');
+
       // -------------------------------------------------------------- save toggle
       step('3. Optimistic save is durable');
+      await browser.viewport(1365, 900);
+      await browser.navigate(`/ad/${listing.slug}`);
       const saveSelector = 'button.detail-action[aria-pressed]';
       check(
         'listing begins unsaved',
