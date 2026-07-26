@@ -258,7 +258,7 @@ async function freshSignIn(api, phone, deviceKey, onWait) {
  * limit), then a real sign-in. Only the last one can be throttled, and it is the rare
  * path once the cache is warm.
  */
-export async function getSession(api, phone, deviceKey, { onWait } = {}) {
+export async function getSession(api, phone, deviceKey, { onWait, forceFresh = false } = {}) {
   const cache = readCache();
   // Keyed on the phone alone, not the device: the suites use different device keys for
   // readability, but a second device means a second sign-in and the limiter counts by
@@ -271,7 +271,7 @@ export async function getSession(api, phone, deviceKey, { onWait } = {}) {
   const cached =
     cache[key] ?? cache[Object.keys(cache).find((entry) => entry.startsWith(`${key}|`)) ?? ''];
 
-  if (cached) {
+  if (cached && !forceFresh) {
     // An access token lasts fifteen minutes and a full suite now runs longer than that,
     // because sign-ins are paced to stay under the OTP limit. A token that is merely
     // *currently* valid is not good enough — it can expire between this check and the

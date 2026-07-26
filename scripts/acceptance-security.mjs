@@ -99,7 +99,9 @@ async function raw(path, { method = 'GET', body, token, headers = {}, expectLimi
 async function call(path, options = {}) {
   const result = await raw(path, options);
   if (result.status >= 400) {
-    throw new Error(`${options.method ?? 'GET'} ${path} → ${result.status}: ${result.text.slice(0, 200)}`);
+    throw new Error(
+      `${options.method ?? 'GET'} ${path} → ${result.status}: ${result.text.slice(0, 200)}`,
+    );
   }
   return result.body;
 }
@@ -119,7 +121,14 @@ async function main() {
 
   const alice = await getSession(API, alicePhone, 'security-alice');
   const mallory = await getSession(API, malloryPhone, 'security-mallory');
-  const moderator = await getSession(API, '+919000000003', 'security-moderator');
+  // This probe suspends and reinstates accounts, so it must not share a refresh-token
+  // family with another acceptance process. Two release gates can legitimately overlap
+  // on a workstation; if both refresh the same cached token, replay protection revokes
+  // that family and the probe loses its moderator halfway through for the right product
+  // reason. A separate device session keeps the security assertion isolated.
+  const moderator = await getSession(API, '+919000000003', 'security-moderator', {
+    forceFresh: true,
+  });
 
   const aliceToken = alice.tokens.accessToken;
   const malloryToken = mallory.tokens.accessToken;
@@ -185,7 +194,11 @@ async function main() {
   check('cannot attach photos to it', refused(uploadUrl), `HTTP ${uploadUrl.status}`);
 
   const stillIntact = await call(`/listings/${listing.slug}`);
-  check('the listing is untouched', stillIntact.title.startsWith('Bookshelf in solid'), stillIntact.title);
+  check(
+    'the listing is untouched',
+    stillIntact.title.startsWith('Bookshelf in solid'),
+    stillIntact.title,
+  );
 
   // ---------------------------------------------------------------- 2. private conversations
   step('2. Mallory reaches into a conversation she is not in');
@@ -197,7 +210,11 @@ async function main() {
   });
 
   // Mallory is legitimately in that one. Alice starts a second thread that Mallory is not.
-  const bystander = await getSession(API, `+9191${String(Math.floor(10_000_000 + Math.random() * 89_999_999))}`, 'security-bystander');
+  const bystander = await getSession(
+    API,
+    `+9191${String(Math.floor(10_000_000 + Math.random() * 89_999_999))}`,
+    'security-bystander',
+  );
   const bystanderThread = await call('/conversations', {
     method: 'POST',
     token: bystander.tokens.accessToken,
@@ -251,10 +268,7 @@ async function main() {
   );
 
   const searchPayload = await call('/search?limit=24');
-  check(
-    'search results carry no phone numbers',
-    !/\+91\d{10}/.test(JSON.stringify(searchPayload)),
-  );
+  check('search results carry no phone numbers', !/\+91\d{10}/.test(JSON.stringify(searchPayload)));
 
   const renderedPage = await fetch(`${WEB}/ad/${listing.slug}`).then((response) => response.text());
   check(
@@ -282,7 +296,11 @@ async function main() {
   }
 
   const stillPublished = await call(`/listings/${listing.slug}`);
-  check('the listing survived all of that', stillPublished.status === 'PUBLISHED', stillPublished.status);
+  check(
+    'the listing survived all of that',
+    stillPublished.status === 'PUBLISHED',
+    stillPublished.status,
+  );
 
   // ---------------------------------------------------------------- 4b. suspension
   step('4b. Suspension stops a person, so it must be hard to reach');
@@ -295,10 +313,18 @@ async function main() {
     token: malloryToken,
     body: { reason },
   });
-  check('an ordinary account cannot suspend anyone', refused(strangerSuspends), `HTTP ${strangerSuspends.status}`);
+  check(
+    'an ordinary account cannot suspend anyone',
+    refused(strangerSuspends),
+    `HTTP ${strangerSuspends.status}`,
+  );
 
   const anonymousSuspends = await raw(suspendPath, { method: 'POST', body: { reason } });
-  check('nor can an anonymous request', anonymousSuspends.status === 401, `HTTP ${anonymousSuspends.status}`);
+  check(
+    'nor can an anonymous request',
+    anonymousSuspends.status === 401,
+    `HTTP ${anonymousSuspends.status}`,
+  );
 
   const aliceStillWorks = await raw('/users/me', { token: aliceToken });
   check('and the account is untouched by the attempt', aliceStillWorks.status === 200);
@@ -307,14 +333,21 @@ async function main() {
   const doomedPhone = `+9186${String(Math.floor(10_000_000 + Math.random() * 89_999_999))}`;
   const doomedUser = await getSession(API, doomedPhone, 'security-suspendee');
   const doomedUserToken = doomedUser.tokens.accessToken;
-  check('the account works before suspension', (await raw('/users/me', { token: doomedUserToken })).status === 200);
+  check(
+    'the account works before suspension',
+    (await raw('/users/me', { token: doomedUserToken })).status === 200,
+  );
 
   const suspended = await call(`/moderation/users/${doomedUser.user.id}/suspend`, {
     method: 'POST',
     token: moderatorToken,
     body: { reason: 'Repeated fake listings after two warnings' },
   });
-  check('a moderator can suspend', suspended.suspended === true, `${suspended.sessionsRevoked} session(s) revoked`);
+  check(
+    'a moderator can suspend',
+    suspended.suspended === true,
+    `${suspended.sessionsRevoked} session(s) revoked`,
+  );
 
   const afterSuspension = await raw('/users/me', { token: doomedUserToken });
   check(
@@ -342,7 +375,11 @@ async function main() {
     token: moderatorToken,
     body: { reason: 'A moderator locking themselves out by accident' },
   });
-  check('a moderator cannot suspend themselves', selfSuspend.status === 400, `HTTP ${selfSuspend.status}`);
+  check(
+    'a moderator cannot suspend themselves',
+    selfSuspend.status === 400,
+    `HTTP ${selfSuspend.status}`,
+  );
 
   // Left reinstated: a suspended account in the seed data would break later runs.
   await raw(`/moderation/users/${doomedUser.user.id}/reinstate`, {
@@ -363,7 +400,9 @@ async function main() {
   // A structurally valid JWT signed with the wrong key — the classic forgery attempt.
   const forged = [
     Buffer.from(JSON.stringify({ alg: 'HS256', typ: 'JWT' })).toString('base64url'),
-    Buffer.from(JSON.stringify({ sub: alice.user.id, exp: Math.floor(Date.now() / 1000) + 3600 })).toString('base64url'),
+    Buffer.from(
+      JSON.stringify({ sub: alice.user.id, exp: Math.floor(Date.now() / 1000) + 3600 }),
+    ).toString('base64url'),
     'this-signature-is-invented',
   ].join('.');
   const forgedResult = await raw('/users/me', { token: forged });
@@ -372,18 +411,35 @@ async function main() {
   // The `alg: none` trick, in case verification ever trusts the header.
   const unsigned = [
     Buffer.from(JSON.stringify({ alg: 'none', typ: 'JWT' })).toString('base64url'),
-    Buffer.from(JSON.stringify({ sub: alice.user.id, exp: Math.floor(Date.now() / 1000) + 3600 })).toString('base64url'),
+    Buffer.from(
+      JSON.stringify({ sub: alice.user.id, exp: Math.floor(Date.now() / 1000) + 3600 }),
+    ).toString('base64url'),
     '',
   ].join('.');
   const unsignedResult = await raw('/users/me', { token: unsigned });
-  check('an unsigned token is refused', unsignedResult.status === 401, `HTTP ${unsignedResult.status}`);
+  check(
+    'an unsigned token is refused',
+    unsignedResult.status === 401,
+    `HTTP ${unsignedResult.status}`,
+  );
 
   // A logged-out session must die immediately, not linger until the token expires.
-  const doomed = await getSession(API, `+9190${String(Math.floor(10_000_000 + Math.random() * 89_999_999))}`, 'security-logout');
+  const doomed = await getSession(
+    API,
+    `+9190${String(Math.floor(10_000_000 + Math.random() * 89_999_999))}`,
+    'security-logout',
+  );
   const doomedToken = doomed.tokens.accessToken;
-  check('the session works before logout', (await raw('/users/me', { token: doomedToken })).status === 200);
+  check(
+    'the session works before logout',
+    (await raw('/users/me', { token: doomedToken })).status === 200,
+  );
 
-  await raw('/auth/logout', { method: 'POST', token: doomedToken, body: { refreshToken: doomed.tokens.refreshToken } });
+  await raw('/auth/logout', {
+    method: 'POST',
+    token: doomedToken,
+    body: { refreshToken: doomed.tokens.refreshToken },
+  });
   const afterLogout = await raw('/users/me', { token: doomedToken });
   check('and stops working after it', afterLogout.status === 401, `HTTP ${afterLogout.status}`);
 
@@ -399,12 +455,26 @@ async function main() {
 
   // Refresh rotation: the old token must die the moment it is exchanged, so a stolen copy
   // is worth nothing once the real user has moved on.
-  const rotating = await getSession(API, `+9189${String(Math.floor(10_000_000 + Math.random() * 89_999_999))}`, 'security-rotate');
+  const rotating = await getSession(
+    API,
+    `+9189${String(Math.floor(10_000_000 + Math.random() * 89_999_999))}`,
+    'security-rotate',
+  );
   const firstRefresh = rotating.tokens.refreshToken;
-  const rotated = await raw('/auth/refresh', { method: 'POST', body: { refreshToken: firstRefresh } });
-  check('a refresh token can be exchanged once', rotated.status === 200 || rotated.status === 201, `HTTP ${rotated.status}`);
+  const rotated = await raw('/auth/refresh', {
+    method: 'POST',
+    body: { refreshToken: firstRefresh },
+  });
+  check(
+    'a refresh token can be exchanged once',
+    rotated.status === 200 || rotated.status === 201,
+    `HTTP ${rotated.status}`,
+  );
 
-  const reused = await raw('/auth/refresh', { method: 'POST', body: { refreshToken: firstRefresh } });
+  const reused = await raw('/auth/refresh', {
+    method: 'POST',
+    body: { refreshToken: firstRefresh },
+  });
   check('but never twice', reused.status >= 400, `HTTP ${reused.status}`);
 
   // ---------------------------------------------------------------- 6. guessing an OTP
@@ -427,7 +497,11 @@ async function main() {
     if (guess.status === 429 || guess.status === 423) blocked = true;
     // A correct guess would be catastrophic; it is also a 1-in-900,000 accident.
     if (guess.status === 200 || guess.status === 201) {
-      check('a guessed code was accepted — investigate immediately', false, `after ${attempts + 1} tries`);
+      check(
+        'a guessed code was accepted — investigate immediately',
+        false,
+        `after ${attempts + 1} tries`,
+      );
       break;
     }
   }
@@ -523,11 +597,7 @@ async function main() {
     const page = await fetch(`${WEB}/ad/${scripted.slug}`);
     const html = await page.text();
 
-    check(
-      'the listing page renders',
-      page.status === 200,
-      `HTTP ${page.status}`,
-    );
+    check('the listing page renders', page.status === 200, `HTTP ${page.status}`);
     check(
       'the script tag is escaped, not executable',
       !html.includes('<script>alert(1)</script>'),
@@ -539,10 +609,7 @@ async function main() {
     );
 
     const searchPage = await fetch(`${WEB}/search?q=sofa`).then((response) => response.text());
-    check(
-      'and stays escaped in search results',
-      !searchPage.includes('<script>alert(1)</script>'),
-    );
+    check('and stays escaped in search results', !searchPage.includes('<script>alert(1)</script>'));
   } else {
     check(
       'the scripted listing could be published for the rendering check',
@@ -575,7 +642,11 @@ async function main() {
   check('a draft is not public', refused(draftDetail), `HTTP ${draftDetail.status}`);
 
   const draftToAlice = await raw(`/listings/${draft.slug}`, { token: aliceToken });
-  check('nor visible to another signed-in user', refused(draftToAlice), `HTTP ${draftToAlice.status}`);
+  check(
+    'nor visible to another signed-in user',
+    refused(draftToAlice),
+    `HTTP ${draftToAlice.status}`,
+  );
 
   const draftInSearch = await call('/search?q=unfinished%20draft&limit=10');
   check(
@@ -632,7 +703,11 @@ async function main() {
     token: aliceToken,
     body: { verified: true },
   });
-  check('an owner cannot verify their own business', refused(selfVerify), `HTTP ${selfVerify.status}`);
+  check(
+    'an owner cannot verify their own business',
+    refused(selfVerify),
+    `HTTP ${selfVerify.status}`,
+  );
 
   // Verification cannot be requested from a bare profile — a badge earned by filling in
   // nothing would be worth nothing to the buyer reading it. The refusal names what is
@@ -648,7 +723,9 @@ async function main() {
   );
   check(
     'and the refusal says what is missing',
-    /address|opening hours|description|phone/i.test(requested.body?.error?.message ?? requested.text),
+    /address|opening hours|description|phone/i.test(
+      requested.body?.error?.message ?? requested.text,
+    ),
     requested.body?.error?.message ?? '',
   );
 
@@ -717,7 +794,11 @@ async function main() {
     token: aliceToken,
   });
   const afterRemoval = await raw(`/businesses/${business.id}/staff`, { token: malloryToken });
-  check('a removed staff member loses access at once', refused(afterRemoval), `HTTP ${afterRemoval.status}`);
+  check(
+    'a removed staff member loses access at once',
+    refused(afterRemoval),
+    `HTTP ${afterRemoval.status}`,
+  );
 
   const removedPost = await raw('/listings', {
     method: 'POST',
@@ -732,7 +813,11 @@ async function main() {
       marketplace: { price: 9000, condition: 'GOOD' },
     },
   });
-  check('and cannot keep posting as the business', refused(removedPost), `HTTP ${removedPost.status}`);
+  check(
+    'and cannot keep posting as the business',
+    refused(removedPost),
+    `HTTP ${removedPost.status}`,
+  );
 
   // A manager runs the day-to-day work and still does not own the place.
   const manager = await call(`/businesses/${business.id}/staff`, {
@@ -792,7 +877,10 @@ async function main() {
     });
     if (!put.ok) throw new Error(`Object storage refused the upload: HTTP ${put.status}`);
 
-    return { mediaId: ticket.mediaId, confirmed: await raw(`/media/${ticket.mediaId}/confirm`, { method: 'POST', token }) };
+    return {
+      mediaId: ticket.mediaId,
+      confirmed: await raw(`/media/${ticket.mediaId}/confirm`, { method: 'POST', token }),
+    };
   }
 
   /**
@@ -947,7 +1035,11 @@ async function main() {
   // The queue is useless without someone able to read it, and the report POCSO makes
   // mandatory cannot be made by a role nobody holds.
   const officerCases = await raw('/moderation/safety/cases', { token: officerToken });
-  check('and can open the restricted queue', officerCases.status === 200, `HTTP ${officerCases.status}`);
+  check(
+    'and can open the restricted queue',
+    officerCases.status === 200,
+    `HTTP ${officerCases.status}`,
+  );
 
   for (const [label, path] of [
     ['the moderation queue', '/moderation/queue?limit=1'],
@@ -961,17 +1053,18 @@ async function main() {
   // The other direction. An ordinary moderator handles listings and reports; restricted
   // evidence is a different job with different training.
   const moderatorCases = await raw('/moderation/safety/cases', { token: moderatorToken });
-  check('a moderator cannot open the restricted queue', refused(moderatorCases), `HTTP ${moderatorCases.status}`);
+  check(
+    'a moderator cannot open the restricted queue',
+    refused(moderatorCases),
+    `HTTP ${moderatorCases.status}`,
+  );
 
   const strangerCases = await raw('/moderation/safety/cases', { token: malloryToken });
   check('nor can an ordinary account', refused(strangerCases), `HTTP ${strangerCases.status}`);
 
   // And the one that matters most: the platform's most powerful credential.
   const superAdmin = await getSession(API, '+919000000001', 'security-superadmin');
-  check(
-    'the super administrator holds the wildcard',
-    superAdmin.user.permissions.includes('*'),
-  );
+  check('the super administrator holds the wildcard', superAdmin.user.permissions.includes('*'));
   check(
     'but not the child-safety permissions',
     !superAdmin.user.permissions.includes('safety:evidence:read'),
@@ -991,7 +1084,11 @@ async function main() {
   const superQueue = await raw('/moderation/queue?limit=1', {
     token: superAdmin.tokens.accessToken,
   });
-  check('while still opening everything else', superQueue.status === 200, `HTTP ${superQueue.status}`);
+  check(
+    'while still opening everything else',
+    superQueue.status === 200,
+    `HTTP ${superQueue.status}`,
+  );
 
   // ---------------------------------------------------------------- 9. cleanup
   step('9. Cleanup');
