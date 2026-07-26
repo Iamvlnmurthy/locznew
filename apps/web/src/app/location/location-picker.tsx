@@ -65,14 +65,9 @@ export function LocationPicker({
 
   useEffect(() => {
     const needle = query.trim();
-    if (needle.length < 2) {
-      setCityResults(cities);
-      setIsSearching(false);
-      return;
-    }
+    if (needle.length < 2) return;
 
     let current = true;
-    setIsSearching(true);
     const timer = window.setTimeout(() => {
       void searchCitiesAction(needle, true).then((matches) => {
         if (!current) return;
@@ -253,7 +248,16 @@ export function LocationPicker({
           id="city-search"
           type="search"
           value={query}
-          onChange={(event) => setQuery(event.target.value)}
+          onChange={(event) => {
+            const nextQuery = event.target.value;
+            setQuery(nextQuery);
+            if (nextQuery.trim().length < 2) {
+              setCityResults(cities);
+              setIsSearching(false);
+            } else {
+              setIsSearching(true);
+            }
+          }}
           autoComplete="off"
           placeholder={labels.searchCity}
           aria-busy={isSearching}
