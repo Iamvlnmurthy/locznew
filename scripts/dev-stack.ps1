@@ -82,11 +82,16 @@ function Start-Postgres {
     if (Test-Port 5432) { Write-Host '  PostgreSQL already running' -ForegroundColor DarkGray; return }
 
     Write-Host 'Starting PostgreSQL…'
-    # No -w: a stale postmaster.pid from an unclean shutdown makes pg_ctl doubt its own
-    # success and wait indefinitely, even though the server did start. Wait-ForPort
-    # answers the only question that matters — is it accepting connections?
-    & "$PgHome\pgsql\bin\pg_ctl.exe" -D "$PgHome\data" -l "$PgHome\logs\postgres.log" start 2>&1 |
-        Out-Null
+    # Launch pg_ctl outside PowerShell's native-output pipeline. The postgres process
+    # can inherit that pipeline and keep it open after pg_ctl exits, which makes stack
+    # recovery appear to hang even though the database is already accepting connections.
+    # Wait-ForPort remains the bounded source of truth for startup success.
+    $pgData = Join-Path $PgHome 'data'
+    $pgLog  = Join-Path $PgHome 'logs\postgres.log'
+    Start-Process -FilePath "$PgHome\pgsql\bin\pg_ctl.exe" `
+        -ArgumentList '-D', "`"$pgData`"", '-l', "`"$pgLog`"", 'start' `
+        -WorkingDirectory $PgHome `
+        -WindowStyle Hidden
     Wait-ForPort -Port 5432 -Name 'PostgreSQL' | Out-Null
 }
 
