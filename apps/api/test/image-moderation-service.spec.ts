@@ -14,6 +14,7 @@ describe('ImageModerationService', () => {
   const fingerprint: ImageFingerprint = {
     sha256: 'a'.repeat(64),
     perceptual: 'f0f0f0f0f0f0f0f0',
+    distinctive: true,
   };
 
   function build({
@@ -92,6 +93,25 @@ describe('ImageModerationService', () => {
       await expect(service.findBlock(fingerprint)).resolves.toBeNull();
     });
 
+    it('will not match a blank image against the perceptual list', async () => {
+      // Every blank picture hashes to the same sixty-four zero bits. Matching on that
+      // would refuse every plain background once one placeholder had been blocked.
+      const { service, prisma } = build({
+        perceptualBlocks: [
+          { hash: '0000000000000000', reason: 'A blocked placeholder', category: null },
+        ],
+      });
+
+      await expect(
+        service.findBlock({
+          sha256: 'b'.repeat(64),
+          perceptual: '0000000000000000',
+          distinctive: false,
+        }),
+      ).resolves.toBeNull();
+      expect(prisma.blockedImageHash.findMany).not.toHaveBeenCalled();
+    });
+
     it('says nothing is blocked when nothing is', async () => {
       const { service } = build();
 
@@ -147,6 +167,22 @@ describe('ImageModerationService', () => {
 
       expect(prisma.listing.update).not.toHaveBeenCalled();
       expect(queue.add).not.toHaveBeenCalled();
+    });
+
+    it('pulls back even an established seller when the safety scanner cannot approve', async () => {
+      const { service, prisma, queue } = build({ listing: published, publishedByOwner: 40 });
+
+      await expect(
+        service.reviewOnUpload({ id: 'media-1', listingId: 'listing-1' } as never, fingerprint, [
+          'IMAGE_SCANNER_UNAVAILABLE',
+        ]),
+      ).resolves.toEqual({
+        decision: 'REVIEW',
+        reasons: ['IMAGE_SCANNER_UNAVAILABLE'],
+      });
+
+      expect(prisma.listing.update).toHaveBeenCalled();
+      expect(queue.add).toHaveBeenCalled();
     });
 
     it('does not resurrect a listing that was already refused', async () => {

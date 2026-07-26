@@ -65,6 +65,12 @@ export class ImageModerationService {
     });
     if (exact) return exact;
 
+    // A blank or near-blank picture reduces to sixty-four zero bits, the same as every
+    // other blank picture. Comparing on that would mean one blocked placeholder quietly
+    // refuses every plain background anyone uploads afterwards, with the uploader told
+    // their photograph was previously removed. The exact hash above still applies.
+    if (!fingerprint.distinctive) return null;
+
     const perceptual = await this.prisma.blockedImageHash.findMany({
       where: { kind: 'PERCEPTUAL' },
       select: { hash: true, reason: true, category: true },
@@ -89,6 +95,7 @@ export class ImageModerationService {
   async reviewOnUpload(
     media: ListingMedia,
     fingerprint: ImageFingerprint,
+    requiredReasons: string[] = [],
   ): Promise<ImageUploadDecision> {
     const listing = await this.prisma.listing.findUnique({
       where: { id: media.listingId },
@@ -96,7 +103,7 @@ export class ImageModerationService {
     });
     if (!listing) return { decision: 'REVIEW', reasons: ['LISTING_NOT_FOUND'] };
 
-    const reasons: string[] = [];
+    const reasons: string[] = [...requiredReasons];
 
     // The same photograph under a different owner. Not proof of anything — a shop and its
     // employee legitimately share pictures — but the strongest single signal that a

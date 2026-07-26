@@ -16,6 +16,9 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
+/** Refresh rather than trust a token older than this. Access tokens live fifteen minutes. */
+const TOKEN_REFRESH_AFTER_MS = 10 * 60 * 1000;
+
 const CACHE_DIR = join(tmpdir(), 'locz-acceptance');
 const CACHE_FILE = join(CACHE_DIR, 'sessions.json');
 
@@ -189,10 +192,18 @@ export async function getSession(api, phone, deviceKey, { onWait } = {}) {
     cache[key] ?? cache[Object.keys(cache).find((entry) => entry.startsWith(`${key}|`)) ?? ''];
 
   if (cached) {
-    if (await stillValid(api, cached)) return cached;
+    // An access token lasts fifteen minutes and a full suite now runs longer than that,
+    // because sign-ins are paced to stay under the OTP limit. A token that is merely
+    // *currently* valid is not good enough — it can expire between this check and the
+    // assertion that uses it, which surfaces as a baffling 401 halfway through a run.
+    // Anything past ten minutes is refreshed on the spot; refreshing costs no SMS and is
+    // not rate limited.
+    const age = Date.now() - (cached.obtainedAt ?? 0);
+    if (age < TOKEN_REFRESH_AFTER_MS && (await stillValid(api, cached))) return cached;
 
     const refreshed = await refresh(api, cached);
     if (refreshed && (await stillValid(api, refreshed))) {
+      refreshed.obtainedAt = Date.now();
       cache[key] = refreshed;
       writeCache(cache);
       return refreshed;
@@ -200,6 +211,7 @@ export async function getSession(api, phone, deviceKey, { onWait } = {}) {
   }
 
   const session = await freshSignIn(api, phone, deviceKey, onWait);
+  session.obtainedAt = Date.now();
   cache[key] = session;
   writeCache(cache);
   return session;

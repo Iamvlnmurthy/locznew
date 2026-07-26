@@ -1176,3 +1176,45 @@ the approval the suite already performs, which also makes them test the real ord
 than a contrived one.
 
 **189 unit tests. Acceptance 67, web 110.**
+
+## M32 — The fingerprint was hashing the wrong bytes (2026-07-26)
+
+Running the blocked-image probes end to end found the thing unit tests could not: **a
+detailed photograph and a flat green rectangle produced the same hash — sixty-four zeros,
+distance zero.** Blocking one would have refused the other.
+
+Two separate faults, both mine.
+
+**It never read luminance.** `sharp.greyscale()` desaturates but keeps three channels, so
+indexing the raw buffer as one byte per pixel compared the red and green of the first few
+pixels instead of brightness across the picture. `toColourspace('b-w')` reduces it for
+real, and the stride is now asserted from `resolveWithObject` rather than assumed. My unit
+tests missed it because every fixture was compared against a transformation of itself —
+equally wrong on both sides.
+
+**Distinctiveness was measured on the wrong thing.** The first fix marked an image
+"distinctive" by its contrast, but these bits record whether each cell is brighter than the
+one to its _right_. A white field above a black band has plenty of contrast and still
+hashes to all zeros — which is exactly how an unrelated photograph came to be refused in
+testing. Distinctiveness is now counted from the hash itself: fewer than twelve set bits,
+or more than fifty-two, means it has recorded nothing to tell two pictures apart by, and
+only the exact hash applies.
+
+The direction of that trade is deliberate. Treating a real photograph as indistinct lets a
+re-crop through; the reverse refuses a seller who did nothing wrong and tells them their
+picture was previously removed.
+
+### And the probes were poisoning their own database
+
+The section blocks whatever it uploads, and a block is permanent by design — there is no
+unblock endpoint, because reversing a safety decision should be a considered act rather
+than an API call. An early version used the shared test photograph, which stayed refused
+for every suite afterwards, including the main flow. Fixtures are now generated per run
+from random rectangles: recolouring the same shapes yields the same bits, so the structure
+has to change, not the palette.
+
+Six hashes were cleaned out of the development database. The recovery is written into the
+suite.
+
+**Verified over HTTP:** the blocked picture is refused, a re-saved copy of it is refused,
+and an unrelated picture is not. **222 unit tests, security 88, acceptance 67, web 110.**

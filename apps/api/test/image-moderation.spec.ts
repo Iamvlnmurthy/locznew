@@ -95,6 +95,62 @@ describe('image fingerprinting', () => {
     });
   });
 
+  describe('images with nothing to describe', () => {
+    it('marks a flat colour as not distinctive', async () => {
+      const flat = await sharp({
+        create: { width: 200, height: 150, channels: 3, background: { r: 20, g: 140, b: 90 } },
+      })
+        .jpeg()
+        .toBuffer();
+
+      const fingerprint = await fingerprintImage(flat);
+
+      expect(fingerprint.distinctive).toBe(false);
+      // All zeros, which is exactly why it must not be compared: every blank image lands
+      // here, so one blocked placeholder would refuse all of them.
+      expect(fingerprint.perceptual).toBe('0000000000000000');
+    });
+
+    it('marks a picture with structure as distinctive', async () => {
+      const fingerprint = await fingerprintImage(await photograph());
+
+      expect(fingerprint.distinctive).toBe(true);
+      expect(fingerprint.perceptual).not.toBe('0000000000000000');
+    });
+
+    it('reads luminance across the image, not the first few bytes', async () => {
+      // sharp's greyscale() desaturates but keeps three channels. Indexing the raw buffer
+      // as one byte per pixel read red against green in the first rows, which made a
+      // detailed photograph hash to all zeros — indistinguishable from a blank one.
+      const left = await sharp({
+        create: { width: 200, height: 150, channels: 3, background: { r: 0, g: 0, b: 0 } },
+      })
+        .composite([
+          {
+            input: await sharp({
+              create: {
+                width: 100,
+                height: 150,
+                channels: 3,
+                background: { r: 255, g: 255, b: 255 },
+              },
+            })
+              .png()
+              .toBuffer(),
+            left: 0,
+            top: 0,
+          },
+        ])
+        .jpeg()
+        .toBuffer();
+
+      const fingerprint = await fingerprintImage(left);
+
+      // A white half beside a black half must register as structure.
+      expect(fingerprint.distinctive).toBe(true);
+    });
+  });
+
   describe('hamming distance', () => {
     it('is zero for identical hashes', () => {
       expect(hammingDistance('abcd1234abcd1234', 'abcd1234abcd1234')).toBe(0);

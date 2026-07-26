@@ -770,6 +770,13 @@ async function main() {
   // ---------------------------------------------------------------- 8c. blocked images
   step('8c. A picture a moderator refused does not come back');
 
+  // Tokens are re-acquired here rather than reused from the top of the run: this section
+  // arrives well past the fifteen-minute life of the ones fetched earlier.
+  const freshAlice = (await getSession(API, alicePhone, 'security-alice')).tokens.accessToken;
+  const freshMallory = (await getSession(API, malloryPhone, 'security-mallory')).tokens.accessToken;
+  const freshModerator = (await getSession(API, '+919000000003', 'security-moderator')).tokens
+    .accessToken;
+
   /** Uploads one image to a listing and returns the confirmation result. */
   async function uploadImage(listingId, token, bytes) {
     const ticket = await call(`/listings/${listingId}/media/upload-url`, {
@@ -788,10 +795,56 @@ async function main() {
     return { mediaId: ticket.mediaId, confirmed: await raw(`/media/${ticket.mediaId}/confirm`, { method: 'POST', token }) };
   }
 
-  const photo = readFileSync(TEST_PHOTO);
+  /**
+   * A picture with structure, different on every run.
+   *
+   * Different matters as much as structured. This section blocks whatever it uploads, and
+   * a block is permanent by design — so a fixed fixture would be refused by the *previous*
+   * run's block the next time the suite executes, and the suite would fail for a reason
+   * that has nothing to do with the code.
+   *
+   * Random rectangles rather than a random colour: the hash records where light meets
+   * dark, so recolouring the same shapes produces the same sixty-four bits.
+   */
+  async function distinctivePicture() {
+    const blocks = Array.from({ length: 12 }, () => ({
+      left: Math.floor(Math.random() * 400),
+      top: Math.floor(Math.random() * 280),
+      width: 40 + Math.floor(Math.random() * 80),
+      height: 30 + Math.floor(Math.random() * 60),
+      shade: Math.floor(Math.random() * 255),
+    }));
+
+    const composites = await Promise.all(
+      blocks.map(async (block) => ({
+        input: await sharp({
+          create: {
+            width: block.width,
+            height: block.height,
+            channels: 3,
+            background: { r: block.shade, g: (block.shade * 3) % 255, b: (block.shade * 7) % 255 },
+          },
+        })
+          .png()
+          .toBuffer(),
+        left: block.left,
+        top: block.top,
+      })),
+    );
+
+    return sharp({
+      create: { width: 480, height: 360, channels: 3, background: { r: 128, g: 128, b: 128 } },
+    })
+      .composite(composites)
+      .jpeg({ quality: 92 })
+      .toBuffer();
+  }
+
+  const photo = await distinctivePicture();
+
   const carrier = await call('/listings', {
     method: 'POST',
-    token: aliceToken,
+    token: freshAlice,
     body: {
       type: 'PRODUCT',
       title: 'Wooden coffee table with glass top',
@@ -803,12 +856,18 @@ async function main() {
     },
   });
 
-  const first = await uploadImage(carrier.id, aliceToken, photo);
-  check('an ordinary image uploads', first.confirmed.body?.status === 'READY', first.confirmed.body?.status);
+  const first = await uploadImage(carrier.id, freshAlice, photo);
+  // Held rather than published: every image now waits for a decision, which is the point
+  // of quarantine. What matters here is that it processed rather than being refused.
+  check(
+    'an ordinary image is accepted for review',
+    first.confirmed.body?.status === 'REVIEW_REQUIRED' || first.confirmed.body?.status === 'READY',
+    first.confirmed.body?.status,
+  );
 
   const blockResult = await call(`/moderation/media/${first.mediaId}/block`, {
     method: 'POST',
-    token: moderatorToken,
+    token: freshModerator,
     body: { reason: 'Security probe — blocking to prove the refusal holds', category: 'WILDLIFE' },
   });
   check(
@@ -821,7 +880,7 @@ async function main() {
   // about the picture, not about the listing or the account it first appeared on.
   const second = await call('/listings', {
     method: 'POST',
-    token: malloryToken,
+    token: freshMallory,
     body: {
       type: 'PRODUCT',
       title: 'Another coffee table for sale cheap',
@@ -833,10 +892,10 @@ async function main() {
     },
   });
 
-  const repeat = await uploadImage(second.id, malloryToken, photo);
+  const repeat = await uploadImage(second.id, freshMallory, photo);
   check(
     'the identical file is refused',
-    repeat.confirmed.body?.status === 'FAILED',
+    repeat.confirmed.body?.status === 'REJECTED',
     repeat.confirmed.body?.status ?? `HTTP ${repeat.confirmed.status}`,
   );
 
@@ -845,29 +904,34 @@ async function main() {
   const resaved = await sharp(photo).jpeg({ quality: 45 }).toBuffer();
   check('the re-saved file is genuinely different bytes', !resaved.equals(photo));
 
-  const evaded = await uploadImage(second.id, malloryToken, resaved);
+  const evaded = await uploadImage(second.id, freshMallory, resaved);
   check(
     'and so is the same picture re-saved',
-    evaded.confirmed.body?.status === 'FAILED',
+    evaded.confirmed.body?.status === 'REJECTED',
     evaded.confirmed.body?.status ?? `HTTP ${evaded.confirmed.status}`,
   );
 
   // A different photograph must still get through, or the block is just an outage.
-  const unrelated = await sharp({
-    create: { width: 400, height: 300, channels: 3, background: { r: 20, g: 140, b: 90 } },
-  })
-    .jpeg()
-    .toBuffer();
+  // Structured, different again, and different from every earlier run's block.
+  const unrelated = await distinctivePicture();
 
-  const innocent = await uploadImage(second.id, malloryToken, unrelated);
+  const innocent = await uploadImage(second.id, freshMallory, unrelated);
   check(
     'an unrelated picture is unaffected',
-    innocent.confirmed.body?.status === 'READY',
+    innocent.confirmed.body?.status !== 'REJECTED',
     innocent.confirmed.body?.status ?? `HTTP ${innocent.confirmed.status}`,
   );
 
-  await raw(`/listings/${carrier.id}`, { method: 'DELETE', token: aliceToken });
-  await raw(`/listings/${second.id}`, { method: 'DELETE', token: malloryToken });
+  await raw(`/listings/${carrier.id}`, { method: 'DELETE', token: freshAlice });
+  await raw(`/listings/${second.id}`, { method: 'DELETE', token: freshMallory });
+
+  // A block is permanent by design and there is no unblock endpoint — deliberately, since
+  // reversing a safety decision should be a considered act rather than an API call. The
+  // fixtures above are therefore generated fresh each run: an earlier version of this
+  // section blocked the shared test photograph, which then stayed refused for every suite
+  // afterwards. Anything left behind can be cleared with:
+  //
+  //   DELETE FROM blocked_image_hashes WHERE reason LIKE 'Security probe%';
 
   // ---------------------------------------------------------------- 9. cleanup
   step('9. Cleanup');
