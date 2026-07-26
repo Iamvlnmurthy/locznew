@@ -13,6 +13,11 @@ import { spawnSync } from 'node:child_process';
 
 const root = resolve(import.meta.dirname, '..');
 const options = new Set(process.argv.slice(2));
+const environmentArgument = process.argv.indexOf('--env');
+const environmentFile =
+  environmentArgument >= 0 && process.argv[environmentArgument + 1]
+    ? process.argv[environmentArgument + 1]
+    : 'infrastructure/docker/.env';
 const bundledNpmCli = resolve(
   dirname(process.execPath),
   'node_modules',
@@ -37,7 +42,7 @@ const evidencePath = resolve(root, requestedEvidence);
 let initialWorktreeState = null;
 
 const evidence = {
-  schemaVersion: 1,
+  schemaVersion: 2,
   startedAt: startedAt.toISOString(),
   finishedAt: null,
   candidate: gitValue(['rev-parse', 'HEAD']),
@@ -55,6 +60,9 @@ const evidence = {
     mobile: !options.has('--skip-mobile'),
     browser: !options.has('--skip-browser'),
     preflight: !options.has('--skip-preflight'),
+    stack: options.has('--stack'),
+    safetyDevelopment: options.has('--safety-development'),
+    syntheticSafety: options.has('--synthetic-safety'),
     dns: options.has('--dns'),
     smoke: options.has('--smoke'),
   },
@@ -113,12 +121,12 @@ function recordSkip(name, command, note) {
 SKIP ${name} — ${note}`);
 }
 
-function run(name, command, args, cwd = root) {
+function run(name, command, args, cwd = root, env = process.env) {
   console.log(`\n${'='.repeat(72)}\n${name}\n${'='.repeat(72)}`);
   const started = performance.now();
   const result = spawnSync(command, args, {
     cwd,
-    env: process.env,
+    env,
     stdio: 'inherit',
     windowsHide: true,
   });
@@ -208,6 +216,42 @@ console.log(`LocZ release gate — ${evidence.candidate ?? 'unknown candidate'}`
 console.log(`Evidence: ${evidencePath}`);
 
 checkWorktree();
+if (environmentArgument >= 0 && !process.argv[environmentArgument + 1]) {
+  recordStep(
+    'release option safety',
+    'gate:release',
+    ['--env'],
+    1,
+    0,
+    '--env requires a file path',
+  );
+}
+if (
+  options.has('--smoke') &&
+  (options.has('--safety-development') || options.has('--synthetic-safety'))
+) {
+  recordStep(
+    'release option safety',
+    'gate:release',
+    ['--smoke', '--safety-development/--synthetic-safety'],
+    1,
+    0,
+    'Development or synthetic safety modes cannot be used for deployed smoke sign-off',
+  );
+}
+if (
+  (options.has('--synthetic-safety') || options.has('--safety-development')) &&
+  !options.has('--stack')
+) {
+  recordStep(
+    'release option safety',
+    'gate:release',
+    ['--safety-development/--synthetic-safety'],
+    1,
+    0,
+    'Safety rehearsal options require --stack',
+  );
+}
 run('patch integrity', 'git', ['diff', '--check']);
 if (!options.has('--skip-node')) {
   if (!options.has('--skip-install')) run('reproducible install', npm, [...npmPrefix, 'ci']);
@@ -218,6 +262,8 @@ if (!options.has('--skip-node')) {
     '--audit-level=high',
   ]);
   run('workspace typecheck', npm, [...npmPrefix, 'run', 'typecheck']);
+  // Needs no running stack, so it belongs in the default path rather than behind --stack.
+  run('translation coverage', npm, [...npmPrefix, 'run', 'check:i18n']);
   run('automated tests', npm, [...npmPrefix, 'test']);
   run('production builds', npm, [...npmPrefix, 'run', 'build']);
 }
@@ -237,7 +283,10 @@ if (!options.has('--skip-preflight')) {
     ...npmPrefix,
     'run',
     'preflight:production',
-    ...(options.has('--dns') ? ['--', '--dns'] : []),
+    '--',
+    '--env',
+    environmentFile,
+    ...(options.has('--dns') ? ['--dns'] : []),
   ]);
 }
 // The HTTP suites need a live stack, so they are opt-in — but a release decided without
@@ -245,8 +294,42 @@ if (!options.has('--skip-preflight')) {
 // the index plans. Roughly four hundred assertions that only a running system can answer.
 // `--stack` should be used for any release that matters; the report records whether it was.
 if (options.has('--stack')) {
+  run('child-safety readiness', npm, [
+    ...npmPrefix,
+    'run',
+    'verify:safety-readiness',
+    '--',
+    '--env',
+    environmentFile,
+    ...(options.has('--safety-development') ? ['--development'] : []),
+  ]);
+  if (options.has('--synthetic-safety')) {
+    run(
+      'restricted safety workflow',
+      npm,
+      [...npmPrefix, 'run', 'verify:safety', '--', '--env', environmentFile],
+      root,
+      { ...process.env, ALLOW_SYNTHETIC_SAFETY_VERIFICATION: '1' },
+    );
+  } else {
+    recordSkip(
+      'restricted safety workflow',
+      'npm run verify:safety',
+      'pass --synthetic-safety to authorize reversible local fixture creation',
+    );
+  }
   run('http acceptance suites', npm, [...npmPrefix, 'run', 'acceptance:all']);
 } else {
+  recordSkip(
+    'child-safety readiness',
+    'npm run verify:safety-readiness',
+    'pass --stack to verify policy, provider and restricted officer continuity',
+  );
+  recordSkip(
+    'restricted safety workflow',
+    'npm run verify:safety',
+    'pass --stack --synthetic-safety on a local non-production stack',
+  );
   recordSkip(
     'http acceptance suites',
     'npm run acceptance:all',

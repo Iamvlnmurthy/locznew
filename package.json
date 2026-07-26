@@ -23,6 +23,7 @@
     "acceptance:security": "node scripts/acceptance-security.mjs",
     "acceptance:web": "node scripts/acceptance-web.mjs",
     "build": "npm run build --workspaces --if-present",
+    "check:i18n": "node scripts/check-i18n.mjs",
     "db:migrate": "npm run db:migrate -w @locz/api",
     "db:seed": "npm run db:seed -w @locz/api",
     "dev:admin": "npm run dev -w @locz/admin",
@@ -40,8 +41,8 @@
     "smoke:production": "node scripts/production-smoke.mjs",
     "test": "npm run test --workspaces --if-present",
     "typecheck": "npm run typecheck --workspaces --if-present",
-    "verify:safety-readiness": "node scripts/child-safety-readiness.mjs",
-    "verify:safety": "node scripts/verify-safety-workflow.mjs"
+    "verify:safety": "node scripts/verify-safety-workflow.mjs",
+    "verify:safety-readiness": "node scripts/child-safety-readiness.mjs"
   },
   "devDependencies": {
     "axe-core": "^4.12.1",

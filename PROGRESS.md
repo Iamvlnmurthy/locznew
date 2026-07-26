@@ -1307,3 +1307,35 @@ informative — the buyer and seller journey first, because if that is broken, k
 filter is also wrong tells you nothing you can act on.
 
 **All seven pass together: 375 assertions in 216 seconds.**
+
+## M36 — Two of the three languages were 36% (2026-07-26)
+
+The brief asks for English, Telugu and Hindi. Nobody had ever measured the last two: both
+sat at **96 of 269 keys**, and the shortfall was concentrated exactly where it hurts —
+**auth 85% missing, post 64% missing**. Signing in and posting an advert are the two things
+no user can avoid, so a Telugu speaker met English at both.
+
+Nothing looked broken, which is why it survived this long. A missing key falls back to
+English rather than rendering `nav.home`, and silent fallback is the right runtime
+behaviour — it is also what makes this failure invisible without counting.
+
+**Both locales are now complete: 269 of 269.** The only string identical to English is
+`brand.name`, which is the product name.
+
+`npm run check:i18n` runs in the release gate's default path, since it needs no live stack.
+It asserts four things, and the last two are the ones a coverage percentage would miss:
+
+- every key exists
+- none is merely copied from English — present-but-identical counts as covered and reads as
+  English on the page
+- **every placeholder survives**, because a dropped `{city}` is worse than a missing
+  translation: the interpolator leaves the literal text and the reader sees `{city}`
+- no locale carries keys English does not have, which is how a key renamed in English
+  quietly falls back for ever
+
+Verified by rendering: `/signin` with a Telugu cookie returns Telugu throughout.
+
+**Written by a careful non-native speaker and needing a native review before launch** — the
+same caveat as the legal corpus in ADR-0013. Register was the thing I paid most attention
+to: the respectful imperative in Telugu, the आप form in Hindi, and ordinary words rather
+than transliterations where both languages have one (ఉచితం and मुफ़्त, not "free").
