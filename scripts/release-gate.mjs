@@ -7,7 +7,7 @@
  * report or printed by this orchestrator.
  */
 
-import { existsSync, mkdirSync, mkdtempSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { spawnSync } from 'node:child_process';
@@ -141,8 +141,20 @@ SKIP ${name} — ${note}`);
  * *committed*, so an uncommitted file that the workspace happens to have cannot make a broken
  * lockfile look fine.
  *
- * The checkout is removed afterwards. `--keep-candidate` leaves it in place, because when an
- * install genuinely fails the tree is the evidence.
+ * Everything that compiles, tests or builds runs here too, not only the install. Building in
+ * the live checkout rewrote `apps/web/next-env.d.ts` and `apps/admin/next-env.d.ts`, which are
+ * tracked — so the gate dirtied the very worktree it was about to check, and failed its own
+ * candidate-stability test. A gate whose act of measuring changes the thing measured cannot
+ * produce evidence.
+ *
+ * `.env` is copied in when present, because a production build reads it and it is deliberately
+ * untracked, so the isolated tree would otherwise build against different configuration than
+ * the one being released. It goes into a directory this function deletes.
+ *
+ * The checkout is removed afterwards, and removal is verified rather than assumed: on Windows
+ * `git worktree remove` reports success while leaving a `node_modules` tree behind, which is
+ * how two abandoned candidate directories accumulated in the temp folder. `--keep-candidate`
+ * skips removal deliberately, because when an install genuinely fails the tree is the evidence.
  */
 function inCandidateCheckout(steps) {
   const commit = evidence.candidate ?? 'HEAD';
@@ -177,7 +189,41 @@ function inCandidateCheckout(steps) {
     if (options.has('--keep-candidate')) {
       console.log(`\nLeaving the candidate checkout in place: ${target}`);
     } else {
-      spawnSync('git', ['worktree', 'remove', '--force', target], { cwd: root });
+      const cleanupStarted = performance.now();
+      let cleanupStatus = 0;
+      let cleanupError = null;
+
+      try {
+        // Untracked dependencies make `git worktree remove --force` fail on Windows.
+        // Nothing in this detached checkout is running, so remove that generated tree first.
+        rmSync(resolve(target, 'node_modules'), { recursive: true, force: true });
+        const removed = spawnSync('git', ['worktree', 'remove', '--force', target], {
+          cwd: root,
+          encoding: 'utf8',
+          windowsHide: true,
+        });
+        if (removed.status !== 0) {
+          cleanupStatus = removed.status ?? 1;
+          cleanupError =
+            removed.stderr?.trim() ||
+            removed.stdout?.trim() ||
+            'git worktree remove did not succeed';
+        } else {
+          rmSync(directory, { recursive: true, force: true });
+        }
+      } catch (error) {
+        cleanupStatus = 1;
+        cleanupError = error instanceof Error ? error.message : String(error);
+      }
+
+      recordStep(
+        'isolated candidate cleanup',
+        'git',
+        ['worktree', 'remove', '--force', '<temp>'],
+        cleanupStatus,
+        Math.round(performance.now() - cleanupStarted),
+        cleanupError,
+      );
     }
   }
 }
@@ -316,22 +362,25 @@ if (
 run('patch integrity', 'git', ['diff', '--check']);
 if (!options.has('--skip-node')) {
   const auditArguments = [...npmPrefix, 'audit', '--omit=dev', '--audit-level=high'];
+  const runNodeChecks = (candidate) => {
+    run('production dependency audit', npm, auditArguments, candidate);
+    run('workspace typecheck', npm, [...npmPrefix, 'run', 'typecheck'], candidate);
+    // Needs no running stack, so it belongs in the default path rather than behind --stack.
+    run('translation coverage', npm, [...npmPrefix, 'run', 'check:i18n'], candidate);
+    run('automated tests', npm, [...npmPrefix, 'test'], candidate);
+    run('production builds', npm, [...npmPrefix, 'run', 'build'], candidate);
+  };
 
   if (options.has('--skip-install')) {
-    run('production dependency audit', npm, auditArguments);
+    runNodeChecks(root);
   } else {
     inCandidateCheckout((candidate) => {
       run('reproducible install', npm, [...npmPrefix, 'ci'], candidate);
       // Audited where the install happened, so the answer describes the tree the lockfile
       // actually produces rather than whatever this workspace has accumulated.
-      run('production dependency audit', npm, auditArguments, candidate);
+      runNodeChecks(candidate);
     });
   }
-  run('workspace typecheck', npm, [...npmPrefix, 'run', 'typecheck']);
-  // Needs no running stack, so it belongs in the default path rather than behind --stack.
-  run('translation coverage', npm, [...npmPrefix, 'run', 'check:i18n']);
-  run('automated tests', npm, [...npmPrefix, 'test']);
-  run('production builds', npm, [...npmPrefix, 'run', 'build']);
 }
 if (!options.has('--skip-mobile')) {
   runFlutter('Flutter analysis', ['analyze']);
