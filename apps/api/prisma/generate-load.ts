@@ -30,11 +30,37 @@ import {
   ItemCondition,
   ListingStatus,
   ListingType,
+  MediaStatus,
   ModerationStatus,
   PrismaClient,
   Visibility,
 } from '@prisma/client';
 import { v7 as uuid } from 'uuid';
+
+/**
+ * The eight pictures the seed already ships, reused across the generated listings.
+ *
+ * Without these the site looks broken at volume: fifty thousand listings with no
+ * photograph, and the handful of real ones lost among them. A marketplace where nothing
+ * has a picture does not read as "test data", it reads as "not working".
+ *
+ * They are attached the way the seed attaches its own — a URL to a static file, no upload
+ * and no storage round-trip. That is honest for demo rows and deliberately *not* how a real
+ * upload works: a real one goes through quarantine, scanning and approval, which is the
+ * whole point of that pipeline and must not be bypassed by anything a user can reach.
+ */
+const DEMO_IMAGES = [
+  'iphone-13-blue.webp',
+  'red-scooter.webp',
+  'wood-study-desk.webp',
+  'business-laptop.webp',
+  'gachibowli-flat.webp',
+  'madhapur-cafe.webp',
+  'biryani-offer.webp',
+  'electrician-service.webp',
+];
+
+const WEB_ORIGIN = process.env.NEXT_PUBLIC_WEB_URL ?? 'http://localhost:3000';
 
 const prisma = new PrismaClient({
   adapter: new PrismaPg({ connectionString: process.env.DATABASE_URL }),
@@ -228,6 +254,33 @@ async function main(): Promise<void> {
 
     if (marketplace.length > 0) {
       await prisma.marketplaceDetail.createMany({ data: marketplace, skipDuplicates: true });
+    }
+
+    // A picture each, cycling through the eight. Not every listing in a real marketplace
+    // has one, so roughly one in eight is left without — which is also what exercises the
+    // "no photograph" placeholder that would otherwise never be seen.
+    const media = rows
+      .filter((_row, offset) => (index + offset) % 8 !== 7)
+      .map((row, offset) => {
+        const url = `${WEB_ORIGIN}/seed/listings/${DEMO_IMAGES[(index + offset) % DEMO_IMAGES.length]}`;
+        return {
+          id: uuid(),
+          listingId: row.id,
+          status: MediaStatus.READY,
+          storageKey: url,
+          thumbKey: url,
+          cardKey: url,
+          fullKey: url,
+          mimeType: 'image/webp',
+          width: 1200,
+          height: 900,
+          sortOrder: 0,
+          isPrimary: true,
+        };
+      });
+
+    if (media.length > 0) {
+      await prisma.listingMedia.createMany({ data: media, skipDuplicates: true });
     }
 
     written += size;
