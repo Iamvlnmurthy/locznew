@@ -14,6 +14,7 @@
 
 import { readFileSync } from 'node:fs';
 import sharp from 'sharp';
+import { getSession } from './lib/session.mjs';
 
 const API = process.env.LOCZ_API ?? 'http://127.0.0.1:4000/api/v1';
 const TEST_PHOTO = process.env.LOCZ_TEST_PHOTO ?? 'C:/Users/USER/locz-stack/test-photo.jpg';
@@ -37,6 +38,19 @@ function step(title) {
   console.log(`\n${title}`);
 }
 
+/**
+ * How long to wait after a 429.
+ *
+ * Taken from the server's own "try again in N seconds" rather than guessed: the per-phone
+ * OTP lockout runs to minutes, and these suites share the seeded staff accounts, so
+ * running them back to back legitimately trips it. Capped so a broken limiter cannot hang
+ * the run.
+ */
+function backoffMs(body) {
+  const hinted = Number(/try again in (\d+) seconds/i.exec(body)?.[1] ?? 0);
+  return Math.min(Math.max(hinted + 2, 11) * 1000, 360_000);
+}
+
 async function call(path, { method = 'GET', body, token, expect, retries = 6 } = {}) {
   const headers = { 'Content-Type': 'application/json' };
   if (token) headers.Authorization = `Bearer ${token}`;
@@ -52,7 +66,9 @@ async function call(path, { method = 'GET', body, token, expect, retries = 6 } =
   // limit, which is a real protection.
   let attempt = 0;
   while (response.status === 429 && attempt < retries) {
-    await new Promise((resolve) => setTimeout(resolve, 11_000));
+    const waitMs = backoffMs(await response.clone().text());
+    console.log(`    (rate limited — waiting ${Math.round(waitMs / 1000)}s)`);
+    await new Promise((resolve) => setTimeout(resolve, waitMs));
     attempt += 1;
     response = await fetch(`${API}${path}`, {
       method,
@@ -76,20 +92,17 @@ async function call(path, { method = 'GET', body, token, expect, retries = 6 } =
   return payload?.data ?? payload;
 }
 
+/**
+ * Signs in, reusing a cached session when one is still good.
+ *
+ * The suites share the seeded staff accounts, and sign-in is rate limited per phone by
+ * design — that limit protects real users from SMS-bombing, so the suites work with it
+ * rather than around it.
+ */
 async function signIn(phone, deviceKey) {
-  const requested = await call('/auth/otp/request', { method: 'POST', body: { phone } });
-  if (!requested.debugCode) {
-    throw new Error('No debugCode returned — is OTP_PROVIDER=mock?');
-  }
-  const session = await call('/auth/otp/verify', {
-    method: 'POST',
-    body: {
-      phone,
-      code: requested.debugCode,
-      device: { deviceKey, platform: 'WEB', name: 'Acceptance run' },
-    },
+  return getSession(API, phone, deviceKey, {
+    onWait: (seconds) => console.log(`    (sign-in rate limited — waiting ${seconds}s)`),
   });
-  return session;
 }
 
 /** Search is eventually consistent; give the index worker a moment to catch up. */

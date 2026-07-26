@@ -4,6 +4,19 @@
  *
  *   npm run db:seed -w @locz/api
  */
+/**
+ * Loads the repository-root .env before anything reads process.env.
+ *
+ * npm runs a workspace script with the workspace as the working directory, so plain
+ * `dotenv/config` looks in apps/api and finds nothing — and the failure surfaces as
+ * "SASL: client password must be a string", which says nothing about a missing file.
+ */
+import 'dotenv/config';
+import { config as loadEnv } from 'dotenv';
+import path from 'node:path';
+
+loadEnv({ path: path.resolve(__dirname, '..', '..', '..', '.env'), quiet: true });
+
 import {
   AttributeDataType,
   ContactPreference,
@@ -60,6 +73,9 @@ const ROLES: Array<{ name: RoleName; description: string; permissions: string[] 
       'listing:create',
       'listing:update:own',
       'listing:delete:own',
+      // A user's first free business profile grants BUSINESS_OWNER after creation,
+      // so the base signed-in role must be allowed through the create guard.
+      'business:create',
       'media:upload',
       'conversation:create',
       'conversation:read',
@@ -125,6 +141,9 @@ const ROLES: Array<{ name: RoleName; description: string; permissions: string[] 
       'banner:manage',
       'settings:read',
       'search:reindex',
+      // Running a maintenance job early is an operations task, not a privileged one: the
+      // jobs are idempotent and already run on a schedule.
+      'job:run',
       'audit:read',
       'metrics:read',
     ],

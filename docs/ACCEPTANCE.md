@@ -156,14 +156,18 @@ The push row stays unsent without FCM credentials — expected in development.
 call 9876543210 or 9876543211 bit.ly/loan` — expect `REJECTED` with several reasons. The
 thresholds are pinned by tests (`npm run test -w @locz/api`).
 
-**Expiry.** Backdate a listing and run the sweeper:
+**Expiry** is covered by `scripts/acceptance-jobs.mjs`, which no longer asks anyone to
+wait fifteen minutes for the sweeper: `POST /admin/jobs/expire-listings/run` triggers it
+on demand. The suite backdates one listing (the single direct database write in any of
+the gates — no API backdates a record, and none should), runs the sweep, and checks the
+listing turns `EXPIRED`, leaves the search index, stops serving publicly and produces a
+`LISTING_EXPIRED` notification for its owner.
 
-```sql
-UPDATE listings SET "expiresAt" = NOW() - INTERVAL '1 day' WHERE id = '<id>';
+It needs `psql` on PATH, or `LOCZ_PSQL` pointing at it:
+
+```bash
+LOCZ_PSQL=/path/to/psql node scripts/acceptance-jobs.mjs
 ```
-
-The job runs every 15 minutes; expect status `EXPIRED`, a `LISTING_EXPIRED` notification,
-and removal from search.
 
 **Posting limits.** As a fresh account, post four listings — the fourth must be refused
 with the daily limit message.
@@ -174,9 +178,10 @@ Two scripts replace most of the manual walkthrough above. Both talk HTTP only, a
 exit non-zero on failure so they can gate a deploy.
 
 ```bash
-node scripts/acceptance.mjs         # the buyer/seller flow — 61 assertions
-node scripts/acceptance-web.mjs     # the public web app  — 75 assertions
-node scripts/acceptance-admin.mjs   # the admin console   — 53 assertions
+node scripts/acceptance.mjs         # the buyer/seller flow  — 61 assertions
+node scripts/acceptance-web.mjs     # the public web app     — 75 assertions
+node scripts/acceptance-admin.mjs   # the admin console      — 53 assertions
+node scripts/acceptance-jobs.mjs    # the background jobs
 ```
 
 189 assertions in total. They need the API on :4000, web on :3000 and admin on :3001,

@@ -565,3 +565,50 @@ and `conversations.service.ts`: 61 assertions, no regressions.
 
 **Three gates, 189 assertions.** Between them they cover the API flow, every public and
 authenticated web page, and the admin console including its authorisation boundaries.
+
+## M20 — The jobs nobody watches (2026-07-26)
+
+`scripts/acceptance-jobs.mjs` — **24 assertions, 0 failures**. Expiry, the expiry warning,
+orphan-media cleanup, session pruning and the nightly reindex all run on a schedule, so a
+broken one is invisible until a seller asks why their sold item is still on the site.
+
+To make that testable — and because operations needs it anyway — administrators can now
+run a maintenance job on demand:
+
+```
+POST /admin/jobs/:name/run      # job:run permission, 202 Accepted
+```
+
+It adds no capability the platform did not have; every one of those jobs already runs on
+a cron. It removes a wait. After an incident, "the expiry sweep runs at quarter past" is
+not an answer, and the alternative is someone opening a Redis client against production.
+The job name comes off the URL, so it is checked against a fixed allowlist rather than
+passed to the queue — 14 unit tests pin that, including path traversal and the
+whitespace-padded near-miss.
+
+The suite proves the chain end to end: a listing is created, approved, indexed, backdated
+(the single direct database write in any gate — no API backdates a record, and none
+should), swept, and then confirmed `EXPIRED` for its owner, gone from search, 404 in
+public, with a `LISTING_EXPIRED` notification delivered. Then every other job runs, the
+queue drains, no queue reports a failure, and a full search rebuild restores all 11
+documents with zero drift.
+
+### Two defects found while building it
+
+**`npm run db:seed` could not work from a clean shell.** The seed read `DATABASE_URL`
+from the environment and nothing loaded the repository-root `.env` — npm runs a workspace
+script with the workspace as the working directory, so `dotenv/config` looked in
+`apps/api` and found nothing. It surfaced as `SASL: client password must be a string`,
+which names neither the file nor the variable. `prisma.config.ts` had the same blind spot.
+Both now load the root `.env` explicitly, and the documented commands work as documented.
+
+**Running the suites in sequence locked them out.** They share the seeded staff accounts,
+and sign-in is rate limited per phone — correctly, since that limit is what stops an
+attacker SMS-bombing someone. The wrong fix was to relax it. `scripts/lib/session.mjs`
+instead makes the suites behave like a real client: sign in once, keep the session, prefer
+a refresh over a new code, and reuse a cached session for the account whatever device it
+was opened on. The backoff also reads the server's own "try again in N seconds" rather
+than guessing.
+
+**Four gates, 213 assertions**, plus 89 unit tests. One command each, all exiting non-zero
+on failure.

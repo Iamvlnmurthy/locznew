@@ -1,5 +1,6 @@
-import { Controller, Get, Query } from '@nestjs/common';
+import { Controller, Get, HttpCode, HttpStatus, Param, Post, Query } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { AuthenticatedUser, CurrentUser } from '../common/decorators/current-user.decorator';
 import { RequirePermissions } from '../rbac/rbac.decorators';
 import { AdminService } from './admin.service';
 import { PaginatedDto, paginate } from '../common/dto/pagination.dto';
@@ -113,6 +114,22 @@ export class AdminController {
   @ApiResponse({ status: 200, type: [QueueHealthDto] })
   queues(): Promise<QueueHealthDto[]> {
     return this.admin.getQueueHealth();
+  }
+
+  @Post('jobs/:name/run')
+  @HttpCode(HttpStatus.ACCEPTED)
+  @RequirePermissions('job:run')
+  @ApiOperation({
+    summary: 'Run a maintenance job now (admin)',
+    description:
+      'Every one of these already runs on a schedule; this only removes the wait. They are idempotent — each re-reads current state rather than trusting its payload — so an early or repeated run is safe.',
+  })
+  @ApiResponse({ status: 202, description: 'Job queued' })
+  runJob(
+    @Param('name') name: string,
+    @CurrentUser() user: AuthenticatedUser,
+  ): Promise<{ queued: true; job: string }> {
+    return this.admin.runJob(name, user.id);
   }
 
   @Get('storage')

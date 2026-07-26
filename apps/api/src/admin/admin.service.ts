@@ -1,6 +1,16 @@
-import { Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable, Logger } from '@nestjs/common';
+import { InjectQueue } from '@nestjs/bullmq';
+import { Queue } from 'bullmq';
 import { ListingStatus, ModerationStatus, ReportStatus, UserStatus } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
+import {
+  JOB_EXPIRE_LISTINGS,
+  JOB_SWEEP_ORPHAN_MEDIA,
+  JOB_SWEEP_SESSIONS,
+  JOB_TRIM_RECENTLY_VIEWED,
+  JOB_WARN_EXPIRING,
+  QUEUE_LIFECYCLE,
+} from '../queue/queue.constants';
 import { RedisService } from '../redis/redis.service';
 import {
   AdminMetricsDto,
@@ -11,11 +21,27 @@ import {
   TopListingDto,
 } from './dto/admin.dto';
 
+/**
+ * Jobs an administrator may trigger by hand. Deliberately a fixed list rather than
+ * anything the queue accepts: this endpoint takes a name from an HTTP request, and an
+ * open-ended one would let a caller enqueue arbitrary job types.
+ */
+const RUNNABLE_JOBS: string[] = [
+  JOB_EXPIRE_LISTINGS,
+  JOB_WARN_EXPIRING,
+  JOB_SWEEP_ORPHAN_MEDIA,
+  JOB_SWEEP_SESSIONS,
+  JOB_TRIM_RECENTLY_VIEWED,
+];
+
 @Injectable()
 export class AdminService {
+  private readonly logger = new Logger(AdminService.name);
+
   constructor(
     private readonly prisma: PrismaService,
     private readonly redis: RedisService,
+    @InjectQueue(QUEUE_LIFECYCLE) private readonly lifecycle: Queue,
   ) {}
 
   /**
@@ -213,6 +239,37 @@ export class AdminService {
     }
 
     return health;
+  }
+
+  /**
+   * Runs a maintenance job now instead of waiting for its schedule.
+   *
+   * Every one of these already runs on a cron, so this adds no capability the platform
+   * did not have — it removes a wait. After an incident, "the expiry sweep runs at
+   * quarter past" is not an answer, and the alternative is someone opening a Redis client
+   * against production.
+   *
+   * The jobs are all idempotent by design: each re-reads current state rather than
+   * carrying it in the payload, so running one early is safe and running it twice is a
+   * no-op.
+   */
+  async runJob(name: string, requestedBy: string): Promise<{ queued: true; job: string }> {
+    if (!RUNNABLE_JOBS.includes(name)) {
+      throw new BadRequestException(
+        `Unknown job "${name}". Runnable jobs: ${RUNNABLE_JOBS.join(', ')}`,
+      );
+    }
+
+    // A fixed job id per name means an impatient double-click is a no-op rather than two
+    // concurrent sweeps. Hyphen, not colon: BullMQ rejects a custom id containing ':'.
+    await this.lifecycle.add(
+      name,
+      { requestedBy },
+      { jobId: `manual-${name}-${Date.now()}`, removeOnComplete: true },
+    );
+
+    this.logger.log(`${name} queued manually by ${requestedBy}`);
+    return { queued: true, job: name };
   }
 
   /**

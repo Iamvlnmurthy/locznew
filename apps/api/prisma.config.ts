@@ -1,5 +1,11 @@
 import 'dotenv/config';
+import { config as loadEnv } from 'dotenv';
 import path from 'node:path';
+
+// `dotenv/config` resolves against the working directory, which is apps/api whenever npm
+// runs a workspace script — so the repository-root .env is loaded explicitly too. Values
+// already in the environment win; this only fills the gaps.
+loadEnv({ path: path.resolve(__dirname, '..', '..', '.env'), quiet: true });
 import { defineConfig } from 'prisma/config';
 
 /**
