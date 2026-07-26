@@ -118,15 +118,34 @@ export async function waitUntil(action, label, timeout = 10_000) {
   throw new Error(`Timed out waiting for ${label}${lastError ? `: ${lastError.message}` : ''}`);
 }
 
-export async function api(path, { method = 'GET', body, token } = {}) {
-  const response = await fetch(`${API}${path}`, {
+export async function api(path, { method = 'GET', body, token, retries = 2 } = {}) {
+  const init = {
     method,
     headers: {
       ...(body ? { 'Content-Type': 'application/json' } : {}),
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
     },
     ...(body ? { body: JSON.stringify(body) } : {}),
-  });
+  };
+
+  let response = await fetch(`${API}${path}`, init);
+  for (let attempt = 0; response.status === 429 && attempt < retries; attempt += 1) {
+    const responseBody = await response.clone().text();
+    const header = Number(response.headers.get('retry-after') ?? 0);
+    const hinted = Number(/try again in (\d+) seconds/i.exec(responseBody)?.[1] ?? 0);
+    const seconds = header > 0 ? header : hinted > 0 ? hinted : 62;
+
+    if (seconds > 180) {
+      throw new Error(
+        `${method} ${path} is rate limited for ${seconds}s; wait for the local test window to reset`,
+      );
+    }
+
+    console.log(`    (browser API rate limited — waiting ${seconds + 2}s)`);
+    await delay((seconds + 2) * 1000);
+    response = await fetch(`${API}${path}`, init);
+  }
+
   const text = await response.text();
   if (!response.ok) {
     throw new Error(`${method} ${path} → ${response.status}: ${text.slice(0, 200)}`);
