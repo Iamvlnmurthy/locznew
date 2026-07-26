@@ -1339,3 +1339,38 @@ Verified by rendering: `/signin` with a Telugu cookie returns Telugu throughout.
 same caveat as the legal corpus in ADR-0013. Register was the thing I paid most attention
 to: the respectful imperative in Telugu, the आप form in Hindi, and ordinary words rather
 than transliterations where both languages have one (ఉచితం and मुफ़्त, not "free").
+
+## M37 — The restore drill was checking eight of sixty-two tables (2026-07-26)
+
+The schema has grown by roughly a dozen tables since the drill was written — safety cases,
+blocked image hashes, suspensions, evidence access logs — and the drill compared row counts
+for a **hand-picked list of eight**. Exactly the staleness trap already fixed once in
+`verify-db.sh`, and here it left the newest and most sensitive records unchecked: a silent
+loss in `media_safety_cases` or `blocked_image_hashes` would have passed 17/17.
+
+Tables are now discovered from the schema. Which immediately exposed a flaw in the method
+itself.
+
+### Comparing a snapshot against a moving target
+
+Eight tables "mismatched" on the first run, and one had _more_ rows restored than the live
+database held. Nothing had been lost — the live database was being written to while the
+drill ran, by the browser suites and by my own runs. A dump is a moment; the live database
+keeps moving.
+
+Counting before the dump as well as after tells the two apart. A table whose live count is
+unchanged across the drill must match the restore **exactly** — anything else is data loss.
+A table that moved cannot be compared, and is reported rather than passed or failed,
+because either would be a guess:
+
+```
+~ system_settings              changed during the drill (8 → 9), restored 8
+✓ 56 settled tables restored exactly
+  1 table(s) were written to while the drill ran and could not be compared.
+```
+
+That branch was exercised deliberately by writing a row mid-drill rather than assumed —
+the same reason the OTP-logging tests were checked by making the provider leak.
+
+**16 checks, 0 failures**, 62 tables, 191 indexes, and the geo trigger still firing on a
+fresh insert in the restored copy.

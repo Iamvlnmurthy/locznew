@@ -93,7 +93,22 @@ echo "[$(date -Is)] Restore drill for ${POSTGRES_DB} on ${POSTGRES_HOST}:${POSTG
 DUMP="${1:-}"
 if [[ -z "${DUMP}" ]]; then
   DUMP="$(mktemp -t locz-drill-XXXXXX).dump"
-  echo "[$(date -Is)] Taking a fresh backup"
+  declare -A LIVE_AT_DUMP
+
+# Counted before the dump rather than after, so a table that moves while the drill runs can
+# be told apart from one that failed to restore.
+while read -r line; do
+  [[ -z "${line}" ]] && continue
+  LIVE_AT_DUMP["${line%%|*}"]="${line##*|}"
+done < <(
+  PGPASSWORD="${POSTGRES_PASSWORD}" "${PSQL_BIN}" \
+    --host="${POSTGRES_HOST}" --port="${POSTGRES_PORT}" \
+    --username="${POSTGRES_USER}" --dbname="${POSTGRES_DB}" -tAc \
+    "SELECT tablename || '|' || (xpath('/row/c/text()', query_to_xml('SELECT count(*) AS c FROM ' || quote_ident(tablename), false, true, '')))[1]::text FROM pg_tables WHERE schemaname='public' AND tablename NOT LIKE '_prisma%'" \
+    | tr -d '\r'
+)
+
+echo "[$(date -Is)] Taking a fresh backup"
   PGPASSWORD="${POSTGRES_PASSWORD}" "${PG_DUMP_BIN}" \
     --host="${POSTGRES_HOST}" --port="${POSTGRES_PORT}" \
     --username="${POSTGRES_USER}" --dbname="${POSTGRES_DB}" \
@@ -162,8 +177,63 @@ check "spatial index present" \
 echo
 echo "Data"
 
-for table in users listings pincodes categories cities businesses conversations messages; do
-  check "${table}" "$(live "SELECT count(*) FROM ${table}")" "$(scratch "SELECT count(*) FROM ${table}")"
+# Every table, discovered rather than listed.
+#
+# A hand-picked list ages badly: this one named eight tables while the schema grew to
+# sixty-two, so the most recently added — safety cases, blocked image hashes, suspensions,
+# the audit trails — were exactly the ones nobody was checking. Those are the records where
+# a silent loss matters most, because nothing downstream would notice.
+#
+# The comparison has to allow for the obvious: a dump is a moment, and the live database
+# keeps moving. Counting before and after tells the two apart. A table whose live count is
+# unchanged across the drill must match the restore exactly — anything else is data loss. A
+# table that was written to meanwhile cannot be compared, and is reported rather than
+# quietly passed or failed, because either would be a guess.
+#
+# Read through a process substitution: `live` strips whitespace for comparing single
+# values, and psql on Windows ends every line with CRLF, which inside a quoted identifier
+# gives a baffling "relation does not exist".
+mismatched=0
+checked=0
+moved=0
+
+while read -r table; do
+  [[ -z "${table}" ]] && continue
+  checked=$((checked + 1))
+
+  live_now="$(live "SELECT count(*) FROM \"${table}\"")"
+  restored_count="$(scratch "SELECT count(*) FROM \"${table}\"")"
+  live_before="${LIVE_AT_DUMP[${table}]:-}"
+
+  if [[ "${live_before}" != "${live_now}" ]]; then
+    printf '  ~ %-28s changed during the drill (%s → %s), restored %s\n' \
+      "${table}" "${live_before}" "${live_now}" "${restored_count}"
+    moved=$((moved + 1))
+    continue
+  fi
+
+  if [[ "${live_before}" != "${restored_count}" ]]; then
+    echo "  MISMATCH ${table}: live ${live_before}, restored ${restored_count}" >&2
+    mismatched=$((mismatched + 1))
+  fi
+done < <(
+  PGPASSWORD="${POSTGRES_PASSWORD}" "${PSQL_BIN}" \
+    --host="${POSTGRES_HOST}" --port="${POSTGRES_PORT}" \
+    --username="${POSTGRES_USER}" --dbname="${POSTGRES_DB}" -tAc \
+    "SELECT tablename FROM pg_tables WHERE schemaname='public' AND tablename NOT LIKE '_prisma%' ORDER BY tablename" \
+    | tr -d '\r'
+)
+
+check "$((checked - moved)) settled tables restored exactly" "0" "${mismatched}"
+if [[ "${moved}" -gt 0 ]]; then
+  echo "  ${moved} table(s) were written to while the drill ran and could not be compared."
+  echo "  Run it against a quiet database, or from a backup file, for a complete answer."
+fi
+
+# Named individually so the output shows the ones a reader cares about, and so a table
+# disappearing from the schema is visible rather than silently skipped.
+for table in users listings pincodes blocked_image_hashes user_suspensions audit_logs; do
+  check "${table}" "$(live "SELECT count(*) FROM \"${table}\"")" "$(scratch "SELECT count(*) FROM \"${table}\"")"
 done
 
 check "listings carrying a geo point" \
