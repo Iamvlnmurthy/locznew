@@ -91,6 +91,35 @@ async function page(path, cookie = '') {
 }
 
 /**
+ * App Router control-flow can happen after the shared layout has started streaming. Once
+ * headers are committed Next.js cannot change the transport status, so it emits the same
+ * 404/redirect instruction in the React stream (and a meta refresh for redirects). Accept
+ * either representation, but still require the exact destination for a redirect.
+ */
+function isNotFound(result) {
+  return result.status === 404 || result.html.includes('NEXT_HTTP_ERROR_FALLBACK;404');
+}
+
+function redirectsTo(result, destination) {
+  if (
+    [301, 302, 303, 307, 308].includes(result.status) &&
+    result.location === destination
+  ) {
+    return true;
+  }
+
+  const escapedDestination = destination.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  return (
+    result.status === 200 &&
+    result.html.includes('NEXT_REDIRECT') &&
+    new RegExp(
+      `http-equiv="refresh"[^>]+content="[^"]*url=${escapedDestination}"`,
+      'i',
+    ).test(result.html)
+  );
+}
+
+/**
  * One page, three questions: did it respond, does it contain data only the database could
  * have supplied, and did it quietly render an error boundary instead.
  */
@@ -434,10 +463,10 @@ async function main() {
   // ---------------------------------------------------------------- 2. not found
   step('2. Missing things are missing, not broken');
   const ghost = await page('/ad/this-listing-does-not-exist-12345');
-  check('unknown listing 404s', ghost.status === 404, `HTTP ${ghost.status}`);
+  check('unknown listing 404s', isNotFound(ghost), `HTTP ${ghost.status}`);
 
   const ghostCity = await page('/in/atlantis');
-  check('unknown city 404s', ghostCity.status === 404, `HTTP ${ghostCity.status}`);
+  check('unknown city 404s', isNotFound(ghostCity), `HTTP ${ghostCity.status}`);
 
   // ---------------------------------------------------------------- 3. signed out
   step('3. Signed-out visitors are sent to sign in');
@@ -448,9 +477,10 @@ async function main() {
     ['post an ad', '/post'],
   ]) {
     const result = await page(path);
+    const destination = `/signin?next=${encodeURIComponent(path)}`;
     check(
       `${label} redirects when signed out`,
-      result.status === 307 || result.status === 302,
+      redirectsTo(result, destination),
       `HTTP ${result.status} → ${result.location ?? ''}`,
     );
   }
@@ -480,7 +510,7 @@ async function main() {
   const unaddressedReport = await page('/report', cookie);
   check(
     'a report with no target goes home rather than erroring',
-    unaddressedReport.status === 307,
+    redirectsTo(unaddressedReport, '/'),
     `HTTP ${unaddressedReport.status} → ${unaddressedReport.location ?? ''}`,
   );
 
