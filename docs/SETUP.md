@@ -97,6 +97,19 @@ schema language cannot express: GiST spatial indexes, partial indexes for the ba
 sweepers, trigram indexes, the one-default-location constraint, and the triggers that
 derive the `geo` column from latitude/longitude.
 
+Rehearse the restore before you need it:
+
+```bash
+./scripts/restore-drill.sh          # backs up, restores to a scratch database, compares, drops it
+```
+
+A backup nobody has restored is a hypothesis. The drill checks what decides whether the
+application still works afterwards — every table and row count, every index including the
+hand-written spatial and partial ones, every trigger (the `geo` column is derived by one,
+and losing it stops coordinates becoming points with no error anywhere), the extensions,
+and finally a radius query on the restored copy to prove the structures are not merely
+present but functional.
+
 Then verify it. **Run this — it is the difference between "the migration succeeded" and
 "the database actually works":**
 

@@ -994,3 +994,34 @@ the number and the password: **four of the six failed**, and the provider was re
 test that has never failed is decoration.
 
 **102 unit tests**, seven gates, 379 assertions.
+
+## M27 — Rehearsing the one failure that cannot be undone (2026-07-26)
+
+Data loss is the only irreversible failure in this system, and the backup had last been
+restored when the database held fifty-five rows and two migrations. It now holds fifty
+thousand listings, PostGIS triggers, hand-written partial indexes and a rolled-back
+migration in its history.
+
+`scripts/restore-drill.sh` takes a backup, restores it into a scratch database beside the
+live one, and compares what actually decides whether the application works afterwards —
+not just row counts. **17 checks, all passing**: 59 tables, 179 indexes, 14 triggers, the
+seven extensions, 50,056 listings each carrying a geo point, an identical radius-search
+result, the spatial index still chosen by the planner, and the geo trigger still firing on
+a fresh insert. The scratch database is dropped at the end; the live one is never touched.
+
+The trigger check is the one worth keeping. Lose it in a restore and inserts still succeed,
+coordinates simply stop becoming points, and nothing anywhere reports an error — the
+symptom arrives days later as "my listing doesn't show up near me".
+
+### Two checks that had gone stale, and one that was almost right
+
+`verify-db.sh` asserted "53 tables" and "2 migrations" — both true when written, both
+wrong now, and a verification script that cries wolf is one people learn to ignore. The
+table count is now derived by counting models in `schema.prisma`, so it stays true as the
+schema grows.
+
+Replacing the migration count with "nothing is unfinished" then found something real-
+looking: one row with `finished_at IS NULL`. It turned out to be the honest record of the
+migration whose index predicate used `NOW()`, which failed, was rolled back, and was
+re-applied. The dangerous state is narrower than I first wrote — started, never finished,
+_and_ never rolled back — and that is what it checks now.

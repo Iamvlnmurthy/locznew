@@ -58,10 +58,29 @@ report "postgis version" "SELECT PostGIS_Lib_Version()"
 
 echo
 echo "Schema"
-check "53 tables created (52 models + PostGIS)" \
-  "SELECT COUNT(*) FROM pg_tables WHERE schemaname='public' AND tablename NOT LIKE '_prisma%'" "53"
-check "both migrations applied" \
-  "SELECT COUNT(*) FROM _prisma_migrations WHERE finished_at IS NOT NULL" "2"
+# Counted against the schema rather than a number written here. An exact figure goes
+# stale the first time anyone adds a model, and a verification script that cries wolf
+# is one people learn to ignore, which costs more than the check ever saved.
+EXPECTED_MODELS="$(grep -c '^model ' "${ROOT_DIR}/apps/api/prisma/schema.prisma")"
+check "every model has a table (plus PostGIS spatial_ref_sys)" \
+  "SELECT COUNT(*) FROM pg_tables WHERE schemaname='public' AND tablename NOT LIKE '_prisma%'" \
+  "$((EXPECTED_MODELS + 1))"
+
+# The number of migrations changes with every schema change; what must never change is
+# that none of them stopped halfway, leaving a schema neither old nor new.
+#
+# A rolled-back row is not that state. It is the honest record of an attempt that failed
+# and was undone — this database carries one, from a migration whose index predicate used
+# NOW(). The dangerous row is the one that started, never finished, and was never rolled
+# back either.
+check "no migration is stuck part-way" \
+  "SELECT COUNT(*) FROM _prisma_migrations WHERE finished_at IS NULL AND rolled_back_at IS NULL" "0"
+
+report "migrations rolled back and re-applied" \
+  "SELECT COUNT(*) FROM _prisma_migrations WHERE rolled_back_at IS NOT NULL"
+
+report "migrations applied" \
+  "SELECT COUNT(*) FROM _prisma_migrations WHERE finished_at IS NOT NULL"
 
 echo
 echo "Spatial indexes — without these, every nearby search is a sequential scan"
