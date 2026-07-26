@@ -505,7 +505,11 @@ if (options.has('--stack')) {
     // Waiting is the honest fix. Raising the limit would make the suites pass by weakening
     // the control that the security suite exists to prove.
     if (!options.has('--skip-browser')) {
-      const cooldownSeconds = Number(process.env.LOCZ_GATE_COOLDOWN_SECONDS ?? 90);
+      // 90s was not enough. The security suite alone signs in about twelve times and
+      // deliberately creates fresh random users that no cache can serve, so it needs the
+      // window genuinely drained rather than merely eased. Four minutes of waiting buys a
+      // stage that passes for the same reason it passes standalone.
+      const cooldownSeconds = Number(process.env.LOCZ_GATE_COOLDOWN_SECONDS ?? 240);
       if (cooldownSeconds > 0) {
         console.log(`
 Letting the shared sign-in limit drain for ${cooldownSeconds}s…`);
