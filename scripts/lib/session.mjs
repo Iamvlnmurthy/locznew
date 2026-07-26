@@ -124,7 +124,13 @@ async function pace(onWait) {
   writeLastSignInAt(lastSignInAt);
 }
 
-async function freshSignIn(api, phone, deviceKey, onWait) {
+/**
+ * One code, requested and spent.
+ *
+ * Split out so a code that went stale can be abandoned and a new one requested, rather than
+ * being submitted twice. See `freshSignIn`.
+ */
+async function requestAndSpendCode(api, phone, deviceKey, onWait) {
   await pace(onWait);
 
   const request = async () =>
@@ -191,11 +197,38 @@ async function freshSignIn(api, phone, deviceKey, onWait) {
   }
 
   const payload = await verified.json();
-  if (!verified.ok) {
-    throw new Error(`Sign-in failed for ${phone}: ${JSON.stringify(payload).slice(0, 200)}`);
-  }
+  return { ok: verified.ok, payload };
+}
 
-  return payload?.data ?? payload;
+/**
+ * A fresh sign-in, retrying once with a *new* code if the first one goes stale.
+ *
+ * The verify step is rate limited separately from the request step, so a suite can obtain a
+ * code and then be told to wait before spending it. The waits are long — up to several
+ * minutes when the shared per-IP ceiling is involved — and a one-time code does not survive
+ * that. Re-submitting it afterwards is not a retry, it is a guess: the API answers
+ * `Incorrect code. 4 attempt(s) remaining`, the suite aborts on what looks like a credential
+ * problem, and a verify attempt has been spent on a code that could never have worked.
+ *
+ * Asking for a new code costs one more SMS in the mock provider and nothing in reality, which
+ * is a better trade than a whole suite failing. Bounded at one retry so a genuinely wrong
+ * credential still fails fast rather than looping.
+ */
+async function freshSignIn(api, phone, deviceKey, onWait) {
+  for (let attempt = 0; ; attempt += 1) {
+    const { ok, payload } = await requestAndSpendCode(api, phone, deviceKey, onWait);
+    if (ok) return payload?.data ?? payload;
+
+    const message = JSON.stringify(payload);
+    const staleCode = /Incorrect code|expired|invalid code/i.test(message);
+
+    if (!staleCode || attempt >= 1) {
+      throw new Error(`Sign-in failed for ${phone}: ${message.slice(0, 200)}`);
+    }
+
+    onWait?.(0);
+    console.log(`    (the code for ${phone} expired before it could be used — asking for another)`);
+  }
 }
 
 /**
