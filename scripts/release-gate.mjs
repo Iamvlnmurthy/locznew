@@ -7,7 +7,7 @@
  * report or printed by this orchestrator.
  */
 
-import { existsSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { copyFileSync, existsSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { spawnSync } from 'node:child_process';
@@ -181,6 +181,15 @@ function inCandidateCheckout(steps) {
     return;
   }
 
+  // A production build reads `.env`, and `.env` is deliberately untracked, so a worktree of
+  // the candidate does not have one. Without this the isolated build compiles against
+  // different configuration than the release it is meant to be verifying. It is copied into
+  // a directory this function deletes, and never into the repository.
+  const environment = resolve(root, '.env');
+  if (existsSync(environment)) {
+    copyFileSync(environment, resolve(target, '.env'));
+  }
+
   console.log(`\nCandidate checked out in isolation at ${target}`);
 
   try {
@@ -214,6 +223,18 @@ function inCandidateCheckout(steps) {
       } catch (error) {
         cleanupStatus = 1;
         cleanupError = error instanceof Error ? error.message : String(error);
+      }
+
+      // Checked rather than assumed. `git worktree remove` has reported success here while
+      // leaving the tree on disk — that is exactly how two abandoned candidates accumulated
+      // in the temp folder unnoticed. A retry covers the Windows case where a file is still
+      // held for a moment after the process that opened it exited.
+      if (existsSync(directory)) {
+        rmSync(directory, { recursive: true, force: true, maxRetries: 5, retryDelay: 250 });
+      }
+      if (existsSync(directory)) {
+        cleanupStatus = cleanupStatus || 1;
+        cleanupError = `${directory} still exists after cleanup`;
       }
 
       recordStep(
