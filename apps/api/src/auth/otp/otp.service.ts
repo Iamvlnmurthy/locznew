@@ -50,6 +50,15 @@ export class OtpService {
     return createHash('sha256').update(code).digest('hex');
   }
 
+  /**
+   * Redis answers -1 for a key with no expiry and -2 for one that has gone. Neither is a
+   * number of seconds, and sending either as Retry-After would tell a client to retry in
+   * the past.
+   */
+  private static toRetrySeconds(ttl: number, fallback: number): number {
+    return ttl > 0 ? ttl : fallback;
+  }
+
   private generateCode(): string {
     const length = this.config.get('OTP_LENGTH');
     const min = 10 ** (length - 1);
@@ -69,9 +78,15 @@ export class OtpService {
 
     const phoneCount = await this.redis.incrementWithWindow(`otp:req:phone:${phoneE164}`, window);
     if (phoneCount > maxPerPhone) {
-      const retryAfter = await this.redis.ttl(`otp:req:phone:${phoneE164}`);
+      const retryAfter = Math.max(
+        OtpService.toRetrySeconds(await this.redis.ttl(`otp:req:phone:${phoneE164}`), window),
+        1,
+      );
+      // The wait is stated twice on purpose: in the message a person reads, and in the
+      // Retry-After header a client obeys.
       throw new TooManyRequestsException(
-        `Too many verification codes requested. Try again in ${Math.max(retryAfter, 1)} seconds.`,
+        `Too many verification codes requested. Try again in ${retryAfter} seconds.`,
+        retryAfter,
       );
     }
 
@@ -79,7 +94,10 @@ export class OtpService {
       // An IP-wide ceiling stops one host enumerating many phone numbers cheaply.
       const ipCount = await this.redis.incrementWithWindow(`otp:req:ip:${context.ip}`, 3600);
       if (ipCount > maxPerPhone * 10) {
-        throw new TooManyRequestsException('Too many verification requests from this network.');
+        throw new TooManyRequestsException(
+          'Too many verification requests from this network.',
+          3600,
+        );
       }
     }
 

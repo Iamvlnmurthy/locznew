@@ -66,6 +66,16 @@ export class AllExceptionsFilter implements ExceptionFilter {
       path: request.url,
     };
 
+    // A 429 without Retry-After leaves every client guessing how long to wait, and a
+    // guess is either a hammered server or a user staring at a spinner far longer than
+    // necessary. The value comes from whichever limiter rejected the request: the OTP
+    // and posting limiters know their own window, and the global throttler exposes
+    // its reset through this header already.
+    if (status === HttpStatus.TOO_MANY_REQUESTS) {
+      const retryAfter = this.retryAfterFor(exception, response);
+      if (retryAfter !== undefined) response.setHeader('Retry-After', String(retryAfter));
+    }
+
     response.status(status).json(body);
   }
 
@@ -136,6 +146,28 @@ export class AllExceptionsFilter implements ExceptionFilter {
       code: 'InternalError',
       message: 'Something went wrong. Please try again.',
     };
+  }
+
+  /**
+   * Seconds a client should wait before retrying, in whole seconds as RFC 9110 requires.
+   *
+   * Our own limiters carry `retryAfterSeconds` because they know their window exactly.
+   * Nest's throttler does not put its reset on the exception, but it has already set the
+   * header by the time this filter runs, so that value is kept rather than overwritten
+   * with a guess.
+   */
+  private retryAfterFor(exception: unknown, response: Response): number | undefined {
+    if (exception instanceof HttpException) {
+      const payload = exception.getResponse();
+      if (typeof payload === 'object' && payload !== null && 'retryAfterSeconds' in payload) {
+        const seconds = Number((payload as { retryAfterSeconds: unknown }).retryAfterSeconds);
+        if (Number.isFinite(seconds) && seconds > 0) return Math.ceil(seconds);
+      }
+    }
+
+    const existing = response.getHeader('Retry-After');
+    const seconds = Number(existing);
+    return Number.isFinite(seconds) && seconds > 0 ? Math.ceil(seconds) : undefined;
   }
 
   /** "Not Found" → "NotFound", "Internal Server Error" → "InternalServerError". */

@@ -1,6 +1,6 @@
 import { MiddlewareConsumer, Module, NestModule } from '@nestjs/common';
 import { APP_FILTER, APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
-import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
+import { ThrottlerModule } from '@nestjs/throttler';
 import { AdminModule } from './admin/admin.module';
 import { AuditModule } from './audit/audit.module';
 import { BusinessesModule } from './businesses/businesses.module';
@@ -25,6 +25,7 @@ import { MediaModule } from './media/media.module';
 import { ModerationModule } from './moderation/moderation.module';
 import { ReportsModule } from './reports/reports.module';
 import { PrismaModule } from './prisma/prisma.module';
+import { RetryAwareThrottlerGuard } from './common/guards/retry-aware-throttler.guard';
 import { JwtAuthGuard } from './rbac/jwt-auth.guard';
 import { PermissionsGuard } from './rbac/permissions.guard';
 import { RbacModule } from './rbac/rbac.module';
@@ -67,7 +68,7 @@ import { UsersModule } from './users/users.module';
   ],
   providers: [
     // Order matters: throttle before doing work, authenticate, then authorise.
-    { provide: APP_GUARD, useClass: ThrottlerGuard },
+    { provide: APP_GUARD, useClass: RetryAwareThrottlerGuard },
     { provide: APP_GUARD, useClass: JwtAuthGuard },
     { provide: APP_GUARD, useClass: PermissionsGuard },
     // Idempotency runs before the response envelope so what is replayed is the
