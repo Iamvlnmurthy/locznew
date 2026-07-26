@@ -58,17 +58,18 @@ Current Claude Code queue:
 
 1. **Done:** Reproduce why `q=car` returns an iPhone: Meilisearch prefix-matched `car`
    against “carefully” in the description.
-2. **Implemented; gate evidence pending:** Fix relevance so an explicit keyword cannot
-   return a semantically unrelated listing. The live UI now returns zero results for `car`.
-3. Make Meilisearch and database fallback return equivalent ordering and filtering.
-4. **In progress:** Add behavioral tests covering exact terms, prefixes, typos, category
-   terms, irrelevant terms, singular result counts and zero-result honesty. New relevance
-   and keyword unit tests are present but must pass Claude's full gate.
-5. Verify explicit sorting never gets overridden by featured placement.
-6. Audit every interactive API path used by save/undo, enquiry, filters, moderation,
-   media upload and business management.
-7. Finish production-provider boundaries without pretending unavailable credentials or
-   compliance approval exist.
+2. **Done:** Fix relevance so an explicit keyword cannot return a semantically unrelated
+   listing. Both API paths and the rendered UI return zero results for `car`.
+3. **Done:** Make Meilisearch and database fallback agree on filtering and explicit
+   ordering.
+4. **Done:** Add behavioral coverage for exact terms, prefixes, irrelevant fragments,
+   singular results, zero-result honesty and final-page totals.
+5. **Done:** Verify explicit sorting is never overridden by featured placement.
+6. **Done:** Audit live save/undo, enquiry, filters, moderation, media upload, business
+   management, jobs, authorization and restricted-safety paths.
+7. **Externally blocked:** Finish production-provider boundaries without pretending
+   unavailable credentials or compliance approval exist. A vetted protected-hash adapter,
+   vendor contract, production credentials and approved runbook metadata are still required.
 
 Claude Code does not edit web CSS, page composition, mobile presentation widgets or
 localized product copy.
@@ -115,6 +116,22 @@ Current search integration evidence:
 
 Latest same-state evidence:
 
+- **Current checkpoint:** candidate
+  `f336579712984b40293fd5947069313d6b64ec15` has a clean worktree and no abandoned
+  candidate worktree. Clean-checkout evidence is
+  `artifacts/release-gate-2026-07-26T17-08-48.014Z.json`: isolated install, Prisma client
+  generation, production audit, all workspace typechecks, 1,278-key translation coverage,
+  278 tests, production builds, cleanup and candidate stability pass 11/11.
+- Browser evidence on the same candidate is
+  `artifacts/release-gate-2026-07-26T17-07-24.241Z.json`: broad interaction/accessibility
+  94/94, localized journey 10/10 and focused search 6/6, with candidate stability.
+- The combined live HTTP runner passes all seven suites and 438 assertions. Flutter analysis
+  and all 18 mobile tests pass. The reversible restricted-safety workflow passes with zero
+  synthetic cases left after cleanup.
+- Production remains NO-GO for external reasons recorded in `docs/LAUNCH_RUNBOOK.md`:
+  production environment/secrets and HTTPS endpoints, Docker/TLS/DNS, real SMS and image
+  providers, a vetted protected-hash adapter, child-safety approval metadata, backup/restore,
+  deployed smoke, physical-device and operational sign-off.
 - `npm run acceptance:search-browser` now passes 6/6: deterministic singular result and
   card, `car` API/UI zero state, random-token API/UI zero state, and no browser or server
   runtime errors.

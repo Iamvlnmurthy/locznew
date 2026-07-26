@@ -22,6 +22,28 @@ Create one record for every candidate and keep it with the release:
 Do not launch from an uncommitted worktree or mutable image tag. Record the previous
 known-good image digests before deployment.
 
+### Current engineering candidate
+
+Candidate `f336579712984b40293fd5947069313d6b64ec15` is the latest locally verified
+engineering checkpoint. This is evidence of code readiness, not a production GO decision.
+
+- Clean-checkout install, Prisma generation, production dependency audit, workspace
+  typecheck, translation coverage, 278 automated tests and API/web/admin production builds
+  pass. Evidence:
+  `artifacts/release-gate-2026-07-26T17-08-48.014Z.json`.
+- Broad browser interaction/accessibility (94 checks), localized browser (10 checks) and
+  focused search browser (6 checks) pass on the same commit. Evidence:
+  `artifacts/release-gate-2026-07-26T17-07-24.241Z.json`.
+- The seven live HTTP suites pass 438 assertions across buyer/seller, filter/order, public
+  web, admin, background jobs, security and performance.
+- Flutter analysis and all 18 mobile tests pass.
+- The reversible local restricted-safety workflow passes and removes every synthetic case.
+
+Production remains NO-GO until the hard gates below have real deployment evidence. In
+particular, the repository does not contain a vetted protected-hash provider adapter, and
+the local development environment is not a substitute for production TLS, DNS, providers,
+credentials, backup/restore, physical-device or operational sign-off.
+
 ## Credential and service ownership
 
 Secrets live in the production secret manager or CI environment, never in this table or
