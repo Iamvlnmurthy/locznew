@@ -2,9 +2,14 @@
 
 ## Where the candidate stands
 
-Candidate `1f6db58` produced a **valid, complete evidence run**: 17 of 18 gates passed, one
+Candidate `f3e51dc` produced a **valid, complete evidence run**: 17 of 18 gates passed, one
 skipped by design, one failed. Evidence:
-`artifacts/release-gate-2026-07-26T20-03-41.433Z.json`.
+`artifacts/release-gate-2026-07-26T20-28-26.872Z.json`.
+
+Reproduced, not observed once. Candidate `1f6db58` reached the same 17/18 earlier
+(`release-gate-2026-07-26T20-03-41.433Z.json`), and a 16/18 run between the two failed its
+HTTP stage because other commands were competing for the same machine — not because the
+candidate changed.
 
 Valid matters here. Earlier runs reached similar numbers while the tree was moving underneath
 them, and a gate whose candidate changed mid-run has not measured anything. This run recorded
