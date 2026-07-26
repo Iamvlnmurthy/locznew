@@ -188,3 +188,72 @@ It does not chase obfuscation — `g@nja`, `g a n j a`. That is an arms race a s
 loses, and the weighted signals around it (new account, contact details in the body,
 duplicate text) are what catch a poster who is actively evading. Claiming otherwise would
 be the more dangerous mistake.
+
+## ADR-0014 — A keyword must match a word, and every word must match
+
+**Status:** accepted
+
+**Context.** Searching `car` returned an iPhone. Meilisearch prefix-matches the last word
+of a query, and the listing's description read "carefully used for two years". Separately,
+a nonsense hyphenated identifier returned 12,377 listings, because the default matching
+strategy drops query terms until something matches — it can never answer "nothing".
+
+**Decision.** Two rules, both narrower than the engine's defaults.
+
+_A partial word counts only where partial words are meaningful._ Title, brand, category
+and place name the thing being sold, and typing the beginning of a name is how people
+search — `iph` must find every iPhone. A description is up to 2000 characters of prose,
+where the chance of an unrelated word merely starting with what you typed is high and grows
+with the length of the text. So a description match must cover a whole word.
+
+_Every word the user typed has to appear._ Measured before adopting: single-word queries
+are unchanged, `samsung double door fridge` moves 4,117 → 4,114, while
+`iphone 13 madhapur` moves 4,171 → 1 and the nonsense identifier moves 12,377 → 0. The
+recall given up is recall that was never relevant, and it makes the index agree with the
+database path, which already required every word.
+
+**Rejected: quoting the query.** It fixes `car` exactly and costs search-as-you-type
+entirely — `iph` returns nothing. A fix that removes the feature is not a fix.
+
+**Consequence.** Match positions arrive as **byte** offsets, so the word-boundary test
+works in bytes. A character-index implementation passes every English test and misjudges
+every Telugu and Hindi listing.
+
+## ADR-0015 — The database path narrows the search; it never widens it
+
+**Status:** accepted
+
+**Context.** When Meilisearch is unavailable the database answers. It was answering "car"
+with all 50,021 published listings, because the fallback built a browse query and never
+copied the keyword into it. Only `usedSearchIndex: false` hinted at it.
+
+**Decision.** A degraded search may return fewer results. It may not return wrong ones, and
+returning everything in response to a specific word is the most wrong answer available.
+
+The database path matches identity fields only — title, brand, category — and matches word
+prefixes rather than substrings, so `car` reaches "Used car" without reaching "scarf".
+Descriptions are deliberately excluded: Meilisearch earns the right to search 2000
+characters of prose by ranking what it finds, and a `LIKE` cannot rank, so searching them
+here would surface the coincidences without the ordering that normally buries them.
+
+Recall is lower than the index: no typo tolerance, no relevance ranking. That is the trade.
+Everything returned genuinely contains the word.
+
+**Consequence.** User input reaches `LIKE`, where `%` and `_` are wildcards. Prisma passes
+them through untouched, so they are escaped — unescaped, a single `%` matched every listing.
+
+## ADR-0016 — A count the product cannot deliver is not a count
+
+**Status:** accepted
+
+**Context.** Meilisearch stops at `maxTotalHits` regardless of what matched. The count came
+from the match and the results came from the ceiling, so a search reported 4,117 results and
+went blank after page 100, offering a hundred empty pages. The same query served from the
+database, which has no ceiling, returned rows to page 206.
+
+**Decision.** The index path reports a total no larger than it can serve. The database path
+keeps its true count. Each path reports what it can actually deliver, and `usedSearchIndex`
+already tells the caller which answered.
+
+The gate states this as a rule rather than a number — _the last page a total implies must
+not be empty_ — so it holds for either path and for any future ceiling.

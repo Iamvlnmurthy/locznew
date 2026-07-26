@@ -1507,3 +1507,63 @@ the placeholder as what it is: absent.
 
 **250 unit tests; acceptance 67, filters 54, web 110, performance 17 — all still green at
 155,543 localities.**
+
+## M41 — Search stopped answering questions nobody asked
+
+Five defects, each of which returned results that looked authoritative and were not.
+
+**`car` returned an iPhone.** Not a ranking problem. Meilisearch prefix-matches the last
+word of a query, and the phone's description said it had been "carefully used for two
+years". Prefix matching is what makes `iph` find every iPhone, so it is kept where it
+helps — title, brand, category, place — and a description match now has to cover a whole
+word. Quoting the query would have fixed `car` and destroyed search-as-you-type: `iph`
+goes from 4,171 hits to zero.
+
+Match offsets are **bytes, not characters**. Verified on this index: "excellent" in
+`iPhone 13, 128 GB — excellent condition` is reported at 22 while its character index is 20. Reading them as character indices passes every English test and then misjudges every
+Telugu and Hindi listing, where each glyph is three bytes.
+
+**A nonsense identifier returned 12,377 listings**, and `iphone 13 madhapur` returned
+4,171 by ignoring both "13" and "madhapur". Meilisearch's default strategy drops query
+terms until something matches, so it can never answer "nothing". Measured before changing
+it — single words unaffected, `samsung double door fridge` 4,117 → 4,114 — and switched to
+requiring every word. Those two queries now return 0 and 1.
+
+**An outage returned the whole catalogue.** The fallback built a browse query and dropped
+the keyword on the way, and `ListingSearchQueryDto` had no keyword field at all, so a
+search for "car" during a Meilisearch outage answered with all 50,021 listings and called
+them results. `SearchQueryService` had no test of any kind, which is how that survived.
+
+**`%` matched everything.** Prisma compiles `contains` to `LIKE` and passes the value
+through untouched, so one character reproduced the failure above. Found by probing my own
+new code rather than by a report.
+
+**Deep pages promised results they could not serve.** The count came from the match and
+the results came from `maxTotalHits`, so a search reporting 4,117 results went blank after
+page 100 while the database path kept serving to page 206.
+
+**276 API tests; filters 67, security 99, journey 67, jobs 25, web, admin, performance 17.**
+
+## M42 — A release gate that stopped damaging what it measured
+
+`npm ci` ran in the live workspace. On Windows it deleted the generated Prisma client —
+six suites then failed with `Cannot find module '.prisma/client/default'`, which reads as a
+code defect — and the running servers held native modules open, leaving a `node_modules`
+that was neither the old tree nor the new one. Both happened, an hour apart.
+
+Install, generation, typecheck, tests and builds now run in a `git worktree` at the
+candidate commit. Isolating it immediately proved its worth: `npm ci` **failed** on the
+committed candidate, because `package.json` declared `axe-core` and `package-lock.json`
+had never heard of it. A fresh clone could not install the project at all, and running the
+install in place had hidden it.
+
+`next-env.d.ts` was tracked, and Next writes it differently depending on whether `dev` or
+`build` ran last. A clean worktree was therefore impossible while the development stack was
+running — which is exactly when the gate needs one. Untracked.
+
+Cleanup is verified rather than assumed: `git worktree remove` reported success while
+leaving trees on disk, which is how two abandoned candidates accumulated in the temp folder.
+
+**Three gates existed only as npm scripts that nothing invoked.** The first time
+`acceptance:localized-browser` ran against a candidate the whole suite called green, it
+found a real contrast failure. All three are wired into the gate now.
