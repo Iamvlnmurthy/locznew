@@ -64,3 +64,24 @@ export class SuspendUserDto {
   @Max(365)
   durationDays?: number;
 }
+
+export class BlockImageDto {
+  @ApiProperty({
+    example: 'Photograph of ivory carving, listed as an antique bangle',
+    description: 'Shown to the uploader if they try again, so it has to say something useful',
+  })
+  @IsString()
+  @MinLength(10)
+  @MaxLength(300)
+  reason!: string;
+
+  @ApiPropertyOptional({
+    example: 'WILDLIFE',
+    description:
+      'Matches the banned-keyword categories, so image and text refusals report together',
+  })
+  @IsOptional()
+  @IsString()
+  @MaxLength(60)
+  category?: string;
+}

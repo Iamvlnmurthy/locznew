@@ -1105,3 +1105,45 @@ one — checked by reverting it, not assumed.
 
 **154 unit tests.** The corpus needs a lawyer's review before launch; it is a developer's
 reading of Indian law, written to be defensible rather than authoritative.
+
+## M30 — Images, and what fingerprints cannot do (2026-07-26)
+
+Nothing had ever looked at an uploaded picture. The pipeline checked the file really was an
+image, stripped its EXIF and made renditions; moderation counted images and never saw one.
+A photograph of ivory under the title "old bangle" published with nothing noticing.
+
+Every image is now fingerprinted twice — SHA-256 for the identical file, and a 64-bit
+difference hash for the same picture re-cropped, re-compressed or re-saved. That buys three
+things: a moderator's refusal sticks (`POST /moderation/media/:id/block` records both
+hashes, and a re-upload is refused during processing), the same photograph under a
+different account flags the listing, and any image from an account with no history pulls
+the listing back into review — because the words were judged before the pictures existed.
+
+Nine tests, including the evasions that matter: re-compression, resizing and a change of
+format all still resolve to the same picture.
+
+### What it does not do, which is the more important half
+
+**It cannot see what a photograph shows.** There is no classifier, and adding a
+plausible-looking one would be worse than none — a control that is believed and does not
+work is how illegal material stays up while everyone assumes it is handled. Content
+classification needs a licensed provider; CSAM detection needs PhotoDNA or Thorn, which are
+access-controlled and cannot be approximated. `docs/MODERATION.md` names what must be
+procured and the reporting duties that come with it — IT Act s67B, IT Rules 2021
+3(1)(b) and 4(4), POCSO ss19–20, where reporting is mandatory and failing to report is
+itself an offence.
+
+**And renditions are made public before anything assesses them.** Pulling a listing back
+takes it off the shelf and out of the index; the object stays exactly where it was, and
+anyone holding the URL keeps it. Fingerprinting closes the loop for a picture already
+refused. It does nothing for the first upload of something new. The fix is quarantine-first
+storage — private until approved, failing closed when the scanner is unavailable — which
+Codex identified and is building.
+
+A structural note worth keeping: `ImageModerationService` sits in its own module and talks
+to the search _queue_ rather than to `SearchModule`. Media, search and moderation all
+reference one another, and `forwardRef` repairs Nest's dependency graph while leaving the
+ES modules to evaluate in a cycle — the second to load sees an uninitialised class. Two
+suites failed exactly that way before the module was pulled out.
+
+**163 unit tests.**

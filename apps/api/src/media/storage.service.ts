@@ -1,4 +1,5 @@
 import {
+  CopyObjectCommand,
   DeleteObjectCommand,
   GetObjectCommand,
   PutObjectCommand,
@@ -56,9 +57,19 @@ export class StorageService {
   }
 
   async createDownloadUrl(key: string): Promise<string> {
-    return getSignedUrl(this.client, new GetObjectCommand({ Bucket: this.bucket, Key: key }), {
-      expiresIn: this.config.get('STORAGE_SIGNED_URL_TTL_SECONDS'),
-    });
+    return (await this.createDownloadUrlWithExpiry(key)).url;
+  }
+
+  async createDownloadUrlWithExpiry(
+    key: string,
+  ): Promise<{ url: string; expiresInSeconds: number }> {
+    const expiresInSeconds = this.config.get('STORAGE_SIGNED_URL_TTL_SECONDS');
+    const url = await getSignedUrl(
+      this.client,
+      new GetObjectCommand({ Bucket: this.bucket, Key: key }),
+      { expiresIn: expiresInSeconds },
+    );
+    return { url, expiresInSeconds };
   }
 
   /** Derivatives live under `public/`, which the bucket policy exposes anonymously. */
@@ -79,6 +90,19 @@ export class StorageService {
         `Could not delete ${key}: ${error instanceof Error ? error.message : error}`,
       );
     }
+  }
+
+  async copy(sourceKey: string, destinationKey: string): Promise<void> {
+    await this.client.send(
+      new CopyObjectCommand({
+        Bucket: this.bucket,
+        CopySource: `${this.bucket}/${sourceKey}`,
+        Key: destinationKey,
+        ContentType: 'image/webp',
+        CacheControl: 'public, max-age=31536000, immutable',
+        MetadataDirective: 'REPLACE',
+      }),
+    );
   }
 
   async getObjectBytes(key: string): Promise<Buffer> {

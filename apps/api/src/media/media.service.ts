@@ -7,6 +7,8 @@ import {
 } from '@nestjs/common';
 import { ListingMedia, MediaStatus } from '@prisma/client';
 import sharp from 'sharp';
+import { fingerprintImage } from './image-fingerprint';
+import { ImageModerationService } from './image-moderation.service';
 import { v7 as uuid } from 'uuid';
 import { AppConfig } from '../config/config.module';
 import { PrismaService } from '../prisma/prisma.service';
@@ -44,6 +46,7 @@ export class MediaService {
     private readonly prisma: PrismaService,
     private readonly storage: StorageService,
     private readonly config: AppConfig,
+    private readonly imageModeration: ImageModerationService,
   ) {}
 
   /**
@@ -169,6 +172,16 @@ export class MediaService {
     const pipeline = sharp(original, { failOn: 'error' }).rotate();
     const metadata = await pipeline.metadata();
 
+    // Fingerprints before renditions: a picture a moderator has already refused should not
+    // be resized, stored and served while we decide what to do about it.
+    const fingerprint = await fingerprintImage(original);
+    const blocked = await this.imageModeration.findBlock(fingerprint);
+    if (blocked) {
+      // The reason is the moderator's own words, so the uploader is told something they
+      // can act on rather than "processing failed".
+      throw new Error(`This image was previously removed: ${blocked.reason}`);
+    }
+
     const keys: Record<string, string> = {};
     for (const rendition of RENDITIONS) {
       const buffer = await sharp(original)
@@ -182,7 +195,7 @@ export class MediaService {
       keys[rendition.name] = key;
     }
 
-    return this.prisma.listingMedia.update({
+    const stored = await this.prisma.listingMedia.update({
       where: { id: media.id },
       data: {
         status: MediaStatus.READY,
@@ -191,9 +204,18 @@ export class MediaService {
         fullKey: keys.full,
         width: metadata.width ?? null,
         height: metadata.height ?? null,
+        sha256: fingerprint.sha256,
+        perceptualHash: fingerprint.perceptual,
         failureReason: null,
       },
     });
+
+    // Moderation runs when a listing is submitted, and images arrive afterwards — so
+    // whatever was decided about the words was decided before anyone could see the
+    // pictures. This is the only point at which an image can affect that.
+    await this.imageModeration.reviewOnUpload(stored, fingerprint);
+
+    return stored;
   }
 
   async listForListing(listingId: string): Promise<MediaDto[]> {

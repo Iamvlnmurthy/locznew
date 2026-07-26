@@ -8,15 +8,20 @@ import {
   ModerationQueueItemDto,
   ModerationQueueQueryDto,
   RejectListingDto,
+  BlockImageDto,
   SuspendUserDto,
 } from './dto/moderation.dto';
+import { ImageModerationService } from '../media/image-moderation.service';
 import { ModerationService } from './moderation.service';
 
 @ApiTags('moderation')
 @ApiBearerAuth()
 @Controller('moderation')
 export class ModerationController {
-  constructor(private readonly moderation: ModerationService) {}
+  constructor(
+    private readonly moderation: ModerationService,
+    private readonly images: ImageModerationService,
+  ) {}
 
   @Get('queue')
   @RequirePermissions('listing:moderate')
@@ -105,5 +110,22 @@ export class ModerationController {
     @CurrentUser() user: AuthenticatedUser,
   ): Promise<void> {
     return this.moderation.reinstateUser(id, user.id, dto.reason);
+  }
+
+  @Post('media/:id/block')
+  @HttpCode(HttpStatus.OK)
+  @RequirePermissions('listing:moderate')
+  @ApiOperation({
+    summary: 'Refuse this image from now on',
+    description:
+      'Removing a listing does not stop the same photograph being uploaded again a minute later. Blocking records both an exact and a perceptual hash, so a re-crop or a re-save of the same picture is refused too.',
+  })
+  @ApiResponse({ status: 200, description: 'Image blocked' })
+  blockImage(
+    @Param('id') id: string,
+    @Body() dto: BlockImageDto,
+    @CurrentUser() user: AuthenticatedUser,
+  ): Promise<{ blocked: number }> {
+    return this.images.blockImage(id, user.id, dto.reason, dto.category);
   }
 }

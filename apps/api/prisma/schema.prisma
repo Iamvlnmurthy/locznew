@@ -142,8 +142,12 @@ enum AttributeDataType {
 enum MediaStatus {
   PENDING_UPLOAD
   UPLOADED
+  QUARANTINED
+  SCANNING
+  REVIEW_REQUIRED
   PROCESSING
   READY
+  REJECTED
   FAILED
 }
 
@@ -911,30 +915,38 @@ model Listing {
 }
 
 model ListingMedia {
-  id            String      @id @db.Uuid
-  listingId     String      @db.Uuid
-  status        MediaStatus @default(PENDING_UPLOAD)
-  storageKey    String      @db.VarChar(300) // original object key
-  thumbKey      String?     @db.VarChar(300) // 320px
-  cardKey       String?     @db.VarChar(300) // 720px
-  fullKey       String?     @db.VarChar(300) // 1600px
-  avifKey       String?     @db.VarChar(300)
-  mimeType      String      @db.VarChar(60)
-  sizeBytes     Int?
-  width         Int?
-  height        Int?
-  blurhash      String?     @db.VarChar(60)
-  sortOrder     Int         @default(0)
-  isPrimary     Boolean     @default(false)
-  failureReason String?     @db.VarChar(300)
-  createdAt     DateTime    @default(now())
-  updatedAt     DateTime    @updatedAt
+  id             String      @id @db.Uuid
+  listingId      String      @db.Uuid
+  status         MediaStatus @default(PENDING_UPLOAD)
+  storageKey     String      @db.VarChar(300) // original object key
+  thumbKey       String?     @db.VarChar(300) // 320px
+  cardKey        String?     @db.VarChar(300) // 720px
+  fullKey        String?     @db.VarChar(300) // 1600px
+  avifKey        String?     @db.VarChar(300)
+  mimeType       String      @db.VarChar(60)
+  sizeBytes      Int?
+  width          Int?
+  height         Int?
+  blurhash       String?     @db.VarChar(60)
+  // Exact bytes. Catches the same file uploaded again, including by another account.
+  sha256         String?     @db.VarChar(64)
+  // A difference hash of the image content, so a re-crop, a re-compression or a small
+  // watermark still resolves to something close. Compared by Hamming distance.
+  perceptualHash String?     @db.VarChar(32)
+  sortOrder      Int         @default(0)
+  isPrimary      Boolean     @default(false)
+  failureReason  String?     @db.VarChar(300)
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
 
   listing Listing @relation(fields: [listingId], references: [id], onDelete: Cascade)
 
   @@index([listingId, sortOrder])
   // Sweeper for uploads that were requested but never confirmed.
   @@index([status, createdAt])
+  // "Has this picture been posted before, and by whom?"
+  @@index([sha256])
+  @@index([perceptualHash])
   @@map("listing_media")
 }
 
@@ -1258,6 +1270,31 @@ model ModeratorNote {
 
   @@index([targetType, targetId])
   @@map("moderator_notes")
+}
+
+/**
+ * Images a moderator has already refused.
+ * Removing a listing does nothing to stop the same photograph being uploaded again a
+ * minute later, which is exactly what someone posting illegal material does. Blocking the
+ * image itself is what breaks that loop — the decision is made once and holds.
+ * Both hash kinds are stored: SHA-256 catches the identical file, and the perceptual hash
+ * catches the same picture re-cropped or re-saved, which is the usual evasion.
+ */
+model BlockedImageHash {
+  id          String   @id @db.Uuid
+  // 'SHA256' or 'PERCEPTUAL'
+  kind        String   @db.VarChar(20)
+  hash        String   @db.VarChar(64)
+  // Why, in the moderator's words — this is what an appeal is answered from.
+  reason      String   @db.VarChar(300)
+  // Which moderation category, matching the banned-keyword vocabulary.
+  category    String?  @db.VarChar(60)
+  blockedById String   @db.Uuid
+  createdAt   DateTime @default(now())
+
+  @@unique([kind, hash])
+  @@index([kind])
+  @@map("blocked_image_hashes")
 }
 
 model BannedKeyword {
