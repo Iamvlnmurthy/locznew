@@ -145,3 +145,46 @@ Format: one entry per decision. Never edit an accepted entry — supersede it wi
 **Decision.** A report increments a counter and is queued. At three independent open reports a listing is pulled from public view into `PENDING_REVIEW` — hidden, not deleted. Removal is always an explicit moderator action. Reporters are themselves rate limited (10/hour), and resolving one report closes every open report against the same target and notifies each reporter of the outcome.
 
 **Consequences.** A genuinely abusive listing stays visible slightly longer than an auto-remove policy would allow. In exchange, mass-reporting cannot be used as a takedown tool, and reporters learn their report mattered — which is what keeps them reporting.
+
+---
+
+## ADR-0013 — What the platform refuses to carry, and what it only holds
+
+**Status:** Accepted — 2026-07-26. **Needs legal review before launch.**
+
+**Context.** The IT Rules 2021 require an intermediary to tell users what they may not host
+and to act on unlawful content. The keyword list that existed was fifteen English terms
+aimed at scams, which meant LocZ would have carried ivory, prenatal sex-determination
+services and e-cigarettes without noticing — and would auto-reject a salon owner selling a
+"unisex" chair, because `sex` was on the list and matching was `String.includes`.
+
+**Decision.** A 197-term corpus in `apps/api/prisma/banned-keywords.ts`, grouped into 27
+categories, each carrying the statute or policy it rests on. Matching is on word
+boundaries. Three judgements shaped it:
+
+_Severity 2 is for things with no innocent reading._ Ivory, `katta`, `mtp kit`, betting ids.
+Anything a lawful trader might advertise — prescription medicines, air rifles, antique
+coins, spy cameras — sits at severity 1 and waits for a person. A wrong rejection is
+invisible to us and final to the seller, who is told their advert broke the rules and
+cannot see how.
+
+_Discrimination is held, never auto-rejected._ "No Muslims", "only vegetarians", "no
+bachelors" and caste filters in rental and job adverts are refused as platform policy
+rather than as law — Article 15 binds the State, not a private landlord. They are held
+because the identical words appear in a listing objecting to the practice, and because a
+machine should not be the last word on whether a sentence is prejudiced.
+
+_Some things are deliberately absent._ Beef is lawful in Kerala, the north-east, Goa and
+West Bengal; a national keyword ban would encode one region's law as everyone's, and a
+religious rule as a legal one. Bhang is sold from licensed government shops in several
+states. Both are questions for a state-aware policy and a lawyer, not a global list.
+
+**Consequences.** The corpus needs a lawyer's review — it is a developer's reading of
+Indian law, written to be specific and defensible rather than authoritative. It will also
+need maintenance: every category is a live area of law, and the list is seeded rather than
+hard-coded precisely so a moderator can add a term during an incident without a deploy.
+
+It does not chase obfuscation — `g@nja`, `g a n j a`. That is an arms race a static list
+loses, and the weighted signals around it (new account, contact details in the body,
+duplicate text) are what catch a poster who is actively evading. Claiming otherwise would
+be the more dangerous mistake.

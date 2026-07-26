@@ -22,6 +22,43 @@ interface Rule {
  * alone. A false rejection on a free classifieds platform costs a real user their post,
  * so the system is biased toward review rather than rejection.
  */
+/**
+ * Does this text contain the banned term as words, rather than as letters?
+ *
+ * The previous check was `text.includes(keyword)`, and with `sex` on the list at severity
+ * two that auto-rejected "unisex salon chair for sale" — and "Essex water heater", and a
+ * carer advertising for a sexagenarian. A moderation rule that silently refuses honest
+ * listings costs more trust than the listing it was meant to stop, because the seller is
+ * told their advert broke the rules and cannot see how.
+ *
+ * Matching is on word boundaries, and a multi-word term tolerates any run of whitespace or
+ * punctuation between its words, so "sex determination", "sex-determination" and
+ * "sex   determination" are one rule rather than three.
+ *
+ * What this deliberately does not do is chase obfuscation — g@nja, g a n j a, ｇａｎｊａ.
+ * That is an arms race a static list loses, and the weighted signals around it (new
+ * account, contact details in the body, duplicate text) are what catch a poster who is
+ * actively evading. Pretending otherwise would be the more dangerous mistake.
+ */
+export function matchesKeyword(text: string, keyword: string): boolean {
+  const words = keyword
+    .toLowerCase()
+    .split(/\s+/)
+    .filter(Boolean)
+    .map((word) => word.replace(/[.*+?^${}()|[\]\\]/g, '\$&'));
+
+  if (words.length === 0) return false;
+
+  // A plain \b would not fire next to a non-ASCII letter, so the edges are asserted
+  // against anything that is not a letter or digit — which keeps Devanagari and Telugu
+  // working when a term is written in script rather than transliterated.
+  const pattern = new RegExp(
+    `(^|[^\\p{L}\\p{N}])${words.join('[^\\p{L}\\p{N}]+')}($|[^\\p{L}\\p{N}])`,
+    'iu',
+  );
+  return pattern.test(text);
+}
+
 @Injectable()
 export class RuleBasedModerationProvider implements ModerationProvider {
   readonly name = 'rule-based';
@@ -74,6 +111,41 @@ export class RuleBasedModerationProvider implements ModerationProvider {
       test: (_subject, text) =>
         /(advance|registration|processing)\s+(fee|payment|amount)/i.test(text) ||
         /pay\s+(first|now|advance)/i.test(text),
+    },
+    {
+      // A job that costs money to get is the commonest employment scam in India, and it
+      // rarely uses a phrase a keyword list would hold. What gives it away is the shape:
+      // a vacancy that mentions the candidate paying something.
+      code: 'JOB_ASKS_CANDIDATE_FOR_MONEY',
+      weight: 60,
+      test: (subject, text) =>
+        subject.type === 'JOB' &&
+        /(fee|fees|deposit|charges|payment|amount|rs|₹)/i.test(text) &&
+        /(pay|paid|deposit|transfer|send)\s+(rs|₹|\d|the|a|an|us|me|amount|money)/i.test(text),
+    },
+    {
+      // Age limits, marital status and appearance in a job advert. Lawful in narrow cases
+      // — a women's hostel warden — so this raises suspicion rather than deciding, and a
+      // person makes the call.
+      code: 'PERSONAL_REQUIREMENT_IN_JOB',
+      weight: 25,
+      test: (subject, text) =>
+        subject.type === 'JOB' &&
+        /(unmarried|married|fair\s+complexion|good\s+looking|attractive|below\s+\d{2}\s+years|age\s+below)/i.test(
+          text,
+        ),
+    },
+    {
+      // A rental advert that filters people rather than describing the property. Same
+      // reasoning: held for a human, never auto-refused, because the identical words turn
+      // up in a listing objecting to the practice.
+      code: 'TENANT_RESTRICTION',
+      weight: 25,
+      test: (subject, text) =>
+        subject.type === 'RENTAL' &&
+        /(only\s+(hindus|muslims|christians|brahmins|vegetarians|veg)|no\s+(muslims|hindus|christians|bachelors|sc\s*st|north\s+indians)|caste\s+no\s+bar\s+not)/i.test(
+          text,
+        ),
     },
     {
       code: 'ALL_CAPS_TITLE',
@@ -133,7 +205,7 @@ export class RuleBasedModerationProvider implements ModerationProvider {
             ? subject.description.toLowerCase()
             : text;
 
-      if (scopeText.includes(entry.keyword.toLowerCase())) {
+      if (matchesKeyword(scopeText, entry.keyword)) {
         reasons.push(`BANNED_KEYWORD:${entry.keyword}`);
         // Severity 2 alone clears the reject threshold; severity 1 only raises suspicion.
         score += entry.severity >= 2 ? 100 : 25;

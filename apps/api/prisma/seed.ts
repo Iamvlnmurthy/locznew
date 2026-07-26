@@ -37,6 +37,7 @@ import {
   WorkplaceType,
 } from '@prisma/client';
 import { PrismaPg } from '@prisma/adapter-pg';
+import { BANNED_KEYWORDS } from './banned-keywords';
 import { v7 as uuid } from 'uuid';
 import * as argon2 from 'argon2';
 
@@ -758,23 +759,6 @@ const CATEGORIES: CategorySeed[] = [
 ];
 
 // Free posting attracts these first. Severity 2 auto-rejects; severity 1 sends to review.
-const BANNED_KEYWORDS: Array<{ keyword: string; severity: number }> = [
-  { keyword: 'instant loan', severity: 2 },
-  { keyword: 'lottery winner', severity: 2 },
-  { keyword: 'work from home earn daily', severity: 2 },
-  { keyword: 'double your money', severity: 2 },
-  { keyword: 'sex', severity: 2 },
-  { keyword: 'escort', severity: 2 },
-  { keyword: 'aadhaar card sale', severity: 2 },
-  { keyword: 'fake certificate', severity: 2 },
-  { keyword: 'firearm', severity: 2 },
-  { keyword: 'ganja', severity: 2 },
-  { keyword: 'whatsapp only', severity: 1 },
-  { keyword: 'advance payment', severity: 1 },
-  { keyword: 'registration fee', severity: 1 },
-  { keyword: 'commission', severity: 1 },
-  { keyword: 'part time job investment', severity: 1 },
-];
 
 const EXPIRY_RULES: Array<{ listingType: ListingType; days: number }> = [
   { listingType: ListingType.CLASSIFIED, days: 30 },
@@ -1353,11 +1337,28 @@ async function seedModerationRules() {
   for (const entry of BANNED_KEYWORDS) {
     await prisma.bannedKeyword.upsert({
       where: { keyword: entry.keyword },
-      update: { severity: entry.severity, isActive: true },
-      create: { id: uuid(), keyword: entry.keyword, severity: entry.severity },
+      update: {
+        severity: entry.severity,
+        category: entry.category,
+        basis: entry.basis,
+        isActive: true,
+      },
+      create: {
+        id: uuid(),
+        keyword: entry.keyword,
+        severity: entry.severity,
+        category: entry.category,
+        basis: entry.basis,
+      },
     });
   }
-  console.log(`  banned keywords: ${BANNED_KEYWORDS.length}`);
+
+  const categories = new Set(BANNED_KEYWORDS.map((entry) => entry.category));
+  const rejecting = BANNED_KEYWORDS.filter((entry) => entry.severity === 2).length;
+  console.log(
+    `  banned keywords: ${BANNED_KEYWORDS.length} across ${categories.size} categories ` +
+      `(${rejecting} auto-reject, ${BANNED_KEYWORDS.length - rejecting} held for review)`,
+  );
 }
 
 async function seedExpiryRules() {

@@ -1067,3 +1067,41 @@ product again rather than testing luck — and gained a check that the results r
 ordered by distance.
 
 **113 unit tests. Seven gates, 388 assertions.**
+
+## M29 — What the platform refuses to carry (2026-07-26)
+
+The banned-keyword list was fifteen English terms aimed at scams. LocZ would have carried
+ivory, prenatal sex-determination services, e-cigarettes, forged marksheets and betting ids
+without noticing — and it auto-rejected "Unisex salon chair for sale", because `sex` was on
+the list at severity 2 and matching was `String.includes`. Also refused: "Essex water
+heater", and a carer advertising for a sexagenarian.
+
+**197 terms, 27 categories, each naming the statute it rests on** — Wildlife Protection Act
+1972, NDPS 1985, Arms Act 1959, PCPNDT 1994 (where advertising sex determination is itself
+the offence), the Transplantation of Human Organs Act 1994, the Surrogacy and ART Acts
+2021, PECA 2019's total ban on e-cigarettes, the Prize Chits Act 1978, Trade Marks and
+Copyright, BNS 2023 forgery provisions, the Immoral Traffic (Prevention) Act 1956, the
+Child Labour Amendment 2016, the Dowry Prohibition Act 1961. Written in the
+transliterations people actually type — `ganja`, `katta`, `dahej`, `tezaab`, `satta`,
+`ling janch` — because a site written in Hinglish is not served by a list that only knows
+"cannabis".
+
+Three structural rules catch what keywords cannot: a job advert that asks the candidate for
+money (the commonest employment scam here, and rarely phrased the same way twice), personal
+requirements in a job advert, and tenant filtering in a rental.
+
+**131 terms auto-reject; 66 wait for a person.** The split is the whole design. Prescription
+medicines, air rifles, antique coins, spy cameras and every discrimination term are held,
+because a lawful trader might be advertising and because a wrong rejection is invisible to
+us and final to the seller.
+
+Beef and bhang are deliberately absent — both are lawful in parts of India, and a national
+keyword ban would encode one region's law as everyone's. That reasoning, and the rest, is
+in ADR-0013.
+
+**37 tests**: every refused category, every held category, and seven listings that must be
+left alone. Three of them fail against the old substring matcher and pass against the new
+one — checked by reverting it, not assumed.
+
+**154 unit tests.** The corpus needs a lawyer's review before launch; it is a developer's
+reading of Indian law, written to be defensible rather than authoritative.

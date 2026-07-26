@@ -1262,10 +1262,16 @@ model ModeratorNote {
 
 model BannedKeyword {
   id        String   @id @db.Uuid
-  // Stored lowercase; matched against normalised listing text.
+  // Stored lowercase; matched on word boundaries against normalised listing text.
   keyword   String   @unique @db.VarChar(120)
   severity  Int      @default(1) // 1 = flag for review, 2 = auto-reject
   scope     String   @default("ALL") @db.VarChar(30) // ALL | TITLE | DESCRIPTION
+  // Why this term is here. A rejection a moderator cannot explain is one the seller
+  // cannot appeal, and "your listing broke the rules" is not an explanation.
+  category  String?  @db.VarChar(60)
+  // The law or policy the category rests on, so a decision can be defended and reviewed
+  // when the law changes.
+  basis     String?  @db.VarChar(200)
   isActive  Boolean  @default(true)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
