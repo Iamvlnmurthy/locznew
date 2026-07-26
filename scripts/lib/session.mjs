@@ -74,7 +74,30 @@ async function refresh(api, session) {
  */
 const MAX_SENSIBLE_WAIT_SECONDS = 180;
 
+/**
+ * The OTP endpoint allows five requests a minute from one address, which is the right
+ * number for production: a person needs one code, occasionally two.
+ *
+ * A suite that opens seven accounts will trip it, and backing off after the fact means
+ * waiting a full minute several times over. Spacing fresh sign-ins a little over twelve
+ * seconds apart keeps the suite under the limit by construction instead — slower than
+ * hammering, much faster than being throttled, and it leaves the limit itself alone.
+ */
+const MIN_GAP_BETWEEN_SIGN_INS_MS = 12_500;
+let lastSignInAt = 0;
+
+async function pace(onWait) {
+  const wait = lastSignInAt + MIN_GAP_BETWEEN_SIGN_INS_MS - Date.now();
+  if (wait > 0) {
+    onWait?.(Math.ceil(wait / 1000));
+    await new Promise((resolve) => setTimeout(resolve, wait));
+  }
+  lastSignInAt = Date.now();
+}
+
 async function freshSignIn(api, phone, deviceKey, onWait) {
+  await pace(onWait);
+
   const request = async () =>
     fetch(`${api}/auth/otp/request`, {
       method: 'POST',
@@ -83,7 +106,7 @@ async function freshSignIn(api, phone, deviceKey, onWait) {
     });
 
   let response = await request();
-  for (let attempt = 0; response.status === 429 && attempt < 4; attempt += 1) {
+  for (let attempt = 0; response.status === 429 && attempt < 8; attempt += 1) {
     const body = await response.clone().text();
     const header = Number(response.headers.get('retry-after') ?? 0);
     const hinted = Number(/try again in (\d+) seconds/i.exec(body)?.[1] ?? 0);

@@ -280,6 +280,73 @@ async function main() {
   const stillPublished = await call(`/listings/${listing.slug}`);
   check('the listing survived all of that', stillPublished.status === 'PUBLISHED', stillPublished.status);
 
+  // ---------------------------------------------------------------- 4b. suspension
+  step('4b. Suspension stops a person, so it must be hard to reach');
+
+  const suspendPath = `/moderation/users/${alice.user.id}/suspend`;
+  const reason = 'Probing whether an ordinary account can suspend someone';
+
+  const strangerSuspends = await raw(suspendPath, {
+    method: 'POST',
+    token: malloryToken,
+    body: { reason },
+  });
+  check('an ordinary account cannot suspend anyone', refused(strangerSuspends), `HTTP ${strangerSuspends.status}`);
+
+  const anonymousSuspends = await raw(suspendPath, { method: 'POST', body: { reason } });
+  check('nor can an anonymous request', anonymousSuspends.status === 401, `HTTP ${anonymousSuspends.status}`);
+
+  const aliceStillWorks = await raw('/users/me', { token: aliceToken });
+  check('and the account is untouched by the attempt', aliceStillWorks.status === 200);
+
+  // A moderator can — and the effect has to be immediate, not whenever the token expires.
+  const doomedPhone = `+9186${String(Math.floor(10_000_000 + Math.random() * 89_999_999))}`;
+  const doomedUser = await getSession(API, doomedPhone, 'security-suspendee');
+  const doomedUserToken = doomedUser.tokens.accessToken;
+  check('the account works before suspension', (await raw('/users/me', { token: doomedUserToken })).status === 200);
+
+  const suspended = await call(`/moderation/users/${doomedUser.user.id}/suspend`, {
+    method: 'POST',
+    token: moderatorToken,
+    body: { reason: 'Repeated fake listings after two warnings' },
+  });
+  check('a moderator can suspend', suspended.suspended === true, `${suspended.sessionsRevoked} session(s) revoked`);
+
+  const afterSuspension = await raw('/users/me', { token: doomedUserToken });
+  check(
+    'the live session dies at once, not when the token expires',
+    afterSuspension.status === 401,
+    `HTTP ${afterSuspension.status}`,
+  );
+
+  const suspendedPost = await raw('/listings', {
+    method: 'POST',
+    token: doomedUserToken,
+    body: {
+      type: 'PRODUCT',
+      title: 'Posting while suspended, which must fail',
+      description: 'If this succeeds the suspension is decorative rather than effective.',
+      categoryId: leaf.id,
+      cityId: cities[0].id,
+      marketplace: { price: 1000, condition: 'GOOD' },
+    },
+  });
+  check('and cannot post', refused(suspendedPost), `HTTP ${suspendedPost.status}`);
+
+  const selfSuspend = await raw(`/moderation/users/${moderator.user.id}/suspend`, {
+    method: 'POST',
+    token: moderatorToken,
+    body: { reason: 'A moderator locking themselves out by accident' },
+  });
+  check('a moderator cannot suspend themselves', selfSuspend.status === 400, `HTTP ${selfSuspend.status}`);
+
+  // Left reinstated: a suspended account in the seed data would break later runs.
+  await raw(`/moderation/users/${doomedUser.user.id}/reinstate`, {
+    method: 'POST',
+    token: moderatorToken,
+    body: { reason: 'Security probe cleanup' },
+  });
+
   // ---------------------------------------------------------------- 5. tokens
   step('5. Tokens that should not work');
 

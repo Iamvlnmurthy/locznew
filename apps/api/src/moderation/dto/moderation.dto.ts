@@ -38,3 +38,14 @@ export class RejectListingDto {
   @MaxLength(500)
   reason!: string;
 }
+
+export class SuspendUserDto {
+  @ApiProperty({
+    example: 'Repeated fake listings after two warnings',
+    description: 'Recorded in the audit trail — the reason is what makes the action reviewable',
+  })
+  @IsString()
+  @MinLength(10)
+  @MaxLength(500)
+  reason!: string;
+}

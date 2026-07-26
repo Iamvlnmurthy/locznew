@@ -184,7 +184,7 @@ node scripts/acceptance-filters.mjs  # filter semantics        — 55 assertions
 node scripts/acceptance-browser.mjs  # browser interactions    — 35 assertions
 node scripts/acceptance-admin.mjs    # the admin console       — 53 assertions
 node scripts/acceptance-jobs.mjs     # the background jobs     — 24 assertions
-node scripts/acceptance-security.mjs # security probes         — 74 assertions
+node scripts/acceptance-security.mjs # security probes         — 82 assertions
 node scripts/acceptance-performance.mjs # plans and latency    — 17 assertions
 ```
 

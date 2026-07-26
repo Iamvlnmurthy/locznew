@@ -326,20 +326,32 @@ async function main() {
 
   // ---------------------------------------------------------------- 8. nearby
   step('8. Nearby search (PostGIS)');
+  // Scoped to this run's own category so the assertion survives a database with real
+  // volume in it. Asking for "the ten nearest listings" and expecting a specific one to be
+  // among them holds only while the neighbourhood is nearly empty — with fifty thousand
+  // listings the suite would be testing luck.
   const nearby = await call(
-    `/listings?latitude=17.4483&longitude=78.3915&radiusKm=5&limit=10`,
+    `/listings?latitude=17.4483&longitude=78.3915&radiusKm=5&categoryId=${leaf.id}&limit=50`,
   );
   const found = nearby.items.find((item) => item.id === listing.id);
-  check('listing found within 5 km', Boolean(found), `${nearby.meta.total} nearby`);
+  check('listing found within 5 km', Boolean(found), `${nearby.meta.total} nearby in this category`);
   check(
     'distance is plausible',
     found !== undefined && found.distanceMeters !== undefined && found.distanceMeters < 5000,
     found ? `${found.distanceMeters} m` : '',
   );
+  check(
+    'and the results really are ordered by distance',
+    nearby.items.every(
+      (item, index) =>
+        index === 0 || (nearby.items[index - 1].distanceMeters ?? 0) <= (item.distanceMeters ?? 0),
+    ),
+    `nearest ${nearby.items[0]?.distanceMeters ?? 0} m`,
+  );
 
   // The user's actual journey: type a pincode, see what is for sale around it. The
   // listing above was placed by pincode alone, so this exercises the whole chain.
-  const byPincode = await call('/listings?pincode=500081&limit=10');
+  const byPincode = await call(`/listings?pincode=500081&categoryId=${leaf.id}&limit=50`);
   check(
     'found by pincode search',
     byPincode.items.some((item) => item.id === listing.id),
@@ -347,7 +359,7 @@ async function main() {
   );
 
   // A code 1,500 km away must not match — proof the radius is real, not ignored.
-  const farAway = await call('/listings?pincode=110001&radiusKm=10&limit=10');
+  const farAway = await call(`/listings?pincode=110001&radiusKm=10&categoryId=${leaf.id}&limit=50`);
   check(
     'a distant pincode does not match',
     !farAway.items.some((item) => item.id === listing.id),

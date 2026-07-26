@@ -1,14 +1,24 @@
-import { ForbiddenException, Inject, Injectable, Logger, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ConflictException,
+  ForbiddenException,
+  Inject,
+  Injectable,
+  Logger,
+  NotFoundException,
+} from '@nestjs/common';
 import {
   Listing,
   ListingStatus,
   ModerationDecision,
   ModerationStatus,
   ReportTargetType,
+  UserStatus,
 } from '@prisma/client';
 import { createHash } from 'node:crypto';
 import { v7 as uuid } from 'uuid';
 import { AuditService } from '../audit/audit.service';
+import { TokenService } from '../auth/token.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { SearchIndexPublisher } from '../search/search-index.publisher';
 import { ModerationQueueItemDto } from './dto/moderation.dto';
@@ -33,6 +43,7 @@ export class ModerationService {
     private readonly prisma: PrismaService,
     private readonly audit: AuditService,
     private readonly searchIndex: SearchIndexPublisher,
+    private readonly tokens: TokenService,
   ) {}
 
   /**
@@ -269,6 +280,84 @@ export class ModerationService {
 
     await this.recordDecision(listingId, moderatorId, 'REMOVE', reason);
     await this.searchIndex.enqueueRemoval(listingId);
+  }
+
+  /**
+   * Suspends an account.
+   *
+   * Removing someone's listings does not stop them posting more, and until now that was
+   * the only tool a moderator had: `user:suspend` was granted to the role, the account
+   * status existed, sign-in refused a suspended user — and nothing could set the status.
+   * The dashboard even counted suspended users, of which there could never be any.
+   *
+   * Sessions are revoked in the same breath. Sign-in checks the status, but a live access
+   * token would otherwise keep working until it expired, so the person being suspended for
+   * harassing someone would have another quarter of an hour to do it. A suspension that
+   * takes effect later is not a suspension.
+   *
+   * Their listings are left alone deliberately: hiding an account's content is a separate
+   * decision with its own audit trail, and conflating the two makes both harder to undo.
+   */
+  async suspendUser(
+    userId: string,
+    moderatorId: string,
+    reason: string,
+  ): Promise<{ suspended: true; sessionsRevoked: number }> {
+    const user = await this.prisma.user.findFirst({ where: { id: userId, deletedAt: null } });
+    if (!user) throw new NotFoundException('User not found');
+
+    if (user.id === moderatorId) {
+      throw new BadRequestException('You cannot suspend your own account');
+    }
+    if (user.status === UserStatus.SUSPENDED) {
+      throw new ConflictException('That account is already suspended');
+    }
+
+    await this.prisma.user.update({
+      where: { id: userId },
+      data: { status: UserStatus.SUSPENDED },
+    });
+
+    const sessionsRevoked = await this.tokens.revokeAllForUser(userId, `suspended: ${reason}`);
+
+    await this.audit.record({
+      action: 'user.suspend',
+      entityType: 'User',
+      entityId: userId,
+      actorId: moderatorId,
+      changes: { reason, sessionsRevoked },
+    });
+
+    this.logger.warn(`User ${userId} suspended by ${moderatorId}: ${reason}`);
+    return { suspended: true, sessionsRevoked };
+  }
+
+  /**
+   * Lifts a suspension. Sessions are not restored — the account signs in again, which is
+   * both simpler and the behaviour anyone would expect after being locked out.
+   */
+  async reinstateUser(userId: string, moderatorId: string, reason: string): Promise<void> {
+    const user = await this.prisma.user.findFirst({ where: { id: userId, deletedAt: null } });
+    if (!user) throw new NotFoundException('User not found');
+
+    if (user.status !== UserStatus.SUSPENDED) {
+      throw new ConflictException('That account is not suspended');
+    }
+
+    await this.prisma.user.update({
+      where: { id: userId },
+      data: { status: UserStatus.ACTIVE },
+    });
+
+    await this.audit.record({
+      action: 'user.reinstate',
+      entityType: 'User',
+      entityId: userId,
+      actorId: moderatorId,
+      changes: { reason },
+    });
+
+    this.logger.log(`User ${userId} reinstated by ${moderatorId}: ${reason}`);
   }
 
   private async recordDecision(

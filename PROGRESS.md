@@ -1025,3 +1025,45 @@ looking: one row with `finished_at IS NULL`. It turned out to be the honest reco
 migration whose index predicate used `NOW()`, which failed, was rolled back, and was
 re-applied. The dangerous state is narrower than I first wrote — started, never finished,
 _and_ never rolled back — and that is what it checks now.
+
+## M28 — A moderator could remove a listing but not stop the person (2026-07-26)
+
+`user:suspend` was seeded to moderators and administrators. `UserStatus.SUSPENDED` existed.
+Sign-in, refresh and token validation all checked for it. The admin dashboard counted
+suspended users. And **nothing in the system could suspend anybody** — no endpoint, no
+service method, no path from the permission to the status. The dashboard was counting a
+number that could only ever be zero.
+
+The gap matters because removing someone's listings does not stop them posting more. A
+moderator handling a person who is harassing sellers could delete the evidence and nothing
+else.
+
+`POST /moderation/users/:id/suspend` and `/reinstate` close it, and the detail that makes
+suspension real rather than notional is that **every session is revoked in the same
+breath**. Sign-in checks the status, but a live access token would otherwise keep working
+until it expired — handing the person being suspended another quarter of an hour to do
+precisely what they were suspended for. Verified against a live session: the same token
+that answered 200 a moment earlier answers 401, and posting is refused.
+
+Listings are deliberately left alone. Hiding an account's content is a separate decision
+with its own audit trail, and conflating the two makes both harder to undo.
+
+Seven unit tests pin the behaviour — including that suspending an already-suspended account
+is refused rather than silently revoking a session the person opened after being
+reinstated — and eight probes attack the boundary: an ordinary account cannot suspend
+anyone, an anonymous request cannot, a moderator cannot suspend themselves, and the target
+account is untouched by a failed attempt.
+
+### The suites learned to respect a limit rather than fight it
+
+Opening a seventh account tripped the OTP endpoint's five-per-minute-per-IP throttle. That
+figure is right for production — a person needs one code, sometimes two — so the fix was
+not to raise it. Fresh sign-ins are now spaced twelve and a half seconds apart, which keeps
+every suite under the limit by construction instead of hammering it and backing off.
+
+Two assertions in the flow suite also had to grow up: "the listing is among the ten nearest"
+held only while the neighbourhood was empty. Scoped to the run's own category, it tests the
+product again rather than testing luck — and gained a check that the results really are
+ordered by distance.
+
+**113 unit tests. Seven gates, 388 assertions.**

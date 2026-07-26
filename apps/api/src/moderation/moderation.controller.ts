@@ -8,6 +8,7 @@ import {
   ModerationQueueItemDto,
   ModerationQueueQueryDto,
   RejectListingDto,
+  SuspendUserDto,
 } from './dto/moderation.dto';
 import { ModerationService } from './moderation.service';
 
@@ -72,5 +73,37 @@ export class ModerationController {
     @CurrentUser() user: AuthenticatedUser,
   ): Promise<void> {
     return this.moderation.removeListing(id, user.id, dto.reason);
+  }
+
+  @Post('users/:id/suspend')
+  @HttpCode(HttpStatus.OK)
+  @RequirePermissions('user:suspend')
+  @ApiOperation({
+    summary: 'Suspend an account',
+    description:
+      'Takes effect immediately: every session is revoked, so the account cannot keep acting on a token it already holds. Listings are left alone, because hiding the content of an account is a separate decision with its own trail.',
+  })
+  @ApiResponse({ status: 200, description: 'Account suspended' })
+  suspendUser(
+    @Param('id') id: string,
+    @Body() dto: SuspendUserDto,
+    @CurrentUser() user: AuthenticatedUser,
+  ): Promise<{ suspended: true; sessionsRevoked: number }> {
+    return this.moderation.suspendUser(id, user.id, dto.reason);
+  }
+
+  @Post('users/:id/reinstate')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @RequirePermissions('user:suspend')
+  @ApiOperation({
+    summary: 'Lift a suspension',
+    description: 'The account signs in again; revoked sessions are not restored.',
+  })
+  reinstateUser(
+    @Param('id') id: string,
+    @Body() dto: SuspendUserDto,
+    @CurrentUser() user: AuthenticatedUser,
+  ): Promise<void> {
+    return this.moderation.reinstateUser(id, user.id, dto.reason);
   }
 }
