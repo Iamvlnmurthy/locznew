@@ -646,3 +646,41 @@ nothing rather than everything, and all three ordering rules above. **87 asserti
 
 Worth stating plainly: the redesign of the search page did not cause this. It made it
 visible, and the equivalence check is what turned "looks fine" into a specific defect.
+
+## M22 — Filters, verified rather than compared (2026-07-26)
+
+The review of the previous milestone was right, and the sharpest part of it was about the
+gate I had just written: comparing the rendered page against the API proves the two layers
+**agree**, not that either is correct. A radius search that silently dropped the buyer's
+budget agreed perfectly with a page that rendered everything it was handed. Three defects
+were sitting behind that blind spot — `pincode` combined with `priceMax`, `condition` or
+`type` ignored the second filter, and `type=JOB` returned one listing while reporting
+eleven.
+
+The root cause was duplication: filters existed twice, once in Prisma for the plain browse
+path and once in SQL for the radius path, and price and condition had only ever been added
+to the first. Two dialects of the same rule is how that happens; a longer review is not the
+fix. The shared `whereFor` builder now defines them once.
+
+`scripts/acceptance-filters.mjs` — **55 assertions** — is the layer that would have caught
+it. It trusts nothing the API says: the unfiltered set is fetched once, the expected result
+of every filter is computed from it in plain JavaScript, and the API is held to that.
+
+- **truth** — every returned listing genuinely satisfies the filter
+- **coverage** — nothing that should have matched is missing
+- **honesty** — `total` equals the number of listings that actually match
+- **order** — the sequence is exactly right, not merely the right set
+
+Each filter is first proven to be a _real_ test — a price ceiling that excludes nothing
+would otherwise pass every assertion about it. Compound queries get their own section,
+because that is precisely where each filter worked alone and the combination did not.
+Pagination is checked for repeats, consistent totals and honest behaviour past the last
+page, including inside a radius search where the slice and the count came from different
+lists.
+
+All 55 pass against the corrected implementation, as do the web gate (95) and the unit
+tests (89).
+
+**Five gates: 61 + 95 + 55 + 53 + 24 = 288 assertions**, plus 89 unit tests. Still missing,
+and named honestly: browser-level interaction coverage for the lightbox, filter drawer,
+optimistic save and undo — behaviour no HTTP gate can reach.
