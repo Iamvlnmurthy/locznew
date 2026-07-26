@@ -101,7 +101,9 @@ async function call(path, { method = 'GET', body, token, expect, retries = 6 } =
   const payload = text ? JSON.parse(text) : null;
 
   if (expect !== undefined && response.status !== expect) {
-    throw new Error(`${method} ${path} → ${response.status} (expected ${expect}): ${text.slice(0, 250)}`);
+    throw new Error(
+      `${method} ${path} → ${response.status} (expected ${expect}): ${text.slice(0, 250)}`,
+    );
   }
   if (expect === undefined && !response.ok) {
     throw new Error(`${method} ${path} → ${response.status}: ${text.slice(0, 250)}`);
@@ -166,7 +168,11 @@ async function main() {
     token: adminToken,
     expect: 400,
   });
-  check('an unknown job name is rejected', unknown.error.code === 'BadRequest', unknown.error.message);
+  check(
+    'an unknown job name is rejected',
+    unknown.error.code === 'BadRequest',
+    unknown.error.message,
+  );
 
   // ---------------------------------------------------------------- 3. expiry
   step('3. Expiry takes a listing down');
@@ -211,7 +217,10 @@ async function main() {
   sql(
     `UPDATE listings SET "expiresAt" = (NOW() AT TIME ZONE 'UTC') - INTERVAL '1 day' WHERE id = '${listing.id}'`,
   );
-  check('expiry backdated', sql(`SELECT "expiresAt" < NOW() FROM listings WHERE id = '${listing.id}'`) === 't');
+  check(
+    'expiry backdated',
+    sql(`SELECT "expiresAt" < NOW() FROM listings WHERE id = '${listing.id}'`) === 't',
+  );
 
   const queued = await call('/admin/jobs/expire-listings/run', {
     method: 'POST',
@@ -249,7 +258,12 @@ async function main() {
 
   // ---------------------------------------------------------------- 4. the rest
   step('4. The other maintenance jobs run cleanly');
-  for (const job of ['warn-expiring', 'sweep-orphan-media', 'sweep-sessions', 'trim-recently-viewed']) {
+  for (const job of [
+    'warn-expiring',
+    'sweep-orphan-media',
+    'sweep-sessions',
+    'trim-recently-viewed',
+  ]) {
     const result = await call(`/admin/jobs/${job}/run`, {
       method: 'POST',
       token: adminToken,
@@ -259,12 +273,22 @@ async function main() {
   }
 
   // A job that throws lands in the failed set. Nothing here should.
-  const settled = await waitFor(async () => {
-    const queues = await call('/admin/queues', { token: adminToken });
-    const lifecycle = queues.find((queue) => queue.name === 'lifecycle');
-    return lifecycle.waiting === 0 && lifecycle.active === 0;
-  });
-  check('the lifecycle queue drains', settled);
+  let lifecycleState;
+  const settled = await waitFor(
+    async () => {
+      const queues = await call('/admin/queues', { token: adminToken });
+      lifecycleState = queues.find((queue) => queue.name === 'lifecycle');
+      return lifecycleState.waiting === 0 && lifecycleState.active === 0;
+    },
+    { attempts: 120, delayMs: 500 },
+  );
+  check(
+    'the lifecycle queue drains',
+    settled,
+    lifecycleState
+      ? `${lifecycleState.waiting} waiting, ${lifecycleState.active} active`
+      : 'queue state unavailable',
+  );
 
   const queues = await call('/admin/queues', { token: adminToken });
   for (const queue of queues) {
@@ -274,7 +298,11 @@ async function main() {
   // ---------------------------------------------------------------- 5. reindex
   step('5. The search index can be rebuilt from the database');
   const before = await call('/search/index/status', { token: adminToken });
-  check('index status readable', typeof before.indexedDocuments === 'number', `${before.indexedDocuments} documents`);
+  check(
+    'index status readable',
+    typeof before.indexedDocuments === 'number',
+    `${before.indexedDocuments} documents`,
+  );
 
   // Twice, deliberately. A fixed job id kept the rebuild from being queued more than once
   // ever: BullMQ discards a duplicate id, and finished jobs were never removed, so the

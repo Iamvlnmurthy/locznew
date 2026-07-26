@@ -87,7 +87,11 @@ const MAX_SENSIBLE_WAIT_SECONDS = 180;
  * seconds apart keeps the suite under the limit by construction instead — slower than
  * hammering, much faster than being throttled, and it leaves the limit itself alone.
  */
-const MIN_GAP_BETWEEN_SIGN_INS_MS = 12_500;
+const MIN_GAP_BETWEEN_SIGN_INS_MS = 15_000;
+// The route guard's window is 60 seconds. A standards-compliant response supplies
+// Retry-After; this is only the conservative fallback for an older running API that does
+// not. Eleven seconds repeatedly re-enters the same window and can prolong the block.
+const ROUTE_THROTTLE_FALLBACK_SECONDS = 62;
 let lastSignInAt = 0;
 
 function readLastSignInAt() {
@@ -146,7 +150,8 @@ async function freshSignIn(api, phone, deviceKey, onWait) {
       );
     }
 
-    const waitMs = Math.min(Math.max(seconds + 2, 11), 360) * 1000;
+    const waitSeconds = seconds > 0 ? seconds + 2 : ROUTE_THROTTLE_FALLBACK_SECONDS;
+    const waitMs = Math.min(Math.max(waitSeconds, 11), 360) * 1000;
     onWait?.(Math.round(waitMs / 1000));
     await new Promise((resolve) => setTimeout(resolve, waitMs));
     response = await request();
@@ -155,9 +160,7 @@ async function freshSignIn(api, phone, deviceKey, onWait) {
   const requested = await response.json();
   const debugCode = requested?.data?.debugCode ?? requested?.debugCode;
   if (!debugCode) {
-    throw new Error(
-      `No debugCode for ${phone} (HTTP ${response.status}) — is OTP_PROVIDER=mock?`,
-    );
+    throw new Error(`No debugCode for ${phone} (HTTP ${response.status}) — is OTP_PROVIDER=mock?`);
   }
 
   // The verify step has its own limit, and the code expires — so it is retried on 429
@@ -179,7 +182,9 @@ async function freshSignIn(api, phone, deviceKey, onWait) {
     const body = await verified.clone().text();
     const header = Number(verified.headers.get('retry-after') ?? 0);
     const hinted = Number(/try again in (\d+) seconds/i.exec(body)?.[1] ?? 0);
-    const waitMs = Math.min(Math.max((header > 0 ? header : hinted) + 2, 11), 360) * 1000;
+    const seconds = header > 0 ? header : hinted;
+    const waitSeconds = seconds > 0 ? seconds + 2 : ROUTE_THROTTLE_FALLBACK_SECONDS;
+    const waitMs = Math.min(Math.max(waitSeconds, 11), 360) * 1000;
     onWait?.(Math.round(waitMs / 1000));
     await new Promise((resolve) => setTimeout(resolve, waitMs));
     verified = await verifyOnce();
