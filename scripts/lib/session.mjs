@@ -21,6 +21,7 @@ const TOKEN_REFRESH_AFTER_MS = 10 * 60 * 1000;
 
 const CACHE_DIR = join(tmpdir(), 'locz-acceptance');
 const CACHE_FILE = join(CACHE_DIR, 'sessions.json');
+const PACE_FILE = join(CACHE_DIR, 'last-sign-in-at');
 
 function readCache() {
   if (!existsSync(CACHE_FILE)) return {};
@@ -89,13 +90,34 @@ const MAX_SENSIBLE_WAIT_SECONDS = 180;
 const MIN_GAP_BETWEEN_SIGN_INS_MS = 12_500;
 let lastSignInAt = 0;
 
+function readLastSignInAt() {
+  if (!existsSync(PACE_FILE)) return 0;
+  try {
+    const timestamp = Number(readFileSync(PACE_FILE, 'utf8'));
+    return Number.isFinite(timestamp) ? timestamp : 0;
+  } catch {
+    return 0;
+  }
+}
+
+function writeLastSignInAt(timestamp) {
+  mkdirSync(CACHE_DIR, { recursive: true });
+  writeFileSync(PACE_FILE, String(timestamp), { mode: 0o600 });
+}
+
 async function pace(onWait) {
+  // `acceptance:all` launches each suite as a separate process. Keeping this clock only
+  // in memory lets every new suite believe it is first, so their first OTP requests bunch
+  // together and trip the route's five-per-minute IP limit. The timestamp contains no
+  // credential or phone number and lives beside the session cache in the OS temp folder.
+  lastSignInAt = Math.max(lastSignInAt, readLastSignInAt());
   const wait = lastSignInAt + MIN_GAP_BETWEEN_SIGN_INS_MS - Date.now();
   if (wait > 0) {
     onWait?.(Math.ceil(wait / 1000));
     await new Promise((resolve) => setTimeout(resolve, wait));
   }
   lastSignInAt = Date.now();
+  writeLastSignInAt(lastSignInAt);
 }
 
 async function freshSignIn(api, phone, deviceKey, onWait) {
