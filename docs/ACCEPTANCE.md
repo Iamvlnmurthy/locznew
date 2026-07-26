@@ -175,8 +175,12 @@ exit non-zero on failure so they can gate a deploy.
 
 ```bash
 node scripts/acceptance.mjs         # the buyer/seller flow — 61 assertions
-node scripts/acceptance-admin.mjs   # the admin console — 53 assertions
+node scripts/acceptance-web.mjs     # the public web app  — 75 assertions
+node scripts/acceptance-admin.mjs   # the admin console   — 53 assertions
 ```
+
+189 assertions in total. They need the API on :4000, web on :3000 and admin on :3001,
+with `OTP_PROVIDER=mock` so a sign-in can be completed without an SMS gateway.
 
 The admin gate checks authorisation with **negative** assertions — an ordinary account
 and an anonymous request must be refused by every `/admin/*` endpoint — and checks each

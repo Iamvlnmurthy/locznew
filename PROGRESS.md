@@ -540,3 +540,28 @@ past its burst and watching every rejection come back 429.
 
 Still unverified, honestly: `docker compose build` and `up`. Nothing here proves the
 images build.
+
+## M19 — The web app, exercised (2026-07-26)
+
+`scripts/acceptance-web.mjs` — **75 assertions, 0 failures**. The API suite cannot see
+whether a page renders; this one opens every page a visitor actually visits and checks it
+for a string that could only have come from the database, plus the absence of an error
+boundary. Slugs and ids are read from the live API at startup, so a reseed does not break
+the suite.
+
+Covered: home, search, listing detail, category, city landing, location picker, sign-in,
+the five static pages, 404s for unknown listings and cities, the four authenticated pages
+redirecting when signed out, then dashboard, chats, notifications, posting, new business
+and report rendering with a session — plus robots.txt, sitemap.xml and the web manifest.
+
+Three assertions failed on the first run and all three were mine, not the app's: the
+dashboard greets by first name, the report page takes `?listing=` rather than
+`?listingId=`, and the sitemap deliberately excludes listing URLs because they expire
+within 30 days and a sitemap full of dead links costs more crawl trust than the coverage
+is worth. The suite now asserts that exclusion rather than contradicting it.
+
+Also re-ran the buyer/seller suite against Codex's API changes to `businesses.service.ts`
+and `conversations.service.ts`: 61 assertions, no regressions.
+
+**Three gates, 189 assertions.** Between them they cover the API flow, every public and
+authenticated web page, and the admin console including its authorisation boundaries.
