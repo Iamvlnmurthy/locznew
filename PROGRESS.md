@@ -972,3 +972,25 @@ assertions assumed the newest listing appears on the home page and that `total` 
 number of rows on the page; both were true only while one page was the whole answer.
 
 **Seven gates, 379 assertions**, plus 89 unit tests and Codex's browser suite.
+
+## M26 — The other way a secret gets out (2026-07-26)
+
+The SMS provider work arrived with tests covering the response path: a failed send returns
+a generic message and does not surface the code. That is the right first check. The second
+channel is the log, and it is the easier one to leak by accident and the harder one to
+notice — nothing fails, nobody is told, and the codes sit in a file that gets shipped to a
+log aggregator and read by people who should never see them.
+
+Six tests, in `otp-secret-handling.spec.ts`, spy on every logger level and assert that a
+Twilio send writes none of: the verification code on success, the code when the gateway
+rejects the send, either credential (auth token or API key secret, including the base64
+form they travel in), or the subscriber's full number. Plus the guarantee the whole API
+rests on — a real provider returns no `debugCode`, because the field is spread into the
+response only when a provider supplies one.
+
+**All six passed on the implementation as written**, which is the good outcome and also the
+one that proves nothing on its own. So the provider was temporarily made to log the code,
+the number and the password: **four of the six failed**, and the provider was restored. A
+test that has never failed is decoration.
+
+**102 unit tests**, seven gates, 379 assertions.
