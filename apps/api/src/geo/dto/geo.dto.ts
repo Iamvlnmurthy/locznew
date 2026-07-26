@@ -34,6 +34,11 @@ export class CoordinatesDto {
 }
 
 export class CitySearchQueryDto {
+  @ApiPropertyOptional({ description: 'Return one exact city by its public id' })
+  @IsOptional()
+  @IsUUID()
+  id?: string;
+
   @ApiPropertyOptional({ example: 'hyd', description: 'Substring match on the city name' })
   @IsOptional()
   @IsString()

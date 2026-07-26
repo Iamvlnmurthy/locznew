@@ -1,9 +1,9 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { useMemo, useState, useTransition } from 'react';
+import { useEffect, useMemo, useState, useTransition } from 'react';
 import type { City } from '@locz/shared-types';
-import { selectCityAction } from '@/app/actions';
+import { searchCitiesAction, selectCityAction } from '@/app/actions';
 import { Icon } from '@/components/icons';
 import { resolveCoordinatesAction, resolvePincodeAction } from './actions';
 
@@ -42,24 +42,50 @@ export function LocationPicker({
   const [pincodeError, setPincodeError] = useState<string | null>(null);
   const [status, setStatus] = useState<string | null>(null);
   const [activeChoice, setActiveChoice] = useState<string | null>(null);
+  const [cityResults, setCityResults] = useState(cities);
+  const [isSearching, setIsSearching] = useState(false);
   const [isPending, startTransition] = useTransition();
 
   const filtered = useMemo(() => {
     const needle = query.trim().toLowerCase();
     const matches = needle
-      ? cities.filter(
+      ? cityResults.filter(
           (city) =>
             city.name.toLowerCase().includes(needle) ||
             city.nameTe?.includes(query) ||
             city.nameHi?.includes(query),
         )
-      : cities;
+      : cityResults;
     return [...matches].sort((a, b) => {
       if (a.id === currentCityId) return -1;
       if (b.id === currentCityId) return 1;
       return Number(b.isLaunched) - Number(a.isLaunched);
     });
-  }, [cities, currentCityId, query]);
+  }, [cityResults, currentCityId, query]);
+
+  useEffect(() => {
+    const needle = query.trim();
+    if (needle.length < 2) {
+      setCityResults(cities);
+      setIsSearching(false);
+      return;
+    }
+
+    let current = true;
+    setIsSearching(true);
+    const timer = window.setTimeout(() => {
+      void searchCitiesAction(needle, true).then((matches) => {
+        if (!current) return;
+        setCityResults(matches);
+        setIsSearching(false);
+      });
+    }, 250);
+
+    return () => {
+      current = false;
+      window.clearTimeout(timer);
+    };
+  }, [cities, query]);
 
   function choose(city: City) {
     if (!city.isLaunched) return;
@@ -230,10 +256,12 @@ export function LocationPicker({
           onChange={(event) => setQuery(event.target.value)}
           autoComplete="off"
           placeholder={labels.searchCity}
+          aria-busy={isSearching}
         />
+        {isSearching ? <span className="city-combobox__spinner" aria-hidden="true" /> : null}
       </label>
 
-      <ul className="location-picker__city-list" aria-live="polite">
+      <ul className="location-picker__city-list" aria-live="polite" aria-busy={isSearching}>
         {filtered.length === 0 ? (
           <li className="location-picker__empty">
             <Icon name="search" width="21" height="21" />

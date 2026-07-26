@@ -1321,6 +1321,20 @@ async function main() {
       step('5. Pincode location selection');
       await browser.deleteCookie('locz_city');
       await browser.navigate('/location');
+      await browser.fill('#city-search', 'Srinagar');
+      await browser.waitFor(
+        `document.querySelector('.location-picker__city-list strong')?.textContent === 'Srinagar'`,
+        'nationwide city result outside initial location payload',
+        20_000,
+      );
+      check(
+        'location search reaches a city outside its initial 50 results',
+        await browser.evaluate(`(() => {
+          const result = document.querySelector('.location-picker__city-list button');
+          return result?.querySelector('strong')?.textContent === 'Srinagar' &&
+            result?.querySelector('small')?.textContent === 'Jammu & Kashmir';
+        })()`),
+      );
       await browser.fill('#pincode', '500081');
       await browser.click('.location-picker__pincode button');
       await browser.waitFor(`location.pathname === '/'`, 'location redirect');
@@ -1338,6 +1352,37 @@ async function main() {
       await browser.navigate(`/business?q=${encodeURIComponent(business.name.split(' ')[0])}`);
       await browser.screenshot('business-directory-desktop.png');
       await checkAccessibility(browser, 'business directory passes automated WCAG A/AA checks');
+      await browser.fill('#business-city-filter', 'Chennai');
+      await browser.waitFor(
+        `document.querySelector('.city-combobox__options [role="option"] strong')?.textContent === 'Chennai'`,
+        'searchable directory city options',
+      );
+      await browser.evaluate(`document.querySelector('#business-city-filter')?.focus()`);
+      await browser.press('Enter');
+      const directoryCityId = await browser.evaluate(
+        `document.querySelector('.business-directory-filters input[name="cityId"]')?.value`,
+      );
+      check(
+        'directory city filter supports keyboard search and selection',
+        Boolean(directoryCityId) &&
+          (await browser.evaluate(`document.querySelector('#business-city-filter')?.value`)) ===
+            'Chennai, Tamil Nadu',
+        `${directoryCityId ?? 'no id'} · ${await browser.evaluate(
+          `document.querySelector('#business-city-filter')?.value`,
+        )}`,
+      );
+      await browser.click('.business-directory-filters button[type="submit"]');
+      await browser.waitFor(
+        `new URLSearchParams(location.search).get('cityId') === ${JSON.stringify(directoryCityId)}`,
+        'directory city filter URL',
+      );
+      check('directory sends the selected city to its query', true);
+      await browser.waitFor(
+        `document.querySelector('#business-city-filter')?.value === 'Chennai, Tamil Nadu'`,
+        'server-rendered directory city label',
+      );
+      check('directory preserves the selected city label after navigation', true);
+      await browser.navigate(`/business?q=${encodeURIComponent(business.name.split(' ')[0])}`);
       check(
         'directory renders the API business and its profile entry',
         await browser.evaluate(

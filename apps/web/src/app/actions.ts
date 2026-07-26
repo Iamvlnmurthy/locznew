@@ -16,13 +16,13 @@ export async function selectCityAction(city: SelectedCity): Promise<void> {
   revalidatePath('/', 'layout');
 }
 
-export async function searchCitiesAction(query: string): Promise<City[]> {
+export async function searchCitiesAction(query: string, includeUpcoming = false): Promise<City[]> {
   const q = query.trim().slice(0, 60);
   if (q.length < 2) return [];
 
   return (
     (await apiSafe<City[]>(
-      `/locations/cities?launchedOnly=true&limit=50&q=${encodeURIComponent(q)}`,
+      `/locations/cities?${includeUpcoming ? '' : 'launchedOnly=true&'}limit=50&q=${encodeURIComponent(q)}`,
     )) ?? []
   );
 }

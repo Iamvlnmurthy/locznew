@@ -1534,6 +1534,10 @@ html {
   font: inherit;
 }
 
+.location-picker__city-search .city-combobox__spinner {
+  right: 1rem;
+}
+
 .location-picker__pincode .btn {
   max-width: 190px;
   font-size: 0.72rem;
@@ -1566,6 +1570,7 @@ html {
 }
 
 .location-picker__city-search {
+  position: relative;
   margin-bottom: 10px;
 }
 
@@ -12077,6 +12082,28 @@ body.has-gallery-lightbox {
   color: #1f403b;
   font: inherit;
   font-size: 0.8rem;
+}
+
+.business-directory-filters .city-combobox__control input {
+  width: 100%;
+  min-height: 44px;
+  padding: 0 35px 0 38px;
+  border: 1px solid #d9ddd7;
+  border-radius: 11px;
+  background: #fafaf7;
+  color: #1f403b;
+  font: inherit;
+  font-size: 0.8rem;
+}
+
+.business-directory-filters .city-combobox__control > svg {
+  left: 12px;
+}
+
+.business-directory-filters label > small {
+  color: #526661;
+  font-size: 0.7rem;
+  font-weight: 500;
 }
 
 .business-directory-filters__check {

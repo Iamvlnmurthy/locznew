@@ -56,6 +56,7 @@ export class GeoService {
     const cities = await this.prisma.city.findMany({
       where: {
         isActive: true,
+        ...(query.id ? { id: query.id } : {}),
         ...(query.launchedOnly ? { isLaunched: true } : {}),
         ...(query.q ? { name: { contains: query.q, mode: 'insensitive' } } : {}),
       },

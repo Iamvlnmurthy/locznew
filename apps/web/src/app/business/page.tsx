@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import Image from 'next/image';
 import Link from 'next/link';
 import type { Category, City, Paginated } from '@locz/shared-types';
+import { CityCombobox } from '@/components/city-combobox';
 import { Icon, categoryImageName } from '@/components/icons';
 import { getTranslator, type Locale, type Translator } from '@/i18n';
 import { apiSafe } from '@/lib/api';
@@ -61,8 +62,10 @@ export default async function BusinessDirectoryPage({
   ]);
   const t = getTranslator(locale);
 
-  const activeCityId =
-    params.cityId === 'all' ? undefined : (params.cityId ?? selectedCity?.id ?? undefined);
+  const explicitlyAllCities = params.cityId === 'all' || params.cityId === '';
+  const activeCityId = explicitlyAllCities
+    ? undefined
+    : (params.cityId ?? selectedCity?.id ?? undefined);
   const query = new URLSearchParams({ limit: '12', page: params.page ?? '1' });
   if (params.q?.trim()) query.set('q', params.q.trim());
   if (activeCityId) query.set('cityId', activeCityId);
@@ -73,15 +76,22 @@ export default async function BusinessDirectoryPage({
   const result = await apiSafe<Paginated<BusinessSummary>>(`/businesses?${query.toString()}`);
   const businesses = result?.items ?? [];
   const topCategories = (categories ?? []).filter((category) => !category.parentId);
-  const activeCity = (cities ?? []).find((city) => city.id === activeCityId);
+  let activeCity = (cities ?? []).find((city) => city.id === activeCityId);
+  if (activeCityId && !activeCity) {
+    activeCity = (
+      await apiSafe<City[]>(`/locations/cities?id=${encodeURIComponent(activeCityId)}&limit=1`, {
+        revalidate: 3600,
+      })
+    )?.[0];
+  }
   const activeCategory = topCategories.find((category) => category.id === params.categoryId);
   const areaLabel =
     activeCity?.name ??
-    (params.cityId === 'all'
+    (explicitlyAllCities
       ? t('businessDirectory.allLiveCitiesInline')
       : t('businessDirectory.nearYou'));
   const hasFilters = Boolean(
-    params.q || params.categoryId || params.verifiedOnly || params.cityId === 'all',
+    params.q || params.categoryId || params.verifiedOnly || explicitlyAllCities,
   );
 
   return (
@@ -192,14 +202,19 @@ export default async function BusinessDirectoryPage({
 
               <label>
                 <span>{t('businessDirectory.area')}</span>
-                <select name="cityId" defaultValue={params.cityId ?? activeCityId ?? 'all'}>
-                  <option value="all">{t('businessDirectory.allLiveCities')}</option>
-                  {(cities ?? []).map((city) => (
-                    <option key={city.id} value={city.id}>
-                      {city.name}
-                    </option>
-                  ))}
-                </select>
+                <CityCombobox
+                  id="business-city-filter"
+                  cities={cities ?? []}
+                  defaultValue={explicitlyAllCities ? '' : (activeCityId ?? '')}
+                  defaultLabel={
+                    activeCity
+                      ? `${activeCity.name}, ${activeCity.stateName}`
+                      : t('businessDirectory.allLiveCities')
+                  }
+                  placeholder={t('location.searchCity')}
+                  noResultsLabel={t('location.noCityMatches')}
+                />
+                <small>{t('businessDirectory.allLiveCities')}</small>
               </label>
 
               <label>
