@@ -37,6 +37,7 @@ import {
   WorkplaceType,
 } from '@prisma/client';
 import { PrismaPg } from '@prisma/adapter-pg';
+import { databaseUrl } from './connection';
 import { BANNED_KEYWORDS } from './banned-keywords';
 import { v7 as uuid } from 'uuid';
 import * as argon2 from 'argon2';
@@ -45,7 +46,7 @@ import { CHILD_SAFETY_PERMISSIONS } from '../src/rbac/child-safety-role';
 // Prisma 7 connects through a driver adapter rather than a bundled engine, so the seed
 // supplies one exactly as the application does.
 const prisma = new PrismaClient({
-  adapter: new PrismaPg({ connectionString: process.env.DATABASE_URL }),
+  adapter: new PrismaPg({ connectionString: databaseUrl() }),
 });
 
 // ---------------------------------------------------------------------------

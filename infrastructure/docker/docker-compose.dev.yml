@@ -12,7 +12,12 @@ services:
     ports:
       - '${POSTGRES_PORT:-5432}:5432'
     volumes:
-      - postgres-data:/var/lib/postgresql/data
+      # PostgreSQL 18 images expect the whole directory, not the `data` subdirectory
+      # inside it. Mounting `/var/lib/postgresql/data` makes the container exit at
+      # startup complaining about an incompatible version — which reads like a data
+      # problem and is really a mount-point one. The single mount also lets
+      # `pg_upgrade --link` work later without crossing a mount boundary.
+      - postgres-data:/var/lib/postgresql
       - ../database/init:/docker-entrypoint-initdb.d:ro
     healthcheck:
       test: ['CMD-SHELL', 'pg_isready -U ${POSTGRES_USER:-locz} -d ${POSTGRES_DB:-locz}']

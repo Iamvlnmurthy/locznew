@@ -15,13 +15,14 @@
  * Idempotent: re-running updates in place rather than duplicating.
  */
 import { PrismaPg } from '@prisma/adapter-pg';
+import { databaseUrl } from './connection';
 import { PrismaClient } from '@prisma/client';
 import { createReadStream, existsSync } from 'node:fs';
 import { createInterface } from 'node:readline';
 import { resolve } from 'node:path';
 
 const prisma = new PrismaClient({
-  adapter: new PrismaPg({ connectionString: process.env.DATABASE_URL }),
+  adapter: new PrismaPg({ connectionString: databaseUrl() }),
 });
 
 interface Accumulator {

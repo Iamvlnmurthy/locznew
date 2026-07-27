@@ -25,6 +25,7 @@ import path from 'node:path';
 loadEnv({ path: path.resolve(__dirname, '..', '..', '..', '.env'), quiet: true });
 
 import { PrismaPg } from '@prisma/adapter-pg';
+import { databaseUrl } from './connection';
 import { Meilisearch } from 'meilisearch';
 import {
   ContactPreference,
@@ -64,7 +65,7 @@ const DEMO_IMAGES = [
 const WEB_ORIGIN = process.env.NEXT_PUBLIC_WEB_URL ?? 'http://localhost:3000';
 
 const prisma = new PrismaClient({
-  adapter: new PrismaPg({ connectionString: process.env.DATABASE_URL }),
+  adapter: new PrismaPg({ connectionString: databaseUrl() }),
 });
 const meili = new Meilisearch({
   host: process.env.MEILI_HOST ?? 'http://localhost:7700',

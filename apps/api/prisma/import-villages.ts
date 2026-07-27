@@ -25,13 +25,14 @@ import path from 'node:path';
 loadEnv({ path: path.resolve(__dirname, '..', '..', '..', '.env'), quiet: true });
 
 import { PrismaPg } from '@prisma/adapter-pg';
+import { databaseUrl } from './connection';
 import { PrismaClient } from '@prisma/client';
 import { createReadStream, existsSync } from 'node:fs';
 import { createInterface } from 'node:readline';
 import { v7 as uuid } from 'uuid';
 
 const prisma = new PrismaClient({
-  adapter: new PrismaPg({ connectionString: process.env.DATABASE_URL }),
+  adapter: new PrismaPg({ connectionString: databaseUrl() }),
 });
 
 /** Values GeoNames uses to mean "we do not know", which must not reach an address line. */
