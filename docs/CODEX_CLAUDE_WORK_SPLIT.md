@@ -130,6 +130,18 @@ Claude should treat the following as the active mobile design contract:
 - Current Codex verification is `flutter analyze` clean and 22/22 Flutter tests passing.
   Emulator screenshots are in `artifacts/mobile-ui/home-light.png`. One object-storage card
   remains blank until Claude's public/presigned media origin fix is integrated.
+- Latest emulator evidence isolates that blank card precisely. Listing
+  `019f9f49-740a-74ff-965e-11a30e4e154b` returns `thumbUrl` and `fullUrl` values rooted at
+  `http://localhost:9000/locz-media/...`, signed on `20260727T200000Z` with a 4,500-second
+  lifetime. On Android those URLs connect to the phone itself, and by 2026-07-28 the same
+  cached response is also expired. The API must issue display URLs with a client-reachable
+  origin and a freshness contract; Flutter must not mutate the host after signing.
+- Codex's latest source gate is `flutter analyze` clean and 29/29 Flutter tests passing.
+  Native registration, password sign-in, signed-out posting, and listing reports now have
+  focused widget coverage. Emulator evidence confirms the redesigned post entry and the
+  report-to-sign-in flow both preserve a visible back path. Listing gallery failures now
+  render a neutral image fallback instead of exposing socket exceptions to accessibility
+  services.
 - The user explicitly said **do not build the APK yet**. Claude must not run a final APK/AAB
   packaging or claim release completion. Source checks and focused API tests are allowed.
 - After Claude finishes, Codex must re-check Git, re-run analysis/tests, inspect home,

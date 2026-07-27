@@ -8,6 +8,7 @@ import '../../features/auth/presentation/sign_in_screen.dart';
 import '../../features/chat/presentation/chat_screens.dart';
 import '../../features/feed/presentation/home_screen.dart';
 import '../../features/listings/presentation/listing_detail_screen.dart';
+import '../../features/listings/presentation/report_listing_screen.dart';
 import '../../features/listings/presentation/search_screen.dart';
 import '../../features/location/presentation/city_picker_screen.dart';
 import '../../features/notifications/presentation/notifications_screen.dart';
@@ -97,6 +98,13 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/register',
         builder: (context, state) => RegisterScreen(redirectTo: state.uri.queryParameters['next']),
+      ),
+      GoRoute(
+        path: '/report',
+        builder: (context, state) {
+          final listingId = state.uri.queryParameters['listing'];
+          return listingId == null ? const HomeScreen() : ReportListingScreen(listingId: listingId);
+        },
       ),
     ],
   );

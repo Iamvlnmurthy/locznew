@@ -83,6 +83,21 @@ class ListingRepository {
     return ListingDetail.fromJson(_portableMediaUrls(json));
   }
 
+  Future<void> reportListing({
+    required String listingId,
+    required String reason,
+    String? details,
+  }) =>
+      _api.post<void>(
+        '/reports',
+        body: {
+          'targetType': 'LISTING',
+          'targetId': listingId,
+          'reason': reason,
+          if (details != null && details.trim().isNotEmpty) 'details': details.trim(),
+        },
+      );
+
   Future<List<ListingSummary>> myListings() async {
     final json = await _api.get<Map<String, dynamic>>('/listings/mine', query: {'limit': 50});
     return (json['items'] as List<dynamic>)

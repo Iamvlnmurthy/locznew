@@ -140,7 +140,8 @@ class _ListingDetailScreenState extends ConsumerState<ListingDetailScreen> {
     final theme = Theme.of(context);
     final summary = listing.summary;
     final isSaved = _savedOverride ?? summary.isSaved ?? false;
-    final isOwner = ref.watch(authProvider).user?.id == listing.owner.id;
+    final auth = ref.watch(authProvider);
+    final isOwner = auth.user?.id == listing.owner.id;
     final images = listing.media.where((media) => media.fullUrl != null).toList();
 
     return CustomScrollView(
@@ -179,6 +180,19 @@ class _ListingDetailScreenState extends ConsumerState<ListingDetailScreen> {
                         itemBuilder: (context, index) => CachedNetworkImage(
                           imageUrl: images[index].fullUrl!,
                           fit: BoxFit.cover,
+                          placeholder: (context, _) => ColoredBox(
+                            color: theme.colorScheme.surfaceContainerHighest,
+                          ),
+                          // Never expose a transport exception as visible or spoken product
+                          // copy. Media can fail independently of the listing itself.
+                          errorWidget: (context, _, __) => ColoredBox(
+                            color: theme.colorScheme.surfaceContainerHighest,
+                            child: Icon(
+                              Icons.image_not_supported_outlined,
+                              size: 36,
+                              color: theme.colorScheme.onSurfaceVariant,
+                            ),
+                          ),
                         ),
                       ),
                       if (images.length > 1)
@@ -302,11 +316,27 @@ class _ListingDetailScreenState extends ConsumerState<ListingDetailScreen> {
                   ),
                   title: Text(listing.owner.displayName),
                   subtitle: Text(
-                    strings('listing.report'),
+                    strings('listing.seller'),
                     style: theme.textTheme.labelSmall,
                   ),
-                  trailing: const Icon(Icons.chevron_right_rounded),
-                  onTap: () => context.push('/report?listing=${summary.id}'),
+                ),
+              ),
+              Align(
+                alignment: Alignment.centerLeft,
+                child: TextButton.icon(
+                  onPressed: () {
+                    final reportPath = '/report?listing=${summary.id}';
+                    context.push(
+                      auth.isSignedIn
+                          ? reportPath
+                          : Uri(
+                              path: '/signin',
+                              queryParameters: {'next': reportPath},
+                            ).toString(),
+                    );
+                  },
+                  icon: const Icon(Icons.flag_outlined, size: 18),
+                  label: Text(strings('listing.report')),
                 ),
               ),
               const SizedBox(height: 100),

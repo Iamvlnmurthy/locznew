@@ -157,24 +157,85 @@ class _PostAdScreenState extends ConsumerState<PostAdScreen> {
     final auth = ref.watch(authProvider);
 
     if (!auth.isSignedIn) {
+      final theme = Theme.of(context);
       return Scaffold(
         appBar: AppBar(title: Text(strings('post.title'))),
         body: Center(
-          child: Padding(
-            padding: const EdgeInsets.all(LoczSpacing.x8),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  strings('post.loginRequired'),
-                  textAlign: TextAlign.center,
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(LoczSpacing.x5),
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 440),
+              child: Card(
+                child: Padding(
+                  padding: const EdgeInsets.all(LoczSpacing.x5),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Container(
+                        width: 70,
+                        height: 70,
+                        decoration: BoxDecoration(
+                          color: theme.colorScheme.primaryContainer,
+                          borderRadius: BorderRadius.circular(22),
+                        ),
+                        child: Icon(
+                          Icons.add_photo_alternate_outlined,
+                          size: 34,
+                          color: theme.colorScheme.primary,
+                        ),
+                      ),
+                      const SizedBox(height: LoczSpacing.x5),
+                      Text(
+                        strings('post.loginRequired'),
+                        style: theme.textTheme.titleLarge,
+                        textAlign: TextAlign.center,
+                      ),
+                      const SizedBox(height: LoczSpacing.x2),
+                      Text(
+                        strings('post.loginRequiredHint'),
+                        style: theme.textTheme.bodyMedium,
+                        textAlign: TextAlign.center,
+                      ),
+                      const SizedBox(height: LoczSpacing.x5),
+                      SizedBox(
+                        width: double.infinity,
+                        child: FilledButton.icon(
+                          onPressed: () => context.push('/signin?next=/post'),
+                          icon: const Icon(Icons.login_rounded),
+                          label: Text(strings('nav.signIn')),
+                        ),
+                      ),
+                      const SizedBox(height: LoczSpacing.x2),
+                      SizedBox(
+                        width: double.infinity,
+                        child: OutlinedButton(
+                          onPressed: () => context.push('/register?next=/post'),
+                          child: Text(strings('register.createAccount')),
+                        ),
+                      ),
+                      const SizedBox(height: LoczSpacing.x4),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.verified_outlined,
+                            size: 16,
+                            color: theme.colorScheme.primary,
+                          ),
+                          const SizedBox(width: 7),
+                          Flexible(
+                            child: Text(
+                              strings('post.alwaysFree'),
+                              style: theme.textTheme.labelMedium,
+                              textAlign: TextAlign.center,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
                 ),
-                const SizedBox(height: LoczSpacing.x4),
-                FilledButton(
-                  onPressed: () => context.push('/signin?next=/post'),
-                  child: Text(strings('nav.signIn')),
-                ),
-              ],
+              ),
             ),
           ),
         ),
