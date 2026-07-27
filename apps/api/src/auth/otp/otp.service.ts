@@ -60,6 +60,14 @@ export class OtpService {
   }
 
   private generateCode(): string {
+    // A closed trial can run on one shared PIN instead of a one-time code, so invited
+    // testers can sign in with no SMS gateway. Everything else about the flow is unchanged
+    // — the code is still hashed, still expires, still allows five attempts before the
+    // phone is locked out — so the PIN is guessable only within those limits. Configuration
+    // validation refuses this in production.
+    const fixed = this.config.get('OTP_FIXED_CODE');
+    if (fixed) return fixed;
+
     const length = this.config.get('OTP_LENGTH');
     const min = 10 ** (length - 1);
     const max = 10 ** length - 1;

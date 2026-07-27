@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { AppConfig } from '../../config/config.module';
 import { MockOtpProvider } from './mock-otp.provider';
+import { PinOtpProvider } from './pin-otp.provider';
 import { Msg91OtpProvider } from './msg91-otp.provider';
 import { OTP_PROVIDER, OtpProvider } from './otp-provider.interface';
 import { OtpService } from './otp.service';
@@ -12,6 +13,7 @@ import { TwilioOtpProvider } from './twilio-otp.provider';
 @Module({
   providers: [
     MockOtpProvider,
+    PinOtpProvider,
     Msg91OtpProvider,
     TwilioOtpProvider,
     {
@@ -19,6 +21,7 @@ import { TwilioOtpProvider } from './twilio-otp.provider';
       useFactory: (
         config: AppConfig,
         mock: MockOtpProvider,
+        pin: PinOtpProvider,
         msg91: Msg91OtpProvider,
         twilio: TwilioOtpProvider,
       ): OtpProvider => {
@@ -27,12 +30,14 @@ import { TwilioOtpProvider } from './twilio-otp.provider';
             return msg91;
           case 'twilio':
             return twilio;
+          case 'pin':
+            return pin;
           case 'mock':
           default:
             return mock;
         }
       },
-      inject: [AppConfig, MockOtpProvider, Msg91OtpProvider, TwilioOtpProvider],
+      inject: [AppConfig, MockOtpProvider, PinOtpProvider, Msg91OtpProvider, TwilioOtpProvider],
     },
     OtpService,
   ],

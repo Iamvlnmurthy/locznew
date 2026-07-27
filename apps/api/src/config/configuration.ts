@@ -40,7 +40,16 @@ export const envSchema = z.object({
   ARGON2_MEMORY_COST: z.coerce.number().int().positive().default(19456),
   ARGON2_TIME_COST: z.coerce.number().int().positive().default(2),
 
-  OTP_PROVIDER: z.enum(['mock', 'msg91', 'twilio']).default('mock'),
+  OTP_PROVIDER: z.enum(['mock', 'msg91', 'twilio', 'pin']).default('mock'),
+  /**
+   * A shared PIN used in place of a one-time code, for a closed trial with no SMS gateway.
+   * Digits only, and its length must match OTP_LENGTH so the generated code and the PIN are
+   * the same shape. Never permitted in production — see the guard below.
+   */
+  OTP_FIXED_CODE: z
+    .string()
+    .regex(/^\d{4,8}$/, 'OTP_FIXED_CODE must be 4 to 8 digits')
+    .optional(),
   OTP_LENGTH: z.coerce.number().int().min(4).max(8).default(6),
   OTP_TTL_SECONDS: z.coerce.number().int().positive().default(300),
   OTP_MAX_REQUESTS_PER_PHONE_PER_WINDOW: z.coerce.number().int().positive().default(3),
@@ -171,6 +180,22 @@ export function validateEnv(raw: Record<string, unknown>): Env {
   // Development convenience must never leak into production.
   if (result.data.NODE_ENV === 'production' && result.data.OTP_PROVIDER === 'mock') {
     throw new Error('OTP_PROVIDER=mock is not permitted when NODE_ENV=production');
+  }
+
+  // A shared PIN is one credential for every account. It exists so a closed trial can be
+  // used without an SMS gateway; letting it reach real users would mean anybody who learned
+  // four digits could sign in as anybody.
+  if (result.data.NODE_ENV === 'production' && result.data.OTP_PROVIDER === 'pin') {
+    throw new Error('OTP_PROVIDER=pin is not permitted when NODE_ENV=production');
+  }
+  if (result.data.OTP_PROVIDER === 'pin' && !result.data.OTP_FIXED_CODE) {
+    throw new Error('OTP_PROVIDER=pin requires OTP_FIXED_CODE');
+  }
+  if (result.data.OTP_FIXED_CODE && result.data.OTP_FIXED_CODE.length !== result.data.OTP_LENGTH) {
+    throw new Error(
+      `OTP_FIXED_CODE is ${result.data.OTP_FIXED_CODE.length} digits but OTP_LENGTH is ` +
+        `${result.data.OTP_LENGTH}; they must match or the PIN can never be entered`,
+    );
   }
 
   return result.data;
