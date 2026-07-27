@@ -53,93 +53,104 @@ class NotificationsScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final strings = Strings.of(context);
-    final notifications = ref.watch(notificationsProvider);
-    final api = ref.watch(apiClientProvider);
+    final auth = ref.watch(authProvider);
+    final notifications = auth.isSignedIn ? ref.watch(notificationsProvider) : null;
+    final api = auth.isSignedIn ? ref.watch(apiClientProvider) : null;
 
     return Scaffold(
       appBar: AppBar(
         title: Text(strings('account.notifications')),
-        actions: [
-          TextButton(
-            onPressed: () async {
-              await api.post<void>('/notifications/read-all');
-              ref.invalidate(notificationsProvider);
-            },
-            child: Text(strings('notifications.markAllRead')),
-          ),
-        ],
+        actions: auth.isSignedIn
+            ? [
+                TextButton(
+                  onPressed: () async {
+                    await api!.post<void>('/notifications/read-all');
+                    ref.invalidate(notificationsProvider);
+                  },
+                  child: Text(strings('notifications.markAllRead')),
+                ),
+              ]
+            : null,
       ),
-      body: RefreshIndicator(
-        onRefresh: () async => ref.invalidate(notificationsProvider),
-        child: notifications.when(
-          loading: () => const Center(child: CircularProgressIndicator()),
-          error: (error, _) => ListView(
-            children: [
-              Padding(padding: const EdgeInsets.all(32), child: Text('$error')),
-            ],
-          ),
-          data: (items) {
-            if (items.isEmpty) {
-              return ListView(
-                children: [
-                  const SizedBox(height: 120),
-                  Icon(
-                    Icons.notifications_none_rounded,
-                    size: 44,
-                    color: Theme.of(context).colorScheme.primary,
-                  ),
-                  const SizedBox(height: 12),
-                  Center(child: Text(strings('notifications.empty'))),
-                ],
-              );
-            }
-
-            return ListView.separated(
-              padding: const EdgeInsets.all(12),
-              itemCount: items.length,
-              separatorBuilder: (_, __) => const SizedBox(height: 8),
-              itemBuilder: (context, index) {
-                final notification = items[index];
-                return Card(
-                  color: notification.isRead
-                      ? null
-                      : Theme.of(context).colorScheme.primaryContainer.withValues(alpha: 0.45),
-                  child: ListTile(
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
-                    // Unread rows carry a tint rather than a dot: it survives a glance on
-                    // a phone screen in daylight, which a 6px dot does not.
-                    leading: CircleAvatar(
-                      backgroundColor: Theme.of(context).colorScheme.primaryContainer,
-                      child: Icon(
-                        _iconFor(notification.type),
-                        size: 19,
-                        color: Theme.of(context).colorScheme.primary,
-                      ),
+      body: auth.isRestoring
+          ? const Center(child: CircularProgressIndicator())
+          : !auth.isSignedIn
+              ? _SignedOutNotifications(strings: strings)
+              : RefreshIndicator(
+                  onRefresh: () async => ref.invalidate(notificationsProvider),
+                  child: notifications!.when(
+                    loading: () => const Center(child: CircularProgressIndicator()),
+                    error: (error, _) => ListView(
+                      children: [
+                        Padding(padding: const EdgeInsets.all(32), child: Text('$error')),
+                      ],
                     ),
-                    title: Text(notification.title),
-                    subtitle: Text(
-                      notification.body,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    trailing: Text(
-                      DateFormat.MMMd().format(notification.createdAt),
-                      style: Theme.of(context).textTheme.labelSmall,
-                    ),
-                    onTap: () async {
-                      await api.post<void>('/notifications/${notification.id}/read');
-                      ref.invalidate(notificationsProvider);
-                      if (notification.route != null && context.mounted) {
-                        await context.push(notification.route!);
+                    data: (items) {
+                      if (items.isEmpty) {
+                        return ListView(
+                          children: [
+                            const SizedBox(height: 120),
+                            Icon(
+                              Icons.notifications_none_rounded,
+                              size: 44,
+                              color: Theme.of(context).colorScheme.primary,
+                            ),
+                            const SizedBox(height: 12),
+                            Center(child: Text(strings('notifications.empty'))),
+                          ],
+                        );
                       }
+
+                      return ListView.separated(
+                        padding: const EdgeInsets.all(12),
+                        itemCount: items.length,
+                        separatorBuilder: (_, __) => const SizedBox(height: 8),
+                        itemBuilder: (context, index) {
+                          final notification = items[index];
+                          return Card(
+                            color: notification.isRead
+                                ? null
+                                : Theme.of(context)
+                                    .colorScheme
+                                    .primaryContainer
+                                    .withValues(alpha: 0.45),
+                            child: ListTile(
+                              contentPadding:
+                                  const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
+                              // Unread rows carry a tint rather than a dot: it survives a glance on
+                              // a phone screen in daylight, which a 6px dot does not.
+                              leading: CircleAvatar(
+                                backgroundColor: Theme.of(context).colorScheme.primaryContainer,
+                                child: Icon(
+                                  _iconFor(notification.type),
+                                  size: 19,
+                                  color: Theme.of(context).colorScheme.primary,
+                                ),
+                              ),
+                              title: Text(notification.title),
+                              subtitle: Text(
+                                notification.body,
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                              trailing: Text(
+                                DateFormat.MMMd().format(notification.createdAt),
+                                style: Theme.of(context).textTheme.labelSmall,
+                              ),
+                              onTap: () async {
+                                await api!.post<void>('/notifications/${notification.id}/read');
+                                ref.invalidate(notificationsProvider);
+                                if (notification.route != null && context.mounted) {
+                                  await context.push(notification.route!);
+                                }
+                              },
+                            ),
+                          );
+                        },
+                      );
                     },
                   ),
-                );
-              },
-            );
-          },
-        ),
-      ),
+                ),
     );
   }
 
@@ -152,4 +163,47 @@ class NotificationsScreen extends ConsumerWidget {
         'NEARBY_OFFER' => Icons.local_offer_outlined,
         _ => Icons.notifications_none,
       };
+}
+
+class _SignedOutNotifications extends StatelessWidget {
+  const _SignedOutNotifications({required this.strings});
+
+  final Strings strings;
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(32),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              Icons.notifications_active_outlined,
+              size: 46,
+              color: Theme.of(context).colorScheme.primary,
+            ),
+            const SizedBox(height: 16),
+            Text(
+              strings('notifications.signInTitle'),
+              textAlign: TextAlign.center,
+              style: Theme.of(context).textTheme.titleLarge,
+            ),
+            const SizedBox(height: 8),
+            Text(
+              strings('notifications.signInHint'),
+              textAlign: TextAlign.center,
+              style: Theme.of(context).textTheme.bodyMedium,
+            ),
+            const SizedBox(height: 20),
+            FilledButton.icon(
+              onPressed: () => context.push('/signin?next=/notifications'),
+              icon: const Icon(Icons.login_rounded),
+              label: Text(strings('nav.signIn')),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 }

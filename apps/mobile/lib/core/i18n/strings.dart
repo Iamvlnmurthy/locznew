@@ -121,6 +121,9 @@ class Strings {
       'post.contactPhone': 'Show my phone number',
       'notifications.markAllRead': 'Mark all read',
       'notifications.empty': 'Nothing yet',
+      'notifications.signInTitle': 'Sign in for your updates',
+      'notifications.signInHint':
+          'Get replies, listing decisions and useful local alerts in one place.',
       'update.available': 'LocZ {version} is available ({size})',
       'update.action': 'Update',
       'update.dismiss': 'Not now',
@@ -279,6 +282,9 @@ class Strings {
       'post.contactPhone': 'నా ఫోన్ నంబర్ చూపించు',
       'notifications.markAllRead': 'అన్నీ చదివినట్లు గుర్తించు',
       'notifications.empty': 'ఇంకా ఏమీ లేదు',
+      'notifications.signInTitle': 'మీ అప్‌డేట్ల కోసం సైన్ ఇన్ చేయండి',
+      'notifications.signInHint':
+          'ప్రత్యుత్తరాలు, ప్రకటన నిర్ణయాలు మరియు స్థానిక హెచ్చరికలను ఒకే చోట పొందండి.',
       'update.available': 'LocZ {version} అందుబాటులో ఉంది ({size})',
       'update.action': 'నవీకరించండి',
       'update.dismiss': 'ఇప్పుడు వద్దు',
@@ -422,6 +428,9 @@ class Strings {
       'post.contactPhone': 'मेरा फ़ोन नंबर दिखाएँ',
       'notifications.markAllRead': 'सबको पढ़ा हुआ मानें',
       'notifications.empty': 'अभी कुछ नहीं',
+      'notifications.signInTitle': 'अपने अपडेट के लिए साइन इन करें',
+      'notifications.signInHint':
+          'जवाब, विज्ञापन के फ़ैसले और काम के स्थानीय अलर्ट एक ही जगह पाएँ।',
       'update.available': 'LocZ {version} उपलब्ध है ({size})',
       'update.action': 'अपडेट करें',
       'update.dismiss': 'अभी नहीं',

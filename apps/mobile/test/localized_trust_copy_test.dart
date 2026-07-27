@@ -17,6 +17,8 @@ void main() {
       'post.contactPhone',
       'notifications.markAllRead',
       'notifications.empty',
+      'notifications.signInTitle',
+      'notifications.signInHint',
       'update.available',
       'update.action',
       'update.dismiss',
