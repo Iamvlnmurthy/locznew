@@ -45,7 +45,21 @@ export class AuthService {
     private readonly config: AppConfig,
   ) {}
 
+  /**
+   * Refuses the one-time-code routes when the product does not offer them.
+   *
+   * A `NotFoundException` rather than a 403: the endpoints are not temporarily forbidden,
+   * they are not part of the product while this is off, and saying "not found" tells a
+   * prober nothing about what might be re-enabled later.
+   */
+  private assertOtpEnabled(): void {
+    if (!this.config.get('AUTH_OTP_ENABLED')) {
+      throw new NotFoundException('Cannot POST this route');
+    }
+  }
+
   async requestOtp(dto: RequestOtpDto, context: RequestContext): Promise<OtpRequestedDto> {
+    this.assertOtpEnabled();
     // A suspended account must not be able to obtain a fresh session, but the response
     // is deliberately identical to an unknown number so the endpoint does not confirm
     // whether an account exists.
@@ -68,6 +82,7 @@ export class AuthService {
    * OTP-first authentication for a mass-market Indian audience.
    */
   async verifyOtp(dto: VerifyOtpDto, context: RequestContext): Promise<AuthSessionDto> {
+    this.assertOtpEnabled();
     await this.otp.verify(dto.phone, dto.code, 'LOGIN');
 
     let user = await this.prisma.user.findUnique({ where: { phoneE164: dto.phone } });

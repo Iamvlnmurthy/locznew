@@ -42,6 +42,22 @@ export const envSchema = z.object({
 
   OTP_PROVIDER: z.enum(['mock', 'msg91', 'twilio', 'pin']).default('mock'),
   /**
+   * Whether the one-time-code endpoints accept requests at all.
+   *
+   * Hiding the code form in the interface does not hide the endpoints, and while the
+   * provider is `mock` or `pin` those endpoints will mint a session for *any* phone number
+   * from a code the server hands out or that everybody already knows. That is not merely a
+   * weak login: `verifyOtp` resolves an existing account by number, so it takes over an
+   * account whose owner chose a strong password, without ever checking it.
+   *
+   * Turning this off makes the endpoints answer as though they do not exist, which is the
+   * honest description of a sign-in route the product no longer offers.
+   */
+  AUTH_OTP_ENABLED: z
+    .string()
+    .default('true')
+    .transform((v) => v !== 'false'),
+  /**
    * A shared PIN used in place of a one-time code, for a closed trial with no SMS gateway.
    * Digits only, and its length must match OTP_LENGTH so the generated code and the PIN are
    * the same shape. Never permitted in production — see the guard below.
