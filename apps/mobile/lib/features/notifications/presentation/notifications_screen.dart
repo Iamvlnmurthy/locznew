@@ -81,42 +81,59 @@ class NotificationsScreen extends ConsumerWidget {
           data: (items) {
             if (items.isEmpty) {
               return ListView(
-                children: const [
-                  SizedBox(height: 120),
-                  Center(child: Text('Nothing yet')),
+                children: [
+                  const SizedBox(height: 120),
+                  Icon(
+                    Icons.notifications_none_rounded,
+                    size: 44,
+                    color: Theme.of(context).colorScheme.primary,
+                  ),
+                  const SizedBox(height: 12),
+                  const Center(child: Text('Nothing yet')),
                 ],
               );
             }
 
             return ListView.separated(
+              padding: const EdgeInsets.all(12),
               itemCount: items.length,
-              separatorBuilder: (_, __) => const Divider(height: 1),
+              separatorBuilder: (_, __) => const SizedBox(height: 8),
               itemBuilder: (context, index) {
                 final notification = items[index];
-                return ListTile(
-                  // Unread rows carry a tint rather than a dot: it survives a glance on
-                  // a phone screen in daylight, which a 6px dot does not.
-                  tileColor: notification.isRead
+                return Card(
+                  color: notification.isRead
                       ? null
-                      : Theme.of(context).colorScheme.primary.withValues(alpha: 0.05),
-                  leading: Icon(_iconFor(notification.type)),
-                  title: Text(notification.title),
-                  subtitle: Text(
-                    notification.body,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
+                      : Theme.of(context).colorScheme.primaryContainer.withValues(alpha: 0.45),
+                  child: ListTile(
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
+                    // Unread rows carry a tint rather than a dot: it survives a glance on
+                    // a phone screen in daylight, which a 6px dot does not.
+                    leading: CircleAvatar(
+                      backgroundColor: Theme.of(context).colorScheme.primaryContainer,
+                      child: Icon(
+                        _iconFor(notification.type),
+                        size: 19,
+                        color: Theme.of(context).colorScheme.primary,
+                      ),
+                    ),
+                    title: Text(notification.title),
+                    subtitle: Text(
+                      notification.body,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    trailing: Text(
+                      DateFormat.MMMd().format(notification.createdAt),
+                      style: Theme.of(context).textTheme.labelSmall,
+                    ),
+                    onTap: () async {
+                      await api.post<void>('/notifications/${notification.id}/read');
+                      ref.invalidate(notificationsProvider);
+                      if (notification.route != null && context.mounted) {
+                        await context.push(notification.route!);
+                      }
+                    },
                   ),
-                  trailing: Text(
-                    DateFormat.MMMd().format(notification.createdAt),
-                    style: Theme.of(context).textTheme.labelSmall,
-                  ),
-                  onTap: () async {
-                    await api.post<void>('/notifications/${notification.id}/read');
-                    ref.invalidate(notificationsProvider);
-                    if (notification.route != null && context.mounted) {
-                      await context.push(notification.route!);
-                    }
-                  },
                 );
               },
             );

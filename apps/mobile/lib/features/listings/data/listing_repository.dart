@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:dio/dio.dart';
 
+import '../../../core/config/env.dart';
 import '../../../core/network/api_client.dart';
 import '../domain/models.dart';
 
@@ -30,7 +31,7 @@ class ListingRepository {
         if (longitude != null) 'longitude': longitude,
       },
     );
-    return Feed.fromJson(json);
+    return Feed.fromJson(_portableMediaUrls(json));
   }
 
   Future<List<ListingSummary>> search({
@@ -69,26 +70,38 @@ class ListingRepository {
     );
 
     return (json['items'] as List<dynamic>)
-        .map((entry) => ListingSummary.fromJson(entry as Map<String, dynamic>))
+        .map(
+          (entry) => ListingSummary.fromJson(
+            _portableMediaUrls(entry as Map<String, dynamic>),
+          ),
+        )
         .toList();
   }
 
   Future<ListingDetail> detail(String slug) async {
     final json = await _api.get<Map<String, dynamic>>('/listings/$slug');
-    return ListingDetail.fromJson(json);
+    return ListingDetail.fromJson(_portableMediaUrls(json));
   }
 
   Future<List<ListingSummary>> myListings() async {
     final json = await _api.get<Map<String, dynamic>>('/listings/mine', query: {'limit': 50});
     return (json['items'] as List<dynamic>)
-        .map((entry) => ListingSummary.fromJson(entry as Map<String, dynamic>))
+        .map(
+          (entry) => ListingSummary.fromJson(
+            _portableMediaUrls(entry as Map<String, dynamic>),
+          ),
+        )
         .toList();
   }
 
   Future<List<ListingSummary>> savedListings() async {
     final json = await _api.get<Map<String, dynamic>>('/listings/saved', query: {'limit': 50});
     return (json['items'] as List<dynamic>)
-        .map((entry) => ListingSummary.fromJson(entry as Map<String, dynamic>))
+        .map(
+          (entry) => ListingSummary.fromJson(
+            _portableMediaUrls(entry as Map<String, dynamic>),
+          ),
+        )
         .toList();
   }
 
@@ -241,6 +254,37 @@ class ListingRepository {
     );
     final pincode = json['pincode'];
     return pincode == null ? null : PincodeArea.fromJson(pincode as Map<String, dynamic>);
+  }
+
+  /// Seeded and development records can contain a loopback web URL. `localhost`
+  /// means the Android phone itself, not the machine serving LocZ, so replace only
+  /// loopback origins with the build's public site origin while preserving paths.
+  Map<String, dynamic> _portableMediaUrls(Map<String, dynamic> source) {
+    final site = Uri.tryParse(Env.siteUrl);
+
+    dynamic rewrite(dynamic value) {
+      if (value is Map<String, dynamic>) {
+        return value.map((key, child) => MapEntry(key, rewrite(child)));
+      }
+      if (value is List<dynamic>) return value.map(rewrite).toList();
+      if (value is! String || site == null) return value;
+
+      final uri = Uri.tryParse(value);
+      if (uri == null ||
+          (uri.host != 'localhost' && uri.host != '127.0.0.1') ||
+          !uri.path.startsWith('/seed/')) {
+        return value;
+      }
+      return site
+          .replace(
+            path: uri.path,
+            query: uri.hasQuery ? uri.query : null,
+            fragment: uri.hasFragment ? uri.fragment : null,
+          )
+          .toString();
+    }
+
+    return rewrite(source) as Map<String, dynamic>;
   }
 }
 

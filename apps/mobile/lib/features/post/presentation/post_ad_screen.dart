@@ -196,261 +196,348 @@ class _PostAdScreenState extends ConsumerState<PostAdScreen> {
       appBar: AppBar(title: Text(strings('post.title'))),
       body: Form(
         key: _formKey,
-        child: ListView(
-          padding: const EdgeInsets.all(LoczSpacing.x4),
-          children: [
-            Text(
-              strings('post.subtitle'),
-              style: Theme.of(context).textTheme.bodyMedium,
-            ),
-            const SizedBox(height: LoczSpacing.x4),
-            if (_error != null)
-              Container(
-                padding: const EdgeInsets.all(LoczSpacing.x3),
-                margin: const EdgeInsets.only(bottom: LoczSpacing.x4),
-                decoration: BoxDecoration(
-                  color: LoczColors.dangerSurface,
-                  borderRadius: BorderRadius.circular(LoczRadius.md),
+        child: Align(
+          alignment: Alignment.topCenter,
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 680),
+            child: ListView(
+              padding: const EdgeInsets.all(LoczSpacing.x4),
+              children: [
+                Text(
+                  strings('post.subtitle'),
+                  style: Theme.of(context).textTheme.bodyMedium,
                 ),
-                child: Text(
-                  _error!,
-                  style: const TextStyle(color: LoczColors.danger),
+                const SizedBox(height: LoczSpacing.x5),
+                _SectionHeading(
+                  index: '01',
+                  label: strings('post.detailsSection'),
                 ),
-              ),
-            TextFormField(
-              controller: _titleController,
-              maxLength: 160,
-              decoration: InputDecoration(labelText: strings('post.fieldTitle')),
-              validator: (value) =>
-                  (value == null || value.trim().length < 5) ? strings('common.error') : null,
-            ),
-            categories.when(
-              loading: () => const LinearProgressIndicator(),
-              error: (error, _) => Text(error.toString()),
-              data: (list) {
-                // Only leaf categories are offered — posting into "Electronics" instead
-                // of "Mobile Phones" is the most common miscategorisation.
-                final options = <MapEntry<String, String>>[];
-                for (final category in list) {
-                  if (category.children.isEmpty) {
-                    options.add(MapEntry(category.id, category.name));
-                  } else {
-                    for (final child in category.children) {
-                      options.add(
-                        MapEntry(
-                          child.id,
-                          '${category.name} › ${child.name}',
-                        ),
-                      );
+                const SizedBox(height: LoczSpacing.x3),
+                if (_error != null)
+                  Container(
+                    padding: const EdgeInsets.all(LoczSpacing.x3),
+                    margin: const EdgeInsets.only(bottom: LoczSpacing.x4),
+                    decoration: BoxDecoration(
+                      color: LoczColors.dangerSurface,
+                      borderRadius: BorderRadius.circular(LoczRadius.md),
+                    ),
+                    child: Text(
+                      _error!,
+                      style: const TextStyle(color: LoczColors.danger),
+                    ),
+                  ),
+                TextFormField(
+                  controller: _titleController,
+                  maxLength: 160,
+                  decoration: InputDecoration(labelText: strings('post.fieldTitle')),
+                  validator: (value) =>
+                      (value == null || value.trim().length < 5) ? strings('common.error') : null,
+                ),
+                categories.when(
+                  loading: () => const LinearProgressIndicator(),
+                  error: (error, _) => Text(error.toString()),
+                  data: (list) {
+                    // Only leaf categories are offered — posting into "Electronics" instead
+                    // of "Mobile Phones" is the most common miscategorisation.
+                    final options = <MapEntry<String, String>>[];
+                    for (final category in list) {
+                      if (category.children.isEmpty) {
+                        options.add(MapEntry(category.id, category.name));
+                      } else {
+                        for (final child in category.children) {
+                          options.add(
+                            MapEntry(
+                              child.id,
+                              '${category.name} › ${child.name}',
+                            ),
+                          );
+                        }
+                      }
                     }
-                  }
-                }
 
-                return DropdownButtonFormField<String>(
-                  initialValue: _categoryId,
-                  decoration: InputDecoration(labelText: strings('post.fieldCategory')),
+                    return DropdownButtonFormField<String>(
+                      initialValue: _categoryId,
+                      decoration: InputDecoration(
+                        labelText: strings('post.fieldCategory'),
+                      ),
+                      isExpanded: true,
+                      items: options
+                          .map(
+                            (option) => DropdownMenuItem(
+                              value: option.key,
+                              child: Text(
+                                option.value,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                          )
+                          .toList(),
+                      onChanged: (value) => setState(() => _categoryId = value),
+                      validator: (value) => value == null ? strings('common.error') : null,
+                    );
+                  },
+                ),
+                const SizedBox(height: LoczSpacing.x4),
+                TextFormField(
+                  controller: _descriptionController,
+                  maxLines: 5,
+                  maxLength: 5000,
+                  decoration: InputDecoration(
+                    labelText: strings('post.fieldDescription'),
+                  ),
+                  validator: (value) =>
+                      (value == null || value.trim().length < 10) ? strings('common.error') : null,
+                ),
+                const SizedBox(height: LoczSpacing.x5),
+                _SectionHeading(
+                  index: '02',
+                  label: strings('post.priceSection'),
+                ),
+                const SizedBox(height: LoczSpacing.x3),
+                TextFormField(
+                  controller: _priceController,
+                  enabled: !_isFree,
+                  keyboardType: TextInputType.number,
+                  inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                  decoration: InputDecoration(
+                    labelText: strings('post.fieldPrice'),
+                    prefixText: '₹ ',
+                  ),
+                ),
+                SwitchListTile.adaptive(
+                  value: _isFree,
+                  onChanged: (value) => setState(() => _isFree = value),
+                  title: Text(strings('listing.free')),
+                  contentPadding: EdgeInsets.zero,
+                ),
+                SwitchListTile.adaptive(
+                  value: _isNegotiable,
+                  onChanged: (value) => setState(() => _isNegotiable = value),
+                  title: Text(strings('listing.negotiable')),
+                  contentPadding: EdgeInsets.zero,
+                ),
+                DropdownButtonFormField<String>(
+                  initialValue: _condition,
+                  decoration: const InputDecoration(labelText: 'Condition'),
+                  items: const [
+                    DropdownMenuItem(value: 'NEW', child: Text('New')),
+                    DropdownMenuItem(
+                      value: 'LIKE_NEW',
+                      child: Text('Like new'),
+                    ),
+                    DropdownMenuItem(value: 'GOOD', child: Text('Good')),
+                    DropdownMenuItem(value: 'FAIR', child: Text('Fair')),
+                    DropdownMenuItem(
+                      value: 'FOR_PARTS',
+                      child: Text('For parts'),
+                    ),
+                  ],
+                  onChanged: (value) => setState(() => _condition = value ?? 'GOOD'),
+                ),
+                const SizedBox(height: LoczSpacing.x5),
+                _SectionHeading(
+                  index: '03',
+                  label: strings('post.locationSection'),
+                ),
+                const SizedBox(height: LoczSpacing.x3),
+                cities.when(
+                  loading: () => const LinearProgressIndicator(),
+                  error: (error, _) => Text(error.toString()),
+                  data: (list) => DropdownButtonFormField<String>(
+                    initialValue: _cityId,
+                    isExpanded: true,
+                    decoration: InputDecoration(labelText: strings('post.fieldCity')),
+                    items: list
+                        .map(
+                          (city) => DropdownMenuItem(
+                            value: city.id,
+                            child: Text(city.name),
+                          ),
+                        )
+                        .toList(),
+                    onChanged: (value) => setState(() => _cityId = value),
+                    validator: (value) => value == null ? strings('common.error') : null,
+                  ),
+                ),
+                const SizedBox(height: LoczSpacing.x4),
+                DropdownButtonFormField<String>(
+                  initialValue: _contactPreference,
                   isExpanded: true,
-                  items: options
-                      .map(
-                        (option) => DropdownMenuItem(
-                          value: option.key,
-                          child: Text(
-                            option.value,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                      )
-                      .toList(),
-                  onChanged: (value) => setState(() => _categoryId = value),
-                  validator: (value) => value == null ? strings('common.error') : null,
-                );
-              },
-            ),
-            const SizedBox(height: LoczSpacing.x4),
-            TextFormField(
-              controller: _descriptionController,
-              maxLines: 5,
-              maxLength: 5000,
-              decoration: InputDecoration(labelText: strings('post.fieldDescription')),
-              validator: (value) =>
-                  (value == null || value.trim().length < 10) ? strings('common.error') : null,
-            ),
-            TextFormField(
-              controller: _priceController,
-              enabled: !_isFree,
-              keyboardType: TextInputType.number,
-              inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-              decoration: InputDecoration(
-                labelText: strings('post.fieldPrice'),
-                prefixText: '₹ ',
-              ),
-            ),
-            CheckboxListTile(
-              value: _isFree,
-              onChanged: (value) => setState(() => _isFree = value ?? false),
-              title: Text(strings('listing.free')),
-              contentPadding: EdgeInsets.zero,
-            ),
-            CheckboxListTile(
-              value: _isNegotiable,
-              onChanged: (value) => setState(() => _isNegotiable = value ?? false),
-              title: Text(strings('listing.negotiable')),
-              contentPadding: EdgeInsets.zero,
-            ),
-            DropdownButtonFormField<String>(
-              initialValue: _condition,
-              decoration: const InputDecoration(labelText: 'Condition'),
-              items: const [
-                DropdownMenuItem(value: 'NEW', child: Text('New')),
-                DropdownMenuItem(value: 'LIKE_NEW', child: Text('Like new')),
-                DropdownMenuItem(value: 'GOOD', child: Text('Good')),
-                DropdownMenuItem(value: 'FAIR', child: Text('Fair')),
-                DropdownMenuItem(value: 'FOR_PARTS', child: Text('For parts')),
-              ],
-              onChanged: (value) => setState(() => _condition = value ?? 'GOOD'),
-            ),
-            const SizedBox(height: LoczSpacing.x4),
-            cities.when(
-              loading: () => const LinearProgressIndicator(),
-              error: (error, _) => Text(error.toString()),
-              data: (list) => DropdownButtonFormField<String>(
-                initialValue: _cityId,
-                isExpanded: true,
-                decoration: InputDecoration(labelText: strings('post.fieldCity')),
-                items: list
-                    .map(
-                      (city) => DropdownMenuItem(
-                        value: city.id,
-                        child: Text(city.name),
-                      ),
-                    )
-                    .toList(),
-                onChanged: (value) => setState(() => _cityId = value),
-                validator: (value) => value == null ? strings('common.error') : null,
-              ),
-            ),
-            const SizedBox(height: LoczSpacing.x4),
-            DropdownButtonFormField<String>(
-              initialValue: _contactPreference,
-              isExpanded: true,
-              decoration: const InputDecoration(labelText: 'Contact preference'),
-              items: const [
-                DropdownMenuItem(
-                  value: 'IN_APP_ONLY',
-                  child: Text('Messages on LocZ only'),
+                  decoration: const InputDecoration(labelText: 'Contact preference'),
+                  items: const [
+                    DropdownMenuItem(
+                      value: 'IN_APP_ONLY',
+                      child: Text('Messages on LocZ only'),
+                    ),
+                    DropdownMenuItem(
+                      value: 'PHONE_AND_IN_APP',
+                      child: Text('Phone and messages'),
+                    ),
+                    DropdownMenuItem(
+                      value: 'PHONE',
+                      child: Text('Show my phone number'),
+                    ),
+                  ],
+                  onChanged: (value) => setState(
+                    () => _contactPreference = value ?? 'IN_APP_ONLY',
+                  ),
                 ),
-                DropdownMenuItem(
-                  value: 'PHONE_AND_IN_APP',
-                  child: Text('Phone and messages'),
+                const SizedBox(height: LoczSpacing.x6),
+                _SectionHeading(
+                  index: '04',
+                  label: strings('post.photos'),
                 ),
-                DropdownMenuItem(
-                  value: 'PHONE',
-                  child: Text('Show my phone number'),
+                Text(
+                  strings('post.photosHint'),
+                  style: Theme.of(context).textTheme.labelSmall,
                 ),
-              ],
-              onChanged: (value) => setState(() => _contactPreference = value ?? 'IN_APP_ONLY'),
-            ),
-            const SizedBox(height: LoczSpacing.x6),
-            Text(
-              strings('post.photos'),
-              style: Theme.of(context).textTheme.titleMedium,
-            ),
-            Text(
-              strings('post.photosHint'),
-              style: Theme.of(context).textTheme.labelSmall,
-            ),
-            const SizedBox(height: LoczSpacing.x3),
-            SizedBox(
-              height: 96,
-              child: ListView(
-                scrollDirection: Axis.horizontal,
-                children: [
-                  for (final image in _images)
-                    Padding(
-                      padding: const EdgeInsets.only(right: LoczSpacing.x2),
-                      child: Stack(
-                        children: [
-                          ClipRRect(
-                            borderRadius: BorderRadius.circular(LoczRadius.md),
-                            child: Image.file(
-                              image.file,
-                              width: 96,
-                              height: 96,
-                              fit: BoxFit.cover,
-                            ),
-                          ),
-                          if (_submitting && image.progress < 1 && !image.failed)
-                            Positioned.fill(
-                              child: ColoredBox(
-                                color: Colors.black45,
-                                child: Center(
-                                  child: CircularProgressIndicator(
-                                    value: image.progress,
-                                    strokeWidth: 2,
-                                    color: Colors.white,
-                                  ),
-                                ),
-                              ),
-                            ),
-                          if (image.failed)
-                            const Positioned.fill(
-                              child: ColoredBox(
-                                color: Colors.black45,
-                                child: Icon(
-                                  Icons.error_outline,
-                                  color: Colors.white,
-                                ),
-                              ),
-                            ),
-                          if (!_submitting)
-                            Positioned(
-                              top: 0,
-                              right: 0,
-                              child: GestureDetector(
-                                onTap: () => setState(() => _images.remove(image)),
-                                child: const CircleAvatar(
-                                  radius: 12,
-                                  backgroundColor: Colors.black54,
-                                  child: Icon(
-                                    Icons.close,
-                                    size: 14,
-                                    color: Colors.white,
-                                  ),
-                                ),
-                              ),
-                            ),
-                        ],
+                const SizedBox(height: 4),
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Icon(
+                      Icons.verified_user_outlined,
+                      size: 14,
+                      color: Theme.of(context).colorScheme.primary,
+                    ),
+                    const SizedBox(width: 6),
+                    Expanded(
+                      child: Text(
+                        strings('post.photoSafety'),
+                        style: Theme.of(context).textTheme.labelSmall,
                       ),
                     ),
-                  if (_images.length < Env.maxImagesPerListing)
-                    InkWell(
-                      onTap: _submitting ? null : _pickImages,
-                      child: Container(
-                        width: 96,
-                        height: 96,
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(LoczRadius.md),
-                          border: Border.all(
-                            color: Theme.of(context).colorScheme.outline,
+                  ],
+                ),
+                const SizedBox(height: LoczSpacing.x3),
+                SizedBox(
+                  height: 96,
+                  child: ListView(
+                    scrollDirection: Axis.horizontal,
+                    children: [
+                      for (final image in _images)
+                        Padding(
+                          padding: const EdgeInsets.only(right: LoczSpacing.x2),
+                          child: Stack(
+                            children: [
+                              ClipRRect(
+                                borderRadius: BorderRadius.circular(LoczRadius.md),
+                                child: Image.file(
+                                  image.file,
+                                  width: 96,
+                                  height: 96,
+                                  fit: BoxFit.cover,
+                                ),
+                              ),
+                              if (_submitting && image.progress < 1 && !image.failed)
+                                Positioned.fill(
+                                  child: ColoredBox(
+                                    color: Colors.black45,
+                                    child: Center(
+                                      child: CircularProgressIndicator(
+                                        value: image.progress,
+                                        strokeWidth: 2,
+                                        color: Colors.white,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              if (image.failed)
+                                const Positioned.fill(
+                                  child: ColoredBox(
+                                    color: Colors.black45,
+                                    child: Icon(
+                                      Icons.error_outline,
+                                      color: Colors.white,
+                                    ),
+                                  ),
+                                ),
+                              if (!_submitting)
+                                Positioned(
+                                  top: 0,
+                                  right: 0,
+                                  child: GestureDetector(
+                                    onTap: () => setState(() => _images.remove(image)),
+                                    child: const CircleAvatar(
+                                      radius: 12,
+                                      backgroundColor: Colors.black54,
+                                      child: Icon(
+                                        Icons.close,
+                                        size: 14,
+                                        color: Colors.white,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                            ],
                           ),
                         ),
-                        child: const Icon(Icons.add_a_photo_outlined),
-                      ),
-                    ),
-                ],
-              ),
+                      if (_images.length < Env.maxImagesPerListing)
+                        InkWell(
+                          onTap: _submitting ? null : _pickImages,
+                          child: Container(
+                            width: 96,
+                            height: 96,
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(LoczRadius.md),
+                              border: Border.all(
+                                color: Theme.of(context).colorScheme.outline,
+                              ),
+                            ),
+                            child: const Icon(Icons.add_a_photo_outlined),
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: LoczSpacing.x8),
+                FilledButton(
+                  onPressed: _submitting ? null : _submit,
+                  child: Text(
+                    _submitting ? strings('post.publishing') : strings('post.publish'),
+                  ),
+                ),
+                const SizedBox(height: LoczSpacing.x8),
+              ],
             ),
-            const SizedBox(height: LoczSpacing.x8),
-            FilledButton(
-              onPressed: _submitting ? null : _submit,
-              child: Text(
-                _submitting ? strings('post.publishing') : strings('post.publish'),
-              ),
-            ),
-            const SizedBox(height: LoczSpacing.x8),
-          ],
+          ),
         ),
       ),
+    );
+  }
+}
+
+class _SectionHeading extends StatelessWidget {
+  const _SectionHeading({required this.index, required this.label});
+
+  final String index;
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return Row(
+      children: [
+        Container(
+          width: 28,
+          height: 28,
+          alignment: Alignment.center,
+          decoration: BoxDecoration(
+            color: theme.colorScheme.primaryContainer,
+            borderRadius: BorderRadius.circular(9),
+          ),
+          child: Text(
+            index,
+            style: theme.textTheme.labelSmall?.copyWith(
+              color: theme.colorScheme.primary,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+        ),
+        const SizedBox(width: 10),
+        Text(label, style: theme.textTheme.titleMedium),
+      ],
     );
   }
 }

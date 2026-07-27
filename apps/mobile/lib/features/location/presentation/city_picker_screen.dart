@@ -132,6 +132,7 @@ class _CityPickerScreenState extends ConsumerState<CityPickerScreen> {
           Padding(
             padding: const EdgeInsets.all(LoczSpacing.x4),
             child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 FilledButton.icon(
                   onPressed: _locating ? null : _useCurrentLocation,
@@ -229,23 +230,47 @@ class _CityPickerScreenState extends ConsumerState<CityPickerScreen> {
                     (a, b) => (b.isLaunched ? 1 : 0).compareTo(a.isLaunched ? 1 : 0),
                   );
 
-                return ListView.builder(
+                return ListView.separated(
+                  padding: const EdgeInsets.fromLTRB(
+                    LoczSpacing.x3,
+                    0,
+                    LoczSpacing.x3,
+                    LoczSpacing.x4,
+                  ),
                   itemCount: filtered.length,
+                  separatorBuilder: (_, __) => const SizedBox(height: 6),
                   itemBuilder: (context, index) {
                     final city = filtered[index];
-                    return ListTile(
-                      title: Text(city.name),
-                      subtitle: Text(city.stateName),
-                      trailing: city.isLaunched
-                          ? (selected?.id == city.id ? const Icon(Icons.check) : null)
-                          : const Chip(
-                              label: Text('soon'),
-                              visualDensity: VisualDensity.compact,
-                            ),
-                      onTap: () async {
-                        await ref.read(selectedCityProvider.notifier).select(city);
-                        if (context.mounted) context.pop();
-                      },
+                    return Card(
+                      child: ListTile(
+                        dense: true,
+                        leading: CircleAvatar(
+                          radius: 18,
+                          backgroundColor: Theme.of(context).colorScheme.primaryContainer,
+                          child: Icon(
+                            Icons.location_city_outlined,
+                            size: 18,
+                            color: Theme.of(context).colorScheme.primary,
+                          ),
+                        ),
+                        title: Text(city.name),
+                        subtitle: Text(city.stateName),
+                        trailing: city.isLaunched
+                            ? (selected?.id == city.id
+                                ? Icon(
+                                    Icons.check_circle_rounded,
+                                    color: Theme.of(context).colorScheme.primary,
+                                  )
+                                : const Icon(Icons.chevron_right_rounded))
+                            : const Chip(
+                                label: Text('soon'),
+                                visualDensity: VisualDensity.compact,
+                              ),
+                        onTap: () async {
+                          await ref.read(selectedCityProvider.notifier).select(city);
+                          if (context.mounted) context.pop();
+                        },
+                      ),
                     );
                   },
                 );

@@ -146,11 +146,19 @@ class _ListingDetailScreenState extends ConsumerState<ListingDetailScreen> {
     return CustomScrollView(
       slivers: [
         SliverAppBar(
-          expandedHeight: 300,
+          expandedHeight: (MediaQuery.sizeOf(context).width * 0.82).clamp(280, 390),
           pinned: true,
           actions: [
             IconButton(
-              icon: const Icon(Icons.share_outlined),
+              icon: Icon(
+                isSaved ? Icons.favorite_rounded : Icons.favorite_border_rounded,
+              ),
+              color: isSaved ? LoczColors.danger : null,
+              tooltip: isSaved ? strings('listing.saved') : strings('listing.save'),
+              onPressed: () => _toggleSave(listing),
+            ),
+            IconButton(
+              icon: const Icon(Icons.ios_share_rounded),
               tooltip: strings('listing.share'),
               // Shares the canonical web URL so the recipient can open it without the app.
               onPressed: () => Share.share('${Env.siteUrl}/ad/${summary.slug}'),
@@ -175,23 +183,23 @@ class _ListingDetailScreenState extends ConsumerState<ListingDetailScreen> {
                       ),
                       if (images.length > 1)
                         Positioned(
+                          right: 12,
                           bottom: 12,
-                          left: 0,
-                          right: 0,
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: List.generate(
-                              images.length,
-                              (index) => Container(
-                                width: 6,
-                                height: 6,
-                                margin: const EdgeInsets.symmetric(horizontal: 3),
-                                decoration: BoxDecoration(
-                                  shape: BoxShape.circle,
-                                  color: index == _galleryIndex
-                                      ? Colors.white
-                                      : Colors.white.withValues(alpha: 0.5),
-                                ),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 9,
+                              vertical: 5,
+                            ),
+                            decoration: BoxDecoration(
+                              color: LoczColors.neutral900.withValues(alpha: 0.76),
+                              borderRadius: BorderRadius.circular(LoczRadius.full),
+                            ),
+                            child: Text(
+                              '${_galleryIndex + 1} / ${images.length}',
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 11,
+                                fontWeight: FontWeight.w700,
                               ),
                             ),
                           ),
@@ -207,7 +215,9 @@ class _ListingDetailScreenState extends ConsumerState<ListingDetailScreen> {
               if (summary.price != null)
                 Text(
                   summary.isFree ? strings('listing.free') : formatPrice(summary.price!),
-                  style: theme.textTheme.headlineSmall,
+                  style: theme.textTheme.displaySmall?.copyWith(
+                    color: summary.isFree ? LoczColors.success : null,
+                  ),
                 ),
               if (summary.isNegotiable && !summary.isFree)
                 Text(
@@ -215,14 +225,30 @@ class _ListingDetailScreenState extends ConsumerState<ListingDetailScreen> {
                   style: theme.textTheme.bodyMedium,
                 ),
               const SizedBox(height: LoczSpacing.x2),
-              Text(summary.title, style: theme.textTheme.titleMedium),
+              Text(summary.title, style: theme.textTheme.titleLarge),
               const SizedBox(height: LoczSpacing.x2),
-              Text(
-                '${summary.localityName ?? ''}${summary.localityName != null ? ', ' : ''}'
-                '${summary.cityName} · ${strings('listing.views', {
-                      'count': summary.viewCount,
-                    })}',
-                style: theme.textTheme.labelSmall,
+              Row(
+                children: [
+                  Icon(
+                    Icons.location_on_outlined,
+                    size: 15,
+                    color: theme.colorScheme.primary,
+                  ),
+                  const SizedBox(width: 4),
+                  Expanded(
+                    child: Text(
+                      '${summary.localityName ?? ''}${summary.localityName != null ? ', ' : ''}'
+                      '${summary.cityName}',
+                      style: theme.textTheme.bodyMedium,
+                    ),
+                  ),
+                  const Icon(Icons.visibility_outlined, size: 14),
+                  const SizedBox(width: 4),
+                  Text(
+                    strings('listing.views', {'count': summary.viewCount}),
+                    style: theme.textTheme.labelSmall,
+                  ),
+                ],
               ),
               if (summary.isSold) ...[
                 const SizedBox(height: LoczSpacing.x4),
@@ -235,7 +261,9 @@ class _ListingDetailScreenState extends ConsumerState<ListingDetailScreen> {
                   child: Text(strings('listing.sold')),
                 ),
               ],
-              const SizedBox(height: LoczSpacing.x6),
+              const SizedBox(height: LoczSpacing.x5),
+              const Divider(),
+              const SizedBox(height: LoczSpacing.x5),
               Text(
                 strings('listing.description'),
                 style: theme.textTheme.titleMedium,
@@ -258,15 +286,23 @@ class _ListingDetailScreenState extends ConsumerState<ListingDetailScreen> {
                       .toList(),
                 ),
               ],
-              const SizedBox(height: LoczSpacing.x6),
+              const SizedBox(height: LoczSpacing.x5),
               Card(
                 child: ListTile(
-                  leading: const CircleAvatar(child: Icon(Icons.person_outline)),
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                  leading: CircleAvatar(
+                    backgroundColor: theme.colorScheme.primaryContainer,
+                    child: Icon(
+                      Icons.person_outline,
+                      color: theme.colorScheme.primary,
+                    ),
+                  ),
                   title: Text(listing.owner.displayName),
                   subtitle: Text(
                     strings('listing.report'),
                     style: theme.textTheme.labelSmall,
                   ),
+                  trailing: const Icon(Icons.chevron_right_rounded),
                   onTap: () => context.push('/report?listing=${summary.id}'),
                 ),
               ),
@@ -331,7 +367,6 @@ class _ContactBar extends StatelessWidget {
     final theme = Theme.of(context);
 
     return Material(
-      elevation: 8,
       color: theme.colorScheme.surface,
       child: SafeArea(
         top: false,
@@ -343,7 +378,7 @@ class _ContactBar extends StatelessWidget {
                 onPressed: onSave,
                 icon: Icon(isSaved ? Icons.favorite : Icons.favorite_border),
                 tooltip: isSaved ? strings('listing.saved') : strings('listing.save'),
-                color: isSaved ? LoczColors.primary500 : null,
+                color: isSaved ? LoczColors.danger : null,
               ),
               const SizedBox(width: LoczSpacing.x2),
 

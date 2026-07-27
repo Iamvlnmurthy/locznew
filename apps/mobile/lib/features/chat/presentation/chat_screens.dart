@@ -25,9 +25,30 @@ class ChatsScreen extends ConsumerWidget {
       return Scaffold(
         appBar: AppBar(title: Text(strings('chats.title'))),
         body: Center(
-          child: FilledButton(
-            onPressed: () => context.push('/signin?next=/chats'),
-            child: Text(strings('nav.signIn')),
+          child: Padding(
+            padding: const EdgeInsets.all(LoczSpacing.x8),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  Icons.forum_outlined,
+                  size: 44,
+                  color: Theme.of(context).colorScheme.primary,
+                ),
+                const SizedBox(height: LoczSpacing.x3),
+                Text(
+                  strings('chats.empty'),
+                  style: Theme.of(context).textTheme.titleLarge,
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: LoczSpacing.x4),
+                FilledButton.icon(
+                  onPressed: () => context.push('/signin?next=/chats'),
+                  icon: const Icon(Icons.login_rounded, size: 18),
+                  label: Text(strings('nav.signIn')),
+                ),
+              ],
+            ),
           ),
         ),
       );
@@ -54,45 +75,62 @@ class ChatsScreen extends ConsumerWidget {
               return ListView(
                 children: [
                   const SizedBox(height: 120),
+                  Icon(
+                    Icons.mark_chat_unread_outlined,
+                    size: 42,
+                    color: Theme.of(context).colorScheme.primary,
+                  ),
+                  const SizedBox(height: LoczSpacing.x3),
                   Center(child: Text(strings('chats.empty'))),
                 ],
               );
             }
 
             return ListView.separated(
+              padding: const EdgeInsets.all(LoczSpacing.x3),
               itemCount: items.length,
-              separatorBuilder: (_, __) => const Divider(height: 1),
+              separatorBuilder: (_, __) => const SizedBox(height: 8),
               itemBuilder: (context, index) {
                 final conversation = items[index];
-                return ListTile(
-                  leading: conversation.listingThumbUrl != null
-                      ? ClipRRect(
-                          borderRadius: BorderRadius.circular(LoczRadius.sm),
-                          child: CachedNetworkImage(
-                            imageUrl: conversation.listingThumbUrl!,
-                            width: 48,
-                            height: 48,
-                            fit: BoxFit.cover,
+                return Card(
+                  child: ListTile(
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
+                    leading: conversation.listingThumbUrl != null
+                        ? ClipRRect(
+                            borderRadius: BorderRadius.circular(10),
+                            child: CachedNetworkImage(
+                              imageUrl: conversation.listingThumbUrl!,
+                              width: 52,
+                              height: 52,
+                              fit: BoxFit.cover,
+                            ),
+                          )
+                        : CircleAvatar(
+                            backgroundColor: Theme.of(context).colorScheme.primaryContainer,
+                            child: Icon(
+                              Icons.chat_bubble_outline,
+                              color: Theme.of(context).colorScheme.primary,
+                            ),
                           ),
-                        )
-                      : const CircleAvatar(
-                          child: Icon(Icons.chat_bubble_outline),
-                        ),
-                  title: Text(conversation.otherPartyName),
-                  subtitle: Text(
-                    conversation.listingTitle ?? conversation.lastMessagePreview ?? '',
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
+                    title: Text(
+                      conversation.otherPartyName,
+                      style: Theme.of(context).textTheme.titleSmall,
+                    ),
+                    subtitle: Text(
+                      conversation.listingTitle ?? conversation.lastMessagePreview ?? '',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    trailing: conversation.unreadCount > 0
+                        ? Badge(label: Text('${conversation.unreadCount}'))
+                        : Text(
+                            conversation.lastMessageAt == null
+                                ? ''
+                                : DateFormat.Hm().format(conversation.lastMessageAt!),
+                            style: Theme.of(context).textTheme.labelSmall,
+                          ),
+                    onTap: () => context.push('/chats/${conversation.id}'),
                   ),
-                  trailing: conversation.unreadCount > 0
-                      ? Badge(label: Text('${conversation.unreadCount}'))
-                      : Text(
-                          conversation.lastMessageAt == null
-                              ? ''
-                              : DateFormat.Hm().format(conversation.lastMessageAt!),
-                          style: Theme.of(context).textTheme.labelSmall,
-                        ),
-                  onTap: () => context.push('/chats/${conversation.id}'),
                 );
               },
             );
@@ -196,13 +234,33 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                         color: message.isMine
                             ? theme.colorScheme.primary
                             : theme.colorScheme.surfaceContainerHighest,
-                        borderRadius: BorderRadius.circular(LoczRadius.lg),
-                      ),
-                      child: Text(
-                        message.body,
-                        style: TextStyle(
-                          color: message.isMine ? theme.colorScheme.onPrimary : null,
+                        borderRadius: BorderRadius.only(
+                          topLeft: const Radius.circular(16),
+                          topRight: const Radius.circular(16),
+                          bottomLeft: Radius.circular(message.isMine ? 16 : 4),
+                          bottomRight: Radius.circular(message.isMine ? 4 : 16),
                         ),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        children: [
+                          Text(
+                            message.body,
+                            style: TextStyle(
+                              color: message.isMine ? theme.colorScheme.onPrimary : null,
+                            ),
+                          ),
+                          const SizedBox(height: 3),
+                          Text(
+                            DateFormat.Hm().format(message.createdAt),
+                            style: theme.textTheme.labelSmall?.copyWith(
+                              fontSize: 9,
+                              color: message.isMine
+                                  ? theme.colorScheme.onPrimary.withValues(alpha: 0.7)
+                                  : theme.colorScheme.onSurfaceVariant,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                   );
@@ -212,29 +270,39 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
           ),
           SafeArea(
             top: false,
-            child: Padding(
-              padding: const EdgeInsets.all(LoczSpacing.x3),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: TextField(
-                      controller: _controller,
-                      decoration: InputDecoration(
-                        hintText: strings('chats.messageHint'),
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                color: theme.colorScheme.surface,
+                border: Border(
+                  top: BorderSide(
+                    color: theme.colorScheme.outline.withValues(alpha: 0.45),
+                  ),
+                ),
+              ),
+              child: Padding(
+                padding: const EdgeInsets.all(LoczSpacing.x3),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: TextField(
+                        controller: _controller,
+                        decoration: InputDecoration(
+                          hintText: strings('chats.messageHint'),
+                        ),
+                        textInputAction: TextInputAction.send,
+                        onSubmitted: (_) => _send(),
+                        maxLines: 4,
+                        minLines: 1,
                       ),
-                      textInputAction: TextInputAction.send,
-                      onSubmitted: (_) => _send(),
-                      maxLines: 4,
-                      minLines: 1,
                     ),
-                  ),
-                  const SizedBox(width: LoczSpacing.x2),
-                  IconButton.filled(
-                    onPressed: _sending ? null : _send,
-                    icon: const Icon(Icons.send),
-                    tooltip: strings('chats.send'),
-                  ),
-                ],
+                    const SizedBox(width: LoczSpacing.x2),
+                    IconButton.filled(
+                      onPressed: _sending ? null : _send,
+                      icon: const Icon(Icons.send),
+                      tooltip: strings('chats.send'),
+                    ),
+                  ],
+                ),
               ),
             ),
           ),

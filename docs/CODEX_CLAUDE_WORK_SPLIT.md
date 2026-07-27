@@ -19,6 +19,11 @@ Codex owns:
 
 Current Codex queue:
 
+0. **In progress — mobile flagship pass:** compact light/dark native theme, persistent
+   appearance preference, branded five-action navigation, redesigned home/search/listing
+   detail/post/sign-in/chat/account/location/notification presentation, portable seeded
+   image URLs and emulator visual QA. Do not build a release APK until Claude's media and
+   authentication work is merged.
 1. **Done:** Fix singular/plural search copy in every locale and every result-count surface.
 2. **Done:** Redesign sparse search states: zero, one and two results must use the desktop canvas
    intentionally instead of leaving a large accidental void.
@@ -56,6 +61,9 @@ Claude Code owns:
 
 Current Claude Code queue:
 
+0. **In progress:** Complete media storage/presigning and the phone-password authentication
+   boundary. Claude currently owns dirty `apps/api/src/media/storage.service.ts` and
+   `apps/api/src/media/presign.ts`; Codex will not edit them.
 1. **Done:** Reproduce why `q=car` returns an iPhone: Meilisearch prefix-matched `car`
    against “carefully” in the description.
 2. **Done:** Fix relevance so an explicit keyword cannot return a semantically unrelated
@@ -94,6 +102,39 @@ localized product copy.
    - Claude: API unit tests plus filter/search/security acceptance.
    - Codex: lint, i18n, hardcoded-copy scan, responsive browser and accessibility checks.
 4. The final release gate runs only after both tracks are green on the same commit.
+
+## Mobile UI handoff — 2026-07-28
+
+Claude should treat the following as the active mobile design contract:
+
+- Commit `e1e74b2` already contains the first Codex mobile foundation because Claude's
+  concurrent commit included the staged mobile theme, appearance provider, branded bottom
+  navigation and home redesign. Do not revert those mobile files while changing the API.
+- The remaining Codex UI work is intentionally uncommitted during Claude's active media
+  work. Its substantive files are:
+  - `apps/mobile/lib/core/i18n/strings.dart`
+  - `apps/mobile/lib/core/theme/app_theme.dart` (removes an unsupported `ChipThemeData`
+    property accidentally committed in `e1e74b2`)
+  - presentation files for account, sign-in, chat, listing detail/search/card, location,
+    notifications and posting
+  - `apps/mobile/lib/features/listings/data/listing_repository.dart` only for converting
+    seeded `/seed/` loopback image URLs to the build's `SITE_URL`
+- Do not edit or stage mobile presentation/localization files from Claude. Before every
+  commit, use `git status --short` and stage only Claude-owned API files.
+- The Android emulator exposed a backend URL-boundary defect: seeded web images arrive as
+  `http://localhost:3000/seed/...`, while generated object-storage thumbnails can arrive as
+  signed `http://localhost:9000/...` URLs. Codex safely rewrites only `/seed/` URLs. Claude's
+  presigning work must make object-storage display URLs reachable from a physical phone and
+  emulator without invalidating the signature; do not solve this by rewriting a signed URL
+  in Flutter.
+- Current Codex verification is `flutter analyze` clean and 22/22 Flutter tests passing.
+  Emulator screenshots are in `artifacts/mobile-ui/home-light.png`. One object-storage card
+  remains blank until Claude's public/presigned media origin fix is integrated.
+- The user explicitly said **do not build the APK yet**. Claude must not run a final APK/AAB
+  packaging or claim release completion. Source checks and focused API tests are allowed.
+- After Claude finishes, Codex must re-check Git, re-run analysis/tests, inspect home,
+  search, listing detail, post and account in both light and dark themes, and only build the
+  APK when the user authorizes the merged release step.
 
 Current search integration evidence:
 
@@ -182,12 +223,14 @@ Latest same-state evidence:
 
 ## Task to paste into Claude Code
 
-> Read `docs/CODEX_CLAUDE_WORK_SPLIT.md` and follow the Claude Code ownership boundary.
-> Start with search correctness. Reproduce `q=car` returning the iPhone, show the exact
-> field or token that matched, fix both Meilisearch and database fallback semantics, and
-> add durable tests proving irrelevant listings do not appear. Do not edit `apps/web/**`,
-> mobile presentation files, localized copy, `package.json` or `package-lock.json`.
-> Before every edit, re-check Git because Codex is working concurrently.
+> Read `docs/CODEX_CLAUDE_WORK_SPLIT.md`, especially “Mobile UI handoff — 2026-07-28”.
+> Continue only your active API media/presigning and authentication work. Make generated
+> media URLs reachable from Android emulators and physical phones without changing signed
+> URL hosts after signing, and add focused API coverage for that origin contract. Do not
+> edit or stage mobile presentation, localization, theme, listing repository, web UI,
+> `package.json` or `package-lock.json`; Codex owns those dirty files. Re-check
+> `git status --short` before every edit and stage only your API files. Do not build an APK
+> or AAB—the user has deferred packaging until both work streams are merged.
 
 ## Verified checkpoint — 2026-07-26
 

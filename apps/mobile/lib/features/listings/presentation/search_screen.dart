@@ -72,15 +72,33 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
 
     return Scaffold(
       appBar: AppBar(
+        titleSpacing: LoczSpacing.x4,
         title: TextField(
           controller: _controller,
           autofocus: false,
           textInputAction: TextInputAction.search,
           decoration: InputDecoration(
             hintText: strings('search.placeholder'),
+            prefixIcon: const Icon(Icons.search_rounded, size: 20),
+            suffixIcon: _controller.text.isEmpty
+                ? null
+                : IconButton(
+                    onPressed: () {
+                      _controller.clear();
+                      setState(() => _query = '');
+                      _run();
+                    },
+                    icon: const Icon(Icons.close_rounded, size: 18),
+                  ),
             border: InputBorder.none,
+            enabledBorder: InputBorder.none,
+            focusedBorder: InputBorder.none,
+            fillColor: Theme.of(context).colorScheme.surface,
           ),
-          onChanged: _onQueryChanged,
+          onChanged: (value) {
+            setState(() {});
+            _onQueryChanged(value);
+          },
           onSubmitted: (value) {
             _debounce?.cancel();
             setState(() => _query = value.trim());
@@ -90,53 +108,74 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
       ),
       body: Column(
         children: [
-          SizedBox(
-            height: 52,
-            child: ListView(
-              scrollDirection: Axis.horizontal,
-              padding: const EdgeInsets.symmetric(horizontal: LoczSpacing.x3),
-              children: [
-                for (final km in Env.radiusPresetsKm)
-                  Padding(
-                    padding: const EdgeInsets.only(right: LoczSpacing.x2),
-                    child: FilterChip(
-                      label: Text('$km ${strings('common.km')}'),
-                      selected: _radiusKm == km,
-                      onSelected: (selected) {
-                        setState(() => _radiusKm = selected ? km : null);
-                        _run();
-                      },
-                    ),
-                  ),
-                const SizedBox(width: LoczSpacing.x2),
-                PopupMenuButton<String>(
-                  initialValue: _sort,
-                  onSelected: (value) {
-                    setState(() => _sort = value);
-                    _run();
-                  },
-                  itemBuilder: (context) => const [
-                    PopupMenuItem(
-                      value: 'relevance',
-                      child: Text('Best match'),
-                    ),
-                    PopupMenuItem(value: 'newest', child: Text('Newest')),
-                    PopupMenuItem(
-                      value: 'price_asc',
-                      child: Text('Price: low to high'),
-                    ),
-                    PopupMenuItem(
-                      value: 'price_desc',
-                      child: Text('Price: high to low'),
-                    ),
-                    PopupMenuItem(value: 'distance', child: Text('Nearest')),
-                  ],
-                  child: const Chip(
-                    avatar: Icon(Icons.sort, size: 16),
-                    label: Text('Sort'),
-                  ),
+          DecoratedBox(
+            decoration: BoxDecoration(
+              color: Theme.of(context).colorScheme.surface,
+              border: Border(
+                bottom: BorderSide(
+                  color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.4),
                 ),
-              ],
+              ),
+            ),
+            child: SizedBox(
+              height: 48,
+              child: ListView(
+                scrollDirection: Axis.horizontal,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: LoczSpacing.x3,
+                  vertical: 6,
+                ),
+                children: [
+                  for (final km in Env.radiusPresetsKm)
+                    Padding(
+                      padding: const EdgeInsets.only(right: 6),
+                      child: FilterChip(
+                        label: Text('$km ${strings('common.km')}'),
+                        selected: _radiusKm == km,
+                        onSelected: (selected) {
+                          setState(() => _radiusKm = selected ? km : null);
+                          _run();
+                        },
+                      ),
+                    ),
+                  const SizedBox(width: 2),
+                  PopupMenuButton<String>(
+                    initialValue: _sort,
+                    onSelected: (value) {
+                      setState(() => _sort = value);
+                      _run();
+                    },
+                    itemBuilder: (context) => const [
+                      PopupMenuItem(
+                        value: 'relevance',
+                        child: Text('Best match'),
+                      ),
+                      PopupMenuItem(value: 'newest', child: Text('Newest')),
+                      PopupMenuItem(
+                        value: 'price_asc',
+                        child: Text('Price: low to high'),
+                      ),
+                      PopupMenuItem(
+                        value: 'price_desc',
+                        child: Text('Price: high to low'),
+                      ),
+                      PopupMenuItem(value: 'distance', child: Text('Nearest')),
+                    ],
+                    child: Chip(
+                      avatar: const Icon(Icons.sort_rounded, size: 16),
+                      label: Text(
+                        switch (_sort) {
+                          'newest' => 'Newest',
+                          'price_asc' => 'Lowest price',
+                          'price_desc' => 'Highest price',
+                          'distance' => 'Nearest',
+                          _ => 'Best match',
+                        },
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
           Expanded(
@@ -154,6 +193,12 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
                         children: [
+                          Icon(
+                            Icons.search_off_rounded,
+                            size: 40,
+                            color: Theme.of(context).colorScheme.primary,
+                          ),
+                          const SizedBox(height: LoczSpacing.x3),
                           Text(
                             '${snapshot.error}',
                             textAlign: TextAlign.center,
@@ -194,7 +239,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                 }
 
                 return GridView.builder(
-                  padding: const EdgeInsets.all(LoczSpacing.x4),
+                  padding: const EdgeInsets.all(LoczSpacing.x3),
                   gridDelegate: listingCardGridDelegate(textScale),
                   itemCount: items.length,
                   itemBuilder: (context, index) => ListingCard(

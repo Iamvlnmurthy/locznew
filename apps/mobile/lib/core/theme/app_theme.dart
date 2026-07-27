@@ -166,7 +166,6 @@ class AppTheme {
         side: BorderSide(color: scheme.outline),
         labelStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
         padding: const EdgeInsets.symmetric(horizontal: 4),
-        visualDensity: VisualDensity.compact,
       ),
       navigationBarTheme: NavigationBarThemeData(
         backgroundColor: scheme.surface,

@@ -102,118 +102,173 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
     return Scaffold(
       appBar: AppBar(),
       body: SafeArea(
-        child: ListView(
-          padding: const EdgeInsets.all(LoczSpacing.x6),
-          children: [
-            Text(
-              _codeSent ? strings('auth.codeTitle') : strings('auth.signInTitle'),
-              style: theme.textTheme.headlineSmall,
+        child: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 440),
+            child: ListView(
+              padding: const EdgeInsets.fromLTRB(
+                LoczSpacing.x5,
+                LoczSpacing.x2,
+                LoczSpacing.x5,
+                LoczSpacing.x6,
+              ),
+              children: [
+                Row(
+                  children: [
+                    Container(
+                      width: 42,
+                      height: 42,
+                      decoration: BoxDecoration(
+                        color: theme.colorScheme.primary,
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                      alignment: Alignment.center,
+                      child: Text(
+                        'Z',
+                        style: theme.textTheme.titleLarge?.copyWith(
+                          color: theme.colorScheme.onPrimary,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Text(
+                      'LocZ',
+                      style: theme.textTheme.titleLarge?.copyWith(
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: -0.5,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: LoczSpacing.x8),
+                Text(
+                  _codeSent ? strings('auth.codeTitle') : strings('auth.signInTitle'),
+                  style: theme.textTheme.headlineSmall,
+                ),
+                const SizedBox(height: LoczSpacing.x2),
+                Text(
+                  _codeSent
+                      ? strings(
+                          'auth.codeSentTo',
+                          {'phone': '+91 ${_phoneController.text}'},
+                        )
+                      : strings('auth.signInSubtitle'),
+                  style: theme.textTheme.bodyMedium,
+                ),
+                const SizedBox(height: LoczSpacing.x6),
+
+                if (_error != null)
+                  Container(
+                    padding: const EdgeInsets.all(LoczSpacing.x3),
+                    margin: const EdgeInsets.only(bottom: LoczSpacing.x4),
+                    decoration: BoxDecoration(
+                      color: LoczColors.dangerSurface,
+                      borderRadius: BorderRadius.circular(LoczRadius.md),
+                    ),
+                    child: Text(
+                      _error!,
+                      style: const TextStyle(color: LoczColors.danger),
+                    ),
+                  ),
+
+                // The mock provider returns the code in development so the flow is
+                // completable without an SMS gateway. Production never sends this field.
+                if (_codeSent && _debugCode != null)
+                  Container(
+                    padding: const EdgeInsets.all(LoczSpacing.x3),
+                    margin: const EdgeInsets.only(bottom: LoczSpacing.x4),
+                    decoration: BoxDecoration(
+                      color: LoczColors.infoSurface,
+                      borderRadius: BorderRadius.circular(LoczRadius.md),
+                    ),
+                    child: Text(strings('auth.devCode', {'code': _debugCode!})),
+                  ),
+
+                if (!_codeSent) ...[
+                  TextField(
+                    controller: _phoneController,
+                    keyboardType: TextInputType.phone,
+                    autofocus: true,
+                    maxLength: 10,
+                    inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                    decoration: InputDecoration(
+                      labelText: strings('auth.phone'),
+                      prefixText: '+91 ',
+                      counterText: '',
+                    ),
+                  ),
+                  const SizedBox(height: LoczSpacing.x4),
+                  FilledButton(
+                    onPressed: _busy ? null : _requestCode,
+                    child: _busy
+                        ? const SizedBox(
+                            height: 20,
+                            width: 20,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        : Text(strings('auth.sendCode')),
+                  ),
+                ] else ...[
+                  TextField(
+                    controller: _codeController,
+                    keyboardType: TextInputType.number,
+                    autofocus: true,
+                    maxLength: 6,
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(fontSize: 22, letterSpacing: 8),
+                    // Lets Android and iOS auto-fill the code straight from the SMS.
+                    autofillHints: const [AutofillHints.oneTimeCode],
+                    inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                    decoration: InputDecoration(
+                      labelText: strings('auth.code'),
+                      counterText: '',
+                    ),
+                    onSubmitted: (_) => _verify(),
+                  ),
+                  const SizedBox(height: LoczSpacing.x4),
+                  FilledButton(
+                    onPressed: _busy ? null : _verify,
+                    child: _busy
+                        ? const SizedBox(
+                            height: 20,
+                            width: 20,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        : Text(strings('auth.verify')),
+                  ),
+                  const SizedBox(height: LoczSpacing.x2),
+                  TextButton(
+                    onPressed: _busy
+                        ? null
+                        : () => setState(() {
+                              _codeSent = false;
+                              _codeController.clear();
+                              _debugCode = null;
+                              _error = null;
+                            }),
+                    child: Text(strings('common.cancel')),
+                  ),
+                ],
+                const SizedBox(height: LoczSpacing.x6),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      Icons.lock_outline_rounded,
+                      size: 14,
+                      color: theme.colorScheme.primary,
+                    ),
+                    const SizedBox(width: 6),
+                    Text(
+                      strings('auth.privacy'),
+                      style: theme.textTheme.labelSmall,
+                    ),
+                  ],
+                ),
+              ],
             ),
-            const SizedBox(height: LoczSpacing.x2),
-            Text(
-              _codeSent
-                  ? strings(
-                      'auth.codeSentTo',
-                      {'phone': '+91 ${_phoneController.text}'},
-                    )
-                  : strings('auth.signInSubtitle'),
-              style: theme.textTheme.bodyMedium,
-            ),
-            const SizedBox(height: LoczSpacing.x6),
-
-            if (_error != null)
-              Container(
-                padding: const EdgeInsets.all(LoczSpacing.x3),
-                margin: const EdgeInsets.only(bottom: LoczSpacing.x4),
-                decoration: BoxDecoration(
-                  color: LoczColors.dangerSurface,
-                  borderRadius: BorderRadius.circular(LoczRadius.md),
-                ),
-                child: Text(
-                  _error!,
-                  style: const TextStyle(color: LoczColors.danger),
-                ),
-              ),
-
-            // The mock provider returns the code in development so the flow is
-            // completable without an SMS gateway. Production never sends this field.
-            if (_codeSent && _debugCode != null)
-              Container(
-                padding: const EdgeInsets.all(LoczSpacing.x3),
-                margin: const EdgeInsets.only(bottom: LoczSpacing.x4),
-                decoration: BoxDecoration(
-                  color: LoczColors.infoSurface,
-                  borderRadius: BorderRadius.circular(LoczRadius.md),
-                ),
-                child: Text(strings('auth.devCode', {'code': _debugCode!})),
-              ),
-
-            if (!_codeSent) ...[
-              TextField(
-                controller: _phoneController,
-                keyboardType: TextInputType.phone,
-                autofocus: true,
-                maxLength: 10,
-                inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                decoration: InputDecoration(
-                  labelText: strings('auth.phone'),
-                  prefixText: '+91 ',
-                  counterText: '',
-                ),
-              ),
-              const SizedBox(height: LoczSpacing.x4),
-              FilledButton(
-                onPressed: _busy ? null : _requestCode,
-                child: _busy
-                    ? const SizedBox(
-                        height: 20,
-                        width: 20,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      )
-                    : Text(strings('auth.sendCode')),
-              ),
-            ] else ...[
-              TextField(
-                controller: _codeController,
-                keyboardType: TextInputType.number,
-                autofocus: true,
-                maxLength: 6,
-                textAlign: TextAlign.center,
-                style: const TextStyle(fontSize: 22, letterSpacing: 8),
-                // Lets Android and iOS auto-fill the code straight from the SMS.
-                autofillHints: const [AutofillHints.oneTimeCode],
-                inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                decoration: InputDecoration(
-                  labelText: strings('auth.code'),
-                  counterText: '',
-                ),
-                onSubmitted: (_) => _verify(),
-              ),
-              const SizedBox(height: LoczSpacing.x4),
-              FilledButton(
-                onPressed: _busy ? null : _verify,
-                child: _busy
-                    ? const SizedBox(
-                        height: 20,
-                        width: 20,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      )
-                    : Text(strings('auth.verify')),
-              ),
-              const SizedBox(height: LoczSpacing.x2),
-              TextButton(
-                onPressed: _busy
-                    ? null
-                    : () => setState(() {
-                          _codeSent = false;
-                          _codeController.clear();
-                          _debugCode = null;
-                          _error = null;
-                        }),
-                child: Text(strings('common.cancel')),
-              ),
-            ],
-          ],
+          ),
         ),
       ),
     );

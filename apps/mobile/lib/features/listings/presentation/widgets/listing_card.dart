@@ -12,7 +12,7 @@ final _rupees = NumberFormat.currency(locale: 'en_IN', symbol: '₹', decimalDig
 String formatPrice(num value) => _rupees.format(value);
 
 /// Fixed-height rails need extra room as text grows; the app caps scaling at 1.4.
-double listingCardRailHeight(double textScale) => 250 + ((textScale - 1).clamp(0, 0.4) * 160);
+double listingCardRailHeight(double textScale) => 238 + ((textScale - 1).clamp(0, 0.4) * 160);
 
 /// Large text gets fewer, taller cards instead of forcing scaled copy into a dense grid.
 SliverGridDelegateWithMaxCrossAxisExtent listingCardGridDelegate(
@@ -20,9 +20,9 @@ SliverGridDelegateWithMaxCrossAxisExtent listingCardGridDelegate(
 ) =>
     SliverGridDelegateWithMaxCrossAxisExtent(
       maxCrossAxisExtent: textScale > 1.15 ? 320 : 200,
-      mainAxisSpacing: LoczSpacing.x3,
-      crossAxisSpacing: LoczSpacing.x3,
-      childAspectRatio: textScale > 1.15 ? 0.62 : 0.68,
+      mainAxisSpacing: 10,
+      crossAxisSpacing: 10,
+      childAspectRatio: textScale > 1.15 ? 0.66 : 0.72,
     );
 
 class ListingCard extends StatelessWidget {
@@ -74,7 +74,7 @@ class ListingCard extends StatelessWidget {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   AspectRatio(
-                    aspectRatio: 4 / 3,
+                    aspectRatio: 1.28,
                     child: Stack(
                       fit: StackFit.expand,
                       children: [
@@ -124,7 +124,7 @@ class ListingCard extends StatelessWidget {
                     ),
                   ),
                   Padding(
-                    padding: const EdgeInsets.all(LoczSpacing.x3),
+                    padding: const EdgeInsets.fromLTRB(10, 9, 10, 10),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       mainAxisSize: MainAxisSize.min,
@@ -134,6 +134,7 @@ class ListingCard extends StatelessWidget {
                             price,
                             style: theme.textTheme.titleMedium?.copyWith(
                               fontWeight: FontWeight.w700,
+                              letterSpacing: -0.15,
                               color: listing.isFree ? LoczColors.success : null,
                             ),
                           ),
@@ -147,6 +148,12 @@ class ListingCard extends StatelessWidget {
                         const SizedBox(height: LoczSpacing.x1),
                         Row(
                           children: [
+                            Icon(
+                              Icons.location_on_outlined,
+                              size: 12,
+                              color: theme.colorScheme.onSurfaceVariant,
+                            ),
+                            const SizedBox(width: 2),
                             Expanded(
                               child: Text(
                                 place,

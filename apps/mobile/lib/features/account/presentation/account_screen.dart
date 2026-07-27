@@ -22,24 +22,84 @@ class AccountScreen extends ConsumerWidget {
     if (!auth.isSignedIn) {
       return Scaffold(
         appBar: AppBar(title: Text(strings('nav.account'))),
-        body: Center(
-          child: Padding(
-            padding: const EdgeInsets.all(LoczSpacing.x8),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const Icon(Icons.person_outline, size: 48),
-                const SizedBox(height: LoczSpacing.x4),
-                FilledButton(
-                  onPressed: () => context.push('/signin?next=/account'),
-                  child: Text(strings('nav.signIn')),
+        body: ListView(
+          padding: const EdgeInsets.all(LoczSpacing.x4),
+          children: [
+            Card(
+              child: Padding(
+                padding: const EdgeInsets.all(LoczSpacing.x4),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Container(
+                      width: 48,
+                      height: 48,
+                      decoration: BoxDecoration(
+                        color: Theme.of(context).colorScheme.primaryContainer,
+                        borderRadius: BorderRadius.circular(15),
+                      ),
+                      child: Icon(
+                        Icons.person_outline_rounded,
+                        color: Theme.of(context).colorScheme.primary,
+                      ),
+                    ),
+                    const SizedBox(width: LoczSpacing.x3),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            strings('nav.signIn'),
+                            style: Theme.of(context).textTheme.titleLarge,
+                          ),
+                          const SizedBox(height: 3),
+                          Text(
+                            strings('account.signInHint'),
+                            style: Theme.of(context).textTheme.bodyMedium,
+                          ),
+                          const SizedBox(height: LoczSpacing.x3),
+                          FilledButton.icon(
+                            onPressed: () => context.push('/signin?next=/account'),
+                            icon: const Icon(Icons.login_rounded, size: 17),
+                            label: Text(strings('nav.signIn')),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
                 ),
-                const SizedBox(height: LoczSpacing.x4),
-                const DeviceLockTile(),
-                const _LanguageSelector(),
-              ],
+              ),
             ),
-          ),
+            const SizedBox(height: LoczSpacing.x3),
+            Card(
+              child: Column(
+                children: [
+                  const DeviceLockTile(),
+                  const Divider(),
+                  ListTile(
+                    dense: true,
+                    leading: const Icon(Icons.brightness_6_outlined),
+                    title: Text(strings('account.appearance')),
+                    trailing: const Icon(Icons.chevron_right_rounded),
+                    onTap: () => _showAppearance(context),
+                  ),
+                  const Divider(),
+                  ListTile(
+                    dense: true,
+                    leading: const Icon(Icons.translate_rounded),
+                    title: Text(strings('account.language')),
+                    trailing: const Icon(Icons.chevron_right_rounded),
+                    onTap: () => showModalBottomSheet<void>(
+                      context: context,
+                      builder: (_) => const SafeArea(
+                        child: _LanguageSelector(),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
         ),
       );
     }
@@ -72,12 +132,18 @@ class AccountScreen extends ConsumerWidget {
                       child: _LanguageSelector(),
                     ),
                   );
+                } else if (value == 'appearance' && context.mounted) {
+                  await _showAppearance(context);
                 }
               },
               itemBuilder: (context) => [
                 PopupMenuItem(
                   value: 'language',
                   child: Text(strings('account.language')),
+                ),
+                PopupMenuItem(
+                  value: 'appearance',
+                  child: Text(strings('account.appearance')),
                 ),
                 PopupMenuItem(
                   value: 'signout',
@@ -102,6 +168,71 @@ class AccountScreen extends ConsumerWidget {
           ],
         ),
       ),
+    );
+  }
+}
+
+Future<void> _showAppearance(BuildContext context) {
+  return showModalBottomSheet<void>(
+    context: context,
+    builder: (_) => const SafeArea(
+      top: false,
+      child: Padding(
+        padding: EdgeInsets.fromLTRB(
+          LoczSpacing.x4,
+          0,
+          LoczSpacing.x4,
+          LoczSpacing.x4,
+        ),
+        child: _AppearanceSelector(),
+      ),
+    ),
+  );
+}
+
+class _AppearanceSelector extends ConsumerWidget {
+  const _AppearanceSelector();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final strings = Strings.of(context);
+    final current = ref.watch(themeModeProvider);
+
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          strings('account.appearance'),
+          style: Theme.of(context).textTheme.titleLarge,
+        ),
+        const SizedBox(height: LoczSpacing.x3),
+        RadioGroup<ThemeMode>(
+          groupValue: current,
+          onChanged: (mode) {
+            if (mode != null) ref.read(themeModeProvider.notifier).select(mode);
+          },
+          child: Column(
+            children: [
+              RadioListTile(
+                value: ThemeMode.system,
+                secondary: const Icon(Icons.settings_suggest_outlined),
+                title: Text(strings('account.themeSystem')),
+              ),
+              RadioListTile(
+                value: ThemeMode.light,
+                secondary: const Icon(Icons.light_mode_outlined),
+                title: Text(strings('account.themeLight')),
+              ),
+              RadioListTile(
+                value: ThemeMode.dark,
+                secondary: const Icon(Icons.dark_mode_outlined),
+                title: Text(strings('account.themeDark')),
+              ),
+            ],
+          ),
+        ),
+      ],
     );
   }
 }
