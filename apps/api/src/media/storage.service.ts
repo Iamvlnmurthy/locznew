@@ -6,6 +6,7 @@ import {
   S3Client,
 } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
+import { presignGetUrl } from './presign';
 import { Injectable, Logger } from '@nestjs/common';
 import { AppConfig } from '../config/config.module';
 
@@ -78,7 +79,19 @@ export class StorageService {
     // convincing catalogue before MinIO is populated. User uploads still use normal
     // object-storage keys; absolute URLs are never accepted by the upload endpoints.
     if (/^https?:\/\//i.test(key)) return key;
-    return `${this.config.get('STORAGE_PUBLIC_BASE_URL')}/${key}`;
+
+    // Signed rather than plain, so a copied link stops working and the images cannot be
+    // embedded on someone else's site indefinitely. Aligned to a window so the URL is
+    // stable enough to cache — see `presignGetUrl` for why that trade is made.
+    return presignGetUrl({
+      endpoint: this.config.get('STORAGE_ENDPOINT'),
+      region: this.config.get('STORAGE_REGION'),
+      bucket: this.bucket,
+      accessKeyId: this.config.get('STORAGE_ACCESS_KEY_ID'),
+      secretAccessKey: this.config.get('STORAGE_SECRET_ACCESS_KEY'),
+      key,
+      expiresIn: this.config.get('STORAGE_SIGNED_URL_TTL_SECONDS'),
+    });
   }
 
   async delete(key: string): Promise<void> {
