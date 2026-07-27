@@ -5,6 +5,9 @@ void main() {
   test('supported locales own every high-trust and posting translation', () {
     const requiredKeys = [
       'location.soon',
+      'location.loadError',
+      'location.noCities',
+      'location.noMatches',
       'post.fieldCondition',
       'post.conditionNew',
       'post.conditionLikeNew',

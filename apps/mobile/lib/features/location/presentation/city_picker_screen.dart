@@ -214,7 +214,11 @@ class _CityPickerScreenState extends ConsumerState<CityPickerScreen> {
           Expanded(
             child: cities.when(
               loading: () => const Center(child: CircularProgressIndicator()),
-              error: (error, _) => Center(child: Text(error.toString())),
+              error: (_, __) => _LocationLoadError(
+                message: strings('location.loadError'),
+                retryLabel: strings('common.retry'),
+                onRetry: () => ref.invalidate(citiesProvider),
+              ),
               data: (list) {
                 final filtered = list
                     .where(
@@ -229,6 +233,14 @@ class _CityPickerScreenState extends ConsumerState<CityPickerScreen> {
                   ..sort(
                     (a, b) => (b.isLaunched ? 1 : 0).compareTo(a.isLaunched ? 1 : 0),
                   );
+
+                if (filtered.isEmpty) {
+                  return _EmptyCities(
+                    message: strings(
+                      _query.isEmpty ? 'location.noCities' : 'location.noMatches',
+                    ),
+                  );
+                }
 
                 return ListView.separated(
                   padding: const EdgeInsets.fromLTRB(
@@ -266,10 +278,12 @@ class _CityPickerScreenState extends ConsumerState<CityPickerScreen> {
                                 label: Text(strings('location.soon')),
                                 visualDensity: VisualDensity.compact,
                               ),
-                        onTap: () async {
-                          await ref.read(selectedCityProvider.notifier).select(city);
-                          if (context.mounted) context.pop();
-                        },
+                        onTap: !city.isLaunched
+                            ? null
+                            : () async {
+                                await ref.read(selectedCityProvider.notifier).select(city);
+                                if (context.mounted) context.pop();
+                              },
                       ),
                     );
                   },
@@ -278,6 +292,68 @@ class _CityPickerScreenState extends ConsumerState<CityPickerScreen> {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _LocationLoadError extends StatelessWidget {
+  const _LocationLoadError({
+    required this.message,
+    required this.retryLabel,
+    required this.onRetry,
+  });
+
+  final String message;
+  final String retryLabel;
+  final VoidCallback onRetry;
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(LoczSpacing.x8),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              Icons.location_off_outlined,
+              size: 40,
+              color: Theme.of(context).colorScheme.primary,
+            ),
+            const SizedBox(height: LoczSpacing.x3),
+            Text(message, textAlign: TextAlign.center),
+            const SizedBox(height: LoczSpacing.x4),
+            OutlinedButton(onPressed: onRetry, child: Text(retryLabel)),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _EmptyCities extends StatelessWidget {
+  const _EmptyCities({required this.message});
+
+  final String message;
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(LoczSpacing.x8),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              Icons.travel_explore_outlined,
+              size: 40,
+              color: Theme.of(context).colorScheme.primary,
+            ),
+            const SizedBox(height: LoczSpacing.x3),
+            Text(message, textAlign: TextAlign.center),
+          ],
+        ),
       ),
     );
   }
