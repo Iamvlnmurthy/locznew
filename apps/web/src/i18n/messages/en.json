@@ -1288,7 +1288,14 @@
     "codeHint": "The code expires shortly for your security.",
     "noPassword": "No password to remember. Your verified phone keeps your account secure.",
     "accountNote": "New here? Verifying your number creates your free LocZ account automatically.",
-    "privacyNote": "Your number stays private unless you choose to share it."
+    "privacyNote": "Your number stays private unless you choose to share it.",
+    "signInTitleP": "Sign in",
+    "signInSubtitleP": "Use your mobile number and password.",
+    "passwordLabel": "Password",
+    "submitP": "Sign in",
+    "submittingP": "Signing in…",
+    "missingPassword": "Enter your password.",
+    "badCredentials": "Incorrect mobile number or password."
   },
   "dashboard": {
     "title": "My LocZ",

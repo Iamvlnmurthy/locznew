@@ -4,7 +4,7 @@ import { redirect } from 'next/navigation';
 import { Icon } from '@/components/icons';
 import { getTranslator } from '@/i18n';
 import { getCurrentUser, getLocale } from '@/lib/session';
-import { SignInForm } from './sign-in-form';
+import { PasswordSignInForm } from './password-sign-in-form';
 
 export const metadata: Metadata = {
   title: 'Sign in',
@@ -83,33 +83,22 @@ export default async function SignInPage({
             </span>
           </div>
 
-          <SignInForm
+          <PasswordSignInForm
             next={safeNext}
             labels={{
-              signInTitle: t('auth.signInTitle'),
-              signInSubtitle: t('auth.signInSubtitle'),
+              title: t('auth.signInTitleP'),
+              subtitle: t('auth.signInSubtitleP'),
               phone: t('auth.phone'),
               phoneHint: t('auth.phoneHint'),
-              sendCode: t('auth.sendCode'),
-              sending: t('auth.sending'),
-              codeTitle: t('auth.codeTitle'),
-              codeSentTo: t('auth.codeSentTo'),
-              code: t('auth.code'),
-              verify: t('auth.verify'),
-              verifying: t('auth.verifying'),
-              changeNumber: t('auth.changeNumber'),
+              password: t('auth.passwordLabel'),
+              submit: t('auth.submitP'),
+              submitting: t('auth.submittingP'),
               invalidPhone: t('auth.invalidPhone'),
-              devCodeNotice: t('auth.devCodeNotice'),
-              name: t('auth.name'),
-              nameHint: t('auth.nameHint'),
-              optional: t('auth.optional'),
-              codeHint: t('auth.codeHint'),
-              noPassword: t('auth.noPassword'),
-              accountNote: t('auth.accountNote'),
+              missingPassword: t('auth.missingPassword'),
+              badCredentials: t('auth.badCredentials'),
+              error: t('auth.badCredentials'),
               newHere: t('register.newHere'),
               createOne: t('register.createOne'),
-              privacyNote: t('auth.privacyNote'),
-              resend: t('auth.resend'),
             }}
           />
 

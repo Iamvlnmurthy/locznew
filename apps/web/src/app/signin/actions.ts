@@ -40,6 +40,48 @@ export async function requestCodeAction(
   }
 }
 
+/**
+ * Signs in with a mobile number and a password.
+ *
+ * The one-time-code flow is still implemented above and still works, but nothing in the
+ * interface reaches it: with no SMS gateway the codes were a shared PIN, which authenticates
+ * knowledge of four digits rather than ownership of a number. Passwords give each person a
+ * credential of their own. When a real SMS provider is configured the code path can be shown
+ * again — it is deliberately left intact rather than deleted for that reason.
+ */
+export async function passwordSignInAction(
+  _prev: SignInState,
+  formData: FormData,
+): Promise<SignInState> {
+  const raw = String(formData.get('phone') ?? '').replace(/\D/g, '');
+  const national = raw.startsWith('91') && raw.length === 12 ? raw.slice(2) : raw;
+  const password = String(formData.get('password') ?? '');
+  const next = String(formData.get('next') ?? '/');
+
+  if (!INDIAN_MOBILE.test(national)) return { step: 'phone', error: 'invalidPhone' };
+  if (!password) return { step: 'phone', phone: national, error: 'missingPassword' };
+
+  let session: AuthSession;
+  try {
+    session = await api<AuthSession>('/auth/login/phone', {
+      method: 'POST',
+      body: {
+        phone: `+91${national}`,
+        password,
+        device: { deviceKey: `web-${Date.now()}`, platform: 'WEB', name: 'Web browser' },
+      },
+    });
+  } catch {
+    // The API answers the same way for an unknown number and a wrong password, so the
+    // interface must not invent a distinction the server deliberately refuses to make.
+    // The thrown message is deliberately discarded for the same reason.
+    return { step: 'phone', phone: national, error: 'badCredentials' };
+  }
+
+  await storeSession(session);
+  redirect(next.startsWith('/') && !next.startsWith('//') ? next : '/');
+}
+
 export async function verifyCodeAction(
   prev: SignInState,
   formData: FormData,
