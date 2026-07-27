@@ -153,9 +153,27 @@ if (!existsSync(envPath)) {
     fail('JWT access and refresh secrets must be different');
   }
 
-  const otpProvider = required(env, 'OTP_PROVIDER');
-  if (otpProvider === 'mock') {
+  // Sign-in is a mobile number and a password. The one-time-code routes are switched off
+  // with AUTH_OTP_ENABLED=false and answer as though they do not exist, so the product sends
+  // no SMS at all — and demanding gateway credentials for a feature that is turned off is a
+  // gate that blocks a launch without protecting anything.
+  //
+  // The check is not removed, it is made conditional. The moment somebody turns the code
+  // routes back on, every requirement below applies again, and the mock provider is refused
+  // as firmly as before. That ordering matters: enabling OTP without a real gateway would
+  // mean the server handing out login codes in its own responses.
+  const otpEnabled = (env.get('AUTH_OTP_ENABLED') ?? 'true') !== 'false';
+  const otpProvider = otpEnabled ? required(env, 'OTP_PROVIDER') : env.get('OTP_PROVIDER');
+
+  if (!otpEnabled) {
+    warn(
+      'AUTH_OTP_ENABLED=false — sign-in is password-only, so no SMS gateway is required. ' +
+        'Turning the code routes back on will require MSG91 or Twilio credentials again.',
+    );
+  } else if (otpProvider === 'mock') {
     fail('OTP_PROVIDER=mock is forbidden in production');
+  } else if (otpProvider === 'pin') {
+    fail('OTP_PROVIDER=pin is a shared code and is forbidden in production');
   } else if (otpProvider === 'msg91') {
     required(env, 'MSG91_AUTH_KEY');
     required(env, 'MSG91_SENDER_ID');
@@ -172,7 +190,7 @@ if (!existsSync(envPath)) {
         'Twilio requires TWILIO_API_KEY_SID + TWILIO_API_KEY_SECRET (preferred), or TWILIO_AUTH_TOKEN',
       );
     }
-  } else if (otpProvider) {
+  } else if (otpEnabled && otpProvider) {
     fail('OTP_PROVIDER must be msg91 or twilio');
   }
 
