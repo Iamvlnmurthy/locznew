@@ -77,8 +77,10 @@
     "signIn": "Sign in",
     "signOut": "Sign out",
     "language": "Language",
+    "toggleTheme": "Switch light or dark mode",
     "listBusiness": "List your business",
-    "primary": "Primary navigation"
+    "primary": "Primary navigation",
+    "getApp": "Get the app"
   },
   "location": {
     "label": "Location",
@@ -1354,5 +1356,17 @@
     "body": "The listing may have moved, expired, or found a new home.",
     "kicker": "Lost locally?",
     "title": "We couldn’t find that place."
+  },
+  "getApp": {
+    "title": "Get the LocZ app",
+    "lede": "Buy and sell near you, in your language. Android app, free to install.",
+    "download": "Download for Android",
+    "version": "Version",
+    "installTitle": "How to install",
+    "step1": "Tap Download. Your browser will ask you to confirm — the file comes from locz.in.",
+    "step2": "Open the downloaded file. Android will ask permission to install apps from this source, because LocZ is not on the Play Store yet.",
+    "step3": "Tap Install, then Open. Sign in with your phone number.",
+    "updateNote": "The app checks for new versions on its own and offers an update when one is ready — you never need to come back to this page.",
+    "iosNote": "An iPhone version is not available yet."
   }
 }

@@ -24,6 +24,12 @@ dependencies:
   dio: ^5.7.0
 
   # Tokens are kept in the Keystore / Keychain, never in shared preferences.
+  # Device lock (fingerprint, face, or the phone's own PIN/pattern) used to gate
+  # access to a signed-in session. See core/security/device_lock.dart.
+  local_auth: ^2.3.0
+  # Reports this build's own versionCode, which the update check compares against
+  # the published manifest. See core/update/app_update.dart.
+  package_info_plus: ^8.1.1
   flutter_secure_storage: ^9.2.4
   shared_preferences: ^2.3.3
 

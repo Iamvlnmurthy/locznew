@@ -6,8 +6,8 @@
  */
 
 :root {
-  --locz-font-sans: 'Inter', 'Noto Sans', 'Noto Sans Telugu', 'Noto Sans Devanagari', system-ui,
-    sans-serif;
+  --locz-font-sans:
+    'Inter', 'Noto Sans', 'Noto Sans Telugu', 'Noto Sans Devanagari', system-ui, sans-serif;
   --locz-font-mono: 'JetBrains Mono', ui-monospace, monospace;
 
   --locz-primary: #125b4c;
@@ -71,6 +71,10 @@
   --locz-primary-soft: #0a4f49;
   --locz-accent: #ffbe52;
   --locz-accent-soft: #3a2c10;
+  --locz-coral: #ff8068;
+  --locz-coral-soft: #3c201d;
+  --locz-lilac-soft: #292641;
+  --locz-blue-soft: #172e39;
 
   --locz-bg: #141a1a;
   --locz-surface: #222929;
@@ -87,6 +91,11 @@
   --locz-warning-surface: #3a2c10;
   --locz-danger-surface: #3a1a16;
   --locz-info-surface: #12263a;
+
+  --locz-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.28);
+  --locz-shadow-md: 0 10px 28px rgba(0, 0, 0, 0.3);
+  --locz-shadow-lg: 0 24px 64px rgba(0, 0, 0, 0.4);
+  --locz-shadow-focus: 0 0 0 4px rgba(43, 186, 167, 0.24);
 }
 
 /* Respect the OS preference unless the user has explicitly chosen a theme. */
@@ -96,6 +105,11 @@
     --locz-primary-hover: #5bd2c1;
     --locz-primary-soft: #0a4f49;
     --locz-accent: #ffbe52;
+    --locz-accent-soft: #3a2c10;
+    --locz-coral: #ff8068;
+    --locz-coral-soft: #3c201d;
+    --locz-lilac-soft: #292641;
+    --locz-blue-soft: #172e39;
 
     --locz-bg: #141a1a;
     --locz-surface: #222929;
@@ -107,6 +121,16 @@
     --locz-text-secondary: #cbd3d3;
     --locz-text-muted: #9aa5a5;
     --locz-text-inverse: #141a1a;
+
+    --locz-success-surface: #0d3326;
+    --locz-warning-surface: #3a2c10;
+    --locz-danger-surface: #3a1a16;
+    --locz-info-surface: #12263a;
+
+    --locz-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.28);
+    --locz-shadow-md: 0 10px 28px rgba(0, 0, 0, 0.3);
+    --locz-shadow-lg: 0 24px 64px rgba(0, 0, 0, 0.4);
+    --locz-shadow-focus: 0 0 0 4px rgba(43, 186, 167, 0.24);
   }
 }
 

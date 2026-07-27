@@ -1,4 +1,10 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Device lock. USE_BIOMETRIC covers fingerprint and face on API 28+; the older
+         USE_FINGERPRINT keeps API 23-27 working, where BiometricPrompt falls back to the
+         legacy fingerprint API. Neither grants access to biometric data — they only allow
+         asking the system to confirm the user is present. -->
+    <uses-permission android:name="android.permission.USE_BIOMETRIC" />
+    <uses-permission android:name="android.permission.USE_FINGERPRINT" />
     <uses-permission android:name="android.permission.INTERNET" />
 
     <!-- Coarse only. LocZ resolves a city or a pincode, never a doorstep, and asking for

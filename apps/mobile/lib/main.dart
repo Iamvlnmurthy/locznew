@@ -15,6 +15,8 @@ import 'core/notifications/push_token_registrar.dart';
 import 'core/observability/mobile_error_reporter.dart';
 import 'core/providers.dart';
 import 'core/router/app_router.dart';
+import 'core/security/device_lock_gate.dart';
+import 'core/update/update_banner.dart';
 import 'core/theme/app_theme.dart';
 
 Future<void> main() async {
@@ -183,7 +185,25 @@ class LoczApp extends ConsumerWidget {
         final scale = MediaQuery.textScalerOf(context).clamp(maxScaleFactor: 1.4);
         return MediaQuery(
           data: MediaQuery.of(context).copyWith(textScaler: scale),
-          child: child!,
+          // Wraps the whole app rather than individual screens: what the device lock
+          // protects is the session, so it should not matter which screen was open when
+          // the phone changed hands. Reads auth state through `ref` at challenge time
+          // rather than capturing it, so signing out releases the gate immediately.
+          child: DeviceLockGate(
+            isSignedIn: () => ref.read(authProvider).isSignedIn,
+            // The banner sits above the app rather than inside a screen, so it appears
+            // wherever the user happens to be — and inside the lock gate, so a locked
+            // phone does not advertise anything.
+            child: Column(
+              children: [
+                // Only the top inset: the banner sits above every Scaffold, so without this
+                // it renders underneath the status bar. The screens below keep their own
+                // bottom insets, so claiming those here would double the padding.
+                const SafeArea(bottom: false, child: UpdateBanner()),
+                Expanded(child: child!),
+              ],
+            ),
+          ),
         );
       },
     );

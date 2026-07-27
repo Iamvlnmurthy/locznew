@@ -5,6 +5,7 @@ import { getCurrentUser, getSelectedCity } from '@/lib/session';
 import { LocationChip } from './location-chip';
 import { LocaleSwitcher } from './locale-switcher';
 import { Icon } from './icons';
+import { ThemeToggle } from './theme-toggle';
 
 /**
  * Site header. Search and location are the two controls that matter on a location-first
@@ -39,6 +40,8 @@ export async function Header({ locale }: { locale: Locale }) {
           changeLabel={t('location.change')}
         />
 
+        <ThemeToggle label={t('nav.toggleTheme')} className="theme-toggle--mobile" />
+
         <form className="searchbar" action="/search" method="get" role="search">
           <label htmlFor="site-search" className="sr-only">
             {t('search.submit')}
@@ -58,6 +61,7 @@ export async function Header({ locale }: { locale: Locale }) {
         </form>
 
         <div className="header__actions">
+          <ThemeToggle label={t('nav.toggleTheme')} />
           <LocaleSwitcher current={locale} label={t('nav.language')} />
 
           {user ? (
@@ -87,6 +91,12 @@ export async function Header({ locale }: { locale: Locale }) {
               {t('nav.signIn')}
             </Link>
           )}
+
+          {/* LocZ is sideloaded rather than on the Play Store, so the download has to be
+              findable from the site itself. */}
+          <Link href="/get-app" className="btn btn--ghost header__get-app">
+            <Icon name="phone" width="17" height="17" /> {t('nav.getApp')}
+          </Link>
 
           <Link href="/post" className="btn btn--primary">
             <Icon name="plus" width="18" height="18" /> {t('nav.post')}

@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from 'next';
 import Link from 'next/link';
+import Script from 'next/script';
 import { Analytics } from '@vercel/analytics/next';
 import { SpeedInsights } from '@vercel/speed-insights/next';
 import { Header } from '@/components/header';
@@ -64,7 +65,26 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   return (
     // `lang` is set from the user's locale so screen readers pronounce Telugu and Hindi
     // correctly instead of reading them as accented English.
-    <html lang={locale} data-theme="light" data-scroll-behavior="smooth">
+    <html
+      lang={locale}
+      data-density="compact"
+      data-scroll-behavior="smooth"
+      suppressHydrationWarning
+    >
+      <head>
+        <Script id="locz-theme" strategy="beforeInteractive">{`
+          try {
+            const saved = localStorage.getItem('locz-theme');
+            const theme = saved === 'light' || saved === 'dark'
+              ? saved
+              : matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+            document.documentElement.dataset.theme = theme;
+            document.documentElement.style.colorScheme = theme;
+          } catch (_) {
+            document.documentElement.dataset.theme = 'light';
+          }
+        `}</Script>
+      </head>
       <body>
         <Header locale={locale} />
         <main id="main">{children}</main>

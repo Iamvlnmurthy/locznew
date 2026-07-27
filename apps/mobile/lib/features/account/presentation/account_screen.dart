@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/i18n/strings.dart';
+import 'device_lock_tile.dart';
 import '../../../core/network/api_exception.dart';
 import '../../../core/providers.dart';
 import '../../../core/theme/tokens.g.dart';
@@ -34,6 +35,7 @@ class AccountScreen extends ConsumerWidget {
                   child: Text(strings('nav.signIn')),
                 ),
                 const SizedBox(height: LoczSpacing.x4),
+                const DeviceLockTile(),
                 const _LanguageSelector(),
               ],
             ),

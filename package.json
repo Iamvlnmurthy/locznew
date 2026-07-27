@@ -25,6 +25,7 @@
     "acceptance:responsive": "node scripts/acceptance-responsive.mjs",
     "acceptance:search-browser": "node scripts/acceptance-search-browser.mjs",
     "acceptance:security": "node scripts/acceptance-security.mjs",
+    "acceptance:theme-browser": "node scripts/acceptance-theme-browser.mjs",
     "acceptance:web": "node scripts/acceptance-web.mjs",
     "build": "npm run build --workspaces --if-present",
     "check:hardcoded": "node scripts/check-hardcoded-text.mjs",
