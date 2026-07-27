@@ -1623,7 +1623,15 @@ async function seedDemoListings() {
       }
     }
 
-    const publicUrl = `http://localhost:3000/seed/listings/${seed.image}`;
+    // The demo photographs are static files served by the web app, so their address is
+    // wherever the web app is. Hardcoding localhost meant every deployed environment seeded
+    // listings whose images resolved to the visitor's own machine — pictures that render on
+    // a developer's laptop and are broken everywhere else, including on a phone.
+    const siteUrl = (process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000').replace(
+      /\/$/,
+      '',
+    );
+    const publicUrl = `${siteUrl}/seed/listings/${seed.image}`;
     await prisma.listingMedia.deleteMany({ where: { listingId: listing.id } });
     await prisma.listingMedia.create({
       data: {
