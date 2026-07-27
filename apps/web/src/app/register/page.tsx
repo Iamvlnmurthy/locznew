@@ -22,7 +22,7 @@ export default async function RegisterPage() {
 
   return (
     <main className="signin-page">
-      <div className="container signin-page__inner">
+      <div className="container signin-page__inner signin-page__inner--single">
         <section className="signin-panel">
           <RegisterForm
             labels={{

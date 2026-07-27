@@ -136,6 +136,24 @@ Claude should treat the following as the active mobile design contract:
   search, listing detail, post and account in both light and dark themes, and only build the
   APK when the user authorizes the merged release step.
 
+## Web authentication UI handoff — 2026-07-28
+
+- Claude's `e70b8e1` password-authentication commit is now the integration baseline. Codex
+  preserved that flow and redesigned only its presentation; Claude must not replace the
+  auth page composition or CSS while finishing API authentication behavior.
+- Codex's current uncommitted web files are `apps/web/src/app/globals.css`,
+  `apps/web/src/app/register/page.tsx` and the now-unmounted legacy
+  `apps/web/src/app/signin/sign-in-form.tsx`. They provide the compact two-panel sign-in,
+  single-panel registration shell, consistent `+91` phone treatment, non-duplicated privacy
+  reassurance, responsive typography and complete light/dark styling.
+- Live verification covers `/signin` and `/register` at 1365×768 and 390×844 in both themes:
+  no horizontal overflow, no page/runtime errors and zero automated WCAG A/AA violations.
+  Web TypeScript, ESLint, i18n, hardcoded-copy scan, production build and the 20/20 theme
+  browser gate pass.
+- Claude should continue only API authentication correctness and tests. Before editing or
+  committing, re-run `git status --short` and do not stage these Codex-owned web files or
+  `apps/mobile/pubspec.yaml`.
+
 Current search integration evidence:
 
 - Claude's focused relevance/query suites pass 26/26.

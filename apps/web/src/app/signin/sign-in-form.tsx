@@ -25,7 +25,6 @@ interface Labels {
   optional: string;
   codeHint: string;
   noPassword: string;
-  accountNote: string;
   newHere: string;
   createOne: string;
   privacyNote: string;
@@ -79,7 +78,6 @@ export function SignInForm({ labels, next }: { labels: Labels; next: string }) {
   return (
     <div className="signin-form">
       <div className="signin-form__heading">
-        <span className="signin-form__step">{onCodeStep ? '02' : '01'} / 02</span>
         <h2>{onCodeStep ? labels.codeTitle : labels.signInTitle}</h2>
         <p>
           {onCodeStep && phone
@@ -136,10 +134,6 @@ export function SignInForm({ labels, next }: { labels: Labels; next: string }) {
             <p className="field__hint">{labels.phoneHint}</p>
           </div>
           <Submit idle={labels.sendCode} busy={labels.sending} />
-          <p className="signin-form__account-note">{labels.accountNote}</p>
-          {/* Until now there was no way to reach registration from here at all — the only
-              route into an account was the code flow, which creates one silently. People
-              looking for a sign-up button had nothing to click. */}
           <p className="signin-form__account-note">
             {labels.newHere} <a href="/register">{labels.createOne}</a>
           </p>
