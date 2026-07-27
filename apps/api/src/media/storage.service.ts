@@ -23,6 +23,25 @@ export class StorageService {
 
   constructor(private readonly config: AppConfig) {
     this.bucket = config.get('STORAGE_BUCKET');
+
+    // A signed URL is bound to the host it was signed for, so this endpoint is not merely
+    // where the API reaches storage — it is the address every *client* will be sent to, and
+    // it cannot be rewritten afterwards without invalidating the signature.
+    //
+    // Pointing it at a loopback address therefore works on the machine running the API and
+    // fails everywhere else: an Android emulator reaches the host as 10.0.2.2, a physical
+    // phone needs the machine's LAN address, and both get a URL naming a server that, from
+    // where they are standing, is themselves. The failure looks like broken images rather
+    // than a configuration mistake, so it is worth saying out loud at boot.
+    const endpoint = config.get('STORAGE_ENDPOINT');
+    if (/^https?:\/\/(localhost|127\.0\.0\.1|\[::1\])/i.test(endpoint)) {
+      this.logger.warn(
+        `STORAGE_ENDPOINT is ${endpoint}. Signed media URLs will name that host, so phones ` +
+          'and emulators will not be able to load images. Set it to an address clients can ' +
+          'reach — 10.0.2.2 for the Android emulator, the machine LAN IP for a real device, ' +
+          'or the public hostname in a deployment.',
+      );
+    }
     this.client = new S3Client({
       endpoint: config.get('STORAGE_ENDPOINT'),
       region: config.get('STORAGE_REGION'),
