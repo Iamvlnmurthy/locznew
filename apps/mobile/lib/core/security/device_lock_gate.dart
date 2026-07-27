@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../i18n/strings.dart';
 import 'device_lock.dart';
 
 /// Holds the app behind the phone's own lock while a session is signed in.
@@ -102,7 +103,7 @@ class _DeviceLockGateState extends State<DeviceLockGate> with WidgetsBindingObse
         widget.child,
         if (_locked)
           Semantics(
-            label: 'LocZ is locked',
+            label: Strings.of(context)('deviceLock.locked'),
             child: _LockCover(onUnlock: _prompt, prompting: _prompting),
           ),
       ],
@@ -119,6 +120,7 @@ class _LockCover extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final strings = Strings.of(context);
 
     return Material(
       // Opaque rather than translucent: a blur still leaks the shape of a conversation.
@@ -131,10 +133,10 @@ class _LockCover extends StatelessWidget {
             children: [
               Icon(Icons.lock_outline, size: 56, color: theme.colorScheme.primary),
               const SizedBox(height: 20),
-              Text('LocZ is locked', style: theme.textTheme.headlineSmall),
+              Text(strings('deviceLock.locked'), style: theme.textTheme.headlineSmall),
               const SizedBox(height: 8),
               Text(
-                'Unlock with your fingerprint, face or screen lock to continue.',
+                strings('deviceLock.unlockHint'),
                 textAlign: TextAlign.center,
                 style: theme.textTheme.bodyMedium,
               ),
@@ -144,7 +146,7 @@ class _LockCover extends StatelessWidget {
                 // cannot stack two BiometricPrompts and cancel both.
                 onPressed: prompting ? null : onUnlock,
                 icon: const Icon(Icons.fingerprint),
-                label: const Text('Unlock'),
+                label: Text(strings('deviceLock.unlock')),
               ),
             ],
           ),

@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 
+import '../../../core/i18n/strings.dart';
 import '../../../core/security/device_lock.dart';
 
 /// The switch that turns the device lock on and off.
@@ -60,19 +61,20 @@ class _DeviceLockTileState extends State<DeviceLockTile> {
 
     if (!passed) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Not changed — the device lock was not confirmed.')),
+        SnackBar(content: Text(Strings.of(context)('deviceLock.notChanged'))),
       );
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final strings = Strings.of(context);
     final availability = _availability;
     if (availability == null) {
-      return const ListTile(
-        leading: Icon(Icons.lock_outline),
-        title: Text('Device lock'),
-        subtitle: Text('Checking…'),
+      return ListTile(
+        leading: const Icon(Icons.lock_outline),
+        title: Text(strings('deviceLock.title')),
+        subtitle: Text(strings('deviceLock.checking')),
       );
     }
 
@@ -81,16 +83,13 @@ class _DeviceLockTileState extends State<DeviceLockTile> {
 
     return SwitchListTile(
       secondary: const Icon(Icons.lock_outline),
-      title: const Text('Require device lock'),
+      title: Text(strings('deviceLock.require')),
       subtitle: Text(
         switch (availability) {
-          DeviceLockAvailability.biometric =>
-            'Ask for your fingerprint, face or screen lock before opening LocZ.',
-          DeviceLockAvailability.deviceCredential =>
-            'Ask for your screen lock before opening LocZ.',
-          DeviceLockAvailability.notEnrolled =>
-            'Set up a fingerprint or screen lock in your phone settings to use this.',
-          DeviceLockAvailability.unsupported => 'This phone cannot do this.',
+          DeviceLockAvailability.biometric => strings('deviceLock.biometric'),
+          DeviceLockAvailability.deviceCredential => strings('deviceLock.credential'),
+          DeviceLockAvailability.notEnrolled => strings('deviceLock.notEnrolled'),
+          DeviceLockAvailability.unsupported => strings('deviceLock.unsupported'),
         },
       ),
       value: _enabled,

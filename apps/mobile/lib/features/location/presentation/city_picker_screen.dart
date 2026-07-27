@@ -262,8 +262,8 @@ class _CityPickerScreenState extends ConsumerState<CityPickerScreen> {
                                     color: Theme.of(context).colorScheme.primary,
                                   )
                                 : const Icon(Icons.chevron_right_rounded))
-                            : const Chip(
-                                label: Text('soon'),
+                            : Chip(
+                                label: Text(strings('location.soon')),
                                 visualDensity: VisualDensity.compact,
                               ),
                         onTap: () async {

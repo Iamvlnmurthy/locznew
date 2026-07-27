@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../i18n/strings.dart';
 import 'app_update.dart';
 
 /// Offers a newer build when one has been published.
@@ -49,6 +50,7 @@ class _UpdateBannerState extends State<UpdateBanner> {
     }
 
     final theme = Theme.of(context);
+    final strings = Strings.of(context);
 
     return Material(
       color: theme.colorScheme.primaryContainer,
@@ -60,7 +62,10 @@ class _UpdateBannerState extends State<UpdateBanner> {
             const SizedBox(width: 12),
             Expanded(
               child: Text(
-                'LocZ ${update.versionName} is available (${update.sizeLabel})',
+                strings(
+                  'update.available',
+                  {'version': update.versionName, 'size': update.sizeLabel},
+                ),
                 style: theme.textTheme.bodyMedium
                     ?.copyWith(color: theme.colorScheme.onPrimaryContainer),
               ),
@@ -72,10 +77,10 @@ class _UpdateBannerState extends State<UpdateBanner> {
                 // notification shade, and triggers the install prompt on completion.
                 launchUrl(Uri.parse(update.url), mode: LaunchMode.externalApplication),
               ),
-              child: const Text('Update'),
+              child: Text(strings('update.action')),
             ),
             IconButton(
-              tooltip: 'Not now',
+              tooltip: strings('update.dismiss'),
               icon: const Icon(Icons.close),
               onPressed: () => setState(() => _dismissedCode = update.versionCode),
             ),

@@ -65,7 +65,7 @@ class NotificationsScreen extends ConsumerWidget {
               await api.post<void>('/notifications/read-all');
               ref.invalidate(notificationsProvider);
             },
-            child: const Text('Mark all read'),
+            child: Text(strings('notifications.markAllRead')),
           ),
         ],
       ),
@@ -89,7 +89,7 @@ class NotificationsScreen extends ConsumerWidget {
                     color: Theme.of(context).colorScheme.primary,
                   ),
                   const SizedBox(height: 12),
-                  const Center(child: Text('Nothing yet')),
+                  Center(child: Text(strings('notifications.empty'))),
                 ],
               );
             }

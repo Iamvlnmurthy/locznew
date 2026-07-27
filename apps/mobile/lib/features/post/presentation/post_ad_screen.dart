@@ -381,18 +381,27 @@ class _PostAdScreenState extends ConsumerState<PostAdScreen> {
                 ),
                 DropdownButtonFormField<String>(
                   initialValue: _condition,
-                  decoration: const InputDecoration(labelText: 'Condition'),
-                  items: const [
-                    DropdownMenuItem(value: 'NEW', child: Text('New')),
+                  decoration: InputDecoration(labelText: strings('post.fieldCondition')),
+                  items: [
+                    DropdownMenuItem(
+                      value: 'NEW',
+                      child: Text(strings('post.conditionNew')),
+                    ),
                     DropdownMenuItem(
                       value: 'LIKE_NEW',
-                      child: Text('Like new'),
+                      child: Text(strings('post.conditionLikeNew')),
                     ),
-                    DropdownMenuItem(value: 'GOOD', child: Text('Good')),
-                    DropdownMenuItem(value: 'FAIR', child: Text('Fair')),
+                    DropdownMenuItem(
+                      value: 'GOOD',
+                      child: Text(strings('post.conditionGood')),
+                    ),
+                    DropdownMenuItem(
+                      value: 'FAIR',
+                      child: Text(strings('post.conditionFair')),
+                    ),
                     DropdownMenuItem(
                       value: 'FOR_PARTS',
-                      child: Text('For parts'),
+                      child: Text(strings('post.conditionParts')),
                     ),
                   ],
                   onChanged: (value) => setState(() => _condition = value ?? 'GOOD'),
@@ -426,19 +435,19 @@ class _PostAdScreenState extends ConsumerState<PostAdScreen> {
                 DropdownButtonFormField<String>(
                   initialValue: _contactPreference,
                   isExpanded: true,
-                  decoration: const InputDecoration(labelText: 'Contact preference'),
-                  items: const [
+                  decoration: InputDecoration(labelText: strings('post.contactPreference')),
+                  items: [
                     DropdownMenuItem(
                       value: 'IN_APP_ONLY',
-                      child: Text('Messages on LocZ only'),
+                      child: Text(strings('post.contactMessages')),
                     ),
                     DropdownMenuItem(
                       value: 'PHONE_AND_IN_APP',
-                      child: Text('Phone and messages'),
+                      child: Text(strings('post.contactPhoneAndMessages')),
                     ),
                     DropdownMenuItem(
                       value: 'PHONE',
-                      child: Text('Show my phone number'),
+                      child: Text(strings('post.contactPhone')),
                     ),
                   ],
                   onChanged: (value) => setState(
