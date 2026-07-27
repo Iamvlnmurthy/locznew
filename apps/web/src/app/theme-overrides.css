@@ -1,0 +1,24 @@
+/* Kept separate so these user-preference rules always follow the route-specific legacy
+   sections in globals.css. */
+
+@media (max-width: 760px) {
+  .location-chip {
+    max-width: none;
+    margin-left: -4px;
+    padding-inline: 6px;
+    gap: 3px;
+  }
+
+  .location-chip > span:first-of-type {
+    display: none;
+  }
+
+  .home-intents__intro {
+    display: block;
+  }
+
+  .home-intents__intro h2 {
+    max-width: 280px;
+    margin-top: 9px;
+  }
+}

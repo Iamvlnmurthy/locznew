@@ -54,7 +54,7 @@ async function assertAccessible(browser, label) {
   check(
     `${label} has no automated WCAG A/AA violations`,
     violations.length === 0,
-    violations.map((violation) => violation.id).join(', '),
+    violations.map((violation) => `${violation.id}: ${violation.targets.join(' | ')}`).join(', '),
   );
 }
 
@@ -68,12 +68,16 @@ async function main() {
     await browser.navigate('/');
     await browser.evaluate(`
       localStorage.setItem('locz-theme', 'light');
-      document.documentElement.dataset.theme = 'light';
-      document.documentElement.style.colorScheme = 'light';
     `);
+    await browser.navigate('/?theme-audit=light');
+    await browser.evaluate('window.scrollTo(0, 0)');
 
     let state = await pageState(browser, '.home-hero h1');
-    check('desktop light theme renders meaningful content', state.hasContent && !state.hasOverlay);
+    check(
+      'desktop light theme renders meaningful content',
+      state.theme === 'light' && state.hasContent && !state.hasOverlay,
+      `theme=${state.theme}`,
+    );
     check('desktop exposes a visible theme control', state.hasVisibleToggle);
     check(
       'desktop compact display type stays below 54px',
@@ -93,6 +97,7 @@ async function main() {
     await browser.screenshot('home-light-desktop.png');
 
     await browser.click('.header__actions .theme-toggle');
+    await browser.evaluate('new Promise((resolve) => setTimeout(resolve, 250))');
     state = await pageState(browser, '.home-hero h1');
     check(
       'desktop toggle activates and stores dark theme',
@@ -107,6 +112,7 @@ async function main() {
     await browser.screenshot('home-dark-desktop.png');
 
     await browser.navigate('/search?q=phone');
+    await browser.evaluate('window.scrollTo(0, 0)');
     state = await pageState(browser, '.search-page__hero h1');
     check(
       'dark choice persists across navigation',
@@ -117,12 +123,11 @@ async function main() {
     await browser.screenshot('search-dark-desktop.png');
 
     await browser.viewport(390, 844);
-    await browser.navigate('/');
     await browser.evaluate(`
       localStorage.setItem('locz-theme', 'light');
-      document.documentElement.dataset.theme = 'light';
-      document.documentElement.style.colorScheme = 'light';
     `);
+    await browser.navigate('/?theme-audit=mobile-light');
+    await browser.evaluate('window.scrollTo(0, 0)');
     state = await pageState(browser, '.home-hero h1');
     check(
       'mobile compact display type stays below 42px',
@@ -138,6 +143,7 @@ async function main() {
     await browser.screenshot('home-light-mobile.png');
 
     await browser.click('.theme-toggle--mobile');
+    await browser.evaluate('new Promise((resolve) => setTimeout(resolve, 250))');
     state = await pageState(browser, '.home-hero h1');
     check(
       'mobile toggle activates and stores dark theme',

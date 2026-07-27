@@ -8,6 +8,7 @@ import { getTranslator } from '@/i18n';
 import { SITE_URL } from '@/lib/api';
 import { getLocale } from '@/lib/session';
 import './globals.css';
+import './theme-overrides.css';
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
