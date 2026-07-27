@@ -106,6 +106,8 @@ export default async function SignInPage({
               codeHint: t('auth.codeHint'),
               noPassword: t('auth.noPassword'),
               accountNote: t('auth.accountNote'),
+              newHere: t('register.newHere'),
+              createOne: t('register.createOne'),
               privacyNote: t('auth.privacyNote'),
               resend: t('auth.resend'),
             }}

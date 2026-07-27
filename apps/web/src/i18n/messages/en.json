@@ -1368,5 +1368,28 @@
     "step3": "Tap Install, then Open. Sign in with your phone number.",
     "updateNote": "The app checks for new versions on its own and offers an update when one is ready — you never need to come back to this page.",
     "iosNote": "An iPhone version is not available yet."
+  },
+  "register": {
+    "title": "Create your account",
+    "subtitle": "Buy and sell near you. Free to join.",
+    "name": "Your name",
+    "nameHint": "Shown to buyers and sellers you talk to.",
+    "phone": "Mobile number",
+    "phoneHint": "10 digits, without +91.",
+    "password": "Password",
+    "passwordHint": "At least 8 characters.",
+    "confirmPassword": "Confirm password",
+    "submit": "Create account",
+    "submitting": "Creating…",
+    "haveAccount": "Already have an account?",
+    "signIn": "Sign in",
+    "invalidName": "Enter your name.",
+    "invalidPhone": "Enter a valid 10-digit Indian mobile number.",
+    "shortPassword": "Use at least 8 characters.",
+    "passwordMismatch": "Both passwords must match.",
+    "phoneTaken": "That number already has an account. Sign in instead.",
+    "error": "We could not create your account. Please try again.",
+    "newHere": "New to LocZ?",
+    "createOne": "Create an account"
   }
 }
