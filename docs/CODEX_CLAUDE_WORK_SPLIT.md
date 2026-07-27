@@ -110,15 +110,10 @@ Claude should treat the following as the active mobile design contract:
 - Commit `e1e74b2` already contains the first Codex mobile foundation because Claude's
   concurrent commit included the staged mobile theme, appearance provider, branded bottom
   navigation and home redesign. Do not revert those mobile files while changing the API.
-- The remaining Codex UI work is intentionally uncommitted during Claude's active media
-  work. Its substantive files are:
-  - `apps/mobile/lib/core/i18n/strings.dart`
-  - `apps/mobile/lib/core/theme/app_theme.dart` (removes an unsupported `ChipThemeData`
-    property accidentally committed in `e1e74b2`)
-  - presentation files for account, sign-in, chat, listing detail/search/card, location,
-    notifications and posting
-  - `apps/mobile/lib/features/listings/data/listing_repository.dart` only for converting
-    seeded `/seed/` loopback image URLs to the build's `SITE_URL`
+- Codex's latest mobile work is committed in `668d9b8`, `608e3e9`, `6a104d4`, `2d3ec77`
+  and `84ae1c6`. These cover native reports, signed-out posting, honest search filters,
+  light/dark chip contrast, multilingual trust copy, guarded notifications and honest city
+  availability. Claude should not replace those presentation or localization decisions.
 - Do not edit or stage mobile presentation/localization files from Claude. Before every
   commit, use `git status --short` and stage only Claude-owned API files.
 - The Android emulator exposed a backend URL-boundary defect: seeded web images arrive as
@@ -127,21 +122,23 @@ Claude should treat the following as the active mobile design contract:
   presigning work must make object-storage display URLs reachable from a physical phone and
   emulator without invalidating the signature; do not solve this by rewriting a signed URL
   in Flutter.
-- Current Codex verification is `flutter analyze` clean and 22/22 Flutter tests passing.
-  Emulator screenshots are in `artifacts/mobile-ui/home-light.png`. One object-storage card
-  remains blank until Claude's public/presigned media origin fix is integrated.
+- Emulator screenshots are under `artifacts/`, including light/dark search, signed-out post,
+  registration, listing detail and report-to-sign-in states. One object-storage card remains
+  blank until Claude's public/presigned media origin fix is integrated.
 - Latest emulator evidence isolates that blank card precisely. Listing
   `019f9f49-740a-74ff-965e-11a30e4e154b` returns `thumbUrl` and `fullUrl` values rooted at
   `http://localhost:9000/locz-media/...`, signed on `20260727T200000Z` with a 4,500-second
   lifetime. On Android those URLs connect to the phone itself, and by 2026-07-28 the same
   cached response is also expired. The API must issue display URLs with a client-reachable
   origin and a freshness contract; Flutter must not mutate the host after signing.
-- Codex's latest source gate is `flutter analyze` clean and 29/29 Flutter tests passing.
+- Codex's latest source gate is `flutter analyze` clean and 33/33 Flutter tests passing.
   Native registration, password sign-in, signed-out posting, and listing reports now have
-  focused widget coverage. Emulator evidence confirms the redesigned post entry and the
-  report-to-sign-in flow both preserve a visible back path. Listing gallery failures now
-  render a neutral image fallback instead of exposing socket exceptions to accessibility
-  services.
+  focused widget coverage. Search tests prove sort propagation and prevent false radius
+  selection without coordinates. Notification tests prove signed-out access makes no
+  private API request, and city tests prove “soon” locations cannot be selected. Emulator
+  evidence confirms the redesigned post entry and report-to-sign-in flow both preserve a
+  visible back path. Listing gallery failures now render a neutral image fallback instead
+  of exposing socket exceptions to accessibility services.
 - The user explicitly said **do not build the APK yet**. Claude must not run a final APK/AAB
   packaging or claim release completion. Source checks and focused API tests are allowed.
 - After Claude finishes, Codex must re-check Git, re-run analysis/tests, inspect home,
@@ -157,9 +154,9 @@ Claude should treat the following as the active mobile design contract:
   sign-in/registration navigation. Focused widget coverage proves mismatch rejection,
   successful session creation, redirect restoration, password sign-in and dark-mode
   390×844 layout safety.
-- Claude must not edit or stage the dirty mobile auth, router, localization or test files.
-  Continue API-only work and leave `apps/mobile/pubspec.yaml` as the separately owned
-  version bump. No APK or AAB has been built.
+- Claude must continue API-only media-origin work and re-check `git status --short` before
+  staging. No release APK or AAB has been produced; Codex installed debug-only emulator
+  builds from the ignored Flutter build directory for visual verification.
 
 ## Web authentication UI handoff — 2026-07-28
 
