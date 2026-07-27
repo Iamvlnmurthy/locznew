@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import 'tokens.g.dart';
 
@@ -13,25 +14,52 @@ class AppTheme {
 
   static ThemeData _build(Brightness brightness) {
     final isDark = brightness == Brightness.dark;
+    const darkCanvas = Color(0xFF0B100E);
+    const darkSurface = Color(0xFF151B18);
+    const darkSurfaceHigh = Color(0xFF222B27);
+    const darkOutline = Color(0xFF526159);
+    const darkText = Color(0xFFF2F1EC);
+    const darkSecondaryText = Color(0xFFB9C2BC);
+
     final scheme = ColorScheme(
       brightness: brightness,
       primary: isDark ? LoczColors.primary300 : LoczColors.primary500,
       onPrimary: isDark ? LoczColors.neutral900 : Colors.white,
+      primaryContainer: isDark ? const Color(0xFF153D32) : LoczColors.primary50,
+      onPrimaryContainer: isDark ? const Color(0xFFB8E9D8) : LoczColors.primary800,
       secondary: isDark ? LoczColors.accent300 : LoczColors.accent500,
       onSecondary: LoczColors.neutral900,
-      error: LoczColors.danger,
-      onError: Colors.white,
-      surface: isDark ? LoczColors.neutral800 : LoczColors.neutral0,
-      onSurface: isDark ? LoczColors.neutral50 : LoczColors.neutral900,
-      surfaceContainerHighest: isDark ? LoczColors.neutral700 : LoczColors.neutral100,
-      outline: isDark ? LoczColors.neutral600 : LoczColors.neutral300,
+      secondaryContainer: isDark ? const Color(0xFF3D2D16) : LoczColors.accent50,
+      onSecondaryContainer: isDark ? const Color(0xFFFFDDA9) : LoczColors.accent600,
+      tertiary: isDark ? const Color(0xFF9CCBFA) : LoczColors.info,
+      onTertiary: isDark ? const Color(0xFF003353) : Colors.white,
+      tertiaryContainer: isDark ? const Color(0xFF17324A) : LoczColors.infoSurface,
+      onTertiaryContainer: isDark ? const Color(0xFFCDE5FF) : LoczColors.info,
+      error: isDark ? const Color(0xFFFFB4AB) : LoczColors.danger,
+      onError: isDark ? const Color(0xFF690005) : Colors.white,
+      errorContainer: isDark ? const Color(0xFF4A1E1B) : LoczColors.dangerSurface,
+      onErrorContainer: isDark ? const Color(0xFFFFDAD5) : LoczColors.danger,
+      surface: isDark ? darkSurface : LoczColors.neutral0,
+      onSurface: isDark ? darkText : LoczColors.neutral900,
+      onSurfaceVariant: isDark ? darkSecondaryText : LoczColors.neutral600,
+      surfaceContainerLowest: isDark ? darkCanvas : LoczColors.neutral0,
+      surfaceContainerLow: isDark ? const Color(0xFF101613) : LoczColors.neutral50,
+      surfaceContainer: isDark ? darkSurface : LoczColors.neutral50,
+      surfaceContainerHigh: isDark ? const Color(0xFF1B231F) : LoczColors.neutral100,
+      surfaceContainerHighest: isDark ? darkSurfaceHigh : LoczColors.neutral100,
+      outline: isDark ? darkOutline : LoczColors.neutral300,
+      outlineVariant: isDark ? const Color(0xFF303C36) : LoczColors.neutral200,
+      inverseSurface: isDark ? LoczColors.neutral50 : LoczColors.neutral800,
+      onInverseSurface: isDark ? LoczColors.neutral800 : LoczColors.neutral50,
+      inversePrimary: isDark ? LoczColors.primary600 : LoczColors.primary200,
+      surfaceTint: Colors.transparent,
     );
-    final secondaryCopy = isDark ? LoczColors.neutral300 : LoczColors.neutral700;
+    final secondaryCopy = isDark ? darkSecondaryText : LoczColors.neutral700;
 
     return ThemeData(
       useMaterial3: true,
       colorScheme: scheme,
-      scaffoldBackgroundColor: isDark ? LoczColors.neutral900 : LoczColors.neutral50,
+      scaffoldBackgroundColor: isDark ? darkCanvas : LoczColors.neutral50,
       fontFamily: LoczTypography.fontFamily,
       visualDensity: VisualDensity.compact,
       splashFactory: InkSparkle.splashFactory,
@@ -87,17 +115,24 @@ class AppTheme {
         labelSmall: TextStyle(
           fontSize: 11,
           height: 1.35,
-          color: isDark ? LoczColors.neutral400 : LoczColors.neutral700,
+          color: isDark ? const Color(0xFFAAB4AE) : LoczColors.neutral700,
         ),
       ),
       appBarTheme: AppBarTheme(
-        backgroundColor: isDark ? LoczColors.neutral900 : LoczColors.neutral50,
+        backgroundColor: isDark ? darkCanvas : LoczColors.neutral50,
         foregroundColor: scheme.onSurface,
         elevation: 0,
         scrolledUnderElevation: 0,
         centerTitle: false,
         toolbarHeight: 56,
         surfaceTintColor: Colors.transparent,
+        systemOverlayStyle:
+            (isDark ? SystemUiOverlayStyle.light : SystemUiOverlayStyle.dark).copyWith(
+          statusBarColor: isDark ? darkCanvas : LoczColors.neutral50,
+          systemNavigationBarColor: isDark ? darkCanvas : LoczColors.neutral0,
+          systemNavigationBarDividerColor: Colors.transparent,
+          systemNavigationBarIconBrightness: isDark ? Brightness.light : Brightness.dark,
+        ),
         titleTextStyle: TextStyle(
           color: scheme.onSurface,
           fontSize: 17,
@@ -107,12 +142,14 @@ class AppTheme {
       ),
       cardTheme: CardThemeData(
         color: scheme.surface,
-        elevation: isDark ? 0 : 0.5,
+        elevation: isDark ? 0.5 : 0.5,
         shadowColor: LoczColors.neutral900.withValues(alpha: 0.08),
         margin: EdgeInsets.zero,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(16),
-          side: BorderSide(color: scheme.outline.withValues(alpha: isDark ? 0.5 : 0.42)),
+          side: BorderSide(
+            color: isDark ? scheme.outlineVariant : scheme.outline.withValues(alpha: 0.42),
+          ),
         ),
       ),
       filledButtonTheme: FilledButtonThemeData(
@@ -141,7 +178,7 @@ class AppTheme {
       ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
-        fillColor: scheme.surface,
+        fillColor: isDark ? scheme.surfaceContainerHigh : scheme.surface,
         isDense: true,
         contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
         border: OutlineInputBorder(
@@ -150,7 +187,7 @@ class AppTheme {
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: scheme.outline),
+          borderSide: BorderSide(color: isDark ? scheme.outlineVariant : scheme.outline),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
@@ -162,8 +199,11 @@ class AppTheme {
         suffixIconConstraints: const BoxConstraints(minWidth: 42, minHeight: 42),
       ),
       chipTheme: ChipThemeData(
+        backgroundColor: isDark ? scheme.surfaceContainerHigh : scheme.surface,
+        selectedColor: scheme.primaryContainer,
+        disabledColor: scheme.surfaceContainerLow,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(LoczRadius.full)),
-        side: BorderSide(color: scheme.outline),
+        side: BorderSide(color: isDark ? scheme.outlineVariant : scheme.outline),
         labelStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
         padding: const EdgeInsets.symmetric(horizontal: 4),
       ),
@@ -188,7 +228,7 @@ class AppTheme {
         ),
       ),
       dividerTheme: DividerThemeData(
-        color: scheme.outline.withValues(alpha: 0.45),
+        color: isDark ? scheme.outlineVariant : scheme.outline.withValues(alpha: 0.45),
         thickness: 0.7,
         space: 1,
       ),

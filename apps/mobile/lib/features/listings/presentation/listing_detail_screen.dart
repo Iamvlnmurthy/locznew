@@ -255,10 +255,13 @@ class _ListingDetailScreenState extends ConsumerState<ListingDetailScreen> {
                 Container(
                   padding: const EdgeInsets.all(LoczSpacing.x3),
                   decoration: BoxDecoration(
-                    color: LoczColors.dangerSurface,
+                    color: theme.colorScheme.errorContainer,
                     borderRadius: BorderRadius.circular(LoczRadius.md),
                   ),
-                  child: Text(strings('listing.sold')),
+                  child: Text(
+                    strings('listing.sold'),
+                    style: TextStyle(color: theme.colorScheme.onErrorContainer),
+                  ),
                 ),
               ],
               const SizedBox(height: LoczSpacing.x5),

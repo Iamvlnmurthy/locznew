@@ -163,12 +163,12 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
                     padding: const EdgeInsets.all(LoczSpacing.x3),
                     margin: const EdgeInsets.only(bottom: LoczSpacing.x4),
                     decoration: BoxDecoration(
-                      color: LoczColors.dangerSurface,
+                      color: theme.colorScheme.errorContainer,
                       borderRadius: BorderRadius.circular(LoczRadius.md),
                     ),
                     child: Text(
                       _error!,
-                      style: const TextStyle(color: LoczColors.danger),
+                      style: TextStyle(color: theme.colorScheme.onErrorContainer),
                     ),
                   ),
 
@@ -179,10 +179,13 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
                     padding: const EdgeInsets.all(LoczSpacing.x3),
                     margin: const EdgeInsets.only(bottom: LoczSpacing.x4),
                     decoration: BoxDecoration(
-                      color: LoczColors.infoSurface,
+                      color: theme.colorScheme.tertiaryContainer,
                       borderRadius: BorderRadius.circular(LoczRadius.md),
                     ),
-                    child: Text(strings('auth.devCode', {'code': _debugCode!})),
+                    child: Text(
+                      strings('auth.devCode', {'code': _debugCode!}),
+                      style: TextStyle(color: theme.colorScheme.onTertiaryContainer),
+                    ),
                   ),
 
                 if (!_codeSent) ...[

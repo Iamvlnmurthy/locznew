@@ -218,12 +218,14 @@ class _PostAdScreenState extends ConsumerState<PostAdScreen> {
                     padding: const EdgeInsets.all(LoczSpacing.x3),
                     margin: const EdgeInsets.only(bottom: LoczSpacing.x4),
                     decoration: BoxDecoration(
-                      color: LoczColors.dangerSurface,
+                      color: Theme.of(context).colorScheme.errorContainer,
                       borderRadius: BorderRadius.circular(LoczRadius.md),
                     ),
                     child: Text(
                       _error!,
-                      style: const TextStyle(color: LoczColors.danger),
+                      style: TextStyle(
+                        color: Theme.of(context).colorScheme.onErrorContainer,
+                      ),
                     ),
                   ),
                 TextFormField(

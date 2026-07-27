@@ -41,6 +41,7 @@ class ListingCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final strings = Strings.of(context);
     final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
     final price = listing.price == null
         ? null
         : listing.isFree
@@ -106,8 +107,12 @@ class ListingCard extends StatelessWidget {
                             left: 6,
                             child: _Pill(
                               label: '★ ${strings('listing.featured')}',
-                              background: LoczColors.accent100,
-                              foreground: LoczColors.accent600,
+                              background: isDark
+                                  ? theme.colorScheme.secondaryContainer
+                                  : LoczColors.accent100,
+                              foreground: isDark
+                                  ? theme.colorScheme.onSecondaryContainer
+                                  : LoczColors.accent600,
                             ),
                           ),
                         if (listing.isSold)
@@ -116,8 +121,8 @@ class ListingCard extends StatelessWidget {
                             right: 6,
                             child: _Pill(
                               label: strings('listing.sold'),
-                              background: LoczColors.dangerSurface,
-                              foreground: LoczColors.danger,
+                              background: theme.colorScheme.errorContainer,
+                              foreground: theme.colorScheme.onErrorContainer,
                             ),
                           ),
                       ],
