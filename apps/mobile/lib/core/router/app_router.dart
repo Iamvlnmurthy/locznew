@@ -108,40 +108,162 @@ class _TabScaffold extends StatelessWidget {
 
     return Scaffold(
       body: shell,
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => context.push('/post'),
-        icon: const Icon(Icons.add),
-        label: Text(strings('nav.post')),
-      ),
-      bottomNavigationBar: NavigationBar(
-        selectedIndex: shell.currentIndex,
-        onDestinationSelected: (index) => shell.goBranch(
+      bottomNavigationBar: _LoczBottomBar(
+        currentIndex: shell.currentIndex,
+        strings: strings,
+        onTab: (index) => shell.goBranch(
           index,
-          // Tapping the active tab returns it to its root — the standard expectation.
           initialLocation: index == shell.currentIndex,
         ),
-        destinations: [
-          NavigationDestination(
-            icon: const Icon(Icons.home_outlined),
-            selectedIcon: const Icon(Icons.home),
-            label: strings('nav.home'),
+        onPost: () => context.push('/post'),
+      ),
+    );
+  }
+}
+
+class _LoczBottomBar extends StatelessWidget {
+  const _LoczBottomBar({
+    required this.currentIndex,
+    required this.strings,
+    required this.onTab,
+    required this.onPost,
+  });
+
+  final int currentIndex;
+  final Strings strings;
+  final ValueChanged<int> onTab;
+  final VoidCallback onPost;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surface,
+        border: Border(
+          top: BorderSide(color: theme.colorScheme.outline.withValues(alpha: 0.45)),
+        ),
+      ),
+      child: SafeArea(
+        top: false,
+        child: SizedBox(
+          height: 64,
+          child: Row(
+            children: [
+              _BottomDestination(
+                icon: Icons.home_outlined,
+                selectedIcon: Icons.home_rounded,
+                label: strings('nav.home'),
+                selected: currentIndex == 0,
+                onTap: () => onTab(0),
+              ),
+              _BottomDestination(
+                icon: Icons.search_rounded,
+                selectedIcon: Icons.manage_search_rounded,
+                label: strings('nav.search'),
+                selected: currentIndex == 1,
+                onTap: () => onTab(1),
+              ),
+              Expanded(
+                child: Semantics(
+                  button: true,
+                  label: strings('nav.post'),
+                  child: InkResponse(
+                    onTap: onPost,
+                    radius: 30,
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Container(
+                          width: 38,
+                          height: 38,
+                          decoration: BoxDecoration(
+                            color: theme.colorScheme.primary,
+                            borderRadius: BorderRadius.circular(13),
+                            boxShadow: [
+                              BoxShadow(
+                                color: theme.colorScheme.primary.withValues(alpha: 0.22),
+                                blurRadius: 12,
+                                offset: const Offset(0, 4),
+                              ),
+                            ],
+                          ),
+                          child: Icon(Icons.add_rounded, color: theme.colorScheme.onPrimary),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+              _BottomDestination(
+                icon: Icons.chat_bubble_outline_rounded,
+                selectedIcon: Icons.chat_bubble_rounded,
+                label: strings('nav.chats'),
+                selected: currentIndex == 2,
+                onTap: () => onTab(2),
+              ),
+              _BottomDestination(
+                icon: Icons.person_outline_rounded,
+                selectedIcon: Icons.person_rounded,
+                label: strings('nav.account'),
+                selected: currentIndex == 3,
+                onTap: () => onTab(3),
+              ),
+            ],
           ),
-          NavigationDestination(
-            icon: const Icon(Icons.search_outlined),
-            selectedIcon: const Icon(Icons.search),
-            label: strings('nav.search'),
+        ),
+      ),
+    );
+  }
+}
+
+class _BottomDestination extends StatelessWidget {
+  const _BottomDestination({
+    required this.icon,
+    required this.selectedIcon,
+    required this.label,
+    required this.selected,
+    required this.onTap,
+  });
+
+  final IconData icon;
+  final IconData selectedIcon;
+  final String label;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final color = selected ? theme.colorScheme.primary : theme.colorScheme.onSurfaceVariant;
+
+    return Expanded(
+      child: InkResponse(
+        onTap: onTap,
+        radius: 30,
+        child: Semantics(
+          selected: selected,
+          button: true,
+          label: label,
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(selected ? selectedIcon : icon, size: 21, color: color),
+              const SizedBox(height: 3),
+              Text(
+                label,
+                maxLines: 1,
+                overflow: TextOverflow.fade,
+                style: TextStyle(
+                  color: color,
+                  fontSize: 10,
+                  fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
+                ),
+              ),
+            ],
           ),
-          NavigationDestination(
-            icon: const Icon(Icons.chat_bubble_outline),
-            selectedIcon: const Icon(Icons.chat_bubble),
-            label: strings('nav.chats'),
-          ),
-          NavigationDestination(
-            icon: const Icon(Icons.person_outline),
-            selectedIcon: const Icon(Icons.person),
-            label: strings('nav.account'),
-          ),
-        ],
+        ),
       ),
     );
   }

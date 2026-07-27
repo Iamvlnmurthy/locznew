@@ -11,6 +11,8 @@ import { AuthService, RequestContext } from './auth.service';
 import {
   AuthSessionDto,
   EmailLoginDto,
+  PhoneLoginDto,
+  RegisterDto,
   OtpRequestedDto,
   RefreshTokenDto,
   RequestOtpDto,
@@ -64,6 +66,38 @@ export class AuthController {
   @ApiResponse({ status: 403, description: 'Locked out after repeated failures' })
   verifyOtp(@Body() dto: VerifyOtpDto, @Req() request: RequestWithUser): Promise<AuthSessionDto> {
     return this.auth.verifyOtp(dto, this.contextOf(request));
+  }
+
+  @Public()
+  @Post('register')
+  @HttpCode(HttpStatus.CREATED)
+  // Tighter than login: registration writes a row and hashes a password, so it is the more
+  // expensive endpoint to abuse, and nobody legitimately creates accounts in bulk.
+  @Throttle({ default: { limit: 5, ttl: 60_000 } })
+  @ApiOperation({
+    summary: 'Create an account with a mobile number and password',
+    description:
+      'The mobile number is not treated as verified — no SMS has proved the person holds it. ' +
+      'Verification is a separate step once an SMS provider is configured.',
+  })
+  @ApiResponse({ status: 201, type: AuthSessionDto })
+  @ApiResponse({ status: 409, description: 'That mobile number already has an account' })
+  register(@Body() dto: RegisterDto, @Req() request: RequestWithUser): Promise<AuthSessionDto> {
+    return this.auth.register(dto, this.contextOf(request));
+  }
+
+  @Public()
+  @Post('login/phone')
+  @HttpCode(HttpStatus.OK)
+  @Throttle({ default: { limit: 10, ttl: 60_000 } })
+  @ApiOperation({ summary: 'Sign in with a mobile number and password' })
+  @ApiResponse({ status: 200, type: AuthSessionDto })
+  @ApiResponse({ status: 401, description: 'Incorrect mobile number or password' })
+  loginWithPhone(
+    @Body() dto: PhoneLoginDto,
+    @Req() request: RequestWithUser,
+  ): Promise<AuthSessionDto> {
+    return this.auth.loginWithPhone(dto, this.contextOf(request));
   }
 
   @Public()

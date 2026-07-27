@@ -102,6 +102,53 @@ export class EmailLoginDto {
   device!: DeviceInfoDto;
 }
 
+/**
+ * Minimum password length.
+ *
+ * Eight, matching the existing email login, rather than something longer. A marketplace
+ * used on shared and low-end phones in three languages pays a real cost for a rule people
+ * cannot satisfy: they write the password down, or reuse one. The protection that actually
+ * matters here is the lockout on repeated failures, which applies per identifier.
+ */
+const PASSWORD_MIN = 8;
+
+export class RegisterDto {
+  @ApiProperty({ example: '+919876543210', description: 'Mobile number in E.164 format' })
+  @Matches(E164_INDIA, { message: 'Enter a valid Indian mobile number, for example +919876543210' })
+  phone!: string;
+
+  @ApiProperty({ example: 'Anjali Rao' })
+  @IsString()
+  @Length(2, 80)
+  displayName!: string;
+
+  @ApiProperty({ example: 'a strong passphrase', minLength: PASSWORD_MIN })
+  @IsString()
+  @Length(PASSWORD_MIN, 128)
+  password!: string;
+
+  @ApiProperty({ type: DeviceInfoDto })
+  @ValidateNested()
+  @Type(() => DeviceInfoDto)
+  device!: DeviceInfoDto;
+}
+
+export class PhoneLoginDto {
+  @ApiProperty({ example: '+919876543210' })
+  @Matches(E164_INDIA, { message: 'Enter a valid Indian mobile number, for example +919876543210' })
+  phone!: string;
+
+  @ApiProperty({ example: 'a strong passphrase' })
+  @IsString()
+  @Length(PASSWORD_MIN, 128)
+  password!: string;
+
+  @ApiProperty({ type: DeviceInfoDto })
+  @ValidateNested()
+  @Type(() => DeviceInfoDto)
+  device!: DeviceInfoDto;
+}
+
 export class RefreshTokenDto {
   @ApiProperty()
   @IsString()

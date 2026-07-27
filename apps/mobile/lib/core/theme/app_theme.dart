@@ -2,8 +2,9 @@ import 'package:flutter/material.dart';
 
 import 'tokens.g.dart';
 
-/// Material theme built from the generated design tokens, so mobile, web and admin
-/// share one visual system. Never hardcode a colour in a widget — add or use a token.
+/// The native LocZ visual language: warm, compact, local and intentionally quieter
+/// than Material's defaults. Telugu and Devanagari retain enough line height while
+/// Latin UI copy stays dense enough for a phone.
 class AppTheme {
   const AppTheme._();
 
@@ -12,11 +13,9 @@ class AppTheme {
 
   static ThemeData _build(Brightness brightness) {
     final isDark = brightness == Brightness.dark;
-
     final scheme = ColorScheme(
       brightness: brightness,
-      // The lighter primary is used on dark surfaces so the teal keeps its contrast.
-      primary: isDark ? LoczColors.primary400 : LoczColors.primary500,
+      primary: isDark ? LoczColors.primary300 : LoczColors.primary500,
       onPrimary: isDark ? LoczColors.neutral900 : Colors.white,
       secondary: isDark ? LoczColors.accent300 : LoczColors.accent500,
       onSecondary: LoczColors.neutral900,
@@ -27,122 +26,189 @@ class AppTheme {
       surfaceContainerHighest: isDark ? LoczColors.neutral700 : LoczColors.neutral100,
       outline: isDark ? LoczColors.neutral600 : LoczColors.neutral300,
     );
+    final secondaryCopy = isDark ? LoczColors.neutral300 : LoczColors.neutral700;
 
     return ThemeData(
       useMaterial3: true,
       colorScheme: scheme,
       scaffoldBackgroundColor: isDark ? LoczColors.neutral900 : LoczColors.neutral50,
       fontFamily: LoczTypography.fontFamily,
-
-      // Line heights are generous throughout: Telugu and Devanagari glyphs are taller
-      // than Latin at the same point size and get clipped by a Latin-tuned scale.
+      visualDensity: VisualDensity.compact,
+      splashFactory: InkSparkle.splashFactory,
       textTheme: TextTheme(
+        displaySmall: TextStyle(
+          fontSize: 28,
+          fontWeight: FontWeight.w800,
+          height: 1.18,
+          letterSpacing: -0.7,
+          color: scheme.onSurface,
+        ),
         headlineSmall: TextStyle(
-          fontSize: LoczTypography.xxl,
+          fontSize: 22,
           fontWeight: FontWeight.w700,
-          height: LoczTypography.leadingTight,
+          height: 1.24,
+          letterSpacing: -0.35,
+          color: scheme.onSurface,
+        ),
+        titleLarge: TextStyle(
+          fontSize: 18,
+          fontWeight: FontWeight.w700,
+          height: 1.3,
+          letterSpacing: -0.2,
           color: scheme.onSurface,
         ),
         titleMedium: TextStyle(
-          fontSize: LoczTypography.lg,
+          fontSize: 15,
+          fontWeight: FontWeight.w700,
+          height: 1.35,
+          letterSpacing: -0.1,
+          color: scheme.onSurface,
+        ),
+        titleSmall: TextStyle(
+          fontSize: 13,
           fontWeight: FontWeight.w600,
-          height: LoczTypography.leadingTight,
+          height: 1.35,
           color: scheme.onSurface,
         ),
-        bodyLarge: TextStyle(
-          fontSize: LoczTypography.base,
-          height: LoczTypography.leadingNormal,
+        bodyLarge: TextStyle(fontSize: 14, height: 1.5, color: scheme.onSurface),
+        bodyMedium: TextStyle(fontSize: 13, height: 1.48, color: secondaryCopy),
+        labelLarge: TextStyle(
+          fontSize: 13,
+          fontWeight: FontWeight.w700,
+          height: 1.25,
           color: scheme.onSurface,
         ),
-        bodyMedium: TextStyle(
-          fontSize: LoczTypography.sm,
-          height: LoczTypography.leadingNormal,
-          // Leave headroom for glyph anti-aliasing, which lowers the contrast of
-          // rendered 12–14 px text compared with the raw token pair.
-          color: isDark ? LoczColors.neutral300 : LoczColors.neutral700,
+        labelMedium: TextStyle(
+          fontSize: 12,
+          fontWeight: FontWeight.w600,
+          height: 1.3,
+          color: secondaryCopy,
         ),
         labelSmall: TextStyle(
-          fontSize: LoczTypography.xs,
-          // Small metadata needs the stronger neutral to clear WCAG 4.5:1 on the
-          // warm scaffold surface after glyph anti-aliasing.
+          fontSize: 11,
+          height: 1.35,
           color: isDark ? LoczColors.neutral400 : LoczColors.neutral700,
         ),
       ),
-
       appBarTheme: AppBarTheme(
-        backgroundColor: scheme.surface,
+        backgroundColor: isDark ? LoczColors.neutral900 : LoczColors.neutral50,
         foregroundColor: scheme.onSurface,
         elevation: 0,
-        scrolledUnderElevation: 1,
+        scrolledUnderElevation: 0,
         centerTitle: false,
+        toolbarHeight: 56,
+        surfaceTintColor: Colors.transparent,
+        titleTextStyle: TextStyle(
+          color: scheme.onSurface,
+          fontSize: 17,
+          fontWeight: FontWeight.w700,
+          letterSpacing: -0.25,
+        ),
       ),
-
       cardTheme: CardThemeData(
         color: scheme.surface,
-        elevation: 0,
+        elevation: isDark ? 0 : 0.5,
+        shadowColor: LoczColors.neutral900.withValues(alpha: 0.08),
         margin: EdgeInsets.zero,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(LoczRadius.lg),
-          side: BorderSide(color: scheme.outline.withValues(alpha: 0.6)),
+          borderRadius: BorderRadius.circular(16),
+          side: BorderSide(color: scheme.outline.withValues(alpha: isDark ? 0.5 : 0.42)),
         ),
       ),
-
       filledButtonTheme: FilledButtonThemeData(
         style: FilledButton.styleFrom(
-          // 48dp: these are tapped one-handed on a phone.
-          minimumSize: const Size.fromHeight(48),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(LoczRadius.full),
-          ),
-          textStyle: const TextStyle(
-            fontSize: LoczTypography.base,
-            fontWeight: FontWeight.w600,
-          ),
+          minimumSize: const Size(0, 44),
+          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 11),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          textStyle: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700),
         ),
       ),
-
       outlinedButtonTheme: OutlinedButtonThemeData(
         style: OutlinedButton.styleFrom(
-          minimumSize: const Size.fromHeight(48),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(LoczRadius.full),
-          ),
+          minimumSize: const Size(0, 44),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          side: BorderSide(color: scheme.outline),
+          textStyle: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
         ),
       ),
-
+      textButtonTheme: TextButtonThemeData(
+        style: TextButton.styleFrom(
+          minimumSize: const Size(44, 40),
+          textStyle: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+        ),
+      ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
         fillColor: scheme.surface,
-        contentPadding: const EdgeInsets.symmetric(
-          horizontal: LoczSpacing.x4,
-          vertical: LoczSpacing.x4,
-        ),
+        isDense: true,
+        contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(LoczRadius.md),
+          borderRadius: BorderRadius.circular(12),
           borderSide: BorderSide(color: scheme.outline),
         ),
         enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(LoczRadius.md),
+          borderRadius: BorderRadius.circular(12),
           borderSide: BorderSide(color: scheme.outline),
         ),
         focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(LoczRadius.md),
-          borderSide: BorderSide(color: scheme.primary, width: 2),
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide(color: scheme.primary, width: 1.5),
         ),
+        labelStyle: TextStyle(fontSize: 13, color: scheme.onSurfaceVariant),
+        hintStyle: TextStyle(fontSize: 13, color: scheme.onSurfaceVariant),
+        prefixIconConstraints: const BoxConstraints(minWidth: 42, minHeight: 42),
+        suffixIconConstraints: const BoxConstraints(minWidth: 42, minHeight: 42),
       ),
-
       chipTheme: ChipThemeData(
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(LoczRadius.full),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(LoczRadius.full)),
         side: BorderSide(color: scheme.outline),
+        labelStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+        padding: const EdgeInsets.symmetric(horizontal: 4),
+        visualDensity: VisualDensity.compact,
       ),
-
       navigationBarTheme: NavigationBarThemeData(
         backgroundColor: scheme.surface,
         indicatorColor: isDark ? LoczColors.primary800 : LoczColors.primary50,
-        height: 64,
+        height: 66,
+        elevation: 0,
         labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
+        labelTextStyle: WidgetStateProperty.resolveWith(
+          (states) => TextStyle(
+            fontSize: 10.5,
+            fontWeight: states.contains(WidgetState.selected) ? FontWeight.w700 : FontWeight.w500,
+            color: states.contains(WidgetState.selected) ? scheme.primary : scheme.onSurfaceVariant,
+          ),
+        ),
+        iconTheme: WidgetStateProperty.resolveWith(
+          (states) => IconThemeData(
+            size: 21,
+            color: states.contains(WidgetState.selected) ? scheme.primary : scheme.onSurfaceVariant,
+          ),
+        ),
+      ),
+      dividerTheme: DividerThemeData(
+        color: scheme.outline.withValues(alpha: 0.45),
+        thickness: 0.7,
+        space: 1,
+      ),
+      bottomSheetTheme: BottomSheetThemeData(
+        backgroundColor: scheme.surface,
+        surfaceTintColor: Colors.transparent,
+        showDragHandle: true,
+        shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+      ),
+      snackBarTheme: SnackBarThemeData(
+        behavior: SnackBarBehavior.floating,
+        backgroundColor: isDark ? LoczColors.neutral50 : LoczColors.neutral900,
+        contentTextStyle: TextStyle(
+          color: isDark ? LoczColors.neutral900 : LoczColors.neutral50,
+          fontSize: 13,
+        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       ),
     );
   }

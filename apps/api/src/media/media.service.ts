@@ -23,10 +23,28 @@ class RejectedImageError extends Error {}
 
 /** Rendition widths. Named sizes rather than arbitrary ones so clients can cache predictably. */
 const RENDITIONS = [
-  { name: 'thumb', width: 320 },
-  { name: 'card', width: 720 },
-  { name: 'full', width: 1600 },
+  { name: 'thumb', width: 320, quality: 62 },
+  { name: 'card', width: 720, quality: 72 },
+  { name: 'full', width: 1440, quality: 78 },
 ] as const;
+
+/**
+ * Whether the uploaded original is kept once renditions exist.
+ *
+ * A phone camera produces 5–10 MB per photograph and the three renditions together come to
+ * roughly 150 KB, so the original is about 98% of what a listing costs to store. On a 2 GiB
+ * budget that is the difference between a few hundred images and several thousand.
+ *
+ * It is only discarded for images that were **approved**. Anything held for review, rejected,
+ * or under a legal hold keeps its original, because that is precisely the material a
+ * moderator or child-safety officer may need to look at, and `media-safety.service.ts` serves
+ * it to them. Deleting evidence to save disk would be the wrong trade in exactly the cases
+ * that matter most.
+ *
+ * For approved images the 1440px `full` rendition remains, so a later report still has
+ * something to examine — a smaller copy of the same picture, not nothing.
+ */
+const DISCARD_ORIGINAL_WHEN_APPROVED = true;
 
 /** Magic-byte signatures — a declared MIME type is a claim, not evidence. */
 const MAGIC_BYTES: Array<{ mime: string; test: (buffer: Buffer) => boolean }> = [
@@ -249,14 +267,33 @@ export class MediaService {
     for (const rendition of RENDITIONS) {
       const buffer = await sharp(original)
         .rotate()
+        // `effort: 6` spends more CPU searching for a smaller file. It costs about a second
+        // per image on this hardware and typically saves 20–30% over the default, which is
+        // worth it once rather than on every download for the life of the listing.
         .resize({ width: rendition.width, withoutEnlargement: true })
-        .webp({ quality: rendition.name === 'thumb' ? 70 : 82 })
+        .webp({ quality: rendition.quality, effort: 6 })
         .toBuffer();
 
       const prefix = moderation.decision === 'APPROVE' ? 'public' : 'quarantine';
       const key = `${prefix}/listings/${media.listingId}/${media.id}-${rendition.name}.webp`;
       await this.storage.putObject(key, buffer, 'image/webp');
       keys[rendition.name] = key;
+    }
+
+    // Approved images no longer need the multi-megabyte original; see
+    // DISCARD_ORIGINAL_WHEN_APPROVED for why anything else keeps it.
+    if (DISCARD_ORIGINAL_WHEN_APPROVED && moderation.decision === 'APPROVE') {
+      try {
+        await this.storage.delete(media.storageKey);
+      } catch (error) {
+        // Storage that will not delete is a housekeeping problem, not a reason to fail an
+        // upload the user has already completed successfully. The orphan sweep will retry.
+        this.logger.warn(
+          `Could not discard the original for ${media.id}: ${
+            error instanceof Error ? error.message : String(error)
+          }`,
+        );
+      }
     }
 
     return this.prisma.listingMedia.update({

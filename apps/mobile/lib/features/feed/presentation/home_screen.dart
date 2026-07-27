@@ -23,43 +23,62 @@ class HomeScreen extends ConsumerWidget {
     return Scaffold(
       appBar: AppBar(
         titleSpacing: LoczSpacing.x4,
-        title: InkWell(
-          onTap: () => context.push('/location'),
-          borderRadius: BorderRadius.circular(LoczRadius.full),
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(minHeight: 48),
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 4),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Icon(Icons.location_on_outlined, size: 18),
-                  const SizedBox(width: 4),
-                  Flexible(
-                    child: Text(
-                      // Show the pincode back when that is what the user typed — the web
-                      // header does the same, and a chip that answers with something else
-                      // reads as though the app ignored them.
-                      city?.pincode ?? city?.name ?? strings('location.change'),
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        fontSize: 15,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
+        title: Row(
+          children: [
+            Text(
+              'Loc',
+              style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                    color: Theme.of(context).colorScheme.primary,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: -0.7,
                   ),
-                  const Icon(Icons.arrow_drop_down, size: 20),
-                ],
+            ),
+            Text(
+              'Z',
+              style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                    color: LoczColors.danger,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: -0.7,
+                  ),
+            ),
+            const SizedBox(width: LoczSpacing.x3),
+            Expanded(
+              child: InkWell(
+                onTap: () => context.push('/location'),
+                borderRadius: BorderRadius.circular(10),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 7),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        Icons.near_me_outlined,
+                        size: 15,
+                        color: Theme.of(context).colorScheme.primary,
+                      ),
+                      const SizedBox(width: 4),
+                      Flexible(
+                        child: Text(
+                          city?.pincode ?? city?.name ?? strings('location.change'),
+                          overflow: TextOverflow.ellipsis,
+                          style: Theme.of(context).textTheme.labelMedium,
+                        ),
+                      ),
+                      const Icon(Icons.keyboard_arrow_down_rounded, size: 17),
+                    ],
+                  ),
+                ),
               ),
             ),
-          ),
+          ],
         ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.notifications_none),
+            icon: const Icon(Icons.notifications_none_rounded, size: 22),
             onPressed: () => context.push('/notifications'),
             tooltip: strings('account.notifications'),
           ),
+          const SizedBox(width: 4),
         ],
       ),
       body: RefreshIndicator(
@@ -89,44 +108,65 @@ class HomeScreen extends ConsumerWidget {
                   child: Padding(
                     padding: const EdgeInsets.fromLTRB(
                       LoczSpacing.x4,
-                      LoczSpacing.x3,
+                      LoczSpacing.x2,
                       LoczSpacing.x4,
                       0,
                     ),
-                    child: Semantics(
-                      button: true,
-                      child: Material(
-                        color: Theme.of(context).colorScheme.surfaceContainerHigh,
-                        shape: const StadiumBorder(),
-                        clipBehavior: Clip.antiAlias,
-                        child: InkWell(
-                          onTap: () => context.push('/search'),
-                          child: ConstrainedBox(
-                            constraints: const BoxConstraints(minHeight: 56),
-                            child: Padding(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: LoczSpacing.x4,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          strings('brand.tagline'),
+                          style: Theme.of(context).textTheme.headlineSmall,
+                        ),
+                        const SizedBox(height: LoczSpacing.x3),
+                        Semantics(
+                          button: true,
+                          child: Material(
+                            color: Theme.of(context).colorScheme.surface,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(14),
+                              side: BorderSide(
+                                color:
+                                    Theme.of(context).colorScheme.outline.withValues(alpha: 0.55),
                               ),
-                              child: Row(
-                                children: [
-                                  const Icon(Icons.search),
-                                  const SizedBox(width: LoczSpacing.x3),
-                                  Expanded(
-                                    child: Text(
-                                      strings('search.placeholder'),
-                                      style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                                            color: Theme.of(
-                                              context,
-                                            ).colorScheme.onSurfaceVariant,
-                                          ),
-                                    ),
+                            ),
+                            clipBehavior: Clip.antiAlias,
+                            child: InkWell(
+                              onTap: () => context.push('/search'),
+                              child: SizedBox(
+                                height: 48,
+                                child: Padding(
+                                  padding: const EdgeInsets.symmetric(horizontal: 14),
+                                  child: Row(
+                                    children: [
+                                      Icon(
+                                        Icons.search_rounded,
+                                        size: 21,
+                                        color: Theme.of(context).colorScheme.primary,
+                                      ),
+                                      const SizedBox(width: 10),
+                                      Expanded(
+                                        child: Text(
+                                          strings('search.placeholder'),
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                          style: Theme.of(context).textTheme.bodyMedium,
+                                        ),
+                                      ),
+                                      Icon(
+                                        Icons.tune_rounded,
+                                        size: 18,
+                                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                                      ),
+                                    ],
                                   ),
-                                ],
+                                ),
                               ),
                             ),
                           ),
                         ),
-                      ),
+                      ],
                     ),
                   ),
                 ),
@@ -143,7 +183,7 @@ class HomeScreen extends ConsumerWidget {
                             ),
                             child: Text(
                               strings('feed.${section.key}'),
-                              style: Theme.of(context).textTheme.titleMedium,
+                              style: Theme.of(context).textTheme.titleLarge,
                             ),
                           ),
                           const SizedBox(height: LoczSpacing.x3),

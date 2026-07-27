@@ -148,6 +148,7 @@ class LoczApp extends ConsumerWidget {
     final router = ref.watch(routerProvider);
     final locale = ref.watch(localeProvider);
     final auth = ref.watch(authProvider);
+    final themeMode = ref.watch(themeModeProvider);
 
     // Hold the splash until the stored session has been checked, so the app never
     // flashes a signed-out UI to someone who is signed in.
@@ -164,12 +165,9 @@ class LoczApp extends ConsumerWidget {
       title: Env.appName,
       debugShowCheckedModeBanner: false,
       routerConfig: router,
-
       theme: AppTheme.light,
       darkTheme: AppTheme.dark,
-      // The design tokens define both themes, so following the system setting is free.
-      themeMode: ThemeMode.system,
-
+      themeMode: themeMode,
       locale: Locale(locale.name),
       supportedLocales: const [Locale('en'), Locale('te'), Locale('hi')],
       localizationsDelegates: [
@@ -178,7 +176,6 @@ class LoczApp extends ConsumerWidget {
         GlobalWidgetsLocalizations.delegate,
         GlobalCupertinoLocalizations.delegate,
       ],
-
       builder: (context, child) {
         // Caps text scaling: Android allows up to 2.0, which breaks price rows and
         // bottom bars. 1.4 keeps large-text users supported without a broken layout.

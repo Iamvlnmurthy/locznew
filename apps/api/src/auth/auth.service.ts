@@ -1,4 +1,5 @@
 import {
+  ConflictException,
   ForbiddenException,
   Injectable,
   Logger,
@@ -16,6 +17,8 @@ import {
   AuthSessionDto,
   DeviceInfoDto,
   EmailLoginDto,
+  PhoneLoginDto,
+  RegisterDto,
   OtpRequestedDto,
   RequestOtpDto,
   VerifyOtpDto,
@@ -118,6 +121,100 @@ export class AuthService {
 
     const device = await this.registerDevice(user.id, dto.device, context);
     return this.buildSession(user, device, context, isNewUser);
+  }
+
+  /**
+   * Creates an account with a phone number and a password the user chooses.
+   *
+   * The OTP path creates accounts implicitly, which is right when an SMS gateway can prove
+   * the number belongs to whoever is holding it. Without one, that proof does not exist —
+   * so this asks for a password instead, and every user gets a credential that is theirs
+   * rather than a code shared with everybody.
+   *
+   * The phone number is deliberately **not** marked verified here. Nothing has demonstrated
+   * that this person can receive messages at it; recording otherwise would put a claim in
+   * the database that no evidence supports, and later features — contact reveal, recovery —
+   * would be entitled to trust it. `phoneVerifiedAt` stays null until an SMS proves it.
+   */
+  async register(dto: RegisterDto, context: RequestContext): Promise<AuthSessionDto> {
+    const existing = await this.prisma.user.findUnique({ where: { phoneE164: dto.phone } });
+
+    if (existing && !existing.deletedAt) {
+      // Says plainly that the number is taken. The alternative — a generic error to avoid
+      // revealing which numbers are registered — is not worth it here: anybody can discover
+      // the same fact by attempting to register, and a vague message on a sign-up form
+      // leaves a real user stuck with no idea what to do next.
+      throw new ConflictException(
+        'That mobile number already has an account. Sign in instead, or use another number.',
+      );
+    }
+
+    const passwordHash = await argon2.hash(dto.password, {
+      type: argon2.argon2id,
+      memoryCost: this.config.get('ARGON2_MEMORY_COST'),
+      timeCost: this.config.get('ARGON2_TIME_COST'),
+    });
+
+    const user = await this.prisma.user.create({
+      data: {
+        id: uuid(),
+        phoneE164: dto.phone,
+        displayName: dto.displayName.trim(),
+        passwordHash,
+        status: UserStatus.ACTIVE,
+      },
+    });
+
+    await this.rbac.grantRole(user.id, RoleName.REGISTERED_USER);
+    await this.audit.record({
+      action: 'user.register',
+      entityType: 'User',
+      entityId: user.id,
+      actorId: user.id,
+      ip: context.ip,
+      userAgent: context.userAgent,
+      correlationId: context.correlationId,
+    });
+
+    const device = await this.registerDevice(user.id, dto.device, context);
+    return this.buildSession(user, device, context, true);
+  }
+
+  /**
+   * Phone number and password.
+   *
+   * Mirrors `loginWithEmail` rather than inventing a second shape: one generic message for
+   * every failure, the same lockout on repeated attempts, and the same suspension check.
+   * The generic message matters more here than on the email path, because a phone number is
+   * guessable — an endpoint that distinguished "no such account" from "wrong password"
+   * would enumerate which numbers are registered on the platform.
+   */
+  async loginWithPhone(dto: PhoneLoginDto, context: RequestContext): Promise<AuthSessionDto> {
+    const user = await this.prisma.user.findUnique({ where: { phoneE164: dto.phone } });
+
+    const invalid = new UnauthorizedException('Incorrect mobile number or password');
+
+    if (!user || !user.passwordHash || user.deletedAt) {
+      await this.recordFailedPasswordAttempt(dto.phone);
+      throw invalid;
+    }
+
+    if (user.status === UserStatus.SUSPENDED) {
+      throw new ForbiddenException('This account is suspended. Contact support.');
+    }
+
+    await this.assertNotLockedOut(dto.phone);
+
+    const matches = await argon2.verify(user.passwordHash, dto.password);
+    if (!matches) {
+      await this.recordFailedPasswordAttempt(dto.phone);
+      throw invalid;
+    }
+
+    await this.prisma.authLockout.deleteMany({ where: { scope: 'IP', identifier: dto.phone } });
+
+    const device = await this.registerDevice(user.id, dto.device, context);
+    return this.buildSession(user, device, context, false);
   }
 
   /**
