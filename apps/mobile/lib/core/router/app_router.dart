@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../features/account/presentation/account_screen.dart';
+import '../../features/auth/presentation/register_screen.dart';
 import '../../features/auth/presentation/sign_in_screen.dart';
 import '../../features/chat/presentation/chat_screens.dart';
 import '../../features/feed/presentation/home_screen.dart';
@@ -92,6 +93,10 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/signin',
         builder: (context, state) => SignInScreen(redirectTo: state.uri.queryParameters['next']),
+      ),
+      GoRoute(
+        path: '/register',
+        builder: (context, state) => RegisterScreen(redirectTo: state.uri.queryParameters['next']),
       ),
     ],
   );

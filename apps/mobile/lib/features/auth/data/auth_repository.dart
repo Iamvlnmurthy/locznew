@@ -85,6 +85,44 @@ class AuthRepository {
     return _persist(json);
   }
 
+  Future<AuthUser> register({
+    required String displayName,
+    required String nationalNumber,
+    required String password,
+    String? pushToken,
+  }) async {
+    final json = await _api.post<Map<String, dynamic>>(
+      '/auth/register',
+      body: {
+        'phone': toE164(nationalNumber),
+        'displayName': displayName.trim(),
+        'password': password,
+        'device': await _deviceInfo(pushToken),
+      },
+      auth: false,
+    );
+
+    return _persist(json);
+  }
+
+  Future<AuthUser> signInWithPassword({
+    required String nationalNumber,
+    required String password,
+    String? pushToken,
+  }) async {
+    final json = await _api.post<Map<String, dynamic>>(
+      '/auth/login/phone',
+      body: {
+        'phone': toE164(nationalNumber),
+        'password': password,
+        'device': await _deviceInfo(pushToken),
+      },
+      auth: false,
+    );
+
+    return _persist(json);
+  }
+
   Future<AuthUser> _persist(Map<String, dynamic> session) async {
     final tokens = session['tokens'] as Map<String, dynamic>;
     await _tokens.saveTokens(

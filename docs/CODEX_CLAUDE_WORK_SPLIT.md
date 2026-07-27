@@ -135,6 +135,19 @@ Claude should treat the following as the active mobile design contract:
 - After Claude finishes, Codex must re-check Git, re-run analysis/tests, inspect home,
   search, listing detail, post and account in both light and dark themes, and only build the
   APK when the user authorizes the merged release step.
+- Mobile authentication now follows Claude's password boundary: `/signin` uses
+  `/auth/login/phone`, `/register` uses `/auth/register`, both persist the returned session,
+  and both preserve the protected destination through `next`. The mock/shared OTP methods
+  remain in the repository for a future real SMS provider but are no longer exposed in the
+  app UI.
+- Registration has localized English, Telugu and Hindi copy, local name/phone/password
+  validation, password visibility controls, a localized conflict state and direct
+  sign-in/registration navigation. Focused widget coverage proves mismatch rejection,
+  successful session creation, redirect restoration, password sign-in and dark-mode
+  390×844 layout safety.
+- Claude must not edit or stage the dirty mobile auth, router, localization or test files.
+  Continue API-only work and leave `apps/mobile/pubspec.yaml` as the separately owned
+  version bump. No APK or AAB has been built.
 
 ## Web authentication UI handoff — 2026-07-28
 
