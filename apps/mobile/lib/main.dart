@@ -23,6 +23,9 @@ Future<void> main() async {
   await runZonedGuarded(
     () async {
       WidgetsFlutterBinding.ensureInitialized();
+      // Before anything else: refuse to run a release that was built pointing at a
+      // development endpoint. See Env.assertReleaseConfiguration.
+      Env.assertReleaseConfiguration();
       FlutterError.onError = (details) {
         FlutterError.presentError(details);
         unawaited(

@@ -8,10 +8,24 @@
     <!-- Android 13+ requires an explicit grant before any notification is shown. -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 
+    <!-- Backup is off because this app stores a signed-in session.
+
+         Android's auto-backup is on by default and would copy the app's data directory to
+         the user's Drive, and `adb backup` would pull the same data off a developer-enabled
+         handset. flutter_secure_storage keeps refresh tokens in EncryptedSharedPreferences,
+         whose key lives in the Keystore and does not leave the device — so a restored backup
+         yields ciphertext nobody can read, and the app would sign the user out anyway.
+
+         Turning it off removes the ambiguity rather than relying on that reasoning holding
+         for every value the app ever stores. The cost is that a user replacing their phone
+         signs in again, which is one OTP. -->
     <application
         android:label="LocZ"
         android:name="${applicationName}"
-        android:icon="@mipmap/ic_launcher">
+        android:icon="@mipmap/ic_launcher"
+        android:allowBackup="false"
+        android:fullBackupContent="false"
+        android:dataExtractionRules="@xml/data_extraction_rules">
         <activity
             android:name=".MainActivity"
             android:exported="true"

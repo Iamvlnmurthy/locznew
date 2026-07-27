@@ -70,6 +70,21 @@ android {
             if (hasReleaseSigning) {
                 signingConfig = signingConfigs.getByName("release")
             }
+
+            // R8 shrinks and obfuscates. Without it the bundle ships every unreachable
+            // class from every dependency, and the Kotlin and Java layer keeps its original
+            // names — which is a gift to anyone reading the app to find out how the API
+            // works. The Dart code is already compiled to machine code by AOT; this covers
+            // the Android half that is not.
+            //
+            // Resource shrinking needs code shrinking on, and removes the drawables and
+            // strings that dependencies bring along and nothing references.
+            isMinifyEnabled = true
+            isShrinkResources = true
+            proguardFiles(
+                getDefaultProguardFile("proguard-android-optimize.txt"),
+                "proguard-rules.pro",
+            )
         }
     }
 }

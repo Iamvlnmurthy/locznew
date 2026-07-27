@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Android 12 and above read this instead of android:allowBackup alone.
+
+  Both transfer paths are refused outright. `cloud-backup` is Google Drive backup;
+  `device-transfer` is the direct phone-to-phone copy during setup. The app holds a
+  signed-in session, and a session that survives onto a device the user has not
+  authenticated on is worth less than the one OTP it costs to sign in again.
+-->
+<data-extraction-rules>
+    <cloud-backup>
+        <exclude domain="root" />
+        <exclude domain="file" />
+        <exclude domain="database" />
+        <exclude domain="sharedpref" />
+        <exclude domain="external" />
+    </cloud-backup>
+    <device-transfer>
+        <exclude domain="root" />
+        <exclude domain="file" />
+        <exclude domain="database" />
+        <exclude domain="sharedpref" />
+        <exclude domain="external" />
+    </device-transfer>
+</data-extraction-rules>
