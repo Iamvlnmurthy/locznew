@@ -204,7 +204,13 @@ class AppTheme {
         disabledColor: scheme.surfaceContainerLow,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(LoczRadius.full)),
         side: BorderSide(color: isDark ? scheme.outlineVariant : scheme.outline),
-        labelStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+        // Chip labels do not reliably inherit onSurface across Material states.
+        // An explicit foreground keeps ActionChip/FilterChip copy visible in both themes.
+        labelStyle: TextStyle(
+          fontSize: 12,
+          fontWeight: FontWeight.w600,
+          color: scheme.onSurfaceVariant,
+        ),
         padding: const EdgeInsets.symmetric(horizontal: 4),
       ),
       navigationBarTheme: NavigationBarThemeData(
