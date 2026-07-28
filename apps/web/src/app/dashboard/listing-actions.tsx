@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState, useTransition } from 'react';
 import { listingCommandAction, type ListingCommand } from './actions';
@@ -15,7 +16,10 @@ export function ListingActions({
 }: {
   listingId: string;
   status: string;
-  labels: Record<'pause' | 'resume' | 'markSold' | 'republish' | 'delete' | 'failed', string>;
+  labels: Record<
+    'edit' | 'resumeDraft' | 'pause' | 'resume' | 'markSold' | 'republish' | 'delete' | 'failed',
+    string
+  >;
 }) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
@@ -55,6 +59,11 @@ export function ListingActions({
   return (
     <>
       <div className="dashboard-listing-actions">
+        {status !== 'REMOVED' ? (
+          <Link href={`/post/${listingId}/edit`} className="btn btn--outline">
+            {status === 'DRAFT' ? labels.resumeDraft : labels.edit}
+          </Link>
+        ) : null}
         {available.map((action) => (
           <button
             key={action.command}

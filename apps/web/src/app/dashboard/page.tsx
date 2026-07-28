@@ -752,6 +752,8 @@ function DashboardListingRow({
             listingId={listing.id}
             status={listing.status}
             labels={{
+              edit: t('dashboard.action.edit'),
+              resumeDraft: t('dashboard.action.resumeDraft'),
               pause: t('dashboard.action.pause'),
               resume: t('dashboard.action.resume'),
               markSold: t('dashboard.action.markSold'),

@@ -496,12 +496,35 @@ export class ListingsService {
       }
     }
 
+    // Attributes are replaced wholesale rather than merged. A partial merge cannot express
+    // *removing* one — the poster who corrects a car from diesel to petrol and clears the
+    // owner count would silently keep the old owner count — and `buildAttributeValues` can
+    // only enforce the category's required attributes when it sees the complete set.
+    //
+    // Omitting the field entirely leaves the existing attributes untouched, which is what
+    // `PATCH` should mean for a field nobody sent.
+    const attributeRows =
+      dto.attributes === undefined
+        ? null
+        : await this.categories.buildAttributeValues(
+            listing.subcategoryId ?? listing.categoryId,
+            dto.attributes.map((attribute) => ({ key: attribute.key, value: attribute.value })),
+          );
+
     const updated = await this.prisma.listing.update({
       where: { id: listingId },
       data: {
         title: dto.title?.trim(),
         description: dto.description?.trim(),
         addressLine: dto.addressLine,
+        ...(attributeRows === null
+          ? {}
+          : {
+              attributeValues: {
+                deleteMany: {},
+                ...(attributeRows.length > 0 ? { createMany: { data: attributeRows } } : {}),
+              },
+            }),
         ...(movedTo
           ? {
               pincodeCode: movedTo.code,
@@ -910,7 +933,18 @@ export class ListingsService {
       // `AND` rather than a second `OR`: the category filter above already owns the `OR`
       // key, and adding another would replace it outright — quietly widening the search to
       // every category instead of narrowing it by keyword.
-      ...(query.q?.trim() ? { AND: [SearchKeyword.filter(query.q.trim())] } : {}),
+      //
+      // Keyword and attribute filters share this one `AND` for the same reason: two spread
+      // entries both writing `AND` would leave only the last, so setting a keyword *and* a
+      // filter would silently drop one of them. That is the exact failure the comment above
+      // records, and it is easier to reintroduce than to notice.
+      ...(() => {
+        const and = [
+          ...(query.q?.trim() ? [SearchKeyword.filter(query.q.trim())] : []),
+          ...this.attributeFilters(query.attr),
+        ];
+        return and.length > 0 ? { AND: and } : {};
+      })(),
       ...(query.priceMin !== undefined || query.priceMax !== undefined || query.condition
         ? {
             marketplace: {
@@ -931,6 +965,72 @@ export class ListingsService {
           }
         : {}),
     };
+  }
+
+  /**
+   * Turns `attr=fuel_type:PETROL` into a condition per filter.
+   *
+   * Each filter gets its own `some`, never one `some` carrying several conditions: a single
+   * `some` asks for *one* attribute row satisfying everything at once, and no row is both
+   * the fuel type and the distance driven. Combined filters would therefore match nothing —
+   * a filter panel that returns an empty page the moment you pick a second option.
+   *
+   * The value is matched across the typed columns rather than looked up by data type first.
+   * That keeps this synchronous, which is what lets every browse path share one `whereFor`,
+   * and it cannot produce false matches: the key already restricts the row to a single
+   * attribute, so only that attribute's own column is ever populated.
+   *
+   * An unknown key matches nothing, which is the honest answer. Ignoring it would show
+   * results that do not satisfy the filter the user can see selected.
+   */
+  private attributeFilters(specs?: string[]): Prisma.ListingWhereInput[] {
+    if (!specs?.length) return [];
+
+    return specs.flatMap((spec): Prisma.ListingWhereInput[] => {
+      const separator = spec.indexOf(':');
+      if (separator <= 0) return [];
+
+      const key = spec.slice(0, separator).trim();
+      const raw = spec.slice(separator + 1).trim();
+      if (!key || !raw) return [];
+
+      const range = /^(-?\d+(?:\.\d+)?)?\.\.(-?\d+(?:\.\d+)?)?$/.exec(raw);
+      if (range && (range[1] !== undefined || range[2] !== undefined)) {
+        return [
+          {
+            attributeValues: {
+              some: {
+                attribute: { key },
+                valueNumber: {
+                  ...(range[1] !== undefined ? { gte: new Prisma.Decimal(range[1]) } : {}),
+                  ...(range[2] !== undefined ? { lte: new Prisma.Decimal(range[2]) } : {}),
+                },
+              },
+            },
+          },
+        ];
+      }
+
+      const numeric = /^-?\d+(?:\.\d+)?$/.test(raw) ? new Prisma.Decimal(raw) : null;
+      const boolean = raw === 'true' ? true : raw === 'false' ? false : null;
+
+      return [
+        {
+          attributeValues: {
+            some: {
+              attribute: { key },
+              OR: [
+                // Case-insensitive so a shared URL still works when someone retypes
+                // `petrol` for `PETROL`.
+                { valueText: { equals: raw, mode: Prisma.QueryMode.insensitive } },
+                ...(numeric !== null ? [{ valueNumber: numeric }] : []),
+                ...(boolean !== null ? [{ valueBool: boolean }] : []),
+              ],
+            },
+          },
+        },
+      ];
+    });
   }
 
   /**

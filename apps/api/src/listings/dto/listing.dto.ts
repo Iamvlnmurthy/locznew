@@ -1,7 +1,9 @@
 import { ApiProperty, ApiPropertyOptional, PartialType } from '@nestjs/swagger';
 import { ContactPreference, ItemCondition, ListingStatus, ListingType } from '@prisma/client';
-import { Type } from 'class-transformer';
+import { Transform, Type } from 'class-transformer';
 import {
+  ArrayMaxSize,
+  IsArray,
   IsBoolean,
   Matches,
   IsEnum,
@@ -368,6 +370,37 @@ export class ListingSearchQueryDto extends PaginationQueryDto {
   @IsOptional()
   @IsString()
   sort?: 'newest' | 'price_asc' | 'price_desc' | 'popular' | 'distance';
+
+  /**
+   * Category attribute filters, repeated: `attr=fuel_type:PETROL&attr=bedrooms:2..3`.
+   *
+   * A query string cannot carry a nested object without inventing an encoding, and every
+   * such encoding is a source of parsing bugs. `key:value` is readable in a URL, shareable,
+   * and trivially inspectable in a log — which matters when someone reports that a filter
+   * "did nothing" and the request is all we have.
+   *
+   * A range is `min..max`, with either side optional: `..50000` is up to fifty thousand,
+   * `2..` is two or more.
+   *
+   * Capped because each filter becomes its own join. Ten is far past any real filter panel
+   * and well short of a query anyone could use to make the database work hard.
+   */
+  @ApiPropertyOptional({
+    isArray: true,
+    type: String,
+    example: ['fuel_type:PETROL', 'km_driven:..50000'],
+    description: 'Category attribute filters as key:value; ranges as key:min..max',
+  })
+  @IsOptional()
+  @Transform(({ value }) => (Array.isArray(value) ? value : [value]))
+  @IsArray()
+  @ArrayMaxSize(10)
+  @IsString({ each: true })
+  @Matches(/^[a-z0-9_]{1,60}:.{1,120}$/, {
+    each: true,
+    message: 'Each attribute filter must look like key:value',
+  })
+  attr?: string[];
 }
 
 export class MyListingsQueryDto extends PaginationQueryDto {

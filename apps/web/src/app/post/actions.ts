@@ -10,7 +10,7 @@ export interface PostAdState {
   /** Keyed by field name so the form can flag the offending input. */
   fieldErrors?: Record<string, string>;
   /** Set when the listing was created — the form switches to the outcome screen. */
-  outcome?: { slug: string; status: string; id: string };
+  outcome?: { slug: string; status: string; id: string; updated?: boolean };
 }
 
 const text = (formData: FormData, name: string): string | undefined => {
@@ -134,10 +134,11 @@ function buildTypeDetails(type: ListingType, formData: FormData): Record<string,
  * `ListingDetailsBuilder` and surfaced here as a message — duplicating them in the
  * browser would mean two places to keep in step.
  */
-export async function createListingAction(
-  _prev: PostAdState,
+function parseListingForm(
   formData: FormData,
-): Promise<PostAdState> {
+):
+  | { payload: Record<string, unknown>; saveAsDraft: boolean }
+  | { fieldErrors: Record<string, string> } {
   const type = (text(formData, 'type') ?? 'PRODUCT') as ListingType;
   const saveAsDraft = formData.get('saveAsDraft') === 'true';
   const isMarketplace = type === 'PRODUCT' || type === 'CLASSIFIED';
@@ -179,16 +180,33 @@ export async function createListingAction(
     return { fieldErrors: toFieldErrors(parsed.error) };
   }
 
+  return {
+    payload: {
+      ...parsed.data,
+      // Dynamic category attributes intentionally stay out of edit payloads until the
+      // API contract supports updating them.
+      ...buildTypeDetails(type, formData),
+      ...(text(formData, 'businessId') ? { businessId: text(formData, 'businessId') } : {}),
+      showPhonePublicly: parsed.data.contactPreference !== 'IN_APP_ONLY',
+    },
+    saveAsDraft,
+  };
+}
+
+export async function createListingAction(
+  _prev: PostAdState,
+  formData: FormData,
+): Promise<PostAdState> {
+  const parsed = parseListingForm(formData);
+  if ('fieldErrors' in parsed) return { fieldErrors: parsed.fieldErrors };
+
   try {
     const listing = await api<{ id: string; slug: string; status: string }>('/listings', {
       method: 'POST',
       auth: true,
       body: {
-        ...parsed.data,
-        ...buildTypeDetails(type, formData),
-        ...(text(formData, 'businessId') ? { businessId: text(formData, 'businessId') } : {}),
-        showPhonePublicly: parsed.data.contactPreference !== 'IN_APP_ONLY',
-        saveAsDraft,
+        ...parsed.payload,
+        saveAsDraft: parsed.saveAsDraft,
       },
     });
 
@@ -196,6 +214,47 @@ export async function createListingAction(
     return { outcome: { id: listing.id, slug: listing.slug, status: listing.status } };
   } catch (error) {
     return { error: error instanceof Error ? error.message : 'Could not publish your ad' };
+  }
+}
+
+export async function updateListingAction(
+  listingId: string,
+  _prev: PostAdState,
+  formData: FormData,
+): Promise<PostAdState> {
+  const parsed = parseListingForm(formData);
+  if ('fieldErrors' in parsed) return { fieldErrors: parsed.fieldErrors };
+
+  try {
+    let listing = await api<{ id: string; slug: string; status: string }>(
+      `/listings/${encodeURIComponent(listingId)}`,
+      {
+        method: 'PATCH',
+        auth: true,
+        body: parsed.payload,
+      },
+    );
+
+    if (formData.get('originalStatus') === 'DRAFT' && !parsed.saveAsDraft) {
+      listing = await api<{ id: string; slug: string; status: string }>(
+        `/listings/${encodeURIComponent(listingId)}/submit`,
+        { method: 'POST', auth: true },
+      );
+    }
+
+    revalidatePath('/dashboard');
+    revalidatePath(`/ad/${listing.slug}`);
+    return {
+      outcome: {
+        id: listing.id,
+        slug: listing.slug,
+        status: listing.status,
+        updated: true,
+      },
+    };
+  } catch (error) {
+    // ApiError.message contains the moderator explanation for REMOVED listings.
+    return { error: error instanceof Error ? error.message : 'Could not update your ad' };
   }
 }
 

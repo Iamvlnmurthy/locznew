@@ -137,11 +137,44 @@ class ListingRepository {
     bool isFree = false,
     bool isNegotiable = false,
     String contactPreference = 'IN_APP_ONLY',
+    bool saveAsDraft = false,
   }) {
     return _api.post<Map<String, dynamic>>(
       '/listings',
       body: {
         'type': 'PRODUCT',
+        'title': title,
+        'description': description,
+        'categoryId': categoryId,
+        'cityId': cityId,
+        'contactPreference': contactPreference,
+        'showPhonePublicly': contactPreference != 'IN_APP_ONLY',
+        'saveAsDraft': saveAsDraft,
+        'marketplace': {
+          if (price != null) 'price': price,
+          'isFree': isFree,
+          'isNegotiable': isNegotiable,
+          'condition': condition,
+        },
+      },
+    );
+  }
+
+  Future<Map<String, dynamic>> updateListing({
+    required String listingId,
+    required String title,
+    required String description,
+    required String categoryId,
+    required String cityId,
+    required String condition,
+    num? price,
+    bool isFree = false,
+    bool isNegotiable = false,
+    String contactPreference = 'IN_APP_ONLY',
+  }) {
+    return _api.patch<Map<String, dynamic>>(
+      '/listings/$listingId',
+      body: {
         'title': title,
         'description': description,
         'categoryId': categoryId,

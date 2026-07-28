@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { useActionState, useEffect, useMemo, useRef, useState } from 'react';
 import { useFormStatus } from 'react-dom';
 import type { Category, City, ListingType } from '@locz/shared-types';
-import { createListingAction, type PostAdState } from './actions';
+import { createListingAction, updateListingAction, type PostAdState } from './actions';
 import { ListingTypeFields } from './listing-type-fields';
 import { PhotoUploader } from './photo-uploader';
 import { CityCombobox } from '@/components/city-combobox';
@@ -31,11 +31,50 @@ interface Labels {
   saveDraft: string;
   successPublished: string;
   successPending: string;
+  editTitle: string;
+  editSubtitle: string;
+  saveChanges: string;
+  savingChanges: string;
+  updateSuccess: string;
+  moderationWarning: string;
+  removedCannotEdit: string;
+  draftSaved: string;
+  restoreTitle: string;
+  restoreBody: string;
+  restore: string;
+  discard: string;
+  preview: string;
+  previewTitle: string;
+  closePreview: string;
   wizard: Record<string, string>;
   detailFields: Record<string, string>;
   contactOptions: Record<string, string>;
   types: Record<string, string>;
 }
+
+export interface PostFormInitialListing {
+  id: string;
+  slug: string;
+  status: string;
+  type: ListingType;
+  title: string;
+  description: string;
+  categoryId: string;
+  cityId?: string;
+  cityName: string;
+  pincodeCode?: string | null;
+  contactPreference: string;
+  details?: Record<string, unknown>;
+}
+
+interface SavedPostProgress {
+  version: 1;
+  savedAt: number;
+  step: number;
+  fields: Record<string, string>;
+}
+
+const POST_PROGRESS_KEY = 'locz.post-progress.v1';
 
 /** What a person can post from the web flow. Business profiles go through /business. */
 const POSTABLE_TYPES: ListingType[] = [
@@ -61,10 +100,22 @@ const TYPE_ICONS: Record<string, string> = {
   EVENT: 'calendar',
 };
 
-function PublishButton({ idle, busy }: { idle: string; busy: string }) {
+function PublishButton({
+  idle,
+  busy,
+  disabled = false,
+}: {
+  idle: string;
+  busy: string;
+  disabled?: boolean;
+}) {
   const { pending } = useFormStatus();
   return (
-    <button type="submit" className="btn btn--primary post-actions__publish" disabled={pending}>
+    <button
+      type="submit"
+      className="btn btn--primary post-actions__publish"
+      disabled={pending || disabled}
+    >
       {pending ? busy : idle} {!pending ? <Icon name="arrow" /> : null}
     </button>
   );
@@ -86,6 +137,7 @@ export function PostForm({
   defaultCityLabel,
   defaultPincode,
   defaultType,
+  initialListing,
   labels,
 }: {
   categories: Category[];
@@ -94,15 +146,28 @@ export function PostForm({
   defaultCityLabel?: string;
   defaultPincode?: string;
   defaultType?: ListingType;
+  initialListing?: PostFormInitialListing;
   labels: Labels;
 }) {
-  const [state, action] = useActionState<PostAdState, FormData>(createListingAction, {});
-  const [type, setType] = useState<ListingType>(defaultType ?? 'PRODUCT');
+  const formAction = initialListing
+    ? updateListingAction.bind(null, initialListing.id)
+    : createListingAction;
+  const [state, action] = useActionState<PostAdState, FormData>(formAction, {});
+  const [type, setType] = useState<ListingType>(
+    initialListing?.type ?? defaultType ?? 'PRODUCT',
+  );
   const [step, setStep] = useState(1);
-  const [categoryId, setCategoryId] = useState('');
-  const [draftTitle, setDraftTitle] = useState('');
+  const [categoryId, setCategoryId] = useState(initialListing?.categoryId ?? '');
+  const [draftTitle, setDraftTitle] = useState(initialListing?.title ?? '');
+  const [draftDescription, setDraftDescription] = useState(initialListing?.description ?? '');
+  const [restoreCandidate, setRestoreCandidate] = useState<SavedPostProgress | null>(null);
+  const [previewOpen, setPreviewOpen] = useState(false);
+  const [previewPrice, setPreviewPrice] = useState('');
   const formRef = useRef<HTMLFormElement>(null);
+  const saveTimerRef = useRef<number | null>(null);
   const w = labels.wizard;
+  const isEdit = Boolean(initialListing);
+  const isRemoved = initialListing?.status === 'REMOVED';
 
   // Only categories configured for the chosen type, and only leaves — posting into
   // "Electronics" instead of "Mobile Phones" is the commonest miscategorisation.
@@ -119,7 +184,124 @@ export function PostForm({
   }, [categories, type]);
 
   const selectedCategory =
-    categoryOptions.find((option) => option.id === categoryId)?.label ?? 'Choose a category';
+    categoryOptions.find((option) => option.id === categoryId)?.label ?? w.categoryPlaceholder;
+
+  function applyUncontrolledFields(fields: Record<string, string>): void {
+    const form = formRef.current;
+    if (!form) return;
+
+    for (const [name, value] of Object.entries(fields)) {
+      const control = form.elements.namedItem(name);
+      if (!(control instanceof HTMLInputElement || control instanceof HTMLSelectElement)) continue;
+      if (control instanceof HTMLInputElement && control.type === 'checkbox') {
+        control.checked = value === 'true';
+      } else if (!['type', 'categoryId', 'title', 'description'].includes(name)) {
+        control.value = value;
+        control.dispatchEvent(new Event('change', { bubbles: true }));
+      }
+    }
+  }
+
+  function applySavedFields(fields: Record<string, string>): void {
+    if (fields.type) setType(fields.type as ListingType);
+    if (fields.categoryId) setCategoryId(fields.categoryId);
+    if (fields.title !== undefined) setDraftTitle(fields.title);
+    if (fields.description !== undefined) setDraftDescription(fields.description);
+    applyUncontrolledFields(fields);
+  }
+
+  useEffect(() => {
+    if (initialListing?.details) {
+      applyUncontrolledFields(
+        Object.fromEntries(
+          Object.entries(initialListing.details).map(([key, value]) => [
+            key,
+            value === null || value === undefined ? '' : String(value),
+          ]),
+        ),
+      );
+    }
+    // Initial values must be applied once; repeating after controlled state changes would
+    // overwrite the person's edits.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialListing?.id]);
+
+  useEffect(() => {
+    if (isEdit) return;
+    try {
+      const raw = localStorage.getItem(POST_PROGRESS_KEY);
+      if (!raw) return;
+      const saved = JSON.parse(raw) as SavedPostProgress;
+      if (
+        saved.version === 1 &&
+        saved.fields &&
+        (saved.fields.title?.trim() || saved.fields.description?.trim())
+      ) {
+        queueMicrotask(() => setRestoreCandidate(saved));
+      }
+    } catch {
+      localStorage.removeItem(POST_PROGRESS_KEY);
+    }
+  }, [isEdit]);
+
+  useEffect(() => {
+    if (state.outcome && !isEdit) localStorage.removeItem(POST_PROGRESS_KEY);
+  }, [isEdit, state.outcome]);
+
+  function saveProgress(): void {
+    if (isEdit || state.outcome) return;
+    if (saveTimerRef.current !== null) window.clearTimeout(saveTimerRef.current);
+    saveTimerRef.current = window.setTimeout(() => {
+      const form = formRef.current;
+      if (!form) return;
+      const fields: Record<string, string> = {};
+      for (const control of Array.from(form.elements)) {
+        if (
+          !(
+            control instanceof HTMLInputElement ||
+            control instanceof HTMLSelectElement ||
+            control instanceof HTMLTextAreaElement
+          ) ||
+          !control.name ||
+          control.type === 'file' ||
+          control.type === 'submit'
+        ) {
+          continue;
+        }
+        fields[control.name] =
+          control instanceof HTMLInputElement && control.type === 'checkbox'
+            ? String(control.checked)
+            : control.value;
+      }
+      localStorage.setItem(
+        POST_PROGRESS_KEY,
+        JSON.stringify({ version: 1, savedAt: Date.now(), step, fields } satisfies SavedPostProgress),
+      );
+    }, 250);
+  }
+
+  function restoreProgress(): void {
+    if (!restoreCandidate) return;
+    setStep(Math.min(3, Math.max(1, restoreCandidate.step)));
+    applySavedFields(restoreCandidate.fields);
+    setRestoreCandidate(null);
+  }
+
+  function discardProgress(): void {
+    localStorage.removeItem(POST_PROGRESS_KEY);
+    setRestoreCandidate(null);
+  }
+
+  function openPreview(): void {
+    const price = formRef.current?.elements.namedItem('price');
+    const isFree = formRef.current?.elements.namedItem('isFree');
+    const free =
+      isFree instanceof HTMLInputElement && isFree.type === 'checkbox' && isFree.checked;
+    setPreviewPrice(
+      free ? w.free : price instanceof HTMLInputElement && price.value ? `₹${price.value}` : '',
+    );
+    setPreviewOpen(true);
+  }
 
   useEffect(() => {
     const errors = state.fieldErrors;
@@ -170,6 +352,7 @@ export function PostForm({
 
   if (state.outcome) {
     const published = state.outcome.status === 'PUBLISHED';
+    const draft = state.outcome.status === 'DRAFT';
 
     return (
       <div className="post-success">
@@ -179,31 +362,49 @@ export function PostForm({
         <span className="section-kicker">
           {published ? w.successLiveKicker : w.successReviewKicker}
         </span>
-        <h1>{published ? w.successLiveTitle : w.successReviewTitle}</h1>
-        <p>{published ? labels.successPublished : labels.successPending}</p>
+        <h1>
+          {state.outcome.updated
+            ? labels.updateSuccess
+            : draft
+              ? labels.draftSaved
+              : published
+                ? w.successLiveTitle
+                : w.successReviewTitle}
+        </h1>
+        <p>
+          {state.outcome.updated
+            ? labels.updateSuccess
+            : draft
+              ? labels.draftSaved
+              : published
+                ? labels.successPublished
+                : labels.successPending}
+        </p>
 
-        <div className="post-success__upload">
-          <div className="post-success__upload-copy">
-            <span>{w.finalTouch}</span>
-            <h2>{w.addBestPhotos}</h2>
-            <p>{w.photoAdvice}</p>
+        {!state.outcome.updated && !draft ? (
+          <div className="post-success__upload">
+            <div className="post-success__upload-copy">
+              <span>{w.finalTouch}</span>
+              <h2>{w.addBestPhotos}</h2>
+              <p>{w.photoAdvice}</p>
+            </div>
+            <PhotoUploader
+              listingId={state.outcome.id}
+              label={labels.photos}
+              hint={labels.photosHint}
+              labels={{
+                choosePhotos: w.choosePhotos,
+                formats: w.photoFormats,
+                preparing: w.preparingPhoto,
+                ready: w.photoReady,
+                remove: w.removePhoto,
+                processError: w.processImageError,
+                uploadFailed: w.uploadFailed,
+                networkError: w.networkError,
+              }}
+            />
           </div>
-          <PhotoUploader
-            listingId={state.outcome.id}
-            label={labels.photos}
-            hint={labels.photosHint}
-            labels={{
-              choosePhotos: w.choosePhotos,
-              formats: w.photoFormats,
-              preparing: w.preparingPhoto,
-              ready: w.photoReady,
-              remove: w.removePhoto,
-              processError: w.processImageError,
-              uploadFailed: w.uploadFailed,
-              networkError: w.networkError,
-            }}
-          />
-        </div>
+        ) : null}
 
         <div className="post-success__actions">
           {published ? (
@@ -225,12 +426,41 @@ export function PostForm({
         <span className="post-form__free">
           <Icon name="plus" /> {w.freeToPost}
         </span>
-        <h1>{labels.title}</h1>
-        <p>{labels.subtitle}</p>
+        <h1>{isEdit ? labels.editTitle : labels.title}</h1>
+        <p>{isEdit ? labels.editSubtitle : labels.subtitle}</p>
       </header>
 
+      {restoreCandidate ? (
+        <section className="post-restore" role="status">
+          <div>
+            <strong>{labels.restoreTitle}</strong>
+            <p>{labels.restoreBody}</p>
+          </div>
+          <div>
+            <button type="button" className="btn btn--primary" onClick={restoreProgress}>
+              {labels.restore}
+            </button>
+            <button type="button" className="btn btn--ghost" onClick={discardProgress}>
+              {labels.discard}
+            </button>
+          </div>
+        </section>
+      ) : null}
+
       <div className="post-layout">
-        <form ref={formRef} className="post-card" action={action}>
+        <form
+          ref={formRef}
+          className="post-card"
+          action={action}
+          onInput={saveProgress}
+          onChange={saveProgress}
+        >
+          {initialListing ? (
+            <>
+              <input type="hidden" name="originalStatus" value={initialListing.status} />
+              <input type="hidden" name="type" value={type} />
+            </>
+          ) : null}
           <nav className="post-progress" aria-label={w.progressLabel}>
             {[
               [w.choose, w.chooseHint],
@@ -260,6 +490,16 @@ export function PostForm({
               {state.error}
             </div>
           ) : null}
+          {isRemoved ? (
+            <div className="alert alert--error" role="alert">
+              {labels.removedCannotEdit}
+            </div>
+          ) : null}
+          {initialListing?.status === 'PUBLISHED' ? (
+            <div className="alert alert--info">
+              <Icon name="shield" /> {labels.moderationWarning}
+            </div>
+          ) : null}
 
           <section className="post-step" data-step="1" hidden={step !== 1}>
             <div className="post-step__head">
@@ -278,6 +518,7 @@ export function PostForm({
                       name="type"
                       value={option}
                       checked={type === option}
+                      disabled={isEdit}
                       onChange={(event) => {
                         setType(event.target.value as ListingType);
                         setCategoryId('');
@@ -364,6 +605,8 @@ export function PostForm({
                 required
                 minLength={10}
                 maxLength={5000}
+                value={draftDescription}
+                onChange={(event) => setDraftDescription(event.target.value)}
                 placeholder={w.descriptionPlaceholder}
               />
               {state.fieldErrors?.description ? (
@@ -405,8 +648,8 @@ export function PostForm({
                 <CityCombobox
                   id="cityId"
                   cities={cities}
-                  defaultValue={defaultCityId}
-                  defaultLabel={defaultCityLabel}
+                  defaultValue={initialListing?.cityId ?? defaultCityId}
+                  defaultLabel={initialListing?.cityName ?? defaultCityLabel}
                   placeholder={labels.citySearch}
                   noResultsLabel={labels.noCityMatches}
                   required
@@ -427,7 +670,7 @@ export function PostForm({
                   maxLength={6}
                   pattern="\d{6}"
                   placeholder="500081"
-                  defaultValue={defaultPincode ?? ''}
+                  defaultValue={initialListing?.pincodeCode ?? defaultPincode ?? ''}
                 />
                 {state.fieldErrors?.pincodeCode ? (
                   <p className="field__error">{state.fieldErrors.pincodeCode}</p>
@@ -439,7 +682,11 @@ export function PostForm({
 
             <div className="field">
               <label htmlFor="contactPreference">{labels.contactPreference}</label>
-              <select id="contactPreference" name="contactPreference" defaultValue="IN_APP_ONLY">
+              <select
+                id="contactPreference"
+                name="contactPreference"
+                defaultValue={initialListing?.contactPreference ?? 'IN_APP_ONLY'}
+              >
                 {Object.entries(labels.contactOptions).map(([value, label]) => (
                   <option key={value} value={value}>
                     {label}
@@ -478,10 +725,25 @@ export function PostForm({
                 {w.back}
               </button>
               <div className="post-actions__finish">
-                <button type="submit" name="saveAsDraft" value="true" className="btn btn--ghost">
-                  {labels.saveDraft}
+                <button type="button" className="btn btn--outline" onClick={openPreview}>
+                  <Icon name="image" /> {labels.preview}
                 </button>
-                <PublishButton idle={labels.publish} busy={labels.publishing} />
+                {!isEdit || initialListing?.status === 'DRAFT' ? (
+                  <button
+                    type="submit"
+                    name="saveAsDraft"
+                    value="true"
+                    className="btn btn--ghost"
+                    disabled={isRemoved}
+                  >
+                    {labels.saveDraft}
+                  </button>
+                ) : null}
+                <PublishButton
+                  idle={isEdit ? labels.saveChanges : labels.publish}
+                  busy={isEdit ? labels.savingChanges : labels.publishing}
+                  disabled={isRemoved}
+                />
               </div>
             </div>
           </section>
@@ -515,6 +777,45 @@ export function PostForm({
           </div>
         </aside>
       </div>
+
+      {previewOpen ? (
+        <div className="post-preview-backdrop" role="presentation" onMouseDown={() => setPreviewOpen(false)}>
+          <section
+            className="post-preview"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="post-preview-title"
+            onMouseDown={(event) => event.stopPropagation()}
+          >
+            <button
+              type="button"
+              className="post-preview__close"
+              onClick={() => setPreviewOpen(false)}
+              aria-label={labels.closePreview}
+            >
+              ×
+            </button>
+            <span className="section-kicker">{labels.previewTitle}</span>
+            <div className="post-preview__image">
+              <Icon name="image" />
+            </div>
+            {previewPrice ? <strong className="post-preview__price">{previewPrice}</strong> : null}
+            <h2 id="post-preview-title">{draftTitle || w.listingTitle}</h2>
+            <p>{draftDescription || labels.descriptionHint}</p>
+            <div className="post-preview__meta">
+              <span>
+                <Icon name="location" /> {initialListing?.cityName ?? defaultCityLabel ?? labels.fieldCity}
+              </span>
+              <span>
+                <Icon name="tag" /> {selectedCategory}
+              </span>
+            </div>
+            <div className="alert alert--info">
+              <Icon name="shield" /> {w.contactPrivacy}
+            </div>
+          </section>
+        </div>
+      ) : null}
     </div>
   );
 }

@@ -12,6 +12,7 @@ import '../../../core/i18n/strings.dart';
 import '../../../core/network/api_exception.dart';
 import '../../../core/providers.dart';
 import '../../../core/theme/tokens.g.dart';
+import '../../listings/domain/models.dart';
 
 class _PendingImage {
   _PendingImage(this.file);
@@ -27,7 +28,9 @@ class _PendingImage {
 /// listing must exist before any image can be uploaded. That ordering also means a
 /// dropped connection mid-upload loses photos, never the ad itself.
 class PostAdScreen extends ConsumerStatefulWidget {
-  const PostAdScreen({super.key});
+  const PostAdScreen({super.key, this.listingId});
+
+  final String? listingId;
 
   @override
   ConsumerState<PostAdScreen> createState() => _PostAdScreenState();
@@ -52,11 +55,55 @@ class _PostAdScreenState extends ConsumerState<PostAdScreen> {
   String? _createdListingId;
   String? _createdSlug;
   bool _publishedImmediately = false;
+  bool _loadingListing = false;
+  String? _originalStatus;
 
   @override
   void initState() {
     super.initState();
-    _cityId = ref.read(selectedCityProvider)?.id;
+    if (widget.listingId == null) {
+      _cityId = ref.read(selectedCityProvider)?.id;
+    } else {
+      _loadingListing = true;
+      unawaited(_loadListing());
+    }
+  }
+
+  Future<void> _loadListing() async {
+    try {
+      final repository = ref.read(listingRepositoryProvider);
+      final results = await Future.wait([
+        repository.detail(widget.listingId!),
+        repository.cities(launchedOnly: true),
+      ]);
+      final listing = results[0] as ListingDetail;
+      final cities = results[1] as List<City>;
+      if (!mounted) return;
+      final marketplace = listing.marketplace;
+      setState(() {
+        _titleController.text = listing.summary.title;
+        _descriptionController.text = listing.description;
+        _priceController.text = marketplace['price']?.toString() ?? '';
+        _categoryId = listing.categoryId;
+        _cityId =
+            listing.cityId ??
+            cities.where((city) => city.name == listing.summary.cityName).firstOrNull?.id;
+        _condition = marketplace['condition'] as String? ?? 'GOOD';
+        _isFree = marketplace['isFree'] as bool? ?? listing.summary.isFree;
+        _isNegotiable =
+            marketplace['isNegotiable'] as bool? ?? listing.summary.isNegotiable;
+        _contactPreference = listing.contactPreference;
+        _originalStatus = listing.summary.status;
+        _createdSlug = listing.summary.slug;
+        _loadingListing = false;
+      });
+    } on ApiException catch (error) {
+      if (!mounted) return;
+      setState(() {
+        _error = error.message;
+        _loadingListing = false;
+      });
+    }
   }
 
   @override
@@ -87,7 +134,7 @@ class _PostAdScreenState extends ConsumerState<PostAdScreen> {
     });
   }
 
-  Future<void> _submit() async {
+  Future<void> _submit({bool saveAsDraft = false}) async {
     if (!_formKey.currentState!.validate()) return;
     if (_categoryId == null || _cityId == null) {
       setState(() => _error = Strings.of(context)('common.error'));
@@ -102,17 +149,35 @@ class _PostAdScreenState extends ConsumerState<PostAdScreen> {
     try {
       final repository = ref.read(listingRepositoryProvider);
 
-      final created = await repository.createListing(
-        title: _titleController.text.trim(),
-        description: _descriptionController.text.trim(),
-        categoryId: _categoryId!,
-        cityId: _cityId!,
-        condition: _condition,
-        price: _isFree ? 0 : num.tryParse(_priceController.text.trim()),
-        isFree: _isFree,
-        isNegotiable: _isNegotiable,
-        contactPreference: _contactPreference,
-      );
+      final created = widget.listingId == null
+          ? await repository.createListing(
+              title: _titleController.text.trim(),
+              description: _descriptionController.text.trim(),
+              categoryId: _categoryId!,
+              cityId: _cityId!,
+              condition: _condition,
+              price: _isFree ? 0 : num.tryParse(_priceController.text.trim()),
+              isFree: _isFree,
+              isNegotiable: _isNegotiable,
+              contactPreference: _contactPreference,
+              saveAsDraft: saveAsDraft,
+            )
+          : await repository.updateListing(
+              listingId: widget.listingId!,
+              title: _titleController.text.trim(),
+              description: _descriptionController.text.trim(),
+              categoryId: _categoryId!,
+              cityId: _cityId!,
+              condition: _condition,
+              price: _isFree ? 0 : num.tryParse(_priceController.text.trim()),
+              isFree: _isFree,
+              isNegotiable: _isNegotiable,
+              contactPreference: _contactPreference,
+            );
+
+      if (widget.listingId != null && _originalStatus == 'DRAFT' && !saveAsDraft) {
+        await repository.listingCommand(widget.listingId!, 'submit');
+      }
 
       final listingId = created['id'] as String;
       _createdListingId = listingId;
@@ -121,7 +186,7 @@ class _PostAdScreenState extends ConsumerState<PostAdScreen> {
 
       // Sequential uploads: several large photos in parallel on a mobile connection
       // make all of them slow and the progress bars meaningless.
-      for (final image in _images) {
+      for (final image in widget.listingId == null && !saveAsDraft ? _images : <_PendingImage>[]) {
         try {
           await repository.uploadImage(
             listingId,
@@ -149,6 +214,80 @@ class _PostAdScreenState extends ConsumerState<PostAdScreen> {
         });
       }
     }
+  }
+
+  Future<void> _showPreview() {
+    final strings = Strings.of(context);
+    final theme = Theme.of(context);
+    final price = _isFree ? strings('listing.free') : _priceController.text.trim();
+
+    return showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      showDragHandle: true,
+      builder: (context) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(
+            LoczSpacing.x4,
+            0,
+            LoczSpacing.x4,
+            LoczSpacing.x5,
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(strings('post.previewTitle'), style: theme.textTheme.titleLarge),
+              const SizedBox(height: LoczSpacing.x3),
+              Container(
+                height: 150,
+                width: double.infinity,
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                  color: theme.colorScheme.surfaceContainerHighest,
+                  borderRadius: BorderRadius.circular(LoczRadius.lg),
+                ),
+                child: const Icon(Icons.photo_outlined, size: 38),
+              ),
+              const SizedBox(height: LoczSpacing.x3),
+              if (price.isNotEmpty)
+                Text(
+                  _isFree ? price : '₹$price',
+                  style: theme.textTheme.headlineSmall?.copyWith(
+                    color: theme.colorScheme.primary,
+                  ),
+                ),
+              Text(
+                _titleController.text.trim().isEmpty
+                    ? strings('post.previewUntitled')
+                    : _titleController.text.trim(),
+                style: theme.textTheme.titleLarge,
+              ),
+              const SizedBox(height: LoczSpacing.x2),
+              Text(
+                _descriptionController.text.trim().isEmpty
+                    ? strings('post.previewNoDescription')
+                    : _descriptionController.text.trim(),
+                style: theme.textTheme.bodyMedium,
+              ),
+              const SizedBox(height: LoczSpacing.x4),
+              Row(
+                children: [
+                  Icon(Icons.shield_outlined, size: 16, color: theme.colorScheme.primary),
+                  const SizedBox(width: 6),
+                  Expanded(
+                    child: Text(
+                      strings('post.contactPrivacy'),
+                      style: theme.textTheme.labelSmall,
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 
   @override
@@ -250,11 +389,22 @@ class _PostAdScreenState extends ConsumerState<PostAdScreen> {
       );
     }
 
+    if (_loadingListing) {
+      return Scaffold(
+        appBar: AppBar(title: Text(strings('post.editTitle'))),
+        body: const Center(child: CircularProgressIndicator()),
+      );
+    }
+
     final categories = ref.watch(categoriesProvider);
     final cities = ref.watch(citiesProvider);
 
     return Scaffold(
-      appBar: AppBar(title: Text(strings('post.title'))),
+      appBar: AppBar(
+        title: Text(
+          widget.listingId == null ? strings('post.title') : strings('post.editTitle'),
+        ),
+      ),
       body: Form(
         key: _formKey,
         child: Align(
@@ -265,9 +415,41 @@ class _PostAdScreenState extends ConsumerState<PostAdScreen> {
               padding: const EdgeInsets.all(LoczSpacing.x4),
               children: [
                 Text(
-                  strings('post.subtitle'),
+                  strings(widget.listingId == null ? 'post.subtitle' : 'post.editSubtitle'),
                   style: Theme.of(context).textTheme.bodyMedium,
                 ),
+                if (_originalStatus == 'PUBLISHED') ...[
+                  const SizedBox(height: LoczSpacing.x3),
+                  Container(
+                    padding: const EdgeInsets.all(LoczSpacing.x3),
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).colorScheme.tertiaryContainer,
+                      borderRadius: BorderRadius.circular(LoczRadius.md),
+                    ),
+                    child: Text(
+                      strings('post.moderationWarning'),
+                      style: TextStyle(
+                        color: Theme.of(context).colorScheme.onTertiaryContainer,
+                      ),
+                    ),
+                  ),
+                ],
+                if (_originalStatus == 'REMOVED') ...[
+                  const SizedBox(height: LoczSpacing.x3),
+                  Container(
+                    padding: const EdgeInsets.all(LoczSpacing.x3),
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).colorScheme.errorContainer,
+                      borderRadius: BorderRadius.circular(LoczRadius.md),
+                    ),
+                    child: Text(
+                      strings('post.removedCannotEdit'),
+                      style: TextStyle(
+                        color: Theme.of(context).colorScheme.onErrorContainer,
+                      ),
+                    ),
+                  ),
+                ],
                 const SizedBox(height: LoczSpacing.x5),
                 _SectionHeading(
                   index: '01',

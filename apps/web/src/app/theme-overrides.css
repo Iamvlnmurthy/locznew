@@ -85,3 +85,128 @@
     display: none;
   }
 }
+
+.post-restore {
+  display: flex;
+  margin: 0 auto 18px;
+  padding: 14px 16px;
+  max-width: 760px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  border: 1px solid var(--locz-border);
+  border-radius: var(--locz-radius-lg);
+  background: var(--locz-primary-soft);
+}
+
+.post-restore p {
+  margin: 3px 0 0;
+  color: var(--locz-text-secondary);
+}
+
+.post-restore > div:last-child {
+  display: flex;
+  flex: 0 0 auto;
+  gap: 8px;
+}
+
+.post-preview-backdrop {
+  position: fixed;
+  z-index: 500;
+  inset: 0;
+  display: grid;
+  padding: 20px;
+  place-items: center;
+  overflow-y: auto;
+  background: rgba(8, 18, 15, 0.72);
+  backdrop-filter: blur(8px);
+}
+
+.post-preview {
+  position: relative;
+  width: min(100%, 520px);
+  padding: 22px;
+  border: 1px solid var(--locz-border);
+  border-radius: var(--locz-radius-xl);
+  background: var(--locz-surface);
+  box-shadow: var(--locz-shadow-lg);
+}
+
+.post-preview__close {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  width: 38px;
+  height: 38px;
+  border: 1px solid var(--locz-border);
+  border-radius: 50%;
+  background: var(--locz-surface);
+  color: var(--locz-text);
+  font-size: 1.4rem;
+  cursor: pointer;
+}
+
+.post-preview__image {
+  display: grid;
+  min-height: 210px;
+  margin: 14px 0 18px;
+  place-items: center;
+  border-radius: var(--locz-radius-lg);
+  background: var(--locz-surface-muted);
+  color: var(--locz-text-muted);
+}
+
+.post-preview__image svg {
+  width: 42px;
+  height: 42px;
+}
+
+.post-preview__price {
+  color: var(--locz-primary);
+  font-size: 1.3rem;
+}
+
+.post-preview h2 {
+  margin: 6px 0;
+}
+
+.post-preview > p {
+  color: var(--locz-text-secondary);
+  white-space: pre-wrap;
+}
+
+.post-preview__meta {
+  display: flex;
+  margin: 16px 0;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+  color: var(--locz-text-secondary);
+}
+
+.post-preview__meta span {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+@media (max-width: 560px) {
+  .post-restore {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .post-restore > div:last-child {
+    flex-wrap: wrap;
+  }
+
+  .post-preview-backdrop {
+    padding: 10px;
+    place-items: end center;
+  }
+
+  .post-preview {
+    max-height: calc(100dvh - 20px);
+    overflow-y: auto;
+    border-radius: 22px 22px 12px 12px;
+  }
+}

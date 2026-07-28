@@ -82,6 +82,10 @@ final routerProvider = Provider<GoRouter>((ref) {
         builder: (context, state) => ListingDetailScreen(slug: state.pathParameters['slug']!),
       ),
       GoRoute(path: '/post', builder: (_, __) => const PostAdScreen()),
+      GoRoute(
+        path: '/post/:id/edit',
+        builder: (_, state) => PostAdScreen(listingId: state.pathParameters['id']),
+      ),
       GoRoute(path: '/location', builder: (_, __) => const CityPickerScreen()),
       GoRoute(
         path: '/notifications',

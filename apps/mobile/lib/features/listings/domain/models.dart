@@ -108,6 +108,7 @@ class ListingDetail {
   const ListingDetail({
     required this.summary,
     required this.description,
+    required this.categoryId,
     required this.categoryName,
     required this.owner,
     required this.media,
@@ -116,10 +117,15 @@ class ListingDetail {
     this.latitude,
     this.longitude,
     this.addressLine,
+    this.cityId,
+    this.pincodeCode,
+    this.contactPreference = 'IN_APP_ONLY',
+    this.marketplace = const {},
   });
 
   final ListingSummary summary;
   final String description;
+  final String categoryId;
   final String categoryName;
   final ListingOwner owner;
   final List<ListingMedia> media;
@@ -128,10 +134,15 @@ class ListingDetail {
   final double? latitude;
   final double? longitude;
   final String? addressLine;
+  final String? cityId;
+  final String? pincodeCode;
+  final String contactPreference;
+  final Map<String, dynamic> marketplace;
 
   factory ListingDetail.fromJson(Map<String, dynamic> json) => ListingDetail(
         summary: ListingSummary.fromJson(json),
         description: json['description'] as String? ?? '',
+        categoryId: json['categoryId'] as String? ?? '',
         categoryName: json['categoryName'] as String? ?? '',
         owner: ListingOwner.fromJson(json['owner'] as Map<String, dynamic>),
         media: (json['media'] as List<dynamic>? ?? [])
@@ -144,6 +155,10 @@ class ListingDetail {
         latitude: (json['latitude'] as num?)?.toDouble(),
         longitude: (json['longitude'] as num?)?.toDouble(),
         addressLine: json['addressLine'] as String?,
+        cityId: json['cityId'] as String?,
+        pincodeCode: json['pincodeCode'] as String?,
+        contactPreference: json['contactPreference'] as String? ?? 'IN_APP_ONLY',
+        marketplace: (json['marketplace'] as Map<String, dynamic>?) ?? const {},
       );
 }
 
