@@ -363,7 +363,9 @@ type AttrSeed = {
   labelTe?: string;
   labelHi?: string;
   dataType: AttributeDataType;
-  options?: Array<{ value: string; label: string }>;
+  // Matches CategoryAttributeOptionDto, which has carried the translations all along. The
+  // narrower type here silently made every option English-only in a trilingual product.
+  options?: Array<{ value: string; label: string; labelTe?: string; labelHi?: string }>;
   unit?: string;
   isRequired?: boolean;
   isFilterable?: boolean;
@@ -481,13 +483,122 @@ const CATEGORIES: CategorySeed[] = [
       {
         key: 'fuel_type',
         label: 'Fuel type',
+        labelTe: 'ఇంధనం',
+        labelHi: 'ईंधन',
         dataType: AttributeDataType.SELECT,
         options: [
-          { value: 'PETROL', label: 'Petrol' },
-          { value: 'DIESEL', label: 'Diesel' },
+          { value: 'PETROL', label: 'Petrol', labelTe: 'పెట్రోల్', labelHi: 'पेट्रोल' },
+          { value: 'DIESEL', label: 'Diesel', labelTe: 'డీజిల్', labelHi: 'डीज़ल' },
           { value: 'CNG', label: 'CNG' },
-          { value: 'ELECTRIC', label: 'Electric' },
+          { value: 'LPG', label: 'LPG' },
+          { value: 'ELECTRIC', label: 'Electric', labelTe: 'ఎలక్ట్రిక్', labelHi: 'इलेक्ट्रिक' },
+          { value: 'HYBRID', label: 'Hybrid' },
         ],
+        isFilterable: true,
+      },
+      // Brand is a picklist; model is not.
+      //
+      // Brands are a few dozen, change once every few years, and are what people filter by.
+      // Models number in the thousands, several arrive every month, and a stale picklist is
+      // worse than free text — it silently prevents someone listing the car they own. The
+      // model already lives in `MarketplaceDetail.model` and is covered by keyword search.
+      //
+      // Curated for the Indian market rather than imported. Wikidata was the obvious source
+      // and is unusable here: it lists ten Maruti Suzuki models and one Bajaj, while
+      // returning 380 Fiats almost none of which were ever sold in India.
+      {
+        key: 'brand',
+        label: 'Brand',
+        labelTe: 'బ్రాండ్',
+        labelHi: 'ब्रांड',
+        dataType: AttributeDataType.SELECT,
+        options: [
+          { value: 'MARUTI_SUZUKI', label: 'Maruti Suzuki' },
+          { value: 'HYUNDAI', label: 'Hyundai' },
+          { value: 'TATA', label: 'Tata' },
+          { value: 'MAHINDRA', label: 'Mahindra' },
+          { value: 'TOYOTA', label: 'Toyota' },
+          { value: 'HONDA', label: 'Honda' },
+          { value: 'KIA', label: 'Kia' },
+          { value: 'MG', label: 'MG' },
+          { value: 'RENAULT', label: 'Renault' },
+          { value: 'NISSAN', label: 'Nissan' },
+          { value: 'SKODA', label: 'Skoda' },
+          { value: 'VOLKSWAGEN', label: 'Volkswagen' },
+          { value: 'FORD', label: 'Ford' },
+          { value: 'CHEVROLET', label: 'Chevrolet' },
+          { value: 'JEEP', label: 'Jeep' },
+          { value: 'CITROEN', label: 'Citroen' },
+          { value: 'MERCEDES_BENZ', label: 'Mercedes-Benz' },
+          { value: 'BMW', label: 'BMW' },
+          { value: 'AUDI', label: 'Audi' },
+          { value: 'VOLVO', label: 'Volvo' },
+          { value: 'JAGUAR', label: 'Jaguar' },
+          { value: 'LAND_ROVER', label: 'Land Rover' },
+          { value: 'LEXUS', label: 'Lexus' },
+          { value: 'ISUZU', label: 'Isuzu' },
+          { value: 'FIAT', label: 'Fiat' },
+          { value: 'DATSUN', label: 'Datsun' },
+          { value: 'FORCE', label: 'Force Motors' },
+          { value: 'ASHOK_LEYLAND', label: 'Ashok Leyland' },
+          { value: 'BYD', label: 'BYD' },
+          { value: 'HERO', label: 'Hero' },
+          { value: 'HONDA_2W', label: 'Honda (two-wheeler)' },
+          { value: 'BAJAJ', label: 'Bajaj' },
+          { value: 'TVS', label: 'TVS' },
+          { value: 'ROYAL_ENFIELD', label: 'Royal Enfield' },
+          { value: 'YAMAHA', label: 'Yamaha' },
+          { value: 'SUZUKI_2W', label: 'Suzuki (two-wheeler)' },
+          { value: 'KTM', label: 'KTM' },
+          { value: 'JAWA', label: 'Jawa' },
+          { value: 'OLA_ELECTRIC', label: 'Ola Electric' },
+          { value: 'ATHER', label: 'Ather' },
+          { value: 'OKINAWA', label: 'Okinawa' },
+          { value: 'AMPERE', label: 'Ampere' },
+          { value: 'REVOLT', label: 'Revolt' },
+          { value: 'KAWASAKI', label: 'Kawasaki' },
+          { value: 'HARLEY_DAVIDSON', label: 'Harley-Davidson' },
+          { value: 'TRIUMPH', label: 'Triumph' },
+          { value: 'BENELLI', label: 'Benelli' },
+          { value: 'OTHER', label: 'Other' },
+        ],
+        isFilterable: true,
+      },
+      {
+        key: 'transmission',
+        label: 'Transmission',
+        labelTe: 'ట్రాన్స్‌మిషన్',
+        labelHi: 'ट्रांसमिशन',
+        dataType: AttributeDataType.SELECT,
+        options: [
+          { value: 'MANUAL', label: 'Manual', labelTe: 'మాన్యువల్', labelHi: 'मैनुअल' },
+          { value: 'AUTOMATIC', label: 'Automatic', labelTe: 'ఆటోమేటిక్', labelHi: 'ऑटोमैटिक' },
+        ],
+        isFilterable: true,
+      },
+      {
+        key: 'owners',
+        label: 'Number of previous owners',
+        labelTe: 'గత యజమానుల సంఖ్య',
+        labelHi: 'पिछले मालिकों की संख्या',
+        dataType: AttributeDataType.SELECT,
+        options: [
+          { value: 'FIRST', label: 'First owner' },
+          { value: 'SECOND', label: 'Second owner' },
+          { value: 'THIRD', label: 'Third owner' },
+          { value: 'FOURTH_PLUS', label: 'Fourth or more' },
+        ],
+        isFilterable: true,
+      },
+      {
+        // What the seller states, not something LocZ has checked. Verifying insurance needs
+        // an authorised VAHAN data partner, and a claim we cannot check must not be
+        // presented as one we have.
+        key: 'insurance_valid',
+        label: 'Seller states insurance is valid',
+        labelTe: 'బీమా చెల్లుబాటులో ఉందని విక్రేత చెబుతున్నారు',
+        labelHi: 'विक्रेता के अनुसार बीमा वैध है',
+        dataType: AttributeDataType.BOOLEAN,
         isFilterable: true,
       },
     ],
@@ -644,37 +755,77 @@ const CATEGORIES: CategorySeed[] = [
     slug: 'real-estate-rentals',
     iconKey: 'home',
     listingTypes: [ListingType.RENTAL, ListingType.CLASSIFIED, ListingType.BUYER_REQUIREMENT],
+    // Property type, bedrooms, bathrooms, area and furnishing are NOT attributes here.
+    // They are columns on `RentalDetail`, which is where they belong: every rental has them,
+    // they are indexed, and the listing page already renders them. Duplicating them as
+    // attributes gave the same fact two homes that could disagree — the filter would read
+    // one while the page read the other — so the duplicates were removed in
+    // `20260728190000_deduplicate_property_attributes`.
+    //
+    // What remains here is what `RentalDetail` genuinely does not model.
     attributes: [
       {
-        key: 'property_type',
-        label: 'Property type',
-        dataType: AttributeDataType.SELECT,
-        options: [
-          { value: 'ROOM', label: 'Room' },
-          { value: 'FLAT', label: 'Flat' },
-          { value: 'HOUSE', label: 'House' },
-          { value: 'PG', label: 'PG / Hostel' },
-          { value: 'SHOP', label: 'Shop' },
-          { value: 'OFFICE', label: 'Office' },
-        ],
-        isRequired: true,
-        isFilterable: true,
-      },
-      {
-        key: 'bedrooms',
-        label: 'Bedrooms',
+        key: 'floor',
+        label: 'Floor',
+        labelTe: 'అంతస్తు',
+        labelHi: 'मंज़िल',
         dataType: AttributeDataType.NUMBER,
         isFilterable: true,
       },
       {
-        key: 'furnishing',
-        label: 'Furnishing',
+        key: 'total_floors',
+        label: 'Total floors in building',
+        labelTe: 'మొత్తం అంతస్తులు',
+        labelHi: 'कुल मंज़िलें',
+        dataType: AttributeDataType.NUMBER,
+      },
+      {
+        key: 'facing',
+        label: 'Facing',
+        labelTe: 'ముఖద్వారం దిశ',
+        labelHi: 'दिशा',
         dataType: AttributeDataType.SELECT,
         options: [
-          { value: 'UNFURNISHED', label: 'Unfurnished' },
-          { value: 'SEMI', label: 'Semi-furnished' },
-          { value: 'FULL', label: 'Fully furnished' },
+          { value: 'EAST', label: 'East', labelTe: 'తూర్పు', labelHi: 'पूर्व' },
+          { value: 'WEST', label: 'West', labelTe: 'పడమర', labelHi: 'पश्चिम' },
+          { value: 'NORTH', label: 'North', labelTe: 'ఉత్తరం', labelHi: 'उत्तर' },
+          { value: 'SOUTH', label: 'South', labelTe: 'దక్షిణం', labelHi: 'दक्षिण' },
+          { value: 'NORTH_EAST', label: 'North-east' },
+          { value: 'NORTH_WEST', label: 'North-west' },
+          { value: 'SOUTH_EAST', label: 'South-east' },
+          { value: 'SOUTH_WEST', label: 'South-west' },
         ],
+        isFilterable: true,
+      },
+      {
+        key: 'parking',
+        label: 'Parking',
+        labelTe: 'పార్కింగ్',
+        labelHi: 'पार्किंग',
+        dataType: AttributeDataType.SELECT,
+        options: [
+          { value: 'NONE', label: 'None' },
+          { value: 'TWO_WHEELER', label: 'Two-wheeler' },
+          { value: 'CAR', label: 'Car' },
+          { value: 'BOTH', label: 'Two-wheeler and car' },
+        ],
+        isFilterable: true,
+      },
+      {
+        key: 'age_years',
+        label: 'Age of property',
+        labelTe: 'ఆస్తి వయస్సు',
+        labelHi: 'संपत्ति की आयु',
+        dataType: AttributeDataType.NUMBER,
+        unit: 'years',
+        isFilterable: true,
+      },
+      {
+        key: 'ready_to_move',
+        label: 'Ready to move in',
+        labelTe: 'వెంటనే నివాసయోగ్యం',
+        labelHi: 'रहने के लिए तैयार',
+        dataType: AttributeDataType.BOOLEAN,
         isFilterable: true,
       },
     ],
