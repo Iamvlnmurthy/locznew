@@ -206,5 +206,8 @@ class _EditListingRepository extends ListingRepository {
       ];
 
   @override
+  Future<Category> categoryDetail(String slug) async => category;
+
+  @override
   Future<List<City>> cities({bool launchedOnly = false, String? query}) async => const [city];
 }

@@ -55,6 +55,7 @@ class _PostAdScreenState extends ConsumerState<PostAdScreen> {
   List<CategoryAttribute> _categoryAttributes = const [];
   Map<String, dynamic> _attributeValues = {};
   bool _attributesResolved = false;
+  bool _attributesAttempted = false;
   bool _loadingAttributes = false;
 
   final List<_PendingImage> _images = [];
@@ -116,6 +117,7 @@ class _PostAdScreenState extends ConsumerState<PostAdScreen> {
         _attributeValues = Map<String, dynamic>.from(listing.attributes);
         _categoryAttributes = categoryDetail?.attributes ?? const [];
         _attributesResolved = categoryDetail != null;
+        _attributesAttempted = true;
         _loadingListing = false;
       });
     } on ApiException catch (error) {
@@ -258,6 +260,7 @@ class _PostAdScreenState extends ConsumerState<PostAdScreen> {
     setState(() {
       _loadingAttributes = true;
       _attributesResolved = false;
+      _attributesAttempted = true;
       _categoryAttributes = const [];
       _attributeValues = {};
     });
@@ -839,7 +842,10 @@ class _PostAdScreenState extends ConsumerState<PostAdScreen> {
                     }
                     final selectedCategory =
                         _categoryId == null ? null : _findCategory(list, _categoryId!);
-                    if (selectedCategory != null && !_attributesResolved && !_loadingAttributes) {
+                    if (selectedCategory != null &&
+                        !_attributesResolved &&
+                        !_attributesAttempted &&
+                        !_loadingAttributes) {
                       WidgetsBinding.instance.addPostFrameCallback(
                         (_) => _loadCategoryAttributes(selectedCategory),
                       );

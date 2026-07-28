@@ -206,6 +206,55 @@ async function main() {
       ),
     );
 
+    // Category filters are API-defined, so this one journey covers three contracts at once:
+    // the category detail reaches the web build, React renders the right controls, and a
+    // native GET submission preserves repeated attr keys instead of collapsing them.
+    const carCategory = await browser.evaluate(`(() => {
+      const select = document.querySelector('#categoryId');
+      const option = [...(select?.options ?? [])].find((item) => /cars/i.test(item.textContent));
+      return option ? { value: option.value, label: option.textContent.trim() } : null;
+    })()`);
+    check(
+      'the deployed search offers the Cars category',
+      Boolean(carCategory?.value),
+      carCategory?.label ?? '',
+    );
+    await browser.select('#categoryId', carCategory.value);
+    await browser.waitFor(
+      `Boolean(document.querySelector('.search-attribute-filters'))`,
+      'filterable category attributes render after choosing Cars',
+    );
+    const attributeChoice = await browser.evaluate(`(() => {
+      const field = document.querySelector('.search-attribute-filter select[name="attr"]');
+      const option = [...(field?.options ?? [])].find((item) => item.value.includes(':'));
+      if (!field || !option) return null;
+      field.value = option.value;
+      field.dispatchEvent(new Event('change', { bubbles: true }));
+      return option.value;
+    })()`);
+    check('a deployed API picklist becomes an attribute filter', Boolean(attributeChoice));
+
+    const rangeMaximum = await browser.evaluate(
+      `document.querySelector('.search-attribute-filter input[id$="-max"]')?.id ?? ''`,
+    );
+    check('a numeric category attribute renders as a range', Boolean(rangeMaximum));
+    await browser.fill(`#${rangeMaximum}`, '50000');
+    await browser.clickWithin('.search-filters', 'button[type="submit"]');
+    await browser.waitFor(
+      `new URL(location.href).searchParams.getAll('attr').length >= 2`,
+      'attribute filters survive the native search submission',
+      30_000,
+    );
+    const submittedAttributes = await browser.evaluate(
+      `new URL(location.href).searchParams.getAll('attr')`,
+    );
+    check(
+      'the deployed search preserves repeated picklist and numeric attr values',
+      submittedAttributes.includes(attributeChoice) &&
+        submittedAttributes.some((value) => value.endsWith('..50000')),
+      JSON.stringify(submittedAttributes),
+    );
+
     // Use a real public listing to cover both explicit WhatsApp sharing and the privacy
     // boundary: its outgoing text has exactly an introduction plus the canonical URL. It
     // never serialises the seller object or a phone field.
