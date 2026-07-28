@@ -19,12 +19,16 @@
  *    broken to the person who posted it.
  *  - `--dry-run` prints the verdicts and changes nothing.
  *
- * Run it from `apps/api`, not the repository root — tsx resolves `experimentalDecorators`
- * from the nearest tsconfig, and without it every Nest decorator fails to transform:
+ * Run it with ts-node from `apps/api`:
  *
  *   cd apps/api
- *   npx tsx scripts/reapply-moderation.ts --dry-run
- *   npx tsx scripts/reapply-moderation.ts
+ *   npx ts-node scripts/reapply-moderation.ts --dry-run
+ *   npx ts-node scripts/reapply-moderation.ts
+ *
+ * Not tsx. tsx transpiles through esbuild, which does not emit decorator metadata, so every
+ * Nest constructor injection resolves to undefined and the context fails to build with
+ * "Nest can't resolve dependencies of the ImageModerationService (?, BullQueue_search)".
+ * ts-node uses tsc and honours `emitDecoratorMetadata` from this workspace's tsconfig.
  */
 
 import { NestFactory } from '@nestjs/core';
