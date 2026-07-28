@@ -88,6 +88,31 @@ async function chooseArea(browser, pincode) {
 
 const chipText = `document.querySelector('.location-chip')?.textContent?.trim() ?? ''`;
 
+async function mobileHeaderState(browser) {
+  return browser.evaluate(`(() => {
+    const rect = (selector) => document.querySelector(selector)?.getBoundingClientRect();
+    const brand = rect('.header__brand');
+    const location = rect('.location-chip');
+    const theme = rect('.theme-toggle--mobile');
+    const search = rect('.header__row > .searchbar');
+    const label = document.querySelector('.location-chip > span:first-of-type');
+
+    return {
+      overflow: document.documentElement.scrollWidth - document.documentElement.clientWidth,
+      compactBrand: Boolean(brand) && brand.width <= 48,
+      readableLocation: Boolean(label) &&
+        getComputedStyle(label).display !== 'none' &&
+        label.getBoundingClientRect().width > 20,
+      controlsShareFirstRow: [brand, location, theme].every(Boolean) &&
+        Math.max(brand.top, location.top, theme.top) <
+          Math.min(brand.bottom, location.bottom, theme.bottom),
+      searchUsesSecondRow: Boolean(search) &&
+        search.top >= Math.max(brand?.bottom ?? 0, location?.bottom ?? 0, theme?.bottom ?? 0),
+      searchFitsViewport: Boolean(search) && search.left >= 0 && search.right <= innerWidth,
+    };
+  })()`);
+}
+
 async function main() {
   requireDeployedOrigin();
   console.log(`Deployed smoke gate against ${WEB}`);
@@ -99,6 +124,22 @@ async function main() {
 
     await browser.navigate('/');
     check('the deployed homepage renders', await browser.evaluate(`Boolean(document.querySelector('main'))`));
+
+    // Production once served a stale final CSS chunk that overrode the corrected responsive
+    // header. There was no horizontal overflow, so the generic viewport gate stayed green
+    // while the location became an unexplained icon and search was crushed into one row.
+    await browser.viewport(430, 900);
+    const mobileHeader = await mobileHeaderState(browser);
+    check('the deployed mobile header has no overflow', mobileHeader.overflow <= 1);
+    check('the deployed mobile brand uses its compact hitbox', mobileHeader.compactBrand);
+    check('the deployed mobile location remains readable', mobileHeader.readableLocation);
+    check(
+      'the deployed mobile header keeps identity controls on the first row',
+      mobileHeader.controlsShareFirstRow,
+    );
+    check('the deployed mobile search owns the second row', mobileHeader.searchUsesSecondRow);
+    check('the deployed mobile search fits the viewport', mobileHeader.searchFitsViewport);
+    await browser.viewport(1280, 900);
 
     for (const { pincode, city } of AREAS) {
       await chooseArea(browser, pincode);
