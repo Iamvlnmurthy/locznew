@@ -274,6 +274,7 @@
     "shareFailed": "Could not share",
     "shared": "Shared",
     "shareText": "Take a look at {title} on LocZ",
+    "whatsApp": "WhatsApp",
     "signInToMessage": "{signIn} to message",
     "stayProtected": "Stay protected",
     "trustInstinct": "Trust your instinct",
@@ -841,6 +842,8 @@
     "bestMatch": "Best match",
     "category": "Category",
     "clearAll": "Clear all",
+    "clearRecent": "Clear",
+    "recentSearches": "Recent searches",
     "clearFilters": "Clear filters",
     "closeFilters": "Close filters",
     "condition": "Condition",
@@ -1339,7 +1342,8 @@
       "resume": "Make live again",
       "markSold": "Mark as sold",
       "republish": "Republish",
-      "delete": "Delete"
+      "delete": "Delete",
+      "deleteConfirm": "This permanently removes the ad and cannot be undone. Are you sure?"
     }
   },
   "common": {

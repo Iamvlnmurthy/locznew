@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
@@ -6,6 +7,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../core/config/env.dart';
 import '../../../core/i18n/strings.dart';
@@ -37,6 +39,8 @@ class PostAdScreen extends ConsumerStatefulWidget {
 }
 
 class _PostAdScreenState extends ConsumerState<PostAdScreen> {
+  static const _progressKey = 'locz.post-progress.v1';
+
   final _formKey = GlobalKey<FormState>();
   final _titleController = TextEditingController();
   final _descriptionController = TextEditingController();
@@ -58,12 +62,18 @@ class _PostAdScreenState extends ConsumerState<PostAdScreen> {
   bool _savedAsDraft = false;
   bool _loadingListing = false;
   String? _originalStatus;
+  Timer? _progressTimer;
+  bool _restoringProgress = false;
 
   @override
   void initState() {
     super.initState();
     if (widget.listingId == null) {
       _cityId = ref.read(selectedCityProvider)?.id;
+      _titleController.addListener(_scheduleProgressSave);
+      _descriptionController.addListener(_scheduleProgressSave);
+      _priceController.addListener(_scheduleProgressSave);
+      unawaited(_offerProgressRestore());
     } else {
       _loadingListing = true;
       unawaited(_loadListing());
@@ -86,13 +96,11 @@ class _PostAdScreenState extends ConsumerState<PostAdScreen> {
         _descriptionController.text = listing.description;
         _priceController.text = marketplace['price']?.toString() ?? '';
         _categoryId = listing.categoryId;
-        _cityId =
-            listing.cityId ??
+        _cityId = listing.cityId ??
             cities.where((city) => city.name == listing.summary.cityName).firstOrNull?.id;
         _condition = marketplace['condition'] as String? ?? 'GOOD';
         _isFree = marketplace['isFree'] as bool? ?? listing.summary.isFree;
-        _isNegotiable =
-            marketplace['isNegotiable'] as bool? ?? listing.summary.isNegotiable;
+        _isNegotiable = marketplace['isNegotiable'] as bool? ?? listing.summary.isNegotiable;
         _contactPreference = listing.contactPreference;
         _originalStatus = listing.summary.status;
         _createdSlug = listing.summary.slug;
@@ -109,10 +117,105 @@ class _PostAdScreenState extends ConsumerState<PostAdScreen> {
 
   @override
   void dispose() {
+    _progressTimer?.cancel();
     _titleController.dispose();
     _descriptionController.dispose();
     _priceController.dispose();
     super.dispose();
+  }
+
+  void _scheduleProgressSave() {
+    if (widget.listingId != null || _restoringProgress) return;
+    _progressTimer?.cancel();
+    _progressTimer = Timer(const Duration(milliseconds: 350), () {
+      unawaited(_saveProgress());
+    });
+  }
+
+  Future<void> _saveProgress() async {
+    final hasProgress = _titleController.text.trim().isNotEmpty ||
+        _descriptionController.text.trim().isNotEmpty ||
+        _priceController.text.trim().isNotEmpty ||
+        _categoryId != null;
+    final preferences = await SharedPreferences.getInstance();
+    if (!hasProgress) {
+      await preferences.remove(_progressKey);
+      return;
+    }
+    await preferences.setString(
+      _progressKey,
+      jsonEncode({
+        'title': _titleController.text,
+        'description': _descriptionController.text,
+        'price': _priceController.text,
+        'categoryId': _categoryId,
+        'cityId': _cityId,
+        'condition': _condition,
+        'isFree': _isFree,
+        'isNegotiable': _isNegotiable,
+        'contactPreference': _contactPreference,
+      }),
+    );
+  }
+
+  Future<void> _clearProgress() async {
+    _progressTimer?.cancel();
+    final preferences = await SharedPreferences.getInstance();
+    await preferences.remove(_progressKey);
+  }
+
+  Future<void> _offerProgressRestore() async {
+    final preferences = await SharedPreferences.getInstance();
+    final raw = preferences.getString(_progressKey);
+    if (raw == null || !mounted) return;
+
+    Map<String, dynamic> saved;
+    try {
+      saved = jsonDecode(raw) as Map<String, dynamic>;
+    } catch (_) {
+      await preferences.remove(_progressKey);
+      return;
+    }
+
+    await Future<void>.delayed(Duration.zero);
+    if (!mounted) return;
+    final strings = Strings.of(context);
+    final restore = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(strings('post.restoreTitle')),
+        content: Text(strings('post.restoreBody')),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: Text(strings('post.discardProgress')),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: Text(strings('post.restoreProgress')),
+          ),
+        ],
+      ),
+    );
+    if (!mounted) return;
+    if (restore != true) {
+      await preferences.remove(_progressKey);
+      return;
+    }
+
+    _restoringProgress = true;
+    setState(() {
+      _titleController.text = saved['title'] as String? ?? '';
+      _descriptionController.text = saved['description'] as String? ?? '';
+      _priceController.text = saved['price'] as String? ?? '';
+      _categoryId = saved['categoryId'] as String?;
+      _cityId = saved['cityId'] as String? ?? _cityId;
+      _condition = saved['condition'] as String? ?? 'GOOD';
+      _isFree = saved['isFree'] as bool? ?? false;
+      _isNegotiable = saved['isNegotiable'] as bool? ?? false;
+      _contactPreference = saved['contactPreference'] as String? ?? 'IN_APP_ONLY';
+    });
+    _restoringProgress = false;
   }
 
   Future<void> _pickImages() async {
@@ -188,7 +291,7 @@ class _PostAdScreenState extends ConsumerState<PostAdScreen> {
 
       // Sequential uploads: several large photos in parallel on a mobile connection
       // make all of them slow and the progress bars meaningless.
-      for (final image in widget.listingId == null && !saveAsDraft ? _images : <_PendingImage>[]) {
+      for (final image in !saveAsDraft ? _images : <_PendingImage>[]) {
         try {
           await repository.uploadImage(
             listingId,
@@ -202,6 +305,8 @@ class _PostAdScreenState extends ConsumerState<PostAdScreen> {
         }
       }
 
+      if (!mounted) return;
+      if (widget.listingId == null) await _clearProgress();
       if (!mounted) return;
       ref.invalidate(myListingsProvider);
       ref.invalidate(feedProvider);
@@ -239,7 +344,10 @@ class _PostAdScreenState extends ConsumerState<PostAdScreen> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(strings('post.previewTitle'), style: theme.textTheme.titleLarge),
+              Text(
+                strings('post.previewTitle'),
+                style: theme.textTheme.titleLarge,
+              ),
               const SizedBox(height: LoczSpacing.x3),
               Container(
                 height: 150,
@@ -275,7 +383,11 @@ class _PostAdScreenState extends ConsumerState<PostAdScreen> {
               const SizedBox(height: LoczSpacing.x4),
               Row(
                 children: [
-                  Icon(Icons.shield_outlined, size: 16, color: theme.colorScheme.primary),
+                  Icon(
+                    Icons.shield_outlined,
+                    size: 16,
+                    color: theme.colorScheme.primary,
+                  ),
                   const SizedBox(width: 6),
                   Expanded(
                     child: Text(
@@ -419,7 +531,9 @@ class _PostAdScreenState extends ConsumerState<PostAdScreen> {
               padding: const EdgeInsets.all(LoczSpacing.x4),
               children: [
                 Text(
-                  strings(widget.listingId == null ? 'post.subtitle' : 'post.editSubtitle'),
+                  strings(
+                    widget.listingId == null ? 'post.subtitle' : 'post.editSubtitle',
+                  ),
                   style: Theme.of(context).textTheme.bodyMedium,
                 ),
                 if (_originalStatus == 'PUBLISHED') ...[
@@ -505,6 +619,7 @@ class _PostAdScreenState extends ConsumerState<PostAdScreen> {
                     }
 
                     return DropdownButtonFormField<String>(
+                      key: ValueKey('category-$_categoryId'),
                       initialValue: _categoryId,
                       decoration: InputDecoration(
                         labelText: strings('post.fieldCategory'),
@@ -521,7 +636,10 @@ class _PostAdScreenState extends ConsumerState<PostAdScreen> {
                             ),
                           )
                           .toList(),
-                      onChanged: (value) => setState(() => _categoryId = value),
+                      onChanged: (value) {
+                        setState(() => _categoryId = value);
+                        _scheduleProgressSave();
+                      },
                       validator: (value) => value == null ? strings('common.error') : null,
                     );
                   },
@@ -555,19 +673,28 @@ class _PostAdScreenState extends ConsumerState<PostAdScreen> {
                 ),
                 SwitchListTile.adaptive(
                   value: _isFree,
-                  onChanged: (value) => setState(() => _isFree = value),
+                  onChanged: (value) {
+                    setState(() => _isFree = value);
+                    _scheduleProgressSave();
+                  },
                   title: Text(strings('listing.free')),
                   contentPadding: EdgeInsets.zero,
                 ),
                 SwitchListTile.adaptive(
                   value: _isNegotiable,
-                  onChanged: (value) => setState(() => _isNegotiable = value),
+                  onChanged: (value) {
+                    setState(() => _isNegotiable = value);
+                    _scheduleProgressSave();
+                  },
                   title: Text(strings('listing.negotiable')),
                   contentPadding: EdgeInsets.zero,
                 ),
                 DropdownButtonFormField<String>(
+                  key: ValueKey('condition-$_condition'),
                   initialValue: _condition,
-                  decoration: InputDecoration(labelText: strings('post.fieldCondition')),
+                  decoration: InputDecoration(
+                    labelText: strings('post.fieldCondition'),
+                  ),
                   items: [
                     DropdownMenuItem(
                       value: 'NEW',
@@ -590,7 +717,10 @@ class _PostAdScreenState extends ConsumerState<PostAdScreen> {
                       child: Text(strings('post.conditionParts')),
                     ),
                   ],
-                  onChanged: (value) => setState(() => _condition = value ?? 'GOOD'),
+                  onChanged: (value) {
+                    setState(() => _condition = value ?? 'GOOD');
+                    _scheduleProgressSave();
+                  },
                 ),
                 const SizedBox(height: LoczSpacing.x5),
                 _SectionHeading(
@@ -602,6 +732,7 @@ class _PostAdScreenState extends ConsumerState<PostAdScreen> {
                   loading: () => const LinearProgressIndicator(),
                   error: (error, _) => Text(error.toString()),
                   data: (list) => DropdownButtonFormField<String>(
+                    key: ValueKey('city-$_cityId'),
                     initialValue: _cityId,
                     isExpanded: true,
                     decoration: InputDecoration(labelText: strings('post.fieldCity')),
@@ -613,15 +744,21 @@ class _PostAdScreenState extends ConsumerState<PostAdScreen> {
                           ),
                         )
                         .toList(),
-                    onChanged: (value) => setState(() => _cityId = value),
+                    onChanged: (value) {
+                      setState(() => _cityId = value);
+                      _scheduleProgressSave();
+                    },
                     validator: (value) => value == null ? strings('common.error') : null,
                   ),
                 ),
                 const SizedBox(height: LoczSpacing.x4),
                 DropdownButtonFormField<String>(
+                  key: ValueKey('contact-$_contactPreference'),
                   initialValue: _contactPreference,
                   isExpanded: true,
-                  decoration: InputDecoration(labelText: strings('post.contactPreference')),
+                  decoration: InputDecoration(
+                    labelText: strings('post.contactPreference'),
+                  ),
                   items: [
                     DropdownMenuItem(
                       value: 'IN_APP_ONLY',
@@ -636,9 +773,12 @@ class _PostAdScreenState extends ConsumerState<PostAdScreen> {
                       child: Text(strings('post.contactPhone')),
                     ),
                   ],
-                  onChanged: (value) => setState(
-                    () => _contactPreference = value ?? 'IN_APP_ONLY',
-                  ),
+                  onChanged: (value) {
+                    setState(
+                      () => _contactPreference = value ?? 'IN_APP_ONLY',
+                    );
+                    _scheduleProgressSave();
+                  },
                 ),
                 const SizedBox(height: LoczSpacing.x6),
                 _SectionHeading(
@@ -765,15 +905,11 @@ class _PostAdScreenState extends ConsumerState<PostAdScreen> {
                   const SizedBox(height: LoczSpacing.x2),
                 ],
                 FilledButton(
-                  onPressed: _submitting || _originalStatus == 'REMOVED'
-                      ? null
-                      : () => _submit(),
+                  onPressed: _submitting || _originalStatus == 'REMOVED' ? null : () => _submit(),
                   child: Text(
                     _submitting
                         ? strings(
-                            widget.listingId == null
-                                ? 'post.publishing'
-                                : 'post.savingChanges',
+                            widget.listingId == null ? 'post.publishing' : 'post.savingChanges',
                           )
                         : strings(
                             widget.listingId == null ? 'post.publish' : 'post.saveChanges',
@@ -819,7 +955,12 @@ class _SectionHeading extends StatelessWidget {
           ),
         ),
         const SizedBox(width: 10),
-        Text(label, style: theme.textTheme.titleMedium),
+        Expanded(
+          child: Text(
+            label,
+            style: theme.textTheme.titleMedium,
+          ),
+        ),
       ],
     );
   }

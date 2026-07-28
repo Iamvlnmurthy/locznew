@@ -10,7 +10,7 @@ import type { ListingSummary } from '@locz/shared-types';
 import { SaveButton } from './save-button';
 import { ContactPanel } from './contact-panel';
 import { ListingGallery } from './listing-gallery';
-import { ShareButton } from './share-button';
+import { ShareButton, WhatsAppShareButton } from './share-button';
 
 interface ListingMedia {
   id: string;
@@ -355,7 +355,16 @@ export default async function ListingPage({ params }: { params: Promise<{ slug: 
                     isSignedIn={Boolean(user)}
                     labels={labels}
                   />
-                  <ShareButton title={listing.title} labels={labels} />
+                  <ShareButton
+                    title={listing.title}
+                    url={`${SITE_URL}/ad/${listing.slug}`}
+                    labels={labels}
+                  />
+                  <WhatsAppShareButton
+                    title={listing.title}
+                    url={`${SITE_URL}/ad/${listing.slug}`}
+                    labels={labels}
+                  />
                 </div>
                 <p className="detail__action-note">
                   <Icon name="shield" />
@@ -367,7 +376,16 @@ export default async function ListingPage({ params }: { params: Promise<{ slug: 
                 <Link href="/dashboard?tab=listings" className="btn btn--primary btn--block">
                   {t('listing.manage')}
                 </Link>
-                <ShareButton title={listing.title} labels={labels} />
+                <ShareButton
+                  title={listing.title}
+                  url={`${SITE_URL}/ad/${listing.slug}`}
+                  labels={labels}
+                />
+                <WhatsAppShareButton
+                  title={listing.title}
+                  url={`${SITE_URL}/ad/${listing.slug}`}
+                  labels={labels}
+                />
               </div>
             )}
           </div>

@@ -242,6 +242,7 @@
     "shareFailed": "साझा नहीं किया जा सका",
     "shared": "साझा किया गया",
     "shareText": "LocZ पर {title} देखें",
+    "whatsApp": "व्हाट्सऐप",
     "signInToMessage": "संदेश भेजने के लिए {signIn}",
     "stayProtected": "सुरक्षित रहें",
     "trustInstinct": "अपने मन की सुनें",
@@ -809,6 +810,8 @@
     "bestMatch": "सबसे अच्छा मेल",
     "category": "श्रेणी",
     "clearAll": "सब हटाएँ",
+    "clearRecent": "साफ़ करें",
+    "recentSearches": "हाल की खोजें",
     "clearFilters": "फ़िल्टर हटाएँ",
     "closeFilters": "फ़िल्टर बंद करें",
     "condition": "हालत",
@@ -1363,7 +1366,8 @@
       "resume": "फिर से लाइव करें",
       "markSold": "बिका हुआ चिह्नित करें",
       "republish": "दोबारा प्रकाशित करें",
-      "delete": "हटाएँ"
+      "delete": "हटाएँ",
+      "deleteConfirm": "यह विज्ञापन हमेशा के लिए हट जाएगा और वापस नहीं आ सकता। क्या आप निश्चित हैं?"
     }
   },
   "errorPage": {

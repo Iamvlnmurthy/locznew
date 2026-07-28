@@ -6,10 +6,13 @@ import { ApiError, api, apiSafe } from '@/lib/api';
 import { getCurrentUser, getLocale } from '@/lib/session';
 import { PostForm, type PostFormInitialListing } from '../../post-form';
 
-export const metadata: Metadata = {
-  title: 'Edit listing',
-  robots: { index: false, follow: false },
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const locale = await getLocale();
+  return {
+    title: getTranslator(locale)('post.editTitle'),
+    robots: { index: false, follow: false },
+  };
+}
 
 interface EditableListing {
   id: string;
@@ -41,11 +44,7 @@ async function loadEditableListing(id: string): Promise<EditableListing | null> 
   }
 }
 
-export default async function EditListingPage({
-  params,
-}: {
-  params: Promise<{ id: string }>;
-}) {
+export default async function EditListingPage({ params }: { params: Promise<{ id: string }> }) {
   const [{ id }, locale, user] = await Promise.all([params, getLocale(), getCurrentUser()]);
   if (!user) redirect(`/signin?next=${encodeURIComponent(`/post/${id}/edit`)}`);
 
@@ -62,12 +61,7 @@ export default async function EditListingPage({
   const detailKey =
     listing.type === 'BUYER_REQUIREMENT'
       ? 'buyerRequirement'
-      : listing.type.toLowerCase() as
-          | 'job'
-          | 'offer'
-          | 'service'
-          | 'rental'
-          | 'event';
+      : (listing.type.toLowerCase() as 'job' | 'offer' | 'service' | 'rental' | 'event');
   const initialListing: PostFormInitialListing = {
     id: listing.id,
     slug: listing.slug,

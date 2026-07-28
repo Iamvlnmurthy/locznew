@@ -17,7 +17,15 @@ export function ListingActions({
   listingId: string;
   status: string;
   labels: Record<
-    'edit' | 'resumeDraft' | 'pause' | 'resume' | 'markSold' | 'republish' | 'delete' | 'failed',
+    | 'edit'
+    | 'resumeDraft'
+    | 'pause'
+    | 'resume'
+    | 'markSold'
+    | 'republish'
+    | 'delete'
+    | 'deleteConfirm'
+    | 'failed',
     string
   >;
 }) {
@@ -54,7 +62,7 @@ export function ListingActions({
 
   // Deleting is always available and always confirmed — it is the one irreversible
   // action on this screen.
-  available.push({ command: 'delete', label: labels.delete, confirm: `${labels.delete}?` });
+  available.push({ command: 'delete', label: labels.delete, confirm: labels.deleteConfirm });
 
   return (
     <>

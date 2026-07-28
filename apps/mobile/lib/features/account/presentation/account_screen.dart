@@ -380,14 +380,13 @@ class _OwnListingRow extends ConsumerWidget {
                   for (final entry in commands.entries)
                     OutlinedButton(
                       style: OutlinedButton.styleFrom(
-                          minimumSize: const Size(0, 36),
-                          padding: const EdgeInsets.symmetric(horizontal: 12),
-                          foregroundColor:
-                              entry.key == 'delete' ? theme.colorScheme.error : null,
-                          side: entry.key == 'delete'
-                              ? BorderSide(color: theme.colorScheme.error)
-                              : null,
-                        ),
+                        minimumSize: const Size(0, 36),
+                        padding: const EdgeInsets.symmetric(horizontal: 12),
+                        foregroundColor: entry.key == 'delete' ? theme.colorScheme.error : null,
+                        side: entry.key == 'delete'
+                            ? BorderSide(color: theme.colorScheme.error)
+                            : null,
+                      ),
                       onPressed: () async {
                         if (entry.key == 'delete') {
                           final confirmed = await showDialog<bool>(
@@ -414,21 +413,21 @@ class _OwnListingRow extends ConsumerWidget {
                           if (confirmed != true || !context.mounted) return;
                         }
 
-                          try {
-                            await ref
-                                .read(listingRepositoryProvider)
-                                .listingCommand(listing.id, entry.key);
-                            ref.invalidate(myListingsProvider);
-                          } on ApiException catch (error) {
-                            if (context.mounted) {
-                              ScaffoldMessenger.of(
-                                context,
-                              ).showSnackBar(
-                                SnackBar(content: Text(error.message)),
-                              );
-                            }
+                        try {
+                          await ref
+                              .read(listingRepositoryProvider)
+                              .listingCommand(listing.id, entry.key);
+                          ref.invalidate(myListingsProvider);
+                        } on ApiException catch (error) {
+                          if (context.mounted) {
+                            ScaffoldMessenger.of(
+                              context,
+                            ).showSnackBar(
+                              SnackBar(content: Text(error.message)),
+                            );
                           }
-                        },
+                        }
+                      },
                       child: Text(entry.value),
                     ),
                 ],

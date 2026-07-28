@@ -21,8 +21,14 @@ void main() {
     final router = GoRouter(
       initialLocation: '/search',
       routes: [
-        GoRoute(path: '/search', builder: (_, __) => const SearchScreen()),
-        GoRoute(path: '/location', builder: (_, __) => const Scaffold(body: Text('Location'))),
+        GoRoute(
+          path: '/search',
+          builder: (_, __) => const SearchScreen(),
+        ),
+        GoRoute(
+          path: '/location',
+          builder: (_, __) => const Scaffold(body: Text('Location')),
+        ),
       ],
     );
     addTearDown(router.dispose);
@@ -61,12 +67,64 @@ void main() {
     expect(listings.calls.last.radiusKm, isNull);
     expect(tester.takeException(), isNull);
   });
+
+  testWidgets('recent searches stay on-device, can be reused, and can be cleared', (tester) async {
+    SharedPreferences.setMockInitialValues({
+      'locz.recent-searches.v1': ['bicycle', 'room'],
+    });
+    final listings = _FakeListingRepository();
+    final router = GoRouter(
+      initialLocation: '/search',
+      routes: [
+        GoRoute(path: '/search', builder: (_, __) => const SearchScreen()),
+      ],
+    );
+    addTearDown(router.dispose);
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [listingRepositoryProvider.overrideWithValue(listings)],
+        child: MaterialApp.router(
+          routerConfig: router,
+          theme: AppTheme.light,
+          locale: const Locale('en'),
+          supportedLocales: const [Locale('en'), Locale('te'), Locale('hi')],
+          localizationsDelegates: const [
+            StringsDelegate(AppLocaleOption.en),
+            GlobalMaterialLocalizations.delegate,
+            GlobalWidgetsLocalizations.delegate,
+            GlobalCupertinoLocalizations.delegate,
+          ],
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byType(TextField));
+    await tester.pumpAndSettle();
+    expect(find.text('Recent searches'), findsOneWidget);
+    expect(find.text('bicycle'), findsOneWidget);
+
+    await tester.tap(find.text('bicycle'));
+    await tester.pumpAndSettle();
+    expect(listings.calls.last.query, 'bicycle');
+
+    await tester.tap(find.byType(TextField));
+    await tester.enterText(find.byType(TextField), '');
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Clear'));
+    await tester.pumpAndSettle();
+    expect(find.text('bicycle'), findsNothing);
+    final preferences = await SharedPreferences.getInstance();
+    expect(preferences.getStringList('locz.recent-searches.v1'), isNull);
+  });
 }
 
 class _SearchCall {
-  const _SearchCall({required this.sort, this.radiusKm});
+  const _SearchCall({required this.sort, this.query, this.radiusKm});
 
   final String sort;
+  final String? query;
   final int? radiusKm;
 }
 
@@ -90,7 +148,7 @@ class _FakeListingRepository extends ListingRepository {
     String sort = 'relevance',
     int page = 1,
   }) async {
-    calls.add(_SearchCall(sort: sort, radiusKm: radiusKm));
+    calls.add(_SearchCall(sort: sort, query: query, radiusKm: radiusKm));
     return const [];
   }
 }

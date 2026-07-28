@@ -1,11 +1,12 @@
 import Link from 'next/link';
-import { getTranslator, type Locale } from '@/i18n';
+import { getMessageGroup, getTranslator, type Locale } from '@/i18n';
 import { apiSafe } from '@/lib/api';
 import { getCurrentUser, getSelectedCity } from '@/lib/session';
 import { LocationChip } from './location-chip';
 import { LocaleSwitcher } from './locale-switcher';
 import { Icon } from './icons';
 import { ThemeToggle } from './theme-toggle';
+import { RecentSearchInput } from './recent-search-input';
 
 /**
  * Site header. Search and location are the two controls that matter on a location-first
@@ -13,6 +14,7 @@ import { ThemeToggle } from './theme-toggle';
  */
 export async function Header({ locale }: { locale: Locale }) {
   const t = getTranslator(locale);
+  const searchLabels = getMessageGroup(locale, 'searchUi');
   const [user, city] = await Promise.all([getCurrentUser(), getSelectedCity()]);
   const unreadNotifications = user
     ? await apiSafe<{ count: number }>('/notifications/unread-count', { auth: true })
@@ -47,12 +49,11 @@ export async function Header({ locale }: { locale: Locale }) {
             {t('search.submit')}
           </label>
           <Icon name="search" className="searchbar__icon" width="19" height="19" />
-          <input
+          <RecentSearchInput
             id="site-search"
-            name="q"
-            type="search"
             placeholder={t('search.placeholder')}
-            autoComplete="off"
+            recentLabel={searchLabels.recentSearches}
+            clearLabel={searchLabels.clearRecent}
           />
           <button type="submit">
             <span>{t('search.submit')}</span>

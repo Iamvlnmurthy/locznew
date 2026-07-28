@@ -8,6 +8,7 @@ import { apiSafe } from '@/lib/api';
 import { getLocale, getSelectedCity } from '@/lib/session';
 import { SearchFilters } from './search-filters';
 import { SearchSort } from './search-sort';
+import { RecentSearchInput } from '@/components/recent-search-input';
 
 interface SearchResult {
   items: ListingSummary[];
@@ -99,13 +100,13 @@ export default async function SearchPage({
             <label htmlFor="results-search" className="sr-only">
               {t('search.submit')}
             </label>
-            <input
+            <RecentSearchInput
               id="results-search"
-              name="q"
-              type="search"
               defaultValue={params.q ?? ''}
               placeholder={t('search.placeholder')}
               autoFocus={!params.q}
+              recentLabel={s.recentSearches}
+              clearLabel={s.clearRecent}
             />
             <button type="submit">
               {t('search.submit')} <Icon name="arrow" />

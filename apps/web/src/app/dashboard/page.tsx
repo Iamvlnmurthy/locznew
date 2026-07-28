@@ -759,6 +759,7 @@ function DashboardListingRow({
               markSold: t('dashboard.action.markSold'),
               republish: t('dashboard.action.republish'),
               delete: t('dashboard.action.delete'),
+              deleteConfirm: t('dashboard.action.deleteConfirm'),
               failed: d.actionFailed,
             }}
           />

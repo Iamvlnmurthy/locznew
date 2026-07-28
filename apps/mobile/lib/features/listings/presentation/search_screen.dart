@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../core/config/env.dart';
 import '../../../core/i18n/strings.dart';
@@ -19,8 +20,11 @@ class SearchScreen extends ConsumerStatefulWidget {
 }
 
 class _SearchScreenState extends ConsumerState<SearchScreen> {
+  static const _recentKey = 'locz.recent-searches.v1';
   final _controller = TextEditingController();
+  final _focusNode = FocusNode();
   Timer? _debounce;
+  List<String> _recentSearches = const [];
 
   String _query = '';
   int? _radiusKm;
@@ -30,14 +34,60 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
   @override
   void initState() {
     super.initState();
+    _focusNode.addListener(_handleFocusChanged);
+    unawaited(_loadRecentSearches());
     _run();
   }
 
   @override
   void dispose() {
     _debounce?.cancel();
+    _focusNode
+      ..removeListener(_handleFocusChanged)
+      ..dispose();
     _controller.dispose();
     super.dispose();
+  }
+
+  void _handleFocusChanged() {
+    if (mounted) setState(() {});
+  }
+
+  Future<void> _loadRecentSearches() async {
+    final preferences = await SharedPreferences.getInstance();
+    if (!mounted) return;
+    setState(() {
+      _recentSearches = (preferences.getStringList(_recentKey) ?? const []).take(8).toList();
+    });
+  }
+
+  Future<void> _rememberSearch(String value) async {
+    final query = value.trim();
+    if (query.isEmpty) return;
+    final next = [
+      query,
+      ..._recentSearches.where(
+        (item) => item.toLowerCase() != query.toLowerCase(),
+      ),
+    ].take(8).toList();
+    final preferences = await SharedPreferences.getInstance();
+    await preferences.setStringList(_recentKey, next);
+    if (mounted) setState(() => _recentSearches = next);
+  }
+
+  Future<void> _clearRecentSearches() async {
+    final preferences = await SharedPreferences.getInstance();
+    await preferences.remove(_recentKey);
+    if (mounted) setState(() => _recentSearches = const []);
+  }
+
+  void _useRecentSearch(String query) {
+    _controller.text = query;
+    _controller.selection = TextSelection.collapsed(offset: query.length);
+    _focusNode.unfocus();
+    setState(() => _query = query);
+    unawaited(_rememberSearch(query));
+    _run();
   }
 
   void _onQueryChanged(String value) {
@@ -87,6 +137,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
         titleSpacing: LoczSpacing.x4,
         title: TextField(
           controller: _controller,
+          focusNode: _focusNode,
           autofocus: false,
           textInputAction: TextInputAction.search,
           decoration: InputDecoration(
@@ -113,13 +164,68 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
           },
           onSubmitted: (value) {
             _debounce?.cancel();
-            setState(() => _query = value.trim());
+            final query = value.trim();
+            setState(() => _query = query);
+            unawaited(_rememberSearch(query));
+            _focusNode.unfocus();
             _run();
           },
         ),
       ),
       body: Column(
         children: [
+          if (_focusNode.hasFocus && _controller.text.trim().isEmpty && _recentSearches.isNotEmpty)
+            Material(
+              color: Theme.of(context).colorScheme.surface,
+              elevation: 3,
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(
+                  LoczSpacing.x4,
+                  LoczSpacing.x2,
+                  LoczSpacing.x4,
+                  LoczSpacing.x3,
+                ),
+                child: Column(
+                  children: [
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            strings('search.recentSearches'),
+                            style: Theme.of(context).textTheme.labelLarge,
+                          ),
+                        ),
+                        TextButton(
+                          onPressed: _clearRecentSearches,
+                          child: Text(strings('search.clearRecent')),
+                        ),
+                      ],
+                    ),
+                    ConstrainedBox(
+                      constraints: const BoxConstraints(maxHeight: 250),
+                      child: ListView.builder(
+                        shrinkWrap: true,
+                        itemCount: _recentSearches.length,
+                        itemBuilder: (context, index) {
+                          final query = _recentSearches[index];
+                          return ListTile(
+                            dense: true,
+                            minLeadingWidth: 20,
+                            contentPadding: EdgeInsets.zero,
+                            leading: const Icon(
+                              Icons.history_rounded,
+                              size: 19,
+                            ),
+                            title: Text(query, maxLines: 1),
+                            onTap: () => _useRecentSearch(query),
+                          );
+                        },
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
           DecoratedBox(
             decoration: BoxDecoration(
               color: Theme.of(context).colorScheme.surface,

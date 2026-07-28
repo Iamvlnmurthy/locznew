@@ -242,6 +242,7 @@
     "shareFailed": "పంచుకోలేకపోయాం",
     "shared": "పంచుకున్నారు",
     "shareText": "LocZలో {title} చూడండి",
+    "whatsApp": "వాట్సాప్",
     "signInToMessage": "సందేశం పంపడానికి {signIn}",
     "stayProtected": "సురక్షితంగా ఉండండి",
     "trustInstinct": "మీ అంతరాత్మను నమ్మండి",
@@ -809,6 +810,8 @@
     "bestMatch": "ఉత్తమ సరిపోలిక",
     "category": "వర్గం",
     "clearAll": "అన్నీ తొలగించండి",
+    "clearRecent": "తొలగించండి",
+    "recentSearches": "ఇటీవలి శోధనలు",
     "clearFilters": "ఫిల్టర్లు తొలగించండి",
     "closeFilters": "ఫిల్టర్లు మూసివేయండి",
     "condition": "స్థితి",
@@ -1363,7 +1366,8 @@
       "resume": "మళ్లీ అందుబాటులో పెట్టండి",
       "markSold": "అమ్ముడైందని గుర్తించండి",
       "republish": "మళ్లీ ప్రచురించండి",
-      "delete": "తొలగించండి"
+      "delete": "తొలగించండి",
+      "deleteConfirm": "ఇది ప్రకటనను శాశ్వతంగా తొలగిస్తుంది, తిరిగి పొందలేరు. కొనసాగించాలా?"
     }
   },
   "errorPage": {

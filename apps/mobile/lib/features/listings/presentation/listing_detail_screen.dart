@@ -27,6 +27,28 @@ class _ListingDetailScreenState extends ConsumerState<ListingDetailScreen> {
   bool _phoneRevealed = false;
   int _galleryIndex = 0;
 
+  String _shareText(ListingSummary listing, Strings strings) {
+    final intro = strings(
+      'listing.shareText',
+      {'title': listing.title},
+    );
+    return '$intro\n${Env.siteUrl}/ad/${listing.slug}';
+  }
+
+  Future<void> _shareListing(ListingSummary listing, Strings strings) {
+    return Share.share(_shareText(listing, strings));
+  }
+
+  Future<void> _shareOnWhatsApp(
+    ListingSummary listing,
+    Strings strings,
+  ) async {
+    final uri = Uri.parse(
+      'https://wa.me/?text=${Uri.encodeComponent(_shareText(listing, strings))}',
+    );
+    await launchUrl(uri, mode: LaunchMode.externalApplication);
+  }
+
   Future<void> _toggleSave(ListingDetail listing) async {
     final auth = ref.read(authProvider);
     if (!auth.isSignedIn) {
@@ -162,7 +184,12 @@ class _ListingDetailScreenState extends ConsumerState<ListingDetailScreen> {
               icon: const Icon(Icons.ios_share_rounded),
               tooltip: strings('listing.share'),
               // Shares the canonical web URL so the recipient can open it without the app.
-              onPressed: () => Share.share('${Env.siteUrl}/ad/${summary.slug}'),
+              onPressed: () => _shareListing(summary, strings),
+            ),
+            IconButton(
+              icon: const Icon(Icons.chat_outlined),
+              tooltip: strings('listing.whatsApp'),
+              onPressed: () => _shareOnWhatsApp(summary, strings),
             ),
           ],
           flexibleSpace: FlexibleSpaceBar(

@@ -123,7 +123,10 @@ async function main() {
     await browser.viewport(1280, 900);
 
     await browser.navigate('/');
-    check('the deployed homepage renders', await browser.evaluate(`Boolean(document.querySelector('main'))`));
+    check(
+      'the deployed homepage renders',
+      await browser.evaluate(`Boolean(document.querySelector('main'))`),
+    );
 
     // Production once served a stale final CSS chunk that overrode the corrected responsive
     // header. There was no horizontal overflow, so the generic viewport gate stayed green
@@ -173,16 +176,65 @@ async function main() {
       `heading=${JSON.stringify(heading)}; chose ${AREAS[1].pincode}`,
     );
 
+    // Recent searches are intentionally device-local. Seed the browser store rather than
+    // inventing a server fixture, then prove the deployed input can expose and clear it.
+    await chooseArea(browser, AREAS[0].pincode);
+    await browser.navigate('/search');
+    await browser.evaluate(
+      `localStorage.setItem('locz.recent-searches.v1', JSON.stringify(['acceptance bicycle']))`,
+    );
+    await browser.evaluate(`document.querySelector('#results-search').focus()`);
+    await browser.waitFor(
+      `Boolean(document.querySelector('.recent-search__menu'))`,
+      'recent searches open below an empty focused search field',
+    );
+    check(
+      'the deployed search shows device-local recent searches',
+      await browser.evaluate(
+        `document.querySelector('.recent-search__menu')?.textContent.includes('acceptance bicycle')`,
+      ),
+    );
+    await browser.evaluate(`document.querySelector('.recent-search__heading button').click()`);
+    check(
+      'recent searches can be cleared without an API',
+      await browser.evaluate(
+        `localStorage.getItem('locz.recent-searches.v1') === null && !document.querySelector('.recent-search__menu')`,
+      ),
+    );
+
+    // Use a real public listing to cover both explicit WhatsApp sharing and the privacy
+    // boundary: its outgoing text has exactly an introduction plus the canonical URL. It
+    // never serialises the seller object or a phone field.
+    const adPath = await browser.evaluate(
+      `document.querySelector('a[href^="/ad/"]')?.getAttribute('href') ?? ''`,
+    );
+    check('the deployed search exposes a public listing for share verification', Boolean(adPath));
+    await browser.navigate(adPath);
+    const whatsAppShare = await browser.evaluate(`(() => {
+      const link = document.querySelector('a[href^="https://wa.me/?text="]');
+      if (!link) return null;
+      const text = new URL(link.href).searchParams.get('text') ?? '';
+      const lines = text.split('\\n');
+      return {
+        lines,
+        canonical: lines.length === 2 &&
+          lines[1] === location.origin + location.pathname &&
+          /^\\/ad\\//.test(location.pathname),
+      };
+    })()`);
+    check('the deployed listing has an explicit WhatsApp share action', Boolean(whatsAppShare));
+    check(
+      'shared text contains only the introduction and canonical listing URL',
+      whatsAppShare?.canonical,
+      JSON.stringify(whatsAppShare?.lines ?? []),
+    );
+
     check(
       'no server error on any request',
       browser.httpErrors.length === 0,
       browser.httpErrors.join(' | '),
     );
-    check(
-      'no browser console errors',
-      browser.errors.length === 0,
-      browser.errors.join(' | '),
-    );
+    check('no browser console errors', browser.errors.length === 0, browser.errors.join(' | '));
 
     console.log(`\nDeployed smoke gate passed (${passed} checks)`);
   } finally {
