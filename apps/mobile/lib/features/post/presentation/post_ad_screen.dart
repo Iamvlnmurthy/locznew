@@ -55,6 +55,7 @@ class _PostAdScreenState extends ConsumerState<PostAdScreen> {
   String? _createdListingId;
   String? _createdSlug;
   bool _publishedImmediately = false;
+  bool _savedAsDraft = false;
   bool _loadingListing = false;
   String? _originalStatus;
 
@@ -183,6 +184,7 @@ class _PostAdScreenState extends ConsumerState<PostAdScreen> {
       _createdListingId = listingId;
       _createdSlug = created['slug'] as String;
       _publishedImmediately = created['status'] == 'PUBLISHED';
+      _savedAsDraft = saveAsDraft;
 
       // Sequential uploads: several large photos in parallel on a mobile connection
       // make all of them slow and the progress bars meaningless.
@@ -384,6 +386,8 @@ class _PostAdScreenState extends ConsumerState<PostAdScreen> {
     if (_createdListingId != null && !_submitting) {
       return _SuccessScreen(
         published: _publishedImmediately,
+        editing: widget.listingId != null,
+        draft: _savedAsDraft,
         slug: _createdSlug!,
         strings: strings,
       );
@@ -745,10 +749,35 @@ class _PostAdScreenState extends ConsumerState<PostAdScreen> {
                   ),
                 ),
                 const SizedBox(height: LoczSpacing.x8),
+                OutlinedButton.icon(
+                  onPressed: _submitting ? null : _showPreview,
+                  icon: const Icon(Icons.visibility_outlined),
+                  label: Text(strings('post.preview')),
+                ),
+                const SizedBox(height: LoczSpacing.x2),
+                if (widget.listingId == null || _originalStatus == 'DRAFT') ...[
+                  OutlinedButton(
+                    onPressed: _submitting || _originalStatus == 'REMOVED'
+                        ? null
+                        : () => _submit(saveAsDraft: true),
+                    child: Text(strings('post.saveDraft')),
+                  ),
+                  const SizedBox(height: LoczSpacing.x2),
+                ],
                 FilledButton(
-                  onPressed: _submitting ? null : _submit,
+                  onPressed: _submitting || _originalStatus == 'REMOVED'
+                      ? null
+                      : () => _submit(),
                   child: Text(
-                    _submitting ? strings('post.publishing') : strings('post.publish'),
+                    _submitting
+                        ? strings(
+                            widget.listingId == null
+                                ? 'post.publishing'
+                                : 'post.savingChanges',
+                          )
+                        : strings(
+                            widget.listingId == null ? 'post.publish' : 'post.saveChanges',
+                          ),
                   ),
                 ),
                 const SizedBox(height: LoczSpacing.x8),
@@ -799,11 +828,15 @@ class _SectionHeading extends StatelessWidget {
 class _SuccessScreen extends StatelessWidget {
   const _SuccessScreen({
     required this.published,
+    required this.editing,
+    required this.draft,
     required this.slug,
     required this.strings,
   });
 
   final bool published;
+  final bool editing;
+  final bool draft;
   final String slug;
   final Strings strings;
 
@@ -826,7 +859,13 @@ class _SuccessScreen extends StatelessWidget {
               Text(
                 // The API decides whether it published or queued, so the message reports
                 // what actually happened rather than promising "published".
-                published ? strings('post.successPublished') : strings('post.successPending'),
+                editing
+                    ? strings('post.updateSuccess')
+                    : draft
+                        ? strings('post.draftSaved')
+                        : published
+                            ? strings('post.successPublished')
+                            : strings('post.successPending'),
                 textAlign: TextAlign.center,
                 style: Theme.of(context).textTheme.bodyLarge,
               ),

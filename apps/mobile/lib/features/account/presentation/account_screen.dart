@@ -315,13 +315,17 @@ class _OwnListingRow extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
+    final strings = Strings.of(context);
 
     // Only the transitions the API will accept for the current status are offered.
     final commands = <String, String>{
-      if (listing.status == 'PUBLISHED') 'pause': 'Pause',
-      if (listing.status == 'PAUSED') 'resume': 'Make live',
-      if (listing.status == 'PUBLISHED' || listing.status == 'PAUSED') 'sold': 'Mark sold',
-      if (listing.status == 'EXPIRED' || listing.status == 'SOLD') 'republish': 'Republish',
+      if (listing.status == 'PUBLISHED') 'pause': strings('account.actionPause'),
+      if (listing.status == 'PAUSED') 'resume': strings('account.actionResume'),
+      if (listing.status == 'PUBLISHED' || listing.status == 'PAUSED')
+        'sold': strings('account.actionSold'),
+      if (listing.status == 'EXPIRED' || listing.status == 'SOLD')
+        'republish': strings('account.actionRepublish'),
+      'delete': strings('account.actionDelete'),
     };
 
     return Card(
@@ -359,14 +363,57 @@ class _OwnListingRow extends ConsumerWidget {
               const SizedBox(height: LoczSpacing.x2),
               Wrap(
                 spacing: LoczSpacing.x2,
-                children: commands.entries
-                    .map(
-                      (entry) => OutlinedButton(
-                        style: OutlinedButton.styleFrom(
+                runSpacing: LoczSpacing.x2,
+                children: [
+                  if (listing.status != 'REMOVED')
+                    OutlinedButton.icon(
+                      onPressed: () => context.push('/post/${listing.id}/edit'),
+                      icon: const Icon(Icons.edit_outlined, size: 16),
+                      label: Text(
+                        strings(
+                          listing.status == 'DRAFT'
+                              ? 'account.actionResumeDraft'
+                              : 'account.actionEdit',
+                        ),
+                      ),
+                    ),
+                  for (final entry in commands.entries)
+                    OutlinedButton(
+                      style: OutlinedButton.styleFrom(
                           minimumSize: const Size(0, 36),
                           padding: const EdgeInsets.symmetric(horizontal: 12),
+                          foregroundColor:
+                              entry.key == 'delete' ? theme.colorScheme.error : null,
+                          side: entry.key == 'delete'
+                              ? BorderSide(color: theme.colorScheme.error)
+                              : null,
                         ),
-                        onPressed: () async {
+                      onPressed: () async {
+                        if (entry.key == 'delete') {
+                          final confirmed = await showDialog<bool>(
+                            context: context,
+                            builder: (context) => AlertDialog(
+                              title: Text(strings('account.deleteTitle')),
+                              content: Text(strings('account.deleteConfirm')),
+                              actions: [
+                                TextButton(
+                                  onPressed: () => Navigator.pop(context, false),
+                                  child: Text(strings('common.cancel')),
+                                ),
+                                FilledButton(
+                                  style: FilledButton.styleFrom(
+                                    backgroundColor: theme.colorScheme.error,
+                                    foregroundColor: theme.colorScheme.onError,
+                                  ),
+                                  onPressed: () => Navigator.pop(context, true),
+                                  child: Text(strings('account.actionDelete')),
+                                ),
+                              ],
+                            ),
+                          );
+                          if (confirmed != true || !context.mounted) return;
+                        }
+
                           try {
                             await ref
                                 .read(listingRepositoryProvider)
@@ -382,10 +429,9 @@ class _OwnListingRow extends ConsumerWidget {
                             }
                           }
                         },
-                        child: Text(entry.value),
-                      ),
-                    )
-                    .toList(),
+                      child: Text(entry.value),
+                    ),
+                ],
               ),
             ],
           ],

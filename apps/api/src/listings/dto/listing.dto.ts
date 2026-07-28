@@ -19,6 +19,7 @@ import {
   Min,
   MinLength,
   ValidateNested,
+  registerDecorator,
 } from 'class-validator';
 import { PaginationQueryDto } from '../../common/dto/pagination.dto';
 import {
@@ -32,6 +33,42 @@ import {
 import { RADIUS_PRESETS_KM } from '../../geo/dto/geo.dto';
 import { MediaDto } from '../../media/dto/media.dto';
 
+/**
+ * An attribute value is one of four shapes, so no single class-validator decorator fits.
+ *
+ * It needs *some* decorator regardless: the global pipe runs with `forbidNonWhitelisted`, so
+ * an undecorated property is not merely unvalidated but actively rejected. Without this,
+ * every request carrying attributes failed with "property value should not exist" — which is
+ * how a fully implemented feature reached production dead at the HTTP layer, with the
+ * service, the schema and the storage all working perfectly behind it.
+ *
+ * The check is deliberately shallow. What each value must actually *be* depends on the
+ * attribute's declared data type, which only the database knows, and `coerceValue` already
+ * enforces it there against the real definition — including select options and min/max
+ * bounds. Duplicating any of that here would create a second opinion to disagree with.
+ * All this rules out is the shape nothing downstream could handle: an object, or an array of
+ * anything other than strings, both of which would reach `String(value)` and store
+ * "[object Object]".
+ */
+function IsAttributeValue() {
+  return function (object: object, propertyName: string): void {
+    registerDecorator({
+      name: 'isAttributeValue',
+      target: object.constructor,
+      propertyName,
+      validator: {
+        validate(value: unknown) {
+          if (Array.isArray(value)) return value.every((entry) => typeof entry === 'string');
+          return ['string', 'number', 'boolean'].includes(typeof value);
+        },
+        defaultMessage() {
+          return 'value must be a string, number, boolean or array of strings';
+        },
+      },
+    });
+  };
+}
+
 export class ListingAttributeInputDto {
   @ApiProperty({ example: 'brand' })
   @IsString()
@@ -39,6 +76,7 @@ export class ListingAttributeInputDto {
   key!: string;
 
   @ApiProperty({ example: 'Samsung', description: 'string | number | boolean | string[]' })
+  @IsAttributeValue()
   value!: string | number | boolean | string[];
 }
 
