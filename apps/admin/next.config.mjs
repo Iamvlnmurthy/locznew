@@ -1,3 +1,14 @@
+import { config as loadEnv } from 'dotenv';
+import { resolve } from 'node:path';
+
+/**
+ * Load the monorepo's root `.env`, which Next does not look for on its own — it only reads a
+ * `.env` inside the application directory. `NEXT_PUBLIC_*` is inlined at build time, so a
+ * build that cannot see the file quietly ships localhost defaults. See the same block in
+ * `apps/web/next.config.mjs` for the full account.
+ */
+loadEnv({ path: resolve(import.meta.dirname, '..', '..', '.env'), quiet: true });
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,

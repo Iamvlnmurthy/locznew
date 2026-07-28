@@ -63,6 +63,20 @@ async function chooseArea(browser, pincode) {
   await browser.evaluate(
     `[...document.querySelectorAll('button')].find((b) => /Show ads near/i.test(b.textContent)).click()`,
   );
+
+  // The picker reports an unresolvable pincode as a typo, which is right for a real typo and
+  // badly misleading for a build that cannot reach the API at all — a `NEXT_PUBLIC_API_BASE_URL`
+  // missing at build time inlines a localhost default, and then every real pincode "looks
+  // wrong". Naming that here turns a blank timeout into the actual diagnosis.
+  const rejected = await browser.evaluate(
+    `[...document.querySelectorAll('.location-picker p, [role=alert]')].some((n) => /does not look right/i.test(n.textContent))`,
+  );
+  if (rejected) {
+    throw new Error(
+      `the deployed build rejected ${pincode}, a pincode the API resolves. The usual cause is a ` +
+        'build that could not see NEXT_PUBLIC_API_BASE_URL and inlined the localhost default.',
+    );
+  }
   // The action sets the area cookie and redirects home. Waiting on the destination rather
   // than a fixed delay is what distinguishes "it worked" from "it threw and stayed put".
   await browser.waitFor(
