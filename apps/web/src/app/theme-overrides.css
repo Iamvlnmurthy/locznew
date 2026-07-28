@@ -35,6 +35,11 @@
     background: var(--locz-primary-soft);
   }
 
+  :root[data-theme='dark'] .location-chip {
+    background: var(--locz-surface-muted);
+    color: var(--locz-text);
+  }
+
   .location-chip > span:first-of-type {
     display: block;
     min-width: 0;
