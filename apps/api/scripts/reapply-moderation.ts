@@ -38,8 +38,12 @@ import { PrismaService } from '../src/prisma/prisma.service';
 import { ModerationService } from '../src/moderation/moderation.service';
 import { RuleBasedModerationProvider } from '../src/moderation/rule-based-moderation.provider';
 
-/** Attributed to the rules rather than to a person, because no person looked at these. */
-const ACTOR = 'system:reapply-moderation';
+/**
+ * No moderator: nobody looked at these, the rules did. `approveListing` records a null
+ * moderator as an automated action, which is what actually happened — attributing it to a
+ * person would put a decision in the moderation history that no person made.
+ */
+const NO_MODERATOR = null;
 
 async function main(): Promise<void> {
   const dryRun = process.argv.includes('--dry-run');
@@ -107,7 +111,7 @@ async function main(): Promise<void> {
 
       await moderation.approveListing(
         listing.id,
-        ACTOR,
+        NO_MODERATOR,
         `Released by reapply-moderation: rules now score ${verdict.score} [${reasons}]`,
       );
     }

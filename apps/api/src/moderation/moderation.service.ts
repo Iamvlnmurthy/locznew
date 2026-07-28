@@ -215,7 +215,11 @@ export class ModerationService {
   }
 
   /** Human approval from the moderation queue. */
-  async approveListing(listingId: string, moderatorId: string, note?: string): Promise<Listing> {
+  async approveListing(
+    listingId: string,
+    moderatorId: string | null,
+    note?: string,
+  ): Promise<Listing> {
     const listing = await this.prisma.listing.findFirst({
       where: { id: listingId, deletedAt: null },
     });
@@ -225,18 +229,28 @@ export class ModerationService {
       return listing; // already approved — treat as idempotent rather than an error
     }
 
-    const updated = await this.prisma.listing.update({
-      where: { id: listingId },
-      data: {
-        status: ListingStatus.PUBLISHED,
-        moderationStatus: ModerationStatus.APPROVED,
-        publishedAt: listing.publishedAt ?? new Date(),
-        rejectionReason: null,
-      },
+    // Publishing and recording why must succeed or fail together. Run separately, a failure
+    // in between leaves a listing live with nothing in its moderation history explaining how
+    // it got there — which is exactly what happened the first time this was called with an
+    // invalid moderator id: the listing published, the record did not, and the listing was
+    // both unexplained and, because the enqueue never ran, unfindable.
+    const updated = await this.prisma.$transaction(async (tx) => {
+      const published = await tx.listing.update({
+        where: { id: listingId },
+        data: {
+          status: ListingStatus.PUBLISHED,
+          moderationStatus: ModerationStatus.APPROVED,
+          publishedAt: listing.publishedAt ?? new Date(),
+          rejectionReason: null,
+        },
+      });
+      await this.recordDecision(listingId, moderatorId, 'APPROVE', note, tx);
+      return published;
     });
 
-    await this.recordDecision(listingId, moderatorId, 'APPROVE', note);
-    // Approval is the moment a listing becomes discoverable.
+    // Outside the transaction: the index is a different system, and a queue that is briefly
+    // unreachable should not undo an approval a moderator has already made. Reindexing is
+    // recoverable; an approval silently rolled back is not.
     await this.searchIndex.enqueueIndex(listingId);
     return updated;
   }
@@ -414,13 +428,22 @@ export class ModerationService {
     this.logger.log(`User ${userId} reinstated by ${moderatorId}: ${reason}`);
   }
 
+  /**
+   * `moderatorId` is null when no person made the call — a maintenance run re-applying the
+   * automated rules, for instance. That is exactly what `isAutomated` means, so the two are
+   * derived from one another rather than being able to disagree: an action attributed to
+   * nobody but marked as a human decision would misread the moderation history.
+   */
   private async recordDecision(
     listingId: string,
-    moderatorId: string,
+    moderatorId: string | null,
     action: string,
     reason?: string,
+    // The caller's transaction when there is one, so the decision and the state change it
+    // describes cannot come apart.
+    tx: Pick<PrismaService, 'moderationAction'> = this.prisma,
   ): Promise<void> {
-    await this.prisma.moderationAction.create({
+    await tx.moderationAction.create({
       data: {
         id: uuid(),
         listingId,
@@ -429,7 +452,7 @@ export class ModerationService {
         action,
         reason: reason ?? null,
         systemReasons: [],
-        isAutomated: false,
+        isAutomated: moderatorId === null,
         moderatorId,
         appealStatus: 'NONE',
       },
@@ -439,8 +462,9 @@ export class ModerationService {
       action: `moderation.${action.toLowerCase()}`,
       entityType: 'Listing',
       entityId: listingId,
-      actorId: moderatorId,
-      actorRole: 'MODERATOR',
+      actorId: moderatorId ?? undefined,
+      // SYSTEM when nobody made the call, so the audit trail never implies a person did.
+      actorRole: moderatorId === null ? 'SYSTEM' : 'MODERATOR',
       changes: { reason: reason ?? null },
     });
   }
