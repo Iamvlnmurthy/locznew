@@ -1,8 +1,6 @@
 import type { Metadata, Viewport } from 'next';
 import Link from 'next/link';
 import Script from 'next/script';
-import { Analytics } from '@vercel/analytics/next';
-import { SpeedInsights } from '@vercel/speed-insights/next';
 import { Header } from '@/components/header';
 import { getTranslator } from '@/i18n';
 import { SITE_URL } from '@/lib/api';
@@ -107,8 +105,6 @@ export default async function RootLayout({ children }: { children: React.ReactNo
             <p style={{ margin: 0 }}>{t('footer.postFree')}</p>
           </div>
         </footer>
-        <Analytics />
-        <SpeedInsights />
       </body>
     </html>
   );
