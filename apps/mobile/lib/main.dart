@@ -9,6 +9,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'core/config/env.dart';
 import 'core/i18n/strings.dart';
+import 'core/launch/animated_launch_screen.dart';
 import 'core/notifications/firebase_config.dart';
 import 'core/notifications/push_service.dart';
 import 'core/notifications/push_token_registrar.dart';
@@ -140,24 +141,49 @@ class _PushBootstrapState extends ConsumerState<PushBootstrap> {
   Widget build(BuildContext context) => widget.child;
 }
 
-class LoczApp extends ConsumerWidget {
+class LoczApp extends ConsumerStatefulWidget {
   const LoczApp({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<LoczApp> createState() => _LoczAppState();
+}
+
+class _LoczAppState extends ConsumerState<LoczApp> {
+  Timer? _minimumLaunchTimer;
+  bool _minimumLaunchElapsed = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _minimumLaunchTimer = Timer(const Duration(milliseconds: 1200), () {
+      if (mounted) setState(() => _minimumLaunchElapsed = true);
+    });
+  }
+
+  @override
+  void dispose() {
+    _minimumLaunchTimer?.cancel();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final router = ref.watch(routerProvider);
     final locale = ref.watch(localeProvider);
     final auth = ref.watch(authProvider);
     final themeMode = ref.watch(themeModeProvider);
 
-    // Hold the splash until the stored session has been checked, so the app never
-    // flashes a signed-out UI to someone who is signed in.
-    if (auth.isRestoring) {
+    // Session restoration runs underneath the branded motion. Fast devices get enough
+    // time to read the identity; slow devices simply hold its completed final frame.
+    if (auth.isRestoring || !_minimumLaunchElapsed) {
       return MaterialApp(
         theme: AppTheme.light,
         darkTheme: AppTheme.dark,
+        themeMode: themeMode,
         debugShowCheckedModeBanner: false,
-        home: const Scaffold(body: Center(child: CircularProgressIndicator())),
+        home: AnimatedLaunchScreen(
+          tagline: Strings(locale)('brand.tagline'),
+        ),
       );
     }
 
