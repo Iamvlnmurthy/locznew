@@ -945,26 +945,78 @@ export class ListingsService {
         ];
         return and.length > 0 ? { AND: and } : {};
       })(),
-      ...(query.priceMin !== undefined || query.priceMax !== undefined || query.condition
+      // One `marketplace` key, built once. A second spread writing `marketplace` would
+      // replace the first outright, so adding a brand filter alongside a price range would
+      // quietly drop the price -- the same way a second `AND` or `OR` would. This is the
+      // third place in this function where that trap exists, which is why each one is built
+      // in a single expression rather than accumulated.
+      ...this.marketplaceFilter(query),
+      ...this.rentalFilter(query),
+    };
+  }
+
+  /** Filters on `marketplace_details`: price, condition, brand, model, year. */
+  private marketplaceFilter(query: ListingSearchQueryDto): Prisma.ListingWhereInput {
+    const price =
+      query.priceMin !== undefined || query.priceMax !== undefined
         ? {
-            marketplace: {
-              ...(query.condition ? { condition: query.condition } : {}),
-              ...(query.priceMin !== undefined || query.priceMax !== undefined
-                ? {
-                    price: {
-                      ...(query.priceMin !== undefined
-                        ? { gte: new Prisma.Decimal(query.priceMin) }
-                        : {}),
-                      ...(query.priceMax !== undefined
-                        ? { lte: new Prisma.Decimal(query.priceMax) }
-                        : {}),
-                    },
-                  }
-                : {}),
+            price: {
+              ...(query.priceMin !== undefined ? { gte: new Prisma.Decimal(query.priceMin) } : {}),
+              ...(query.priceMax !== undefined ? { lte: new Prisma.Decimal(query.priceMax) } : {}),
             },
           }
+        : {};
+
+    const year =
+      query.yearMin !== undefined || query.yearMax !== undefined
+        ? {
+            purchaseYear: {
+              ...(query.yearMin !== undefined ? { gte: query.yearMin } : {}),
+              ...(query.yearMax !== undefined ? { lte: query.yearMax } : {}),
+            },
+          }
+        : {};
+
+    const marketplace = {
+      ...(query.condition ? { condition: query.condition } : {}),
+      // Brand is matched exactly but case-insensitively: it comes from a picklist, so the
+      // value is known, and only the casing of a hand-edited URL varies.
+      ...(query.brand
+        ? { brand: { equals: query.brand, mode: Prisma.QueryMode.insensitive } }
         : {}),
+      // Model is matched loosely, because it is free text that sellers type themselves.
+      // "Swift" has to find "Swift VXi" and "swift dzire", or the filter is useless for
+      // exactly the field it exists to search.
+      ...(query.model
+        ? { model: { contains: query.model, mode: Prisma.QueryMode.insensitive } }
+        : {}),
+      ...price,
+      ...year,
     };
+
+    return Object.keys(marketplace).length > 0 ? { marketplace } : {};
+  }
+
+  /** Filters on `rental_details`: bedrooms and carpet area. */
+  private rentalFilter(query: ListingSearchQueryDto): Prisma.ListingWhereInput {
+    const area =
+      query.areaMin !== undefined || query.areaMax !== undefined
+        ? {
+            areaSqft: {
+              ...(query.areaMin !== undefined ? { gte: query.areaMin } : {}),
+              ...(query.areaMax !== undefined ? { lte: query.areaMax } : {}),
+            },
+          }
+        : {};
+
+    const rental = {
+      // "At least", not "exactly". Someone who needs two bedrooms will take three; a filter
+      // that hides the three-bedroom flat is answering a question nobody asked.
+      ...(query.bedroomsMin !== undefined ? { bedrooms: { gte: query.bedroomsMin } } : {}),
+      ...area,
+    };
+
+    return Object.keys(rental).length > 0 ? { rental } : {};
   }
 
   /**

@@ -410,6 +410,62 @@ export class ListingSearchQueryDto extends PaginationQueryDto {
   sort?: 'newest' | 'price_asc' | 'price_desc' | 'popular' | 'distance';
 
   /**
+   * Filters on the typed detail columns.
+   *
+   * These are not category attributes and never were: brand, model, year, bedrooms and area
+   * are columns on `marketplace_details` and `rental_details`, where they are indexed and
+   * where the listing page already reads them. Until now nothing could filter on them at
+   * all -- `attr=` only reaches the attribute table -- so the most obvious filters on a
+   * classifieds site were the ones that did not exist.
+   */
+  @ApiPropertyOptional({ example: 'Maruti Suzuki', description: 'Marketplace brand' })
+  @IsOptional()
+  @IsString()
+  @MaxLength(120)
+  brand?: string;
+
+  @ApiPropertyOptional({ example: 'Swift', description: 'Marketplace model, matched loosely' })
+  @IsOptional()
+  @IsString()
+  @MaxLength(120)
+  model?: string;
+
+  @ApiPropertyOptional({ example: 2018, description: 'Earliest purchase year' })
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(1900)
+  yearMin?: number;
+
+  @ApiPropertyOptional({ example: 2024, description: 'Latest purchase year' })
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Max(2100)
+  yearMax?: number;
+
+  @ApiPropertyOptional({ example: 2, description: 'Rentals with at least this many bedrooms' })
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(0)
+  bedroomsMin?: number;
+
+  @ApiPropertyOptional({ example: 600, description: 'Rentals of at least this carpet area' })
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(0)
+  areaMin?: number;
+
+  @ApiPropertyOptional({ example: 1200 })
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(0)
+  areaMax?: number;
+
+  /**
    * Category attribute filters, repeated: `attr=fuel_type:PETROL&attr=bedrooms:2..3`.
    *
    * A query string cannot carry a nested object without inventing an encoding, and every

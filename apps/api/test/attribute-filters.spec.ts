@@ -101,3 +101,67 @@ describe('attribute filters', () => {
     expect(whereFor({}).AND).toBeUndefined();
   });
 });
+
+/**
+ * Filters on the typed detail columns.
+ *
+ * Separate from the attribute filters above because they read a different place entirely:
+ * `marketplace_details` and `rental_details`, not the attribute table. Both had to exist
+ * before a filter panel could be honest — until now the most obvious filters on a
+ * classifieds site were the ones the API could not answer.
+ */
+describe('typed detail filters', () => {
+  const service = Object.create(ListingsService.prototype) as ListingsService;
+  const whereFor = (query: Partial<ListingSearchQueryDto>): Prisma.ListingWhereInput =>
+    (
+      service as unknown as { whereFor(query: ListingSearchQueryDto): Prisma.ListingWhereInput }
+    ).whereFor(query as ListingSearchQueryDto);
+
+  it('keeps price and brand in one marketplace filter', () => {
+    const where = whereFor({ priceMin: 50_000, brand: 'Maruti Suzuki' });
+
+    // Two spread entries each writing `marketplace` would leave only the last, so a brand
+    // filter would quietly discard the buyer's budget.
+    expect(where.marketplace).toEqual({
+      brand: { equals: 'Maruti Suzuki', mode: 'insensitive' },
+      price: { gte: new Prisma.Decimal(50_000) },
+    });
+  });
+
+  it('matches a model loosely and a brand exactly', () => {
+    const marketplace = whereFor({ brand: 'Hyundai', model: 'swift' }).marketplace as Record<
+      string,
+      unknown
+    >;
+
+    // Brand comes from a picklist, so it is known. Model is typed by the seller, so "Swift"
+    // must still find "Swift VXi".
+    expect(marketplace.brand).toEqual({ equals: 'Hyundai', mode: 'insensitive' });
+    expect(marketplace.model).toEqual({ contains: 'swift', mode: 'insensitive' });
+  });
+
+  it('reads bedrooms as a minimum, not an exact count', () => {
+    // Someone who needs two bedrooms will take three.
+    expect(whereFor({ bedroomsMin: 2 }).rental).toEqual({ bedrooms: { gte: 2 } });
+  });
+
+  it('bounds carpet area from either side', () => {
+    expect(whereFor({ areaMin: 600, areaMax: 1200 }).rental).toEqual({
+      areaSqft: { gte: 600, lte: 1200 },
+    });
+  });
+
+  it('adds no detail filter when none was asked for', () => {
+    const where = whereFor({ cityId: 'city-1' });
+
+    expect(where.marketplace).toBeUndefined();
+    expect(where.rental).toBeUndefined();
+  });
+
+  it('combines a typed column, an attribute and a keyword at once', () => {
+    const where = whereFor({ q: 'hatchback', brand: 'Maruti Suzuki', attr: ['fuel_type:PETROL'] });
+
+    expect(where.AND).toHaveLength(2);
+    expect(where.marketplace).toBeDefined();
+  });
+});
