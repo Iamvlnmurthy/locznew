@@ -1,7 +1,13 @@
 #!/usr/bin/env node
 /**
- * Collects brand and model names for the categories where a filter is only as good as its
- * options: vehicles, phones, cameras, laptops and televisions.
+ * Collects brand and model names for the categories where the *model* is what people filter
+ * by: vehicles, phones, cameras and laptops.
+ *
+ * Deliberately not every category. For appliances, televisions, furniture and fashion the
+ * model number is not how anyone shops — nobody searches for a "Whirlpool WDE205 CLS 3S",
+ * they search for a 1.5 ton five-star split AC from a brand they trust. Those categories get
+ * a curated brand list and spec attributes in the seed instead, which is both more useful and
+ * something no amount of scraping would improve.
  *
  * Sources, and why these two:
  *
