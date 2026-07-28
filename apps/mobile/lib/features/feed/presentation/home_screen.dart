@@ -23,49 +23,57 @@ class HomeScreen extends ConsumerWidget {
     return Scaffold(
       appBar: AppBar(
         titleSpacing: LoczSpacing.x4,
+        toolbarHeight: 58,
         title: Row(
           children: [
-            Text(
-              'Loc',
-              style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                    color: Theme.of(context).colorScheme.primary,
-                    fontWeight: FontWeight.w800,
-                    letterSpacing: -0.7,
-                  ),
+            Image.asset(
+              'assets/brand/locz-mark.png',
+              key: const Key('home-brand-mark'),
+              width: 32,
+              height: 36,
+              fit: BoxFit.contain,
             ),
-            Text(
-              'Z',
-              style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                    color: LoczColors.danger,
-                    fontWeight: FontWeight.w800,
-                    letterSpacing: -0.7,
-                  ),
-            ),
-            const SizedBox(width: LoczSpacing.x3),
+            const SizedBox(width: LoczSpacing.x2),
             Expanded(
-              child: InkWell(
-                onTap: () => context.push('/location'),
-                borderRadius: BorderRadius.circular(10),
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 7),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(
-                        Icons.near_me_outlined,
-                        size: 15,
-                        color: Theme.of(context).colorScheme.primary,
+              child: Align(
+                alignment: Alignment.centerLeft,
+                child: Material(
+                  color: Theme.of(context).colorScheme.primaryContainer,
+                  borderRadius: BorderRadius.circular(18),
+                  child: InkWell(
+                    key: const Key('home-location-control'),
+                    onTap: () => context.push('/location'),
+                    borderRadius: BorderRadius.circular(18),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 7),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            Icons.location_on_outlined,
+                            size: 15,
+                            color: Theme.of(context).colorScheme.onPrimaryContainer,
+                          ),
+                          const SizedBox(width: 4),
+                          Flexible(
+                            child: Text(
+                              city?.pincode ?? city?.name ?? strings('location.change'),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                                    color: Theme.of(context).colorScheme.onPrimaryContainer,
+                                  ),
+                            ),
+                          ),
+                          const SizedBox(width: 1),
+                          Icon(
+                            Icons.keyboard_arrow_down_rounded,
+                            size: 16,
+                            color: Theme.of(context).colorScheme.onPrimaryContainer,
+                          ),
+                        ],
                       ),
-                      const SizedBox(width: 4),
-                      Flexible(
-                        child: Text(
-                          city?.pincode ?? city?.name ?? strings('location.change'),
-                          overflow: TextOverflow.ellipsis,
-                          style: Theme.of(context).textTheme.labelMedium,
-                        ),
-                      ),
-                      const Icon(Icons.keyboard_arrow_down_rounded, size: 17),
-                    ],
+                    ),
                   ),
                 ),
               ),
@@ -74,12 +82,88 @@ class HomeScreen extends ConsumerWidget {
         ),
         actions: [
           IconButton(
+            key: const Key('home-theme-toggle'),
+            visualDensity: VisualDensity.compact,
+            constraints: const BoxConstraints.tightFor(width: 40, height: 40),
+            icon: Icon(
+              Theme.of(context).brightness == Brightness.dark
+                  ? Icons.light_mode_outlined
+                  : Icons.dark_mode_outlined,
+              size: 20,
+            ),
+            onPressed: () => ref.read(themeModeProvider.notifier).select(
+                  Theme.of(context).brightness == Brightness.dark
+                      ? ThemeMode.light
+                      : ThemeMode.dark,
+                ),
+            tooltip: strings('account.appearance'),
+          ),
+          IconButton(
+            visualDensity: VisualDensity.compact,
+            constraints: const BoxConstraints.tightFor(width: 40, height: 40),
             icon: const Icon(Icons.notifications_none_rounded, size: 22),
             onPressed: () => context.push('/notifications'),
             tooltip: strings('account.notifications'),
           ),
-          const SizedBox(width: 4),
+          const SizedBox(width: LoczSpacing.x2),
         ],
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(58),
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(
+              LoczSpacing.x4,
+              0,
+              LoczSpacing.x4,
+              LoczSpacing.x3,
+            ),
+            child: Semantics(
+              button: true,
+              child: Material(
+                color: Theme.of(context).colorScheme.surface,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(15),
+                  side: BorderSide(
+                    color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.55),
+                  ),
+                ),
+                clipBehavior: Clip.antiAlias,
+                child: InkWell(
+                  key: const Key('home-header-search'),
+                  onTap: () => context.push('/search'),
+                  child: SizedBox(
+                    height: 46,
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 14),
+                      child: Row(
+                        children: [
+                          Icon(
+                            Icons.search_rounded,
+                            size: 20,
+                            color: Theme.of(context).colorScheme.primary,
+                          ),
+                          const SizedBox(width: 9),
+                          Expanded(
+                            child: Text(
+                              strings('search.placeholder'),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: Theme.of(context).textTheme.bodyMedium,
+                            ),
+                          ),
+                          Icon(
+                            Icons.arrow_forward_rounded,
+                            size: 18,
+                            color: Theme.of(context).colorScheme.primary,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
       ),
       body: RefreshIndicator(
         // Pull-to-refresh is the expected gesture on a feed; invalidating the provider
@@ -118,53 +202,6 @@ class HomeScreen extends ConsumerWidget {
                         Text(
                           strings('brand.tagline'),
                           style: Theme.of(context).textTheme.headlineSmall,
-                        ),
-                        const SizedBox(height: LoczSpacing.x3),
-                        Semantics(
-                          button: true,
-                          child: Material(
-                            color: Theme.of(context).colorScheme.surface,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(14),
-                              side: BorderSide(
-                                color:
-                                    Theme.of(context).colorScheme.outline.withValues(alpha: 0.55),
-                              ),
-                            ),
-                            clipBehavior: Clip.antiAlias,
-                            child: InkWell(
-                              onTap: () => context.push('/search'),
-                              child: SizedBox(
-                                height: 48,
-                                child: Padding(
-                                  padding: const EdgeInsets.symmetric(horizontal: 14),
-                                  child: Row(
-                                    children: [
-                                      Icon(
-                                        Icons.search_rounded,
-                                        size: 21,
-                                        color: Theme.of(context).colorScheme.primary,
-                                      ),
-                                      const SizedBox(width: 10),
-                                      Expanded(
-                                        child: Text(
-                                          strings('search.placeholder'),
-                                          maxLines: 1,
-                                          overflow: TextOverflow.ellipsis,
-                                          style: Theme.of(context).textTheme.bodyMedium,
-                                        ),
-                                      ),
-                                      Icon(
-                                        Icons.tune_rounded,
-                                        size: 18,
-                                        color: Theme.of(context).colorScheme.onSurfaceVariant,
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ),
                         ),
                       ],
                     ),
