@@ -125,7 +125,16 @@ export class ImageModerationService {
       reasons.push('IMAGE_FROM_NEW_ACCOUNT');
     }
 
-    if (reasons.length === 0) return { decision: 'APPROVE', reasons };
+    // Being new is recorded but does not by itself hold the listing, matching the text rules
+    // in `RuleBasedModerationProvider`. Changing only one of the two would have achieved
+    // nothing: almost every real listing carries a photograph, so this rule alone would keep
+    // sending first-time posters back to a queue nobody is working.
+    //
+    // Every other reason here — a hash of previously removed content, the same photograph
+    // under another owner, a scanner that could not be reached — still holds it, and still
+    // pulls back a listing that was already published.
+    const holding = reasons.filter((reason) => reason !== 'IMAGE_FROM_NEW_ACCOUNT');
+    if (holding.length === 0) return { decision: 'APPROVE', reasons };
 
     // Only a live listing is worth pulling back; one already waiting for review is where
     // it needs to be, and one already refused should not be quietly resurrected.

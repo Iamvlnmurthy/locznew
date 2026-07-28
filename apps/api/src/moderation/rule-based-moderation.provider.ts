@@ -233,10 +233,20 @@ export class RuleBasedModerationProvider implements ModerationProvider {
     if (score >= RuleBasedModerationProvider.AUTO_REJECT_AT) {
       return ModerationDecision.AUTO_REJECT;
     }
-    // A clean listing from a new account still goes to review — this is the single
-    // most effective brake on a free-posting spam wave.
+    // A new account is held for review the moment anything at all is suspicious — a far
+    // stricter bar than the score of 20 an established account is allowed, so the brake on
+    // a spam wave is still there. What it no longer does is hold a listing that raised no
+    // signal whatsoever.
+    //
+    // The previous rule sent every first listing to a human regardless of content. With a
+    // staffed queue that is the safer default; without one it means a new user posts and
+    // watches nothing happen, indefinitely — which is not a stricter product, just a broken
+    // one. Holding only what the rules actually object to keeps the protection pointed at
+    // the risk.
+    //
+    // Restoring the old behaviour is one comparison: change `score > 0` back to `true`.
     if (isNewAccount) {
-      return ModerationDecision.REVIEW;
+      return score > 0 ? ModerationDecision.REVIEW : ModerationDecision.AUTO_APPROVE;
     }
     return score < RuleBasedModerationProvider.AUTO_APPROVE_BELOW
       ? ModerationDecision.AUTO_APPROVE

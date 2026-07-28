@@ -152,11 +152,35 @@ describe('ImageModerationService', () => {
       expect(queue.add).toHaveBeenCalled();
     });
 
-    it('pulls back a listing from an account with no history', async () => {
-      const { service, prisma } = build({ listing: published, publishedByOwner: 0 });
+    it('leaves a new seller published when the picture itself is unobjectionable', async () => {
+      const { service, prisma, queue } = build({ listing: published, publishedByOwner: 0 });
 
-      await service.reviewOnUpload({ id: 'media-1', listingId: 'listing-1' } as never, fingerprint);
+      const result = await service.reviewOnUpload(
+        { id: 'media-1', listingId: 'listing-1' } as never,
+        fingerprint,
+      );
 
+      expect(result.decision).toBe('APPROVE');
+      // Recorded for a moderator's benefit, but not grounds on its own to pull the listing.
+      expect(result.reasons).toContain('IMAGE_FROM_NEW_ACCOUNT');
+      expect(prisma.listing.update).not.toHaveBeenCalled();
+      expect(queue.add).not.toHaveBeenCalled();
+    });
+
+    it('still pulls back a new seller when the picture belongs to someone else', async () => {
+      const { service, prisma } = build({
+        listing: published,
+        publishedByOwner: 0,
+        mediaElsewhere: { listingId: 'listing-9' },
+      });
+
+      const result = await service.reviewOnUpload(
+        { id: 'media-1', listingId: 'listing-1' } as never,
+        fingerprint,
+      );
+
+      expect(result.decision).toBe('REVIEW');
+      expect(result.reasons).toContain('IMAGE_USED_BY_ANOTHER_ACCOUNT');
       expect(prisma.listing.update).toHaveBeenCalled();
     });
 
@@ -207,7 +231,12 @@ describe('ImageModerationService', () => {
     });
 
     it('survives the queue being unavailable', async () => {
-      const { service, prisma } = build({ listing: published, publishedByOwner: 0 });
+      // Needs a reason that genuinely holds the listing; being a new account no longer does.
+      const { service, prisma } = build({
+        listing: published,
+        publishedByOwner: 0,
+        mediaElsewhere: { listingId: 'listing-9' },
+      });
       // Redis being down must not leave the listing published because the write that
       // followed the enqueue never ran.
       const failing = { add: jest.fn().mockRejectedValue(new Error('Redis is down')) };
@@ -217,7 +246,7 @@ describe('ImageModerationService', () => {
         resilient.reviewOnUpload({ id: 'media-1', listingId: 'listing-1' } as never, fingerprint),
       ).resolves.toEqual({
         decision: 'REVIEW',
-        reasons: ['IMAGE_FROM_NEW_ACCOUNT'],
+        reasons: ['IMAGE_USED_BY_ANOTHER_ACCOUNT', 'IMAGE_FROM_NEW_ACCOUNT'],
       });
 
       expect(prisma.listing.update).toHaveBeenCalled();

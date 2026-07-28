@@ -39,11 +39,28 @@ describe('RuleBasedModerationProvider', () => {
     expect(verdict.score).toBeLessThan(20);
   });
 
-  it('sends a first-time poster to human review even when the listing is clean', async () => {
+  it('publishes a first-time poster whose listing raised no signal at all', async () => {
     const verdict = await provider.evaluate({ ...baseSubject, ownerPublishedCount: 0 });
 
-    expect(verdict.decision).toBe(ModerationDecision.REVIEW);
+    expect(verdict.decision).toBe(ModerationDecision.AUTO_APPROVE);
+    // Still recorded, so a moderator reading the history can see the account was new.
     expect(verdict.reasons).toContain('NEW_ACCOUNT');
+  });
+
+  it('holds a first-time poster the moment anything at all is suspicious', async () => {
+    // A shortened URL scores 45: well under the 80 that rejects outright, and under the 20 an
+    // established account is allowed, but not nothing. This is the brake that survives
+    // letting clean first listings through, so it is worth pinning down.
+    const verdict = await provider.evaluate({
+      ...baseSubject,
+      ownerPublishedCount: 0,
+      description: 'More details at bit.ly/see-this',
+    });
+
+    expect(verdict.decision).toBe(ModerationDecision.REVIEW);
+    expect(verdict.reasons).toEqual(
+      expect.arrayContaining(['SHORTENED_URL', 'NEW_ACCOUNT']),
+    );
   });
 
   it('auto-rejects a severity-2 banned keyword on its own', async () => {
