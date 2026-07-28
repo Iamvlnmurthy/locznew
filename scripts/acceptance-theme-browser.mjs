@@ -49,6 +49,30 @@ async function pageState(browser, headingSelector) {
   })()`);
 }
 
+async function mobileHeaderState(browser) {
+  return browser.evaluate(`(() => {
+    const rect = (selector) => document.querySelector(selector)?.getBoundingClientRect();
+    const brand = rect('.header__brand');
+    const location = rect('.location-chip');
+    const theme = rect('.theme-toggle--mobile');
+    const search = rect('.header__row > .searchbar');
+    const locationLabel = document.querySelector('.location-chip > span:first-of-type');
+
+    return {
+      controlsShareFirstRow: [brand, location, theme].every(Boolean) &&
+        Math.max(brand.top, location.top, theme.top) <
+          Math.min(brand.bottom, location.bottom, theme.bottom),
+      brandHasCompactHitbox: Boolean(brand) && brand.width <= 48,
+      searchUsesSecondRow: Boolean(search) &&
+        search.top >= Math.max(brand?.bottom ?? 0, location?.bottom ?? 0, theme?.bottom ?? 0),
+      searchFitsViewport: Boolean(search) && search.left >= 0 && search.right <= innerWidth,
+      locationLabelVisible: Boolean(locationLabel) &&
+        getComputedStyle(locationLabel).display !== 'none' &&
+        locationLabel.getBoundingClientRect().width > 20,
+    };
+  })()`);
+}
+
 async function assertAccessible(browser, label) {
   const violations = await browser.accessibilityViolations();
   check(
@@ -139,6 +163,12 @@ async function main() {
       `${state.overflow}px`,
     );
     check('mobile exposes a visible theme control', state.hasVisibleToggle);
+    let headerState = await mobileHeaderState(browser);
+    check('mobile header keeps identity controls on its first row', headerState.controlsShareFirstRow);
+    check('mobile logo does not reserve invisible desktop space', headerState.brandHasCompactHitbox);
+    check('mobile search owns a complete second row', headerState.searchUsesSecondRow);
+    check('mobile search stays inside the viewport', headerState.searchFitsViewport);
+    check('mobile location remains readable', headerState.locationLabelVisible);
     await assertAccessible(browser, 'mobile light home');
     await browser.screenshot('home-light-mobile.png');
 
@@ -156,6 +186,14 @@ async function main() {
     );
     await assertAccessible(browser, 'mobile dark home');
     await browser.screenshot('home-dark-mobile.png');
+
+    await browser.viewport(320, 720);
+    await browser.navigate('/?theme-audit=narrow-mobile');
+    headerState = await mobileHeaderState(browser);
+    state = await pageState(browser, '.home-hero h1');
+    check('320px header has no horizontal overflow', state.overflow <= 1, `${state.overflow}px`);
+    check('320px search stays inside the viewport', headerState.searchFitsViewport);
+    check('320px location remains readable', headerState.locationLabelVisible);
 
     check(
       'theme journeys emit no browser or server runtime errors',

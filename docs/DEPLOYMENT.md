@@ -109,3 +109,35 @@ match old code unless a separately tested disaster-recovery procedure requires i
 After deployment, check Nginx/API error logs, queue failures, Sentry, SMS delivery and
 push delivery. A green health endpoint proves dependencies are reachable, not that a
 buyer can complete a journey.
+
+Then run the deployed smoke gate, which drives a real browser against the live origin:
+
+```bash
+LOCZ_WEB=https://locz.in node scripts/acceptance-deployed.mjs
+```
+
+It exists because every other browser gate drives a locally started Next server and so
+never crosses the reverse proxy. Two outages have hidden in exactly that gap, both of
+them invisible to a health check and to the pre-release suites:
+
+- **A duplicated `Origin` header.** OpenLiteSpeed sends it twice, Node joins repeats with
+  `", "`, and Next parses the result as a URL when validating a Server Action — so it
+  threw before any of its own checks ran. Page loads were unaffected, so the site looked
+  healthy while no Server Action worked at all. Repaired in `apps/web/src/middleware.ts`.
+- **A build that could not see the root `.env`.** `NEXT_PUBLIC_*` is inlined at build
+  time, so the bundle shipped the `localhost` defaults and every API-backed lookup came
+  back empty — the location picker called real pincodes typos. The Next configs now load
+  the root `.env` themselves.
+
+### Restarting under pm2
+
+Restart from the ecosystem file, never with a bare `pm2 restart <name> --update-env`:
+
+```bash
+su - locz -c 'cd /home/locz/app && pm2 startOrRestart ecosystem.config.cjs --only locz-web'
+```
+
+`--update-env` on its own replaces the process environment with the environment of the
+shell issuing the command. Run from a login shell, that discards everything the app was
+started with and the process comes back up configured differently from how it was
+deployed — while reporting `online`.

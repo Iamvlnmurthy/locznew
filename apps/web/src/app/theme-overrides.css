@@ -2,15 +2,58 @@
    sections in globals.css. */
 
 @media (max-width: 760px) {
+  /*
+   * The mobile header has two clear jobs: keep place and theme controls
+   * identifiable, then give search the full row. Do not squeeze all four
+   * controls into one line or reduce the selected location to an icon.
+   */
+  .header__row {
+    display: grid;
+    min-height: 0;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    gap: 8px 10px;
+    padding-block: 10px 12px;
+  }
+
+  .header__brand {
+    grid-column: 1;
+  }
+
+  .header__logo {
+    width: 41px;
+    height: 42px;
+  }
+
   .location-chip {
-    max-width: none;
-    margin-left: -4px;
-    padding-inline: 6px;
-    gap: 3px;
+    grid-column: 2;
+    min-width: 0;
+    max-width: 100%;
+    margin-left: 0;
+    padding: 8px 9px;
+    gap: 5px;
+    justify-self: start;
+    background: var(--locz-primary-soft);
   }
 
   .location-chip > span:first-of-type {
-    display: none;
+    display: block;
+    min-width: 0;
+    white-space: nowrap;
+  }
+
+  .theme-toggle--mobile {
+    grid-column: 3;
+  }
+
+  .header__row > .searchbar {
+    width: 100%;
+    max-width: none;
+    grid-column: 1 / -1;
+    grid-row: 2;
+  }
+
+  .header__row > .searchbar input {
+    padding-right: 12px;
   }
 
   .home-intents__intro {
@@ -20,5 +63,20 @@
   .home-intents__intro h2 {
     max-width: 280px;
     margin-top: 9px;
+  }
+}
+
+@media (max-width: 360px) {
+  .header__row {
+    gap-inline: 7px;
+    padding-inline: 12px;
+  }
+
+  .location-chip {
+    padding-inline: 7px;
+  }
+
+  .location-chip__chevron {
+    display: none;
   }
 }
