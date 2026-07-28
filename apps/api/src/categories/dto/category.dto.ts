@@ -10,6 +10,7 @@ import {
   IsString,
   IsUUID,
   MaxLength,
+  Min,
   MinLength,
 } from 'class-validator';
 
@@ -161,4 +162,28 @@ export class CreateCategoryAttributeDto {
   @Type(() => Number)
   @IsInt()
   sortOrder?: number;
+}
+
+export class ModelSuggestionQueryDto {
+  @ApiPropertyOptional({
+    example: 'MARUTI_SUZUKI',
+    description: 'Attribute option value of the brand, when the user has already chosen one',
+  })
+  @IsOptional()
+  @IsString()
+  @MaxLength(60)
+  brand?: string;
+
+  @ApiPropertyOptional({ example: 'swi', description: 'What the user has typed so far' })
+  @IsOptional()
+  @IsString()
+  @MaxLength(60)
+  q?: string;
+
+  @ApiPropertyOptional({ default: 20, maximum: 50 })
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  limit?: number;
 }

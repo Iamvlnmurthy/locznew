@@ -3,6 +3,7 @@ import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagg
 import { AuthenticatedUser, CurrentUser } from '../common/decorators/current-user.decorator';
 import { Public, RequirePermissions } from '../rbac/rbac.decorators';
 import { CategoriesService } from './categories.service';
+import { ModelSuggestionsService } from './model-suggestions.service';
 import {
   CategoryAttributeDto,
   CategoryDetailDto,
@@ -10,13 +11,17 @@ import {
   CategoryTreeQueryDto,
   CreateCategoryAttributeDto,
   CreateCategoryDto,
+  ModelSuggestionQueryDto,
   UpdateCategoryDto,
 } from './dto/category.dto';
 
 @ApiTags('categories')
 @Controller('categories')
 export class CategoriesController {
-  constructor(private readonly categories: CategoriesService) {}
+  constructor(
+    private readonly categories: CategoriesService,
+    private readonly modelSuggestions: ModelSuggestionsService,
+  ) {}
 
   @Public()
   @Get()
@@ -39,6 +44,23 @@ export class CategoriesController {
   @ApiResponse({ status: 200, type: CategoryDetailDto })
   getBySlug(@Param('slug') slug: string): Promise<CategoryDetailDto> {
     return this.categories.getBySlug(slug);
+  }
+
+  @Public()
+  @Get(':slug/models')
+  @ApiOperation({
+    summary: 'Model-name suggestions for a category',
+    description:
+      'Suggestions only. The model a listing stores is free text, because no list of models ' +
+      'stays complete and a seller whose phone is missing from a picklist simply does not ' +
+      'post. Narrow by `brand` once the brand is known, and by `q` as the user types.',
+  })
+  @ApiResponse({ status: 200, type: [String] })
+  getModelSuggestions(
+    @Param('slug') slug: string,
+    @Query() query: ModelSuggestionQueryDto,
+  ): string[] {
+    return this.modelSuggestions.suggest(slug, query);
   }
 
   @Post()

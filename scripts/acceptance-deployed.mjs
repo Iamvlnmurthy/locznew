@@ -183,7 +183,11 @@ async function main() {
     await browser.evaluate(
       `localStorage.setItem('locz.recent-searches.v1', JSON.stringify(['acceptance bicycle']))`,
     );
-    await browser.evaluate(`document.querySelector('#results-search').focus()`);
+    // The empty results search intentionally autofocuses. Calling `.focus()` again does
+    // not dispatch a focus event, so the component has no reason to re-read the history
+    // that this gate seeded after mount. A click is the real returning-user interaction
+    // and fires even when the field already owns focus.
+    await browser.click('#results-search');
     await browser.waitFor(
       `Boolean(document.querySelector('.recent-search__menu'))`,
       'recent searches open below an empty focused search field',
