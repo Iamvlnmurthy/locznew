@@ -19,10 +19,12 @@
  *    broken to the person who posted it.
  *  - `--dry-run` prints the verdicts and changes nothing.
  *
- * Usage, from the repository root:
+ * Run it from `apps/api`, not the repository root — tsx resolves `experimentalDecorators`
+ * from the nearest tsconfig, and without it every Nest decorator fails to transform:
  *
- *   npx tsx apps/api/scripts/reapply-moderation.ts --dry-run
- *   npx tsx apps/api/scripts/reapply-moderation.ts
+ *   cd apps/api
+ *   npx tsx scripts/reapply-moderation.ts --dry-run
+ *   npx tsx scripts/reapply-moderation.ts
  */
 
 import { NestFactory } from '@nestjs/core';
@@ -113,6 +115,9 @@ async function main(): Promise<void> {
 }
 
 main().catch((error: unknown) => {
-  console.error(error instanceof Error ? error.message : String(error));
+  // The whole error, not just its message. A Nest bootstrap failure often carries the useful
+  // part in the cause or the stack, and a bare message can be empty — which reads as the
+  // script having silently done nothing.
+  console.error(error);
   process.exitCode = 1;
 });
