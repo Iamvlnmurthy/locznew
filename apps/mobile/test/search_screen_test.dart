@@ -145,6 +145,7 @@ class _FakeListingRepository extends ListingRepository {
     String? pincode,
     num? priceMin,
     num? priceMax,
+    List<String> attributes = const [],
     String sort = 'relevance',
     int page = 1,
   }) async {

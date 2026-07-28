@@ -52,6 +52,10 @@ class _PostAdScreenState extends ConsumerState<PostAdScreen> {
   bool _isFree = false;
   bool _isNegotiable = false;
   String _contactPreference = 'IN_APP_ONLY';
+  List<CategoryAttribute> _categoryAttributes = const [];
+  Map<String, dynamic> _attributeValues = {};
+  bool _attributesResolved = false;
+  bool _loadingAttributes = false;
 
   final List<_PendingImage> _images = [];
   bool _submitting = false;
@@ -86,9 +90,14 @@ class _PostAdScreenState extends ConsumerState<PostAdScreen> {
       final results = await Future.wait([
         repository.detail(widget.listingId!),
         repository.cities(launchedOnly: true),
+        repository.categories(listingType: 'PRODUCT'),
       ]);
       final listing = results[0] as ListingDetail;
       final cities = results[1] as List<City>;
+      final categories = results[2] as List<Category>;
+      final category = _findCategory(categories, listing.categoryId);
+      final categoryDetail =
+          category == null ? null : await repository.categoryDetail(category.slug);
       if (!mounted) return;
       final marketplace = listing.marketplace;
       setState(() {
@@ -104,6 +113,9 @@ class _PostAdScreenState extends ConsumerState<PostAdScreen> {
         _contactPreference = listing.contactPreference;
         _originalStatus = listing.summary.status;
         _createdSlug = listing.summary.slug;
+        _attributeValues = Map<String, dynamic>.from(listing.attributes);
+        _categoryAttributes = categoryDetail?.attributes ?? const [];
+        _attributesResolved = categoryDetail != null;
         _loadingListing = false;
       });
     } on ApiException catch (error) {
@@ -154,6 +166,7 @@ class _PostAdScreenState extends ConsumerState<PostAdScreen> {
         'isFree': _isFree,
         'isNegotiable': _isNegotiable,
         'contactPreference': _contactPreference,
+        'attributes': _attributeValues,
       }),
     );
   }
@@ -214,6 +227,9 @@ class _PostAdScreenState extends ConsumerState<PostAdScreen> {
       _isFree = saved['isFree'] as bool? ?? false;
       _isNegotiable = saved['isNegotiable'] as bool? ?? false;
       _contactPreference = saved['contactPreference'] as String? ?? 'IN_APP_ONLY';
+      _attributeValues = Map<String, dynamic>.from(
+        saved['attributes'] as Map<String, dynamic>? ?? const {},
+      );
     });
     _restoringProgress = false;
   }
@@ -236,6 +252,43 @@ class _PostAdScreenState extends ConsumerState<PostAdScreen> {
         _images.add(_PendingImage(File(file.path)));
       }
     });
+  }
+
+  Future<void> _loadCategoryAttributes(Category category) async {
+    setState(() {
+      _loadingAttributes = true;
+      _attributesResolved = false;
+      _categoryAttributes = const [];
+      _attributeValues = {};
+    });
+    try {
+      final detail = await ref.read(listingRepositoryProvider).categoryDetail(category.slug);
+      if (!mounted || _categoryId != category.id) return;
+      setState(() {
+        _categoryAttributes = detail.attributes;
+        _attributesResolved = true;
+        _loadingAttributes = false;
+      });
+    } on ApiException catch (error) {
+      if (!mounted || _categoryId != category.id) return;
+      setState(() {
+        _error = error.message;
+        _loadingAttributes = false;
+      });
+    }
+  }
+
+  List<Map<String, dynamic>>? _attributePayload() {
+    if (!_attributesResolved) return null;
+    final result = <Map<String, dynamic>>[];
+    for (final attribute in _categoryAttributes) {
+      final raw = _attributeValues[attribute.key];
+      if (raw == null || raw == '' || (raw is List && raw.isEmpty)) continue;
+      dynamic value = raw;
+      if (attribute.dataType == 'NUMBER') value = num.tryParse(raw.toString());
+      if (value != null) result.add({'key': attribute.key, 'value': value});
+    }
+    return result;
   }
 
   Future<void> _submit({bool saveAsDraft = false}) async {
@@ -265,6 +318,7 @@ class _PostAdScreenState extends ConsumerState<PostAdScreen> {
               isNegotiable: _isNegotiable,
               contactPreference: _contactPreference,
               saveAsDraft: saveAsDraft,
+              attributes: _attributePayload(),
             )
           : await repository.updateListing(
               listingId: widget.listingId!,
@@ -277,6 +331,7 @@ class _PostAdScreenState extends ConsumerState<PostAdScreen> {
               isFree: _isFree,
               isNegotiable: _isNegotiable,
               contactPreference: _contactPreference,
+              attributes: _attributePayload(),
             );
 
       if (widget.listingId != null && _originalStatus == 'DRAFT' && !saveAsDraft) {
@@ -401,6 +456,171 @@ class _PostAdScreenState extends ConsumerState<PostAdScreen> {
           ),
         ),
       ),
+    );
+  }
+
+  String _attributeLabel(CategoryAttribute attribute, Strings strings) {
+    final base = switch (strings.locale) {
+      AppLocaleOption.te => attribute.labelTe ?? attribute.label,
+      AppLocaleOption.hi => attribute.labelHi ?? attribute.label,
+      AppLocaleOption.en => attribute.label,
+    };
+    return attribute.unit == null ? base : '$base (${attribute.unit})';
+  }
+
+  String _optionLabel(CategoryAttributeOption option, Strings strings) => switch (strings.locale) {
+        AppLocaleOption.te => option.labelTe ?? option.label,
+        AppLocaleOption.hi => option.labelHi ?? option.label,
+        AppLocaleOption.en => option.label,
+      };
+
+  Widget _buildAttributeField(CategoryAttribute attribute, Strings strings) {
+    final label = _attributeLabel(attribute, strings);
+    final current = _attributeValues[attribute.key];
+    String? requiredValidator(dynamic value) {
+      final missing = value == null || value == '' || (value is List && value.isEmpty);
+      return attribute.isRequired && missing ? strings('post.attributeRequired') : null;
+    }
+
+    if (attribute.dataType == 'SELECT') {
+      return DropdownButtonFormField<String>(
+        key: ValueKey('attribute-${attribute.key}-$current'),
+        initialValue: current?.toString(),
+        isExpanded: true,
+        decoration: InputDecoration(labelText: label),
+        items: attribute.options
+            .map(
+              (option) => DropdownMenuItem(
+                value: option.value,
+                child: Text(
+                  _optionLabel(option, strings),
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+            )
+            .toList(),
+        onChanged: (value) {
+          setState(() => _attributeValues[attribute.key] = value);
+          _scheduleProgressSave();
+        },
+        validator: requiredValidator,
+      );
+    }
+
+    if (attribute.dataType == 'BOOLEAN') {
+      return DropdownButtonFormField<bool>(
+        key: ValueKey('attribute-${attribute.key}-$current'),
+        initialValue: current is bool ? current : null,
+        decoration: InputDecoration(labelText: label),
+        items: [
+          DropdownMenuItem(value: true, child: Text(strings('post.attributeYes'))),
+          DropdownMenuItem(value: false, child: Text(strings('post.attributeNo'))),
+        ],
+        onChanged: (value) {
+          setState(() => _attributeValues[attribute.key] = value);
+          _scheduleProgressSave();
+        },
+        validator: requiredValidator,
+      );
+    }
+
+    if (attribute.dataType == 'MULTI_SELECT') {
+      final selected = (current as List<dynamic>? ?? const []).map((value) => '$value').toSet();
+      return FormField<List<String>>(
+        initialValue: selected.toList(),
+        validator: requiredValidator,
+        builder: (field) => InputDecorator(
+          decoration: InputDecoration(
+            labelText: label,
+            errorText: field.errorText,
+            alignLabelWithHint: true,
+          ),
+          child: Wrap(
+            spacing: 7,
+            runSpacing: 7,
+            children: attribute.options.map((option) {
+              final active = selected.contains(option.value);
+              return FilterChip(
+                label: Text(_optionLabel(option, strings)),
+                selected: active,
+                onSelected: (enabled) {
+                  setState(() {
+                    if (enabled) {
+                      selected.add(option.value);
+                    } else {
+                      selected.remove(option.value);
+                    }
+                    _attributeValues[attribute.key] = selected.toList();
+                  });
+                  field.didChange(selected.toList());
+                  _scheduleProgressSave();
+                },
+              );
+            }).toList(),
+          ),
+        ),
+      );
+    }
+
+    if (attribute.dataType == 'DATE') {
+      return FormField<String>(
+        initialValue: current?.toString(),
+        validator: requiredValidator,
+        builder: (field) => InkWell(
+          onTap: () async {
+            final picked = await showDatePicker(
+              context: context,
+              firstDate: DateTime(1900),
+              lastDate: DateTime(2100),
+              initialDate: DateTime.tryParse(field.value ?? '') ?? DateTime.now(),
+            );
+            if (picked == null) return;
+            final value = picked.toIso8601String().substring(0, 10);
+            setState(() => _attributeValues[attribute.key] = value);
+            field.didChange(value);
+            _scheduleProgressSave();
+          },
+          child: InputDecorator(
+            decoration: InputDecoration(
+              labelText: label,
+              errorText: field.errorText,
+              suffixIcon: const Icon(Icons.calendar_today_outlined),
+            ),
+            child: Text(field.value ?? strings('post.attributeSelectDate')),
+          ),
+        ),
+      );
+    }
+
+    return TextFormField(
+      key: ValueKey('attribute-${attribute.key}'),
+      initialValue: current?.toString() ?? '',
+      keyboardType: attribute.dataType == 'NUMBER'
+          ? const TextInputType.numberWithOptions(decimal: true)
+          : TextInputType.text,
+      decoration: InputDecoration(
+        labelText: label,
+        helperText: attribute.key == 'capacity' ? strings('post.attributeCapacityHint') : null,
+      ),
+      onChanged: (value) {
+        _attributeValues[attribute.key] = value;
+        _scheduleProgressSave();
+      },
+      validator: (value) {
+        final missing = value == null || value.trim().isEmpty;
+        if (attribute.isRequired && missing) return strings('post.attributeRequired');
+        if (!missing && attribute.dataType == 'NUMBER') {
+          final number = num.tryParse(value);
+          if (number == null) return strings('post.attributeNumber');
+          if (attribute.minValue != null && number < attribute.minValue!) {
+            return strings('post.attributeMinimum', {'value': attribute.minValue!});
+          }
+          if (attribute.maxValue != null && number > attribute.maxValue!) {
+            return strings('post.attributeMaximum', {'value': attribute.maxValue!});
+          }
+        }
+        return null;
+      },
     );
   }
 
@@ -617,6 +837,13 @@ class _PostAdScreenState extends ConsumerState<PostAdScreen> {
                         }
                       }
                     }
+                    final selectedCategory =
+                        _categoryId == null ? null : _findCategory(list, _categoryId!);
+                    if (selectedCategory != null && !_attributesResolved && !_loadingAttributes) {
+                      WidgetsBinding.instance.addPostFrameCallback(
+                        (_) => _loadCategoryAttributes(selectedCategory),
+                      );
+                    }
 
                     return DropdownButtonFormField<String>(
                       key: ValueKey('category-$_categoryId'),
@@ -638,12 +865,35 @@ class _PostAdScreenState extends ConsumerState<PostAdScreen> {
                           .toList(),
                       onChanged: (value) {
                         setState(() => _categoryId = value);
+                        final category = value == null ? null : _findCategory(list, value);
+                        if (category != null) unawaited(_loadCategoryAttributes(category));
                         _scheduleProgressSave();
                       },
                       validator: (value) => value == null ? strings('common.error') : null,
                     );
                   },
                 ),
+                if (_loadingAttributes) ...[
+                  const SizedBox(height: LoczSpacing.x3),
+                  const LinearProgressIndicator(),
+                ],
+                if (_categoryAttributes.isNotEmpty) ...[
+                  const SizedBox(height: LoczSpacing.x4),
+                  Text(
+                    strings('post.attributeSection'),
+                    style: Theme.of(context).textTheme.titleMedium,
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    strings('post.attributeHint'),
+                    style: Theme.of(context).textTheme.bodySmall,
+                  ),
+                  const SizedBox(height: LoczSpacing.x3),
+                  for (final attribute in _categoryAttributes) ...[
+                    _buildAttributeField(attribute, strings),
+                    const SizedBox(height: LoczSpacing.x3),
+                  ],
+                ],
                 const SizedBox(height: LoczSpacing.x4),
                 TextFormField(
                   controller: _descriptionController,
@@ -924,6 +1174,15 @@ class _PostAdScreenState extends ConsumerState<PostAdScreen> {
       ),
     );
   }
+}
+
+Category? _findCategory(List<Category> categories, String id) {
+  for (final category in categories) {
+    if (category.id == id) return category;
+    final child = _findCategory(category.children, id);
+    if (child != null) return child;
+  }
+  return null;
 }
 
 class _SectionHeading extends StatelessWidget {

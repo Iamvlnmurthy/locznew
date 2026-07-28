@@ -396,6 +396,19 @@ export class MediaService {
       throw new BadRequestException('The order refers to an image that is not on this listing');
     }
 
+    // The order must name every image, not a subset.
+    //
+    // A partial list leaves the omitted images holding their old `sortOrder`, so positions
+    // collide — and worse, an omitted image that was the cover keeps `isPrimary`, because
+    // only the listed ones are rewritten. Two covers is not a state the rest of the code
+    // expects: the summary query takes whichever `isPrimary` row the database returns first,
+    // so the same listing shows different photographs on different requests.
+    if (mediaIds.length !== existing.length || new Set(mediaIds).size !== mediaIds.length) {
+      throw new BadRequestException(
+        `The order must list each of the ${existing.length} images exactly once`,
+      );
+    }
+
     await this.prisma.$transaction(
       mediaIds.map((id, index) =>
         this.prisma.listingMedia.update({

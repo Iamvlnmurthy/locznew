@@ -5,6 +5,12 @@ import { ListingCard } from '@/components/listing-card';
 import { Icon } from '@/components/icons';
 import { getMessageGroup, getTranslator } from '@/i18n';
 import { apiSafe } from '@/lib/api';
+import {
+  categoryAttributeLabel,
+  categoryAttributeOptionLabel,
+  findCategory,
+  hydrateCategoryAttributes,
+} from '@/lib/category-attributes';
 import { getLocale, getSelectedCity } from '@/lib/session';
 import { SearchFilters } from './search-filters';
 import { SearchSort } from './search-sort';
@@ -18,6 +24,8 @@ interface SearchResult {
   usedSearchIndex: boolean;
 }
 
+type SearchParams = Record<string, string | string[] | undefined>;
+
 export const metadata: Metadata = {
   title: 'Search',
   // Search result pages are thin, near-duplicate content — useful to users, harmful in
@@ -28,9 +36,13 @@ export const metadata: Metadata = {
 export default async function SearchPage({
   searchParams,
 }: {
-  searchParams: Promise<Record<string, string | undefined>>;
+  searchParams: Promise<SearchParams>;
 }) {
-  const params = await searchParams;
+  const rawParams = await searchParams;
+  const params = Object.fromEntries(
+    Object.entries(rawParams).map(([key, value]) => [key, Array.isArray(value) ? value[0] : value]),
+  ) as Record<string, string | undefined>;
+  const attributeParams = valuesFor(rawParams.attr);
   const locale = await getLocale();
   const t = getTranslator(locale);
   const s = getMessageGroup(locale, 'searchUi');
@@ -53,6 +65,7 @@ export default async function SearchPage({
   ] as const) {
     if (params[key]) query.set(key, params[key]!);
   }
+  for (const attribute of attributeParams) query.append('attr', attribute);
 
   const cityId = params.cityId ?? city?.id;
   if (cityId) query.set('cityId', cityId);
@@ -68,13 +81,14 @@ export default async function SearchPage({
     query.set('longitude', String(city.longitude));
   }
 
-  const [result, categories] = await Promise.all([
+  const [result, categoryTree] = await Promise.all([
     apiSafe<SearchResult>(`/search?${query.toString()}`, { auth: true }),
     apiSafe<Category[]>('/categories', { revalidate: 3600 }),
   ]);
+  const categories = await hydrateCategoryAttributes(categoryTree ?? []);
 
   const totalPages = result ? Math.max(1, Math.ceil(result.total / result.limit)) : 1;
-  const activeFilters = buildActiveFilters(params, categories ?? [], s);
+  const activeFilters = buildActiveFilters(rawParams, categories, s, locale);
   const resultCount = result?.total ?? 0;
   const visibleResultCount = result?.items.length ?? 0;
   const isSparse = visibleResultCount > 0 && visibleResultCount <= 2;
@@ -124,7 +138,7 @@ export default async function SearchPage({
             ].map(([value, label, icon]) => (
               <Link
                 key={value}
-                href={buildFilterHref(params, 'type', value)}
+                href={buildFilterHref(rawParams, 'type', value)}
                 className={params.type === value || (!params.type && !value) ? 'is-active' : ''}
               >
                 <Icon name={icon} />
@@ -141,18 +155,22 @@ export default async function SearchPage({
             <span>{s.refinedBy}</span>
             <div>
               {activeFilters.map((filter) => (
-                <Link key={filter.key} href={buildFilterHref(params, filter.key, '')}>
+                <Link
+                  key={`${filter.key}-${filter.value ?? ''}`}
+                  href={buildFilterHref(rawParams, filter.key, '', filter.value)}
+                >
                   {filter.label} <span aria-hidden="true">×</span>
                 </Link>
               ))}
             </div>
-            <Link href={clearRefinementsHref(params)}>{s.clearFilters}</Link>
+            <Link href={clearRefinementsHref(rawParams)}>{s.clearFilters}</Link>
           </div>
         ) : null}
 
         <div className="results-layout">
           <SearchFilters
-            categories={categories ?? []}
+            categories={categories}
+            locale={locale}
             values={{
               q: params.q,
               type: params.type,
@@ -163,6 +181,7 @@ export default async function SearchPage({
               radiusKm: params.radiusKm,
               postedWithinDays: params.postedWithinDays,
               verifiedOnly: params.verifiedOnly,
+              attrs: attributeParams,
             }}
             labels={s}
           />
@@ -192,7 +211,7 @@ export default async function SearchPage({
                 <h2>{t('search.noResults')}</h2>
                 <p>{t('search.noResultsHint')}</p>
                 <div>
-                  <Link href={clearRefinementsHref(params)} className="btn btn--primary">
+                  <Link href={clearRefinementsHref(rawParams)} className="btn btn--primary">
                     {s.widenSearch}
                   </Link>
                   <Link href="/post" className="btn btn--outline">
@@ -225,7 +244,7 @@ export default async function SearchPage({
                 {totalPages > 1 ? (
                   <nav className="search-pagination" aria-label={s.pagination}>
                     {page > 1 ? (
-                      <Link className="btn btn--outline" href={buildPageHref(params, page - 1)}>
+                      <Link className="btn btn--outline" href={buildPageHref(rawParams, page - 1)}>
                         ← {t('common.back')}
                       </Link>
                     ) : null}
@@ -235,7 +254,7 @@ export default async function SearchPage({
                         .replace('{total}', String(totalPages))}
                     </span>
                     {page < totalPages ? (
-                      <Link className="btn btn--outline" href={buildPageHref(params, page + 1)}>
+                      <Link className="btn btn--outline" href={buildPageHref(rawParams, page + 1)}>
                         {t('common.next')} →
                       </Link>
                     ) : null}
@@ -251,38 +270,46 @@ export default async function SearchPage({
 }
 
 function buildFilterHref(
-  params: Record<string, string | undefined>,
+  params: SearchParams,
   key: string,
   value: string,
+  removeValue?: string,
 ): string {
   const next = new URLSearchParams();
   for (const [paramKey, paramValue] of Object.entries(params)) {
-    if (paramValue && paramKey !== 'page' && paramKey !== key) next.set(paramKey, paramValue);
+    if (paramKey === 'page' || (paramKey === key && removeValue === undefined)) continue;
+    for (const item of valuesFor(paramValue)) {
+      if (paramKey !== key || item !== removeValue) next.append(paramKey, item);
+    }
   }
-  if (value) next.set(key, value);
+  if (value) next.append(key, value);
   return `/search?${next.toString()}`;
 }
 
-function buildPageHref(params: Record<string, string | undefined>, page: number): string {
+function buildPageHref(params: SearchParams, page: number): string {
   const next = new URLSearchParams();
   for (const [key, value] of Object.entries(params)) {
-    if (value && key !== 'page') next.set(key, value);
+    if (key === 'page') continue;
+    for (const item of valuesFor(value)) next.append(key, item);
   }
   next.set('page', String(page));
   return `/search?${next.toString()}`;
 }
 
 function buildActiveFilters(
-  params: Record<string, string | undefined>,
+  rawParams: SearchParams,
   categories: Category[],
   labels: Record<string, string>,
-): Array<{ key: string; label: string }> {
-  const filters: Array<{ key: string; label: string }> = [];
+  locale: 'en' | 'hi' | 'te',
+): Array<{ key: string; label: string; value?: string }> {
+  const params = Object.fromEntries(
+    Object.entries(rawParams).map(([key, value]) => [key, valuesFor(value)[0]]),
+  ) as Record<string, string | undefined>;
+  const filters: Array<{ key: string; label: string; value?: string }> = [];
   if (params.categoryId) {
     filters.push({
       key: 'categoryId',
-      label:
-        categories.find((category) => category.id === params.categoryId)?.name ?? labels.category,
+      label: findCategory(categories, params.categoryId)?.name ?? labels.category,
     });
   }
   if (params.priceMin)
@@ -308,14 +335,38 @@ function buildActiveFilters(
   if (params.verifiedOnly === 'true') {
     filters.push({ key: 'verifiedOnly', label: labels.verifiedBusinesses });
   }
+  const selectedCategory = params.categoryId
+    ? findCategory(categories, params.categoryId)
+    : undefined;
+  for (const encoded of valuesFor(rawParams.attr)) {
+    const separator = encoded.indexOf(':');
+    const key = separator === -1 ? encoded : encoded.slice(0, separator);
+    const value = separator === -1 ? '' : encoded.slice(separator + 1);
+    const attribute = selectedCategory?.attributes?.find((candidate) => candidate.key === key);
+    const option = attribute?.options?.find((candidate) => candidate.value === value);
+    const attributeName = attribute ? categoryAttributeLabel(attribute, locale) : key;
+    const displayValue = option ? categoryAttributeOptionLabel(option, locale) : value;
+    filters.push({
+      key: 'attr',
+      value: encoded,
+      label: `${attributeName}: ${displayValue.replace('..', '–')}`,
+    });
+  }
   return filters;
 }
 
-function clearRefinementsHref(params: Record<string, string | undefined>): string {
+function clearRefinementsHref(params: SearchParams): string {
   const next = new URLSearchParams();
-  if (params.q) next.set('q', params.q);
-  if (params.type) next.set('type', params.type);
+  const q = valuesFor(params.q)[0];
+  const type = valuesFor(params.type)[0];
+  if (q) next.set('q', q);
+  if (type) next.set('type', type);
   return `/search?${next.toString()}`;
+}
+
+function valuesFor(value: string | string[] | undefined): string[] {
+  if (Array.isArray(value)) return value.filter(Boolean);
+  return value ? [value] : [];
 }
 
 function humaniseFilter(value: string, labels: Record<string, string>): string {

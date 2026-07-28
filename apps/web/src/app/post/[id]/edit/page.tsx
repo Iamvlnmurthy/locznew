@@ -3,6 +3,7 @@ import { notFound, redirect } from 'next/navigation';
 import type { Category, City, ListingType } from '@locz/shared-types';
 import { getMessageGroup, getTranslator } from '@/i18n';
 import { ApiError, api, apiSafe } from '@/lib/api';
+import { hydrateCategoryAttributes } from '@/lib/category-attributes';
 import { getCurrentUser, getLocale } from '@/lib/session';
 import { PostForm, type PostFormInitialListing } from '../../post-form';
 
@@ -33,6 +34,7 @@ interface EditableListing {
   rental?: Record<string, unknown> | null;
   event?: Record<string, unknown> | null;
   buyerRequirement?: Record<string, unknown> | null;
+  attributes?: Record<string, unknown>;
 }
 
 async function loadEditableListing(id: string): Promise<EditableListing | null> {
@@ -48,12 +50,13 @@ export default async function EditListingPage({ params }: { params: Promise<{ id
   const [{ id }, locale, user] = await Promise.all([params, getLocale(), getCurrentUser()]);
   if (!user) redirect(`/signin?next=${encodeURIComponent(`/post/${id}/edit`)}`);
 
-  const [listing, categories, cities] = await Promise.all([
+  const [listing, categoryTree, cities] = await Promise.all([
     loadEditableListing(id),
     apiSafe<Category[]>('/categories', { revalidate: 3600 }),
     apiSafe<City[]>('/locations/cities?launchedOnly=true&limit=50', { revalidate: 3600 }),
   ]);
   if (!listing) notFound();
+  const categories = await hydrateCategoryAttributes(categoryTree ?? []);
 
   const t = getTranslator(locale);
   const availableCities = cities ?? [];
@@ -78,6 +81,7 @@ export default async function EditListingPage({ params }: { params: Promise<{ id
       ...(listing.marketplace ?? {}),
       ...((listing[detailKey] as Record<string, unknown> | null | undefined) ?? {}),
     },
+    attributes: listing.attributes ?? {},
   };
 
   return (
@@ -86,6 +90,7 @@ export default async function EditListingPage({ params }: { params: Promise<{ id
         categories={categories ?? []}
         cities={availableCities}
         initialListing={initialListing}
+        locale={locale}
         labels={{
           title: t('post.title'),
           subtitle: t('post.subtitle'),
@@ -122,6 +127,7 @@ export default async function EditListingPage({ params }: { params: Promise<{ id
           preview: t('post.preview'),
           previewTitle: t('post.previewTitle'),
           closePreview: t('post.closePreview'),
+          attributes: getMessageGroup(locale, 'post.attributes'),
           wizard: getMessageGroup(locale, 'post.wizard'),
           detailFields: getMessageGroup(locale, 'post.detailFields'),
           contactOptions: getMessageGroup(locale, 'post.contact'),

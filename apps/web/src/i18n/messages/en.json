@@ -303,6 +303,15 @@
     "preview": "Preview",
     "previewTitle": "Buyer preview",
     "closePreview": "Close preview",
+    "attributes": {
+      "title": "Category details",
+      "hint": "A few specific details help the right people find your listing.",
+      "select": "Select an option",
+      "yes": "Yes",
+      "no": "No",
+      "multipleHint": "You can choose more than one.",
+      "capacityHint": "Include the unit, for example 250 L, 7 kg or 1.5 ton."
+    },
     "wizard": {
       "freeToPost": "Free to post",
       "progressLabel": "Posting progress",
@@ -841,6 +850,8 @@
     "availableLocations": "Across available locations",
     "bestMatch": "Best match",
     "category": "Category",
+    "categoryDetails": "Category details",
+    "categoryDetailsHint": "Choose only what matters to this search.",
     "clearAll": "Clear all",
     "clearRecent": "Clear",
     "recentSearches": "Recent searches",
@@ -897,6 +908,8 @@
     "thisMonth": "This month",
     "thisWeek": "This week",
     "today": "Today",
+    "yes": "Yes",
+    "no": "No",
     "upToPrice": "Up to ₹{price}",
     "verifiedBusinesses": "Verified businesses",
     "verifiedOnly": "Verified businesses only",

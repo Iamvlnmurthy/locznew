@@ -234,6 +234,73 @@ class City {
       );
 }
 
+class CategoryAttributeOption {
+  const CategoryAttributeOption({
+    required this.value,
+    required this.label,
+    this.labelTe,
+    this.labelHi,
+  });
+
+  final String value;
+  final String label;
+  final String? labelTe;
+  final String? labelHi;
+
+  factory CategoryAttributeOption.fromJson(Map<String, dynamic> json) => CategoryAttributeOption(
+        value: json['value'] as String,
+        label: json['label'] as String,
+        labelTe: json['labelTe'] as String?,
+        labelHi: json['labelHi'] as String?,
+      );
+}
+
+class CategoryAttribute {
+  const CategoryAttribute({
+    required this.key,
+    required this.label,
+    required this.dataType,
+    required this.options,
+    required this.isRequired,
+    required this.isFilterable,
+    this.labelTe,
+    this.labelHi,
+    this.unit,
+    this.minValue,
+    this.maxValue,
+  });
+
+  final String key;
+  final String label;
+  final String? labelTe;
+  final String? labelHi;
+  final String dataType;
+  final List<CategoryAttributeOption> options;
+  final String? unit;
+  final bool isRequired;
+  final bool isFilterable;
+  final num? minValue;
+  final num? maxValue;
+
+  factory CategoryAttribute.fromJson(Map<String, dynamic> json) => CategoryAttribute(
+        key: json['key'] as String,
+        label: json['label'] as String,
+        labelTe: json['labelTe'] as String?,
+        labelHi: json['labelHi'] as String?,
+        dataType: json['dataType'] as String,
+        options: (json['options'] as List<dynamic>? ?? [])
+            .map(
+              (entry) => CategoryAttributeOption.fromJson(entry as Map<String, dynamic>),
+            )
+            .toList(),
+        unit: json['unit'] as String?,
+        isRequired: json['isRequired'] as bool? ?? false,
+        isFilterable: json['isFilterable'] as bool? ?? false,
+        minValue: json['minValue'] as num?,
+        maxValue: json['maxValue'] as num?,
+      );
+}
+
 class Category {
   const Category({
     required this.id,
@@ -243,6 +310,7 @@ class Category {
     this.nameTe,
     this.nameHi,
     this.iconKey,
+    this.attributes = const [],
   });
 
   final String id;
@@ -252,6 +320,7 @@ class Category {
   final String? nameTe;
   final String? nameHi;
   final String? iconKey;
+  final List<CategoryAttribute> attributes;
 
   factory Category.fromJson(Map<String, dynamic> json) => Category(
         id: json['id'] as String,
@@ -260,6 +329,11 @@ class Category {
         nameTe: json['nameTe'] as String?,
         nameHi: json['nameHi'] as String?,
         iconKey: json['iconKey'] as String?,
+        attributes: (json['attributes'] as List<dynamic>? ?? [])
+            .map(
+              (entry) => CategoryAttribute.fromJson(entry as Map<String, dynamic>),
+            )
+            .toList(),
         children: (json['children'] as List<dynamic>? ?? [])
             .map((entry) => Category.fromJson(entry as Map<String, dynamic>))
             .toList(),

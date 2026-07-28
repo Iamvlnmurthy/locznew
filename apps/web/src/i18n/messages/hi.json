@@ -270,6 +270,15 @@
     "preview": "पूर्वावलोकन",
     "previewTitle": "खरीदार को ऐसा दिखेगा",
     "closePreview": "पूर्वावलोकन बंद करें",
+    "attributes": {
+      "title": "श्रेणी की जानकारी",
+      "hint": "कुछ सही विवरण आपकी लिस्टिंग सही लोगों तक पहुँचाने में मदद करते हैं।",
+      "select": "एक विकल्प चुनें",
+      "yes": "हाँ",
+      "no": "नहीं",
+      "multipleHint": "आप एक से अधिक विकल्प चुन सकते हैं।",
+      "capacityHint": "इकाई भी लिखें, जैसे 250 L, 7 kg या 1.5 ton।"
+    },
     "publish": "मुफ़्त प्रकाशित करें",
     "field": {
       "title": "शीर्षक",
@@ -809,6 +818,8 @@
     "availableLocations": "उपलब्ध स्थानों में",
     "bestMatch": "सबसे अच्छा मेल",
     "category": "श्रेणी",
+    "categoryDetails": "श्रेणी की जानकारी",
+    "categoryDetailsHint": "इस खोज के लिए केवल ज़रूरी विकल्प चुनें।",
     "clearAll": "सब हटाएँ",
     "clearRecent": "साफ़ करें",
     "recentSearches": "हाल की खोजें",
@@ -865,6 +876,8 @@
     "thisMonth": "इस महीने",
     "thisWeek": "इस हफ़्ते",
     "today": "आज",
+    "yes": "हाँ",
+    "no": "नहीं",
     "upToPrice": "₹{price} तक",
     "verifiedBusinesses": "सत्यापित व्यवसाय",
     "verifiedOnly": "केवल सत्यापित व्यवसाय",

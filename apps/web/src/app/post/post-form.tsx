@@ -3,7 +3,14 @@
 import Link from 'next/link';
 import { useActionState, useEffect, useMemo, useRef, useState } from 'react';
 import { useFormStatus } from 'react-dom';
-import type { Category, City, ListingType } from '@locz/shared-types';
+import type {
+  Category,
+  CategoryAttribute,
+  CategoryAttributeOption,
+  City,
+  ListingType,
+} from '@locz/shared-types';
+import type { Locale } from '@/i18n';
 import { createListingAction, updateListingAction, type PostAdState } from './actions';
 import { ListingTypeFields } from './listing-type-fields';
 import { PhotoUploader } from './photo-uploader';
@@ -46,6 +53,7 @@ interface Labels {
   preview: string;
   previewTitle: string;
   closePreview: string;
+  attributes: Record<string, string>;
   wizard: Record<string, string>;
   detailFields: Record<string, string>;
   contactOptions: Record<string, string>;
@@ -65,6 +73,7 @@ export interface PostFormInitialListing {
   pincodeCode?: string | null;
   contactPreference: string;
   details?: Record<string, unknown>;
+  attributes?: Record<string, unknown>;
 }
 
 interface SavedPostProgress {
@@ -99,6 +108,136 @@ const TYPE_ICONS: Record<string, string> = {
   BUYER_REQUIREMENT: 'search',
   EVENT: 'calendar',
 };
+
+function translatedAttributeLabel(attribute: CategoryAttribute, locale: Locale): string {
+  if (locale === 'te') return attribute.labelTe || attribute.label;
+  if (locale === 'hi') return attribute.labelHi || attribute.label;
+  return attribute.label;
+}
+
+function translatedOptionLabel(option: CategoryAttributeOption, locale: Locale): string {
+  if (locale === 'te') return option.labelTe || option.label;
+  if (locale === 'hi') return option.labelHi || option.label;
+  return option.label;
+}
+
+function CategoryAttributeFields({
+  attributes,
+  values,
+  locale,
+  labels,
+}: {
+  attributes: CategoryAttribute[];
+  values?: Record<string, unknown>;
+  locale: Locale;
+  labels: Record<string, string>;
+}) {
+  if (attributes.length === 0) return null;
+
+  return (
+    <section className="category-attributes" aria-labelledby="category-attributes-title">
+      <div className="category-attributes__head">
+        <h3 id="category-attributes-title">{labels.title}</h3>
+        <p>{labels.hint}</p>
+      </div>
+      <div className="category-attributes__grid">
+        {attributes.map((attribute) => {
+          const id = `attribute-${attribute.key}`;
+          const label = translatedAttributeLabel(attribute, locale);
+          const savedValue = values?.[attribute.key];
+          const scalarValue =
+            savedValue === null || savedValue === undefined ? '' : String(savedValue);
+          const common = {
+            id,
+            name: `attribute.${attribute.key}`,
+            required: attribute.isRequired,
+          };
+
+          return (
+            <div className="field" key={attribute.key}>
+              <input type="hidden" name="attributeKey" value={attribute.key} />
+              <input
+                type="hidden"
+                name={`attributeType.${attribute.key}`}
+                value={attribute.dataType}
+              />
+              <label htmlFor={id}>
+                {label}
+                {attribute.isRequired ? <span aria-hidden="true"> *</span> : null}
+                {attribute.unit ? <small> ({attribute.unit})</small> : null}
+              </label>
+
+              {attribute.dataType === 'SELECT' ? (
+                <select {...common} defaultValue={scalarValue}>
+                  <option value="">{labels.select}</option>
+                  {(attribute.options ?? []).map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {translatedOptionLabel(option, locale)}
+                    </option>
+                  ))}
+                </select>
+              ) : attribute.dataType === 'MULTI_SELECT' ? (
+                <select
+                  {...common}
+                  multiple
+                  defaultValue={
+                    Array.isArray(savedValue)
+                      ? savedValue.map(String)
+                      : scalarValue
+                        ? [scalarValue]
+                        : []
+                  }
+                  size={Math.min(5, Math.max(3, attribute.options?.length ?? 3))}
+                >
+                  {(attribute.options ?? []).map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {translatedOptionLabel(option, locale)}
+                    </option>
+                  ))}
+                </select>
+              ) : attribute.dataType === 'BOOLEAN' ? (
+                <select {...common} defaultValue={scalarValue}>
+                  <option value="">{labels.select}</option>
+                  <option value="true">{labels.yes}</option>
+                  <option value="false">{labels.no}</option>
+                </select>
+              ) : (
+                <input
+                  {...common}
+                  type={
+                    attribute.dataType === 'NUMBER'
+                      ? 'number'
+                      : attribute.dataType === 'DATE'
+                        ? 'date'
+                        : 'text'
+                  }
+                  inputMode={attribute.dataType === 'NUMBER' ? 'decimal' : undefined}
+                  min={
+                    attribute.dataType === 'NUMBER' ? (attribute.minValue ?? undefined) : undefined
+                  }
+                  max={
+                    attribute.dataType === 'NUMBER' ? (attribute.maxValue ?? undefined) : undefined
+                  }
+                  step={attribute.dataType === 'NUMBER' ? 'any' : undefined}
+                  defaultValue={
+                    attribute.dataType === 'DATE' && scalarValue
+                      ? scalarValue.slice(0, 10)
+                      : scalarValue
+                  }
+                />
+              )}
+              {attribute.key === 'capacity' ? (
+                <p className="field__hint">{labels.capacityHint}</p>
+              ) : attribute.dataType === 'MULTI_SELECT' ? (
+                <p className="field__hint">{labels.multipleHint}</p>
+              ) : null}
+            </div>
+          );
+        })}
+      </div>
+    </section>
+  );
+}
 
 function PublishButton({
   idle,
@@ -138,6 +277,7 @@ export function PostForm({
   defaultPincode,
   defaultType,
   initialListing,
+  locale,
   labels,
 }: {
   categories: Category[];
@@ -147,15 +287,14 @@ export function PostForm({
   defaultPincode?: string;
   defaultType?: ListingType;
   initialListing?: PostFormInitialListing;
+  locale: Locale;
   labels: Labels;
 }) {
   const formAction = initialListing
     ? updateListingAction.bind(null, initialListing.id)
     : createListingAction;
   const [state, action] = useActionState<PostAdState, FormData>(formAction, {});
-  const [type, setType] = useState<ListingType>(
-    initialListing?.type ?? defaultType ?? 'PRODUCT',
-  );
+  const [type, setType] = useState<ListingType>(initialListing?.type ?? defaultType ?? 'PRODUCT');
   const [step, setStep] = useState(1);
   const [categoryId, setCategoryId] = useState(initialListing?.categoryId ?? '');
   const [draftTitle, setDraftTitle] = useState(initialListing?.title ?? '');
@@ -174,17 +313,36 @@ export function PostForm({
   const categoryOptions = useMemo(() => {
     const usable = categories.filter((category) => category.listingTypes.includes(type));
 
-    return usable.flatMap((category) =>
-      category.children && category.children.length > 0
-        ? category.children
-            .filter((child) => child.listingTypes.includes(type))
-            .map((child) => ({ id: child.id, label: `${category.name} › ${child.name}` }))
-        : [{ id: category.id, label: category.name }],
-    );
-  }, [categories, type]);
+    function leaves(
+      category: Category,
+      parents: string[] = [],
+    ): Array<{
+      id: string;
+      label: string;
+      category: Category;
+    }> {
+      const translatedName =
+        locale === 'te'
+          ? category.nameTe || category.name
+          : locale === 'hi'
+            ? category.nameHi || category.name
+            : category.name;
+      const path = [...parents, translatedName];
+      const children = (category.children ?? []).filter((child) =>
+        child.listingTypes.includes(type),
+      );
+      return children.length
+        ? children.flatMap((child) => leaves(child, path))
+        : [{ id: category.id, label: path.join(' › '), category }];
+    }
+
+    return usable.flatMap((category) => leaves(category));
+  }, [categories, locale, type]);
 
   const selectedCategory =
     categoryOptions.find((option) => option.id === categoryId)?.label ?? w.categoryPlaceholder;
+  const selectedCategoryAttributes =
+    categoryOptions.find((option) => option.id === categoryId)?.category.attributes ?? [];
 
   function applyUncontrolledFields(fields: Record<string, string>): void {
     const form = formRef.current;
@@ -275,7 +433,12 @@ export function PostForm({
       }
       localStorage.setItem(
         POST_PROGRESS_KEY,
-        JSON.stringify({ version: 1, savedAt: Date.now(), step, fields } satisfies SavedPostProgress),
+        JSON.stringify({
+          version: 1,
+          savedAt: Date.now(),
+          step,
+          fields,
+        } satisfies SavedPostProgress),
       );
     }, 250);
   }
@@ -295,8 +458,7 @@ export function PostForm({
   function openPreview(): void {
     const price = formRef.current?.elements.namedItem('price');
     const isFree = formRef.current?.elements.namedItem('isFree');
-    const free =
-      isFree instanceof HTMLInputElement && isFree.type === 'checkbox' && isFree.checked;
+    const free = isFree instanceof HTMLInputElement && isFree.type === 'checkbox' && isFree.checked;
     setPreviewPrice(
       free ? w.free : price instanceof HTMLInputElement && price.value ? `₹${price.value}` : '',
     );
@@ -624,6 +786,15 @@ export function PostForm({
               errors={state.fieldErrors}
               labels={labels.detailFields}
             />
+            <CategoryAttributeFields
+              key={categoryId}
+              attributes={selectedCategoryAttributes}
+              values={
+                initialListing?.categoryId === categoryId ? initialListing.attributes : undefined
+              }
+              locale={locale}
+              labels={labels.attributes}
+            />
 
             <div className="post-actions">
               <button type="button" className="btn btn--ghost" onClick={() => moveTo(1)}>
@@ -779,7 +950,11 @@ export function PostForm({
       </div>
 
       {previewOpen ? (
-        <div className="post-preview-backdrop" role="presentation" onMouseDown={() => setPreviewOpen(false)}>
+        <div
+          className="post-preview-backdrop"
+          role="presentation"
+          onMouseDown={() => setPreviewOpen(false)}
+        >
           <section
             className="post-preview"
             role="dialog"
@@ -804,7 +979,8 @@ export function PostForm({
             <p>{draftDescription || labels.descriptionHint}</p>
             <div className="post-preview__meta">
               <span>
-                <Icon name="location" /> {initialListing?.cityName ?? defaultCityLabel ?? labels.fieldCity}
+                <Icon name="location" />{' '}
+                {initialListing?.cityName ?? defaultCityLabel ?? labels.fieldCity}
               </span>
               <span>
                 <Icon name="tag" /> {selectedCategory}

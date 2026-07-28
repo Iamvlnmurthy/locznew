@@ -168,6 +168,32 @@ export interface SearchIndexStatus {
   drift: number;
 }
 
+export type CategoryAttributeDataType =
+  'TEXT' | 'NUMBER' | 'BOOLEAN' | 'SELECT' | 'MULTI_SELECT' | 'DATE';
+
+export interface CategoryAttributeOption {
+  value: string;
+  label: string;
+  labelTe?: string | null;
+  labelHi?: string | null;
+}
+
+export interface CategoryAttribute {
+  id?: string;
+  key: string;
+  label: string;
+  labelTe?: string | null;
+  labelHi?: string | null;
+  dataType: CategoryAttributeDataType;
+  options?: CategoryAttributeOption[];
+  unit?: string | null;
+  isRequired: boolean;
+  isFilterable: boolean;
+  minValue?: number | null;
+  maxValue?: number | null;
+  sortOrder?: number;
+}
+
 export interface Category {
   id: string;
   name: string;
@@ -178,6 +204,7 @@ export interface Category {
   listingTypes: ListingType[];
   parentId: string | null;
   sortOrder: number;
+  attributes?: CategoryAttribute[];
   children?: Category[];
 }
 

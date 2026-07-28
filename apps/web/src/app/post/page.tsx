@@ -1,8 +1,9 @@
 import type { Metadata } from 'next';
 import { redirect } from 'next/navigation';
 import type { Category, City, ListingType } from '@locz/shared-types';
-import { getTranslator } from '@/i18n';
+import { getMessageGroup, getTranslator } from '@/i18n';
 import { apiSafe } from '@/lib/api';
+import { hydrateCategoryAttributes } from '@/lib/category-attributes';
 import { getCurrentUser, getLocale, getSelectedCity } from '@/lib/session';
 import { PostForm } from './post-form';
 
@@ -210,10 +211,11 @@ export default async function PostPage({
 
   // The whole tree, unfiltered — the form narrows it as the user switches type, which
   // avoids a round trip on every change.
-  const [categories, cities] = await Promise.all([
+  const [categoryTree, cities] = await Promise.all([
     apiSafe<Category[]>('/categories', { revalidate: 3600 }),
     apiSafe<City[]>('/locations/cities?launchedOnly=true&limit=50', { revalidate: 3600 }),
   ]);
+  const categories = await hydrateCategoryAttributes(categoryTree ?? []);
 
   return (
     <div className="container">
@@ -224,6 +226,7 @@ export default async function PostPage({
         defaultCityLabel={city?.name}
         defaultPincode={city?.pincode}
         defaultType={defaultType}
+        locale={locale}
         labels={{
           title: t('post.title'),
           subtitle: t('post.subtitle'),
@@ -260,6 +263,7 @@ export default async function PostPage({
           preview: t('post.preview'),
           previewTitle: t('post.previewTitle'),
           closePreview: t('post.closePreview'),
+          attributes: getMessageGroup(locale, 'post.attributes'),
           wizard: Object.fromEntries(WIZARD_KEYS.map((key) => [key, t(`post.wizard.${key}`)])),
           detailFields: Object.fromEntries(
             DETAIL_FIELD_KEYS.map((key) => [key, t(`post.detailFields.${key}`)]),

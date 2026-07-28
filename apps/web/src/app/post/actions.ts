@@ -25,6 +25,42 @@ const number = (formData: FormData, name: string): number | undefined => {
 
 const checked = (formData: FormData, name: string): boolean => formData.get(name) === 'on';
 
+function buildCategoryAttributes(
+  formData: FormData,
+): Array<{ key: string; value: string | number | boolean | string[] }> | undefined {
+  const keys = formData
+    .getAll('attributeKey')
+    .map(String)
+    .filter((key, index, all) => key && all.indexOf(key) === index);
+
+  // No markers means the client did not render category attributes. In an edit this must
+  // omit the key entirely, otherwise PATCH would replace the saved set with an empty one.
+  if (keys.length === 0) return undefined;
+
+  const attributes: Array<{ key: string; value: string | number | boolean | string[] }> = [];
+  for (const key of keys) {
+    const type = String(formData.get(`attributeType.${key}`) ?? 'TEXT');
+    const values = formData
+      .getAll(`attribute.${key}`)
+      .map(String)
+      .filter((value) => value !== '');
+
+    if (type === 'BOOLEAN') {
+      attributes.push({ key, value: values.at(-1) === 'true' });
+      continue;
+    }
+    if (type === 'MULTI_SELECT') {
+      if (values.length) attributes.push({ key, value: values });
+      continue;
+    }
+    const value = values.at(-1);
+    if (value !== undefined) {
+      attributes.push({ key, value: type === 'NUMBER' ? Number(value) : value });
+    }
+  }
+  return attributes;
+}
+
 /** A date input gives `YYYY-MM-DD`; the API expects an ISO datetime. */
 const isoDate = (formData: FormData, name: string): string | undefined => {
   const value = text(formData, name);
@@ -180,12 +216,13 @@ function parseListingForm(
     return { fieldErrors: toFieldErrors(parsed.error) };
   }
 
+  const attributes = buildCategoryAttributes(formData);
+
   return {
     payload: {
       ...parsed.data,
-      // Dynamic category attributes intentionally stay out of edit payloads until the
-      // API contract supports updating them.
       ...buildTypeDetails(type, formData),
+      ...(attributes === undefined ? {} : { attributes }),
       ...(text(formData, 'businessId') ? { businessId: text(formData, 'businessId') } : {}),
       showPhonePublicly: parsed.data.contactPreference !== 'IN_APP_ONLY',
     },

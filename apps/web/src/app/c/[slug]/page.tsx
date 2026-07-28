@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import Image from 'next/image';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import type { Category, ListingSummary } from '@locz/shared-types';
+import type { Category, CategoryAttribute, ListingSummary } from '@locz/shared-types';
 import { ListingCard } from '@/components/listing-card';
 import { Icon, categoryImageName } from '@/components/icons';
 import { getTranslator } from '@/i18n';
@@ -10,7 +10,7 @@ import { ApiError, api, apiSafe } from '@/lib/api';
 import { getLocale, getSelectedCity } from '@/lib/session';
 
 interface CategoryDetail extends Category {
-  attributes: Array<{ key: string; label: string }>;
+  attributes: CategoryAttribute[];
 }
 
 async function loadCategory(slug: string): Promise<CategoryDetail | null> {

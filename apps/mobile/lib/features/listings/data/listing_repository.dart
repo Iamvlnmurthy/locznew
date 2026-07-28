@@ -45,6 +45,7 @@ class ListingRepository {
     String? pincode,
     num? priceMin,
     num? priceMax,
+    List<String> attributes = const [],
     String sort = 'relevance',
     int page = 1,
   }) async {
@@ -66,6 +67,7 @@ class ListingRepository {
         },
         if (priceMin != null) 'priceMin': priceMin,
         if (priceMax != null) 'priceMax': priceMax,
+        if (attributes.isNotEmpty) 'attr': attributes,
       },
     );
 
@@ -138,6 +140,7 @@ class ListingRepository {
     bool isNegotiable = false,
     String contactPreference = 'IN_APP_ONLY',
     bool saveAsDraft = false,
+    List<Map<String, dynamic>>? attributes,
   }) {
     return _api.post<Map<String, dynamic>>(
       '/listings',
@@ -150,6 +153,7 @@ class ListingRepository {
         'contactPreference': contactPreference,
         'showPhonePublicly': contactPreference != 'IN_APP_ONLY',
         'saveAsDraft': saveAsDraft,
+        if (attributes != null) 'attributes': attributes,
         'marketplace': {
           if (price != null) 'price': price,
           'isFree': isFree,
@@ -171,6 +175,7 @@ class ListingRepository {
     bool isFree = false,
     bool isNegotiable = false,
     String contactPreference = 'IN_APP_ONLY',
+    List<Map<String, dynamic>>? attributes,
   }) {
     return _api.patch<Map<String, dynamic>>(
       '/listings/$listingId',
@@ -181,6 +186,7 @@ class ListingRepository {
         'cityId': cityId,
         'contactPreference': contactPreference,
         'showPhonePublicly': contactPreference != 'IN_APP_ONLY',
+        if (attributes != null) 'attributes': attributes,
         'marketplace': {
           if (price != null) 'price': price,
           'isFree': isFree,
@@ -249,6 +255,14 @@ class ListingRepository {
       auth: false,
     );
     return json.map((entry) => Category.fromJson(entry as Map<String, dynamic>)).toList();
+  }
+
+  Future<Category> categoryDetail(String slug) async {
+    final json = await _api.get<Map<String, dynamic>>(
+      '/categories/${Uri.encodeComponent(slug)}',
+      auth: false,
+    );
+    return Category.fromJson(json);
   }
 
   Future<List<City>> cities({bool launchedOnly = false, String? query}) async {
