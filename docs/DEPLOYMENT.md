@@ -129,6 +129,40 @@ them invisible to a health check and to the pre-release suites:
   back empty — the location picker called real pincodes typos. The Next configs now load
   the root `.env` themselves.
 
+### Meilisearch
+
+Run a server version that matches the `meilisearch` client in `package.json`. The client is
+currently 0.60.x, so the server must be a recent 1.2x:
+
+```bash
+docker run -d --name locz-meilisearch --restart unless-stopped   -p 127.0.0.1:7700:7700 -v locz-meilidata:/meili_data   --env-file <file with MEILI_MASTER_KEY, MEILI_ENV=production>   --memory=512m getmeili/meilisearch:v1.24
+```
+
+The version match is not cosmetic. Running the 0.60 client against a 1.11 server produced the
+worst kind of failure: `swapIndexes` created no task at all, yet the call reported success, so
+a rebuild indexed every listing into a replacement index, "swapped" nothing, then deleted the
+replacement — leaving the live index empty while the API happily reported `usedSearchIndex:
+true` and returned no results for every keyword. Search was worse with the index running than
+without it.
+
+Bind to `127.0.0.1` only. Nothing outside the host has any business reaching it, and the
+master key is the only thing standing between a caller and the whole catalogue.
+
+Pass the key through `--env-file`, never `-e`: an `-e` argument is visible in `docker inspect`
+and in the process list to every user on the host, and this is a shared machine.
+
+After starting it, rebuild and confirm the drift is zero:
+
+```bash
+curl -X POST -H "Authorization: Bearer <admin token>" https://api.locz.in/api/v1/search/index/rebuild
+curl -H "Authorization: Bearer <admin token>" https://api.locz.in/api/v1/search/index/status
+# {"available":true,"indexedDocuments":9,"publishedListings":9,"drift":0}
+```
+
+A non-zero drift after a rebuild means the swap did not happen. Do not leave it running in
+that state — the fallback to PostgreSQL is strictly better than an index that answers
+confidently with nothing.
+
 ### Restarting under pm2
 
 Restart from the ecosystem file, never with a bare `pm2 restart <name> --update-env`:
