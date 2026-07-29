@@ -16,11 +16,14 @@ import {
   UserStatus,
 } from '@prisma/client';
 import { createHash } from 'node:crypto';
+import { InjectQueue } from '@nestjs/bullmq';
+import { Queue } from 'bullmq';
 import { v7 as uuid } from 'uuid';
 import { AuditService } from '../audit/audit.service';
 import { TokenService } from '../auth/token.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { SearchIndexPublisher } from '../search/search-index.publisher';
+import { JOB_MATCH_SAVED_SEARCHES, QUEUE_SAVED_SEARCHES } from '../queue/queue.constants';
 import { ModerationQueueItemDto } from './dto/moderation.dto';
 import {
   MODERATION_PROVIDER,
@@ -44,6 +47,7 @@ export class ModerationService {
     private readonly audit: AuditService,
     private readonly searchIndex: SearchIndexPublisher,
     private readonly tokens: TokenService,
+    @InjectQueue(QUEUE_SAVED_SEARCHES) private readonly savedSearches: Queue,
   ) {}
 
   /**
@@ -252,6 +256,22 @@ export class ModerationService {
     // unreachable should not undo an approval a moderator has already made. Reindexing is
     // recoverable; an approval silently rolled back is not.
     await this.searchIndex.enqueueIndex(listingId);
+
+    // A moderator's approval is the moment this listing becomes new to everyone else, so it
+    // is where the saved-search alerts belong for anything that was held for review. Same
+    // reasoning as the index enqueue: a failure here is logged, never fatal.
+    await this.savedSearches
+      .add(
+        JOB_MATCH_SAVED_SEARCHES,
+        { listingId },
+        { jobId: `saved-search-${listingId}`, removeOnComplete: true },
+      )
+      .catch((error: unknown) => {
+        this.logger.error(
+          `Could not queue saved-search alerts for ${listingId}: ${error instanceof Error ? error.message : String(error)}`,
+        );
+      });
+
     return updated;
   }
 

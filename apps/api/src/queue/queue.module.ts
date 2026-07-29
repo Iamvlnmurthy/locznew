@@ -1,7 +1,12 @@
 import { BullModule } from '@nestjs/bullmq';
 import { Global, Module } from '@nestjs/common';
 import { AppConfig } from '../config/config.module';
-import { QUEUE_LIFECYCLE, QUEUE_NOTIFICATIONS, QUEUE_SEARCH } from './queue.constants';
+import {
+  QUEUE_LIFECYCLE,
+  QUEUE_NOTIFICATIONS,
+  QUEUE_SAVED_SEARCHES,
+  QUEUE_SEARCH,
+} from './queue.constants';
 
 /**
  * BullMQ wiring. Defaults are set once here so no producer has to remember them:
@@ -33,6 +38,7 @@ import { QUEUE_LIFECYCLE, QUEUE_NOTIFICATIONS, QUEUE_SEARCH } from './queue.cons
       { name: QUEUE_SEARCH },
       { name: QUEUE_NOTIFICATIONS },
       { name: QUEUE_LIFECYCLE },
+      { name: QUEUE_SAVED_SEARCHES },
     ),
   ],
   exports: [BullModule],

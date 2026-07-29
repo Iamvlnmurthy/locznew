@@ -70,6 +70,9 @@ describe('ModerationService.approveListing', () => {
         audit as never,
         searchIndex as never,
         {} as never,
+        // The saved-search queue: alerts are fired from here, but nothing in these cases
+        // depends on the job actually being enqueued.
+        { add: jest.fn().mockResolvedValue({}) } as never,
       ),
       prisma,
       audit,

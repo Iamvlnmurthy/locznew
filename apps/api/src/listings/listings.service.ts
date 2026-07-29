@@ -14,6 +14,8 @@ import {
   Prisma,
   RoleName,
 } from '@prisma/client';
+import { InjectQueue } from '@nestjs/bullmq';
+import { Queue } from 'bullmq';
 import { v7 as uuid } from 'uuid';
 import { AuditService } from '../audit/audit.service';
 import { CategoriesService } from '../categories/categories.service';
@@ -26,6 +28,7 @@ import { GeoRepository } from '../prisma/geo.repository';
 import { PrismaService } from '../prisma/prisma.service';
 import { RbacService } from '../rbac/rbac.service';
 import { SearchIndexPublisher } from '../search/search-index.publisher';
+import { JOB_MATCH_SAVED_SEARCHES, QUEUE_SAVED_SEARCHES } from '../queue/queue.constants';
 import { SearchKeyword } from './search-keyword';
 import { ListingDetailsBuilder } from './listing-details.builder';
 import {
@@ -78,6 +81,7 @@ export class ListingsService {
     private readonly audit: AuditService,
     private readonly searchIndex: SearchIndexPublisher,
     private readonly details: ListingDetailsBuilder,
+    @InjectQueue(QUEUE_SAVED_SEARCHES) private readonly savedSearches: Queue,
   ) {}
 
   // -------------------------------------------------------------------
@@ -211,10 +215,17 @@ export class ListingsService {
     });
 
     if (!dto.saveAsDraft) {
-      await this.moderation.screenListing(listing, price);
+      const outcome = await this.moderation.screenListing(listing, price);
       // Moderation may have published it outright; the worker re-reads current state and
       // either indexes or skips accordingly.
       await this.searchIndex.enqueueIndex(listing.id);
+
+      // Alerts only for a listing that went live now. One held for review is announced when
+      // a moderator approves it, not before — telling someone about a listing they cannot
+      // open yet is worse than telling them a few hours later.
+      if (outcome.status === ListingStatus.PUBLISHED) {
+        await this.enqueueSavedSearchMatch(listing.id);
+      }
     }
 
     return this.getByIdForOwner(listing.id, userId);
@@ -1017,6 +1028,46 @@ export class ListingsService {
     };
 
     return Object.keys(rental).length > 0 ? { rental } : {};
+  }
+
+  /**
+   * Asks the saved-search matcher to look at a listing that has just gone live.
+   *
+   * Failing here must not fail the posting. The seller has done nothing wrong, and a listing
+   * that exists without having triggered alerts is a far smaller problem than one that could
+   * not be posted because Redis was briefly unreachable.
+   */
+  private async enqueueSavedSearchMatch(listingId: string): Promise<void> {
+    await this.savedSearches
+      .add(
+        JOB_MATCH_SAVED_SEARCHES,
+        { listingId },
+        { jobId: `saved-search-${listingId}`, removeOnComplete: true },
+      )
+      .catch((error: unknown) => {
+        this.logger.error(
+          `Could not queue saved-search alerts for ${listingId}: ${error instanceof Error ? error.message : String(error)}`,
+        );
+      });
+  }
+
+  /**
+   * Does one listing satisfy a saved search's filters?
+   *
+   * Public so `SearchSubscriptionsService` can ask the search path the same question the
+   * search page asks, instead of reimplementing the filters. Two implementations of "does
+   * this match" would drift, and the drift would be silent: alerts that stop agreeing with
+   * what the results page shows, with nothing to notice in a log.
+   *
+   * The listing id is added to the same `whereFor` the browse paths use, so status,
+   * visibility and soft-deletion are all still enforced — a paused or removed listing can
+   * never trigger an alert.
+   */
+  async matchesSavedSearch(listingId: string, query: ListingSearchQueryDto): Promise<boolean> {
+    const count = await this.prisma.listing.count({
+      where: { ...this.whereFor(query), id: listingId },
+    });
+    return count > 0;
   }
 
   /**

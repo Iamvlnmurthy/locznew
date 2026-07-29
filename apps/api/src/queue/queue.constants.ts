@@ -5,12 +5,28 @@
 export const QUEUE_SEARCH = 'search';
 export const QUEUE_NOTIFICATIONS = 'notifications';
 export const QUEUE_LIFECYCLE = 'lifecycle';
+export const QUEUE_SAVED_SEARCHES = 'saved-searches';
 
 export const JOB_INDEX_LISTING = 'index-listing';
 export const JOB_REMOVE_LISTING = 'remove-listing';
 export const JOB_REINDEX_ALL = 'reindex-all';
 
 export const JOB_SEND_NOTIFICATION = 'send-notification';
+
+/**
+ * Matching a newly published listing against saved searches.
+ *
+ * Its own queue rather than a job on an existing one, because the producers are listings and
+ * moderation while the consumer needs the saved-search service, which in turn asks listings
+ * whether a listing matches. Going through a queue keeps that from becoming a ring of
+ * modules holding references to each other, and it keeps the work off the request: a seller
+ * pressing Post should not wait while every watcher in the city is evaluated.
+ */
+export const JOB_MATCH_SAVED_SEARCHES = 'match-saved-searches';
+
+export interface MatchSavedSearchesJob {
+  listingId: string;
+}
 
 export const JOB_EXPIRE_LISTINGS = 'expire-listings';
 export const JOB_WARN_EXPIRING = 'warn-expiring';
