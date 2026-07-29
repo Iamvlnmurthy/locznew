@@ -30,8 +30,23 @@ export class SearchQueryService {
 
     // With no keyword there is nothing for a search engine to do better than the
     // database — structured browse goes straight to Postgres, indexes and all.
-    if (!query.q?.trim()) {
-      const result = await this.listings.search(this.toBrowseQuery(query), viewerId);
+    //
+    // The same applies when a precise filter is set. Category attributes and the typed
+    // detail columns are not in the Meilisearch document, so the index cannot narrow by
+    // them: it would happily return petrol and diesel cars alike for a query filtered to
+    // petrol. Answering from Postgres costs some keyword relevance and gets the filter
+    // right, which is the correct trade — a filter that is visibly set and quietly ignored
+    // is worse than a slightly weaker ranking.
+    if (!query.q?.trim() || this.needsDatabaseFilters(query)) {
+      // The keyword has to travel with it. `toBrowseQuery` only carries the keyword when
+      // told to, because a plain browse must not apply the database's narrower matching on
+      // top of Meilisearch's — but here Postgres is answering the whole question, so
+      // dropping the word would return everything in the category that matched the filter
+      // and ignore what the user actually typed.
+      const result = await this.listings.search(
+        this.toBrowseQuery(query, Boolean(query.q?.trim())),
+        viewerId,
+      );
       return {
         items: result.items,
         total: result.meta.total,
@@ -170,6 +185,20 @@ export class SearchQueryService {
     }
   }
 
+  /** Filters Meilisearch cannot express, because they are not in the indexed document. */
+  private needsDatabaseFilters(query: SearchQueryDto): boolean {
+    return Boolean(
+      query.attr?.length ||
+        query.brand ||
+        query.model ||
+        query.yearMin !== undefined ||
+        query.yearMax !== undefined ||
+        query.bedroomsMin !== undefined ||
+        query.areaMin !== undefined ||
+        query.areaMax !== undefined,
+    );
+  }
+
   private toBrowseQuery(query: SearchQueryDto, keywordFallback = false): ListingSearchQueryDto {
     const browse = new ListingSearchQueryDto();
     Object.assign(browse, {
@@ -189,6 +218,14 @@ export class SearchQueryService {
       condition: query.condition,
       verifiedOnly: query.verifiedOnly,
       postedWithinDays: query.postedWithinDays,
+      attr: query.attr,
+      brand: query.brand,
+      model: query.model,
+      yearMin: query.yearMin,
+      yearMax: query.yearMax,
+      bedroomsMin: query.bedroomsMin,
+      areaMin: query.areaMin,
+      areaMax: query.areaMax,
       // 'relevance' has no meaning without a keyword, and it must not become 'newest'
       // either: an explicit "newest" is the user's choice, while no choice at all is what
       // lets featured listings surface first. Leaving it undefined keeps that distinction.

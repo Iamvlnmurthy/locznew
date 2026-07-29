@@ -1,7 +1,9 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { ItemCondition, ListingType } from '@prisma/client';
-import { Type } from 'class-transformer';
+import { Transform, Type } from 'class-transformer';
 import {
+  ArrayMaxSize,
+  IsArray,
   IsBoolean,
   IsEnum,
   IsInt,
@@ -83,6 +85,64 @@ export class SearchQueryDto extends PaginationQueryDto {
   @IsOptional()
   @IsString()
   sort?: SearchSort;
+
+  /**
+   * Filters `/search` shares with `/listings`.
+   *
+   * They were added to the browse DTO and not to this one, so every attribute filter posted
+   * to `/search` came back "property attr should not exist" — the search page could offer a
+   * filter panel the search endpoint refused. Two DTOs describing the same question is the
+   * same trap the `whereFor` comment records for query building, one layer up.
+   */
+  @ApiPropertyOptional({ isArray: true, type: String, example: ['fuel_type:PETROL'] })
+  @IsOptional()
+  @Transform(({ value }) => (Array.isArray(value) ? value : [value]))
+  @IsArray()
+  @ArrayMaxSize(10)
+  @IsString({ each: true })
+  attr?: string[];
+
+  @ApiPropertyOptional({ example: 'Maruti Suzuki' })
+  @IsOptional()
+  @IsString()
+  @MaxLength(120)
+  brand?: string;
+
+  @ApiPropertyOptional({ example: 'Swift' })
+  @IsOptional()
+  @IsString()
+  @MaxLength(120)
+  model?: string;
+
+  @ApiPropertyOptional({ example: 2018 })
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  yearMin?: number;
+
+  @ApiPropertyOptional({ example: 2024 })
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  yearMax?: number;
+
+  @ApiPropertyOptional({ example: 2 })
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  bedroomsMin?: number;
+
+  @ApiPropertyOptional({ example: 600 })
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  areaMin?: number;
+
+  @ApiPropertyOptional({ example: 1200 })
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  areaMax?: number;
 }
 
 export class SearchResultDto {

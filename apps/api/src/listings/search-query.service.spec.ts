@@ -113,3 +113,61 @@ describe('SearchQueryService, when the search index is unavailable', () => {
     expect(result.usedSearchIndex).toBe(false);
   });
 });
+
+/**
+ * Precise filters on the keyword-search endpoint.
+ *
+ * `/search` and `/listings` describe the same question with two DTOs, and the filters were
+ * added to one of them. Every attribute filter posted to `/search` came back "property attr
+ * should not exist", so the search page could offer a filter panel the search endpoint
+ * refused.
+ */
+describe('SearchQueryService precise filters', () => {
+  function build() {
+    const listings = {
+      search: jest
+        .fn()
+        .mockResolvedValue({ items: [], meta: { total: 0, page: 1, limit: 20 } }),
+      findSummariesByIds: jest.fn().mockResolvedValue([]),
+    };
+    const meili = { searchListings: jest.fn().mockResolvedValue({ ids: [], total: 0 }) };
+    const prisma = { pincode: { findUnique: jest.fn().mockResolvedValue(null) } };
+
+    // Constructor order is (meili, prisma, listings) — matching the block above.
+    const service = new SearchQueryService(meili as never, prisma as never, listings as never);
+    return { service, listings, meili };
+  }
+
+  it('answers an attribute-filtered keyword search from the database', async () => {
+    const { service, listings, meili } = build();
+
+    await service.search({ q: 'swift', attr: ['fuel_type:PETROL'], page: 1, limit: 20 } as never);
+
+    // Attributes are not in the indexed document, so Meilisearch would return petrol and
+    // diesel alike for a query filtered to petrol.
+    expect(meili.searchListings).not.toHaveBeenCalled();
+    expect(listings.search).toHaveBeenCalledWith(
+      expect.objectContaining({ attr: ['fuel_type:PETROL'], q: 'swift' }),
+      undefined,
+    );
+  });
+
+  it('keeps using the index when only the keyword is given', async () => {
+    const { service, meili } = build();
+
+    await service.search({ q: 'swift', page: 1, limit: 20 } as never);
+
+    expect(meili.searchListings).toHaveBeenCalled();
+  });
+
+  it('carries the typed detail filters through to the database', async () => {
+    const { service, listings } = build();
+
+    await service.search({ brand: 'Maruti Suzuki', bedroomsMin: 2, page: 1, limit: 20 } as never);
+
+    expect(listings.search).toHaveBeenCalledWith(
+      expect.objectContaining({ brand: 'Maruti Suzuki', bedroomsMin: 2 }),
+      undefined,
+    );
+  });
+});
