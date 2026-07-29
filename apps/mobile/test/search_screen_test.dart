@@ -118,14 +118,82 @@ void main() {
     final preferences = await SharedPreferences.getInstance();
     expect(preferences.getStringList('locz.recent-searches.v1'), isNull);
   });
+
+  testWidgets('category filters send picklists and numeric ranges as repeated attributes',
+      (tester) async {
+    SharedPreferences.setMockInitialValues({});
+    final listings = _FakeListingRepository();
+    final router = GoRouter(
+      initialLocation: '/search',
+      routes: [
+        GoRoute(path: '/search', builder: (_, __) => const SearchScreen()),
+      ],
+    );
+    addTearDown(router.dispose);
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [listingRepositoryProvider.overrideWithValue(listings)],
+        child: MaterialApp.router(
+          routerConfig: router,
+          theme: AppTheme.light,
+          darkTheme: AppTheme.dark,
+          themeMode: ThemeMode.dark,
+          locale: const Locale('en'),
+          supportedLocales: const [Locale('en'), Locale('te'), Locale('hi')],
+          localizationsDelegates: const [
+            StringsDelegate(AppLocaleOption.en),
+            GlobalMaterialLocalizations.delegate,
+            GlobalWidgetsLocalizations.delegate,
+            GlobalCupertinoLocalizations.delegate,
+          ],
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Filters'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byType(DropdownButtonFormField<String>).first);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Cars').last);
+    await tester.pumpAndSettle();
+
+    expect(find.text('Brand'), findsOneWidget);
+    expect(find.text('Kilometres'), findsOneWidget);
+    await tester.tap(find.text('Any'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Maruti Suzuki').last);
+    await tester.pumpAndSettle();
+
+    final maximum = find.byType(TextFormField).last;
+    await tester.enterText(maximum, '50000');
+    await tester.tap(find.text('Apply filters'));
+    await tester.pumpAndSettle();
+
+    expect(listings.calls.last.categoryId, 'cars');
+    expect(
+      listings.calls.last.attributes,
+      containsAll(['brand:MARUTI_SUZUKI', 'km_driven:..50000']),
+    );
+    expect(tester.takeException(), isNull);
+  });
 }
 
 class _SearchCall {
-  const _SearchCall({required this.sort, this.query, this.radiusKm});
+  const _SearchCall({
+    required this.sort,
+    required this.attributes,
+    this.query,
+    this.radiusKm,
+    this.categoryId,
+  });
 
   final String sort;
   final String? query;
   final int? radiusKm;
+  final String? categoryId;
+  final List<String> attributes;
 }
 
 class _FakeListingRepository extends ListingRepository {
@@ -149,7 +217,51 @@ class _FakeListingRepository extends ListingRepository {
     String sort = 'relevance',
     int page = 1,
   }) async {
-    calls.add(_SearchCall(sort: sort, query: query, radiusKm: radiusKm));
+    calls.add(
+      _SearchCall(
+        sort: sort,
+        query: query,
+        radiusKm: radiusKm,
+        categoryId: categoryId,
+        attributes: [...attributes],
+      ),
+    );
     return const [];
   }
+
+  @override
+  Future<List<Category>> categories({String? listingType}) async => const [_cars];
+
+  @override
+  Future<Category> categoryDetail(String slug) async => _cars;
 }
+
+const _cars = Category(
+  id: 'cars',
+  name: 'Cars',
+  slug: 'cars',
+  children: [],
+  attributes: [
+    CategoryAttribute(
+      key: 'brand',
+      label: 'Brand',
+      dataType: 'SELECT',
+      options: [
+        CategoryAttributeOption(
+          value: 'MARUTI_SUZUKI',
+          label: 'Maruti Suzuki',
+        ),
+      ],
+      isRequired: false,
+      isFilterable: true,
+    ),
+    CategoryAttribute(
+      key: 'km_driven',
+      label: 'Kilometres',
+      dataType: 'NUMBER',
+      options: [],
+      isRequired: false,
+      isFilterable: true,
+    ),
+  ],
+);

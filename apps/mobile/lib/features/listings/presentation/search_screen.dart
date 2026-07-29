@@ -641,7 +641,7 @@ class _SearchAttributeFiltersState extends State<_SearchAttributeFilters> {
           : attribute.options;
       return DropdownButtonFormField<String>(
         key: ValueKey('filter-${attribute.key}-${values.firstOrNull}'),
-        initialValue: values.firstOrNull,
+        initialValue: values.firstOrNull ?? '',
         isExpanded: true,
         decoration: InputDecoration(labelText: label),
         items: [
@@ -761,7 +761,7 @@ class _SearchAttributeFiltersState extends State<_SearchAttributeFilters> {
               children: [
                 DropdownButtonFormField<String>(
                   key: ValueKey('search-category-$_categoryId'),
-                  initialValue: _categoryId,
+                  initialValue: _categoryId ?? '',
                   isExpanded: true,
                   decoration: InputDecoration(labelText: strings('search.category')),
                   items: [
