@@ -255,6 +255,14 @@ async function main() {
       JSON.stringify(submittedAttributes),
     );
 
+    // Clear the filters before looking for a listing.
+    //
+    // The step above leaves a petrol/under-50,000km filter applied, and those filters now
+    // genuinely narrow the results — so this used to find a listing only because `attr` was
+    // being rejected and silently ignored. A filter that works is the point; the fixture for
+    // the next check has to stop depending on one that did not.
+    await browser.navigate('/search');
+
     // Use a real public listing to cover both explicit WhatsApp sharing and the privacy
     // boundary: its outgoing text has exactly an introduction plus the canonical URL. It
     // never serialises the seller object or a phone field.
