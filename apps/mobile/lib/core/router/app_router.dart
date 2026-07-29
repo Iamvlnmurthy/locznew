@@ -44,7 +44,8 @@ final routerProvider = Provider<GoRouter>((ref) {
       // The tabbed shell keeps the bottom bar mounted across tab switches, so scroll
       // position and in-flight requests survive navigation.
       StatefulShellRoute.indexedStack(
-        builder: (context, state, navigationShell) => _TabScaffold(shell: navigationShell),
+        builder: (context, state, navigationShell) =>
+            _TabScaffold(shell: navigationShell),
         branches: [
           StatefulShellBranch(
             routes: [
@@ -79,12 +80,14 @@ final routerProvider = Provider<GoRouter>((ref) {
       // screen rather than competing with a nav bar.
       GoRoute(
         path: '/ad/:slug',
-        builder: (context, state) => ListingDetailScreen(slug: state.pathParameters['slug']!),
+        builder: (context, state) =>
+            ListingDetailScreen(slug: state.pathParameters['slug']!),
       ),
       GoRoute(path: '/post', builder: (_, __) => const PostAdScreen()),
       GoRoute(
         path: '/post/:id/edit',
-        builder: (_, state) => PostAdScreen(listingId: state.pathParameters['id']),
+        builder: (_, state) =>
+            PostAdScreen(listingId: state.pathParameters['id']),
       ),
       GoRoute(path: '/location', builder: (_, __) => const CityPickerScreen()),
       GoRoute(
@@ -93,21 +96,26 @@ final routerProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: '/chats/:id',
-        builder: (context, state) => ChatScreen(conversationId: state.pathParameters['id']!),
+        builder: (context, state) =>
+            ChatScreen(conversationId: state.pathParameters['id']!),
       ),
       GoRoute(
         path: '/signin',
-        builder: (context, state) => SignInScreen(redirectTo: state.uri.queryParameters['next']),
+        builder: (context, state) =>
+            SignInScreen(redirectTo: state.uri.queryParameters['next']),
       ),
       GoRoute(
         path: '/register',
-        builder: (context, state) => RegisterScreen(redirectTo: state.uri.queryParameters['next']),
+        builder: (context, state) =>
+            RegisterScreen(redirectTo: state.uri.queryParameters['next']),
       ),
       GoRoute(
         path: '/report',
         builder: (context, state) {
           final listingId = state.uri.queryParameters['listing'];
-          return listingId == null ? const HomeScreen() : ReportListingScreen(listingId: listingId);
+          return listingId == null
+              ? const HomeScreen()
+              : ReportListingScreen(listingId: listingId);
         },
       ),
     ],
@@ -159,13 +167,22 @@ class _LoczBottomBar extends StatelessWidget {
       decoration: BoxDecoration(
         color: theme.colorScheme.surface,
         border: Border(
-          top: BorderSide(color: theme.colorScheme.outline.withValues(alpha: 0.45)),
+          top: BorderSide(color: theme.colorScheme.outlineVariant),
         ),
+        boxShadow: [
+          BoxShadow(
+            color: theme.colorScheme.shadow.withValues(
+              alpha: theme.brightness == Brightness.dark ? 0.26 : 0.08,
+            ),
+            blurRadius: 18,
+            offset: const Offset(0, -4),
+          ),
+        ],
       ),
       child: SafeArea(
         top: false,
         child: SizedBox(
-          height: 64,
+          height: 68,
           child: Row(
             children: [
               _BottomDestination(
@@ -188,25 +205,45 @@ class _LoczBottomBar extends StatelessWidget {
                   label: strings('nav.post'),
                   child: InkResponse(
                     onTap: onPost,
-                    radius: 30,
+                    radius: 34,
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         Container(
-                          width: 38,
-                          height: 38,
+                          width: 40,
+                          height: 40,
                           decoration: BoxDecoration(
                             color: theme.colorScheme.primary,
-                            borderRadius: BorderRadius.circular(13),
+                            borderRadius: BorderRadius.circular(14),
+                            border: Border.all(
+                              color: theme.colorScheme.surface,
+                              width: 2,
+                            ),
                             boxShadow: [
                               BoxShadow(
-                                color: theme.colorScheme.primary.withValues(alpha: 0.22),
-                                blurRadius: 12,
-                                offset: const Offset(0, 4),
+                                color: theme.colorScheme.primary
+                                    .withValues(alpha: 0.22),
+                                blurRadius: 14,
+                                offset: const Offset(0, 5),
                               ),
                             ],
                           ),
-                          child: Icon(Icons.add_rounded, color: theme.colorScheme.onPrimary),
+                          child: Icon(
+                            Icons.add_rounded,
+                            size: 23,
+                            color: theme.colorScheme.onPrimary,
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          strings('nav.post'),
+                          maxLines: 1,
+                          overflow: TextOverflow.fade,
+                          style: TextStyle(
+                            color: theme.colorScheme.primary,
+                            fontSize: 9.5,
+                            fontWeight: FontWeight.w700,
+                          ),
                         ),
                       ],
                     ),
@@ -253,7 +290,9 @@ class _BottomDestination extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final color = selected ? theme.colorScheme.primary : theme.colorScheme.onSurfaceVariant;
+    final color = selected
+        ? theme.colorScheme.primary
+        : theme.colorScheme.onSurfaceVariant;
 
     return Expanded(
       child: InkResponse(
@@ -267,7 +306,7 @@ class _BottomDestination extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Icon(selected ? selectedIcon : icon, size: 21, color: color),
-              const SizedBox(height: 3),
+              const SizedBox(height: 4),
               Text(
                 label,
                 maxLines: 1,

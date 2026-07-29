@@ -14,10 +14,12 @@ class Strings {
   final AppLocaleOption locale;
 
   static Strings of(BuildContext context) =>
-      Localizations.of<Strings>(context, Strings) ?? const Strings(AppLocaleOption.en);
+      Localizations.of<Strings>(context, Strings) ??
+      const Strings(AppLocaleOption.en);
 
   String call(String key, [Map<String, Object>? values]) {
-    final message = _catalogue[locale]?[key] ?? _catalogue[AppLocaleOption.en]![key] ?? key;
+    final message =
+        _catalogue[locale]?[key] ?? _catalogue[AppLocaleOption.en]![key] ?? key;
     if (values == null) return message;
 
     var output = message;
@@ -28,7 +30,8 @@ class Strings {
   }
 
   /// Lets tests distinguish a real translation from the intentional English fallback.
-  bool hasOwnTranslation(String key) => _catalogue[locale]?.containsKey(key) ?? false;
+  bool hasOwnTranslation(String key) =>
+      _catalogue[locale]?.containsKey(key) ?? false;
 
   static const Map<AppLocaleOption, Map<String, String>> _catalogue = {
     AppLocaleOption.en: {
@@ -46,11 +49,15 @@ class Strings {
       'location.searchCity': 'Search for a city',
       'location.pincodeLabel': 'Or enter your pincode',
       'location.pincodeGo': 'Go',
-      'location.pincodeUnknown': 'That pincode does not look right. Check the six digits.',
-      'location.permissionDenied': 'Location permission was declined. Pick a city instead.',
-      'location.outsideLaunchArea': 'LocZ is not live in your area yet. Pick a city to browse.',
+      'location.pincodeUnknown':
+          'That pincode does not look right. Check the six digits.',
+      'location.permissionDenied':
+          'Location permission was declined. Pick a city instead.',
+      'location.outsideLaunchArea':
+          'LocZ is not live in your area yet. Pick a city to browse.',
       'location.soon': 'soon',
-      'location.loadError': 'Could not load cities. Check your connection and try again.',
+      'location.loadError':
+          'Could not load cities. Check your connection and try again.',
       'location.noCities': 'No cities are available right now.',
       'location.noMatches': 'No city matches that search.',
       'search.placeholder': 'Search phones, jobs, rooms…',
@@ -81,6 +88,9 @@ class Strings {
       'search.yes': 'Yes',
       'search.no': 'No',
       'search.chooseDate': 'Choose a date',
+      'feed.heroEyebrow': 'YOUR NEIGHBOURHOOD, CLOSER',
+      'feed.heroTitle': 'Good finds, right around you',
+      'feed.heroHint': 'Fresh local picks from people and businesses nearby.',
       'feed.nearby': 'Near you',
       'feed.recommended': 'Recommended for you',
       'feed.latest_products': 'Latest items for sale',
@@ -110,20 +120,23 @@ class Strings {
       'post.title': 'Post your free ad',
       'post.subtitle': 'It takes about a minute and costs nothing.',
       'post.editTitle': 'Edit your ad',
-      'post.editSubtitle': 'Keep the details accurate so local buyers know what to expect.',
+      'post.editSubtitle':
+          'Keep the details accurate so local buyers know what to expect.',
       'post.saveChanges': 'Save changes',
       'post.savingChanges': 'Saving…',
       'post.updateSuccess': 'Your changes were saved.',
       'post.moderationWarning':
           'Changing a live ad sends it through moderation again. It may be hidden while we review it.',
-      'post.removedCannotEdit': 'This listing was removed by a moderator and cannot be edited.',
+      'post.removedCannotEdit':
+          'This listing was removed by a moderator and cannot be edited.',
       'post.saveDraft': 'Save as draft',
       'post.draftSaved': 'Your draft is saved. You can finish it from My ads.',
       'post.preview': 'Preview',
       'post.previewTitle': 'Buyer preview',
       'post.previewUntitled': 'Your listing title',
       'post.previewNoDescription': 'Your description will appear here.',
-      'post.contactPrivacy': 'Your contact details are not shown in this preview.',
+      'post.contactPrivacy':
+          'Your contact details are not shown in this preview.',
       'post.restoreTitle': 'Continue your unfinished ad?',
       'post.restoreBody': 'We saved the details you entered on this device.',
       'post.restoreProgress': 'Continue',
@@ -131,7 +144,8 @@ class Strings {
       'post.detailsSection': 'What are you listing?',
       'post.priceSection': 'Price and condition',
       'post.locationSection': 'Location and contact',
-      'post.photoSafety': 'Only upload photos you own. Images are checked before publication.',
+      'post.photoSafety':
+          'Only upload photos you own. Images are checked before publication.',
       'post.fieldTitle': 'Title',
       'post.fieldDescription': 'Description',
       'post.fieldPrice': 'Price (₹)',
@@ -160,12 +174,14 @@ class Strings {
       'post.contactPhoneAndMessages': 'Phone and messages',
       'post.contactPhone': 'Show my phone number',
       'post.attributeSection': 'Category details',
-      'post.attributeHint': 'Add the details that help the right people find this listing.',
+      'post.attributeHint':
+          'Add the details that help the right people find this listing.',
       'post.attributeRequired': 'This detail is required',
       'post.attributeYes': 'Yes',
       'post.attributeNo': 'No',
       'post.attributeSelectDate': 'Choose a date',
-      'post.attributeCapacityHint': 'Include the unit, for example 250 L, 7 kg or 1.5 ton.',
+      'post.attributeCapacityHint':
+          'Include the unit, for example 250 L, 7 kg or 1.5 ton.',
       'post.attributeNumber': 'Enter a valid number',
       'post.attributeMinimum': 'Minimum is {value}',
       'post.attributeMaximum': 'Maximum is {value}',
@@ -180,14 +196,17 @@ class Strings {
       'deviceLock.title': 'Device lock',
       'deviceLock.checking': 'Checking…',
       'deviceLock.require': 'Require device lock',
-      'deviceLock.biometric': 'Ask for your fingerprint, face or screen lock before opening LocZ.',
+      'deviceLock.biometric':
+          'Ask for your fingerprint, face or screen lock before opening LocZ.',
       'deviceLock.credential': 'Ask for your screen lock before opening LocZ.',
       'deviceLock.notEnrolled':
           'Set up a fingerprint or screen lock in your phone settings to use this.',
       'deviceLock.unsupported': 'This phone cannot do this.',
-      'deviceLock.notChanged': 'Not changed — the device lock was not confirmed.',
+      'deviceLock.notChanged':
+          'Not changed — the device lock was not confirmed.',
       'deviceLock.locked': 'LocZ is locked',
-      'deviceLock.unlockHint': 'Unlock with your fingerprint, face or screen lock to continue.',
+      'deviceLock.unlockHint':
+          'Unlock with your fingerprint, face or screen lock to continue.',
       'deviceLock.unlock': 'Unlock',
       'auth.signInTitle': 'Sign in to LocZ',
       'auth.signInSubtitle': 'Use your mobile number and password.',
@@ -205,7 +224,8 @@ class Strings {
       'auth.devCode': 'Development mode — your code is {code}',
       'auth.privacy': 'Your number stays private',
       'register.title': 'Create your account',
-      'register.subtitle': 'Buy and sell near you. Joining LocZ is completely free.',
+      'register.subtitle':
+          'Buy and sell near you. Joining LocZ is completely free.',
       'register.brandLabel': 'LocZ',
       'register.freeAccount': 'Free local member account',
       'register.name': 'Your name',
@@ -220,11 +240,13 @@ class Strings {
       'register.haveAccount': 'Already have an account?',
       'register.newHere': 'New to LocZ?',
       'register.createAccount': 'Create an account',
-      'register.privacy': 'Your number stays private unless you choose to share it.',
+      'register.privacy':
+          'Your number stays private unless you choose to share it.',
       'register.invalidName': 'Enter at least 2 characters for your name',
       'register.shortPassword': 'Use at least 8 characters for your password',
       'register.passwordMismatch': 'The passwords do not match',
-      'register.phoneTaken': 'That mobile number already has an account. Sign in instead.',
+      'register.phoneTaken':
+          'That mobile number already has an account. Sign in instead.',
       'report.reason': 'Why are you reporting this?',
       'report.details': 'Anything else we should know? (optional)',
       'report.submit': 'Send report',
@@ -290,9 +312,11 @@ class Strings {
       'location.searchCity': 'నగరం వెతకండి',
       'location.pincodeLabel': 'లేదా మీ పిన్‌కోడ్ ఇవ్వండి',
       'location.pincodeGo': 'వెళ్లు',
-      'location.pincodeUnknown': 'ఈ పిన్‌కోడ్ సరైనది కాదు. ఆరు అంకెలు సరిచూడండి.',
+      'location.pincodeUnknown':
+          'ఈ పిన్‌కోడ్ సరైనది కాదు. ఆరు అంకెలు సరిచూడండి.',
       'location.soon': 'త్వరలో',
-      'location.loadError': 'నగరాలను లోడ్ చేయలేకపోయాం. కనెక్షన్ చూసి మళ్లీ ప్రయత్నించండి.',
+      'location.loadError':
+          'నగరాలను లోడ్ చేయలేకపోయాం. కనెక్షన్ చూసి మళ్లీ ప్రయత్నించండి.',
       'location.noCities': 'ప్రస్తుతం నగరాలు అందుబాటులో లేవు.',
       'location.noMatches': 'ఆ వెతుకులాటకు సరిపోయే నగరం లేదు.',
       'search.placeholder': 'ఫోన్లు, ఉద్యోగాలు, గదులు…',
@@ -323,6 +347,10 @@ class Strings {
       'search.yes': 'అవును',
       'search.no': 'కాదు',
       'search.chooseDate': 'తేదీని ఎంచుకోండి',
+      'feed.heroEyebrow': 'మీ పరిసరాలు, మరింత దగ్గరగా',
+      'feed.heroTitle': 'మీ దగ్గరలోనే మంచి విషయాలు',
+      'feed.heroHint':
+          'సమీపంలోని వ్యక్తులు, వ్యాపారాల నుండి కొత్త స్థానిక ఎంపికలు.',
       'feed.nearby': 'మీ దగ్గర',
       'feed.latest_products': 'కొత్త వస్తువులు',
       'feed.offers': 'ఆఫర్లు',
@@ -343,7 +371,8 @@ class Strings {
       'listing.featured': 'ప్రత్యేకం',
       'post.title': 'మీ ఉచిత ప్రకటన',
       'post.editTitle': 'మీ ప్రకటనను సవరించండి',
-      'post.editSubtitle': 'స్థానిక కొనుగోలుదారులకు స్పష్టంగా ఉండేలా వివరాలను సరిగా ఉంచండి.',
+      'post.editSubtitle':
+          'స్థానిక కొనుగోలుదారులకు స్పష్టంగా ఉండేలా వివరాలను సరిగా ఉంచండి.',
       'post.saveChanges': 'మార్పులను సేవ్ చేయండి',
       'post.savingChanges': 'సేవ్ చేస్తోంది…',
       'post.updateSuccess': 'మీ మార్పులు సేవ్ అయ్యాయి.',
@@ -351,12 +380,14 @@ class Strings {
           'ప్రత్యక్ష ప్రకటనను మార్చితే మళ్లీ సమీక్షకు వెళ్తుంది. సమీక్ష సమయంలో అది కనిపించకపోవచ్చు.',
       'post.removedCannotEdit': 'మోడరేటర్ తొలగించిన ఈ ప్రకటనను సవరించలేరు.',
       'post.saveDraft': 'డ్రాఫ్ట్‌గా సేవ్ చేయండి',
-      'post.draftSaved': 'మీ డ్రాఫ్ట్ సేవ్ అయింది. నా ప్రకటనల నుంచి పూర్తి చేయవచ్చు.',
+      'post.draftSaved':
+          'మీ డ్రాఫ్ట్ సేవ్ అయింది. నా ప్రకటనల నుంచి పూర్తి చేయవచ్చు.',
       'post.preview': 'ముందుగా చూడండి',
       'post.previewTitle': 'కొనుగోలుదారుకు కనిపించే రూపం',
       'post.previewUntitled': 'మీ ప్రకటన శీర్షిక',
       'post.previewNoDescription': 'మీ వివరణ ఇక్కడ కనిపిస్తుంది.',
-      'post.contactPrivacy': 'ఈ ముందస్తు చూపులో మీ సంప్రదింపు వివరాలు కనిపించవు.',
+      'post.contactPrivacy':
+          'ఈ ముందస్తు చూపులో మీ సంప్రదింపు వివరాలు కనిపించవు.',
       'post.restoreTitle': 'పూర్తికాని ప్రకటనను కొనసాగించాలా?',
       'post.restoreBody': 'ఈ పరికరంలో మీరు నమోదు చేసిన వివరాలను సేవ్ చేశాము.',
       'post.restoreProgress': 'కొనసాగించండి',
@@ -381,12 +412,14 @@ class Strings {
       'post.contactPhoneAndMessages': 'ఫోన్ మరియు సందేశాలు',
       'post.contactPhone': 'నా ఫోన్ నంబర్ చూపించు',
       'post.attributeSection': 'వర్గానికి సంబంధించిన వివరాలు',
-      'post.attributeHint': 'ఈ లిస్టింగ్ సరైన వారికి చేరేలా ఉపయోగకరమైన వివరాలు జోడించండి.',
+      'post.attributeHint':
+          'ఈ లిస్టింగ్ సరైన వారికి చేరేలా ఉపయోగకరమైన వివరాలు జోడించండి.',
       'post.attributeRequired': 'ఈ వివరాన్ని తప్పనిసరిగా ఇవ్వాలి',
       'post.attributeYes': 'అవును',
       'post.attributeNo': 'కాదు',
       'post.attributeSelectDate': 'తేదీని ఎంచుకోండి',
-      'post.attributeCapacityHint': 'యూనిట్‌ను కూడా రాయండి, ఉదాహరణకు 250 L, 7 kg లేదా 1.5 ton.',
+      'post.attributeCapacityHint':
+          'యూనిట్‌ను కూడా రాయండి, ఉదాహరణకు 250 L, 7 kg లేదా 1.5 ton.',
       'post.attributeNumber': 'సరైన సంఖ్యను నమోదు చేయండి',
       'post.attributeMinimum': 'కనిష్ఠ విలువ {value}',
       'post.attributeMaximum': 'గరిష్ఠ విలువ {value}',
@@ -401,13 +434,16 @@ class Strings {
       'deviceLock.title': 'పరికర లాక్',
       'deviceLock.checking': 'తనిఖీ చేస్తోంది…',
       'deviceLock.require': 'పరికర లాక్ అవసరం',
-      'deviceLock.biometric': 'LocZ తెరవడానికి వేలిముద్ర, ముఖం లేదా స్క్రీన్ లాక్ అడగండి.',
+      'deviceLock.biometric':
+          'LocZ తెరవడానికి వేలిముద్ర, ముఖం లేదా స్క్రీన్ లాక్ అడగండి.',
       'deviceLock.credential': 'LocZ తెరవడానికి స్క్రీన్ లాక్ అడగండి.',
-      'deviceLock.notEnrolled': 'దీన్ని ఉపయోగించడానికి ఫోన్ సెట్టింగ్‌లలో లాక్ ఏర్పాటు చేయండి.',
+      'deviceLock.notEnrolled':
+          'దీన్ని ఉపయోగించడానికి ఫోన్ సెట్టింగ్‌లలో లాక్ ఏర్పాటు చేయండి.',
       'deviceLock.unsupported': 'ఈ ఫోన్‌లో ఈ సదుపాయం లేదు.',
       'deviceLock.notChanged': 'మార్పు లేదు — పరికర లాక్ నిర్ధారించబడలేదు.',
       'deviceLock.locked': 'LocZ లాక్ అయింది',
-      'deviceLock.unlockHint': 'కొనసాగించడానికి వేలిముద్ర, ముఖం లేదా స్క్రీన్ లాక్‌తో తెరవండి.',
+      'deviceLock.unlockHint':
+          'కొనసాగించడానికి వేలిముద్ర, ముఖం లేదా స్క్రీన్ లాక్‌తో తెరవండి.',
       'deviceLock.unlock': 'తెరవండి',
       'auth.signInTitle': 'LocZ లోకి సైన్ ఇన్',
       'auth.signInSubtitle': 'మీ మొబైల్ నంబర్ మరియు పాస్‌వర్డ్ ఉపయోగించండి.',
@@ -421,7 +457,8 @@ class Strings {
       'auth.verify': 'ధృవీకరించండి',
       'auth.privacy': 'మీ నంబర్ గోప్యంగా ఉంటుంది',
       'register.title': 'మీ ఖాతాను సృష్టించండి',
-      'register.subtitle': 'మీ దగ్గర కొనండి, అమ్మండి. LocZలో చేరడం పూర్తిగా ఉచితం.',
+      'register.subtitle':
+          'మీ దగ్గర కొనండి, అమ్మండి. LocZలో చేరడం పూర్తిగా ఉచితం.',
       'register.brandLabel': 'LocZ',
       'register.freeAccount': 'ఉచిత స్థానిక సభ్యత్వ ఖాతా',
       'register.name': 'మీ పేరు',
@@ -436,11 +473,13 @@ class Strings {
       'register.haveAccount': 'ఇప్పటికే ఖాతా ఉందా?',
       'register.newHere': 'LocZకు కొత్తా?',
       'register.createAccount': 'ఖాతా సృష్టించండి',
-      'register.privacy': 'మీరు పంచుకోవాలని ఎంచుకుంటే తప్ప మీ నంబర్ గోప్యంగా ఉంటుంది.',
+      'register.privacy':
+          'మీరు పంచుకోవాలని ఎంచుకుంటే తప్ప మీ నంబర్ గోప్యంగా ఉంటుంది.',
       'register.invalidName': 'మీ పేరుకు కనీసం 2 అక్షరాలు నమోదు చేయండి',
       'register.shortPassword': 'పాస్‌వర్డ్‌కు కనీసం 8 అక్షరాలు ఉపయోగించండి',
       'register.passwordMismatch': 'పాస్‌వర్డ్‌లు సరిపోలడం లేదు',
-      'register.phoneTaken': 'ఈ మొబైల్ నంబర్‌కు ఇప్పటికే ఖాతా ఉంది. సైన్ ఇన్ చేయండి.',
+      'register.phoneTaken':
+          'ఈ మొబైల్ నంబర్‌కు ఇప్పటికే ఖాతా ఉంది. సైన్ ఇన్ చేయండి.',
       'report.reason': 'మీరు దీన్ని ఎందుకు నివేదిస్తున్నారు?',
       'report.details': 'మేము ఇంకా ఏమైనా తెలుసుకోవాలా? (ఐచ్ఛికం)',
       'report.submit': 'నివేదిక పంపండి',
@@ -461,7 +500,8 @@ class Strings {
       'report.reason.other': 'వేరే కారణం',
       'chats.title': 'సందేశాలు',
       'account.appearance': 'రూపం',
-      'account.signInHint': 'మీ ప్రకటనలు, సేవ్ చేసినవి మరియు సందేశాలను నిర్వహించండి.',
+      'account.signInHint':
+          'మీ ప్రకటనలు, సేవ్ చేసినవి మరియు సందేశాలను నిర్వహించండి.',
       'account.themeSystem': 'ఫోన్ సెట్టింగ్',
       'account.themeLight': 'లైట్',
       'account.themeDark': 'డార్క్',
@@ -497,7 +537,8 @@ class Strings {
       'location.pincodeUnknown': 'यह पिनकोड सही नहीं लगता। छह अंक जाँच लें।',
       'location.searchCity': 'शहर खोजें',
       'location.soon': 'जल्द',
-      'location.loadError': 'शहर लोड नहीं हो सके। कनेक्शन जाँचकर फिर कोशिश करें।',
+      'location.loadError':
+          'शहर लोड नहीं हो सके। कनेक्शन जाँचकर फिर कोशिश करें।',
       'location.noCities': 'अभी कोई शहर उपलब्ध नहीं है।',
       'location.noMatches': 'इस खोज से मिलता कोई शहर नहीं है।',
       'search.placeholder': 'फ़ोन, नौकरी, कमरा…',
@@ -529,6 +570,9 @@ class Strings {
       'search.yes': 'हाँ',
       'search.no': 'नहीं',
       'search.chooseDate': 'तारीख़ चुनें',
+      'feed.heroEyebrow': 'आपका पड़ोस, और करीब',
+      'feed.heroTitle': 'अच्छी चीज़ें, आपके आसपास',
+      'feed.heroHint': 'पास के लोगों और व्यवसायों से नई स्थानीय पसंद।',
       'feed.latest_products': 'नई चीज़ें',
       'feed.offers': 'ऑफ़र',
       'feed.jobs': 'नौकरियाँ',
@@ -548,20 +592,24 @@ class Strings {
       'listing.featured': 'विशेष',
       'post.title': 'अपना मुफ़्त विज्ञापन',
       'post.editTitle': 'अपना विज्ञापन संपादित करें',
-      'post.editSubtitle': 'जानकारी सही रखें ताकि स्थानीय खरीदारों को स्पष्ट बात पता चले।',
+      'post.editSubtitle':
+          'जानकारी सही रखें ताकि स्थानीय खरीदारों को स्पष्ट बात पता चले।',
       'post.saveChanges': 'बदलाव सहेजें',
       'post.savingChanges': 'सहेज रहे हैं…',
       'post.updateSuccess': 'आपके बदलाव सहेज दिए गए हैं।',
       'post.moderationWarning':
           'लाइव विज्ञापन बदलने पर उसकी दोबारा जाँच होगी। जाँच के दौरान वह छिप सकता है।',
-      'post.removedCannotEdit': 'मॉडरेटर द्वारा हटाए गए इस विज्ञापन को संपादित नहीं किया जा सकता।',
+      'post.removedCannotEdit':
+          'मॉडरेटर द्वारा हटाए गए इस विज्ञापन को संपादित नहीं किया जा सकता।',
       'post.saveDraft': 'ड्राफ़्ट सहेजें',
-      'post.draftSaved': 'आपका ड्राफ़्ट सहेज लिया गया है। इसे मेरे विज्ञापन से पूरा करें।',
+      'post.draftSaved':
+          'आपका ड्राफ़्ट सहेज लिया गया है। इसे मेरे विज्ञापन से पूरा करें।',
       'post.preview': 'पूर्वावलोकन',
       'post.previewTitle': 'खरीदार को ऐसा दिखेगा',
       'post.previewUntitled': 'आपके विज्ञापन का शीर्षक',
       'post.previewNoDescription': 'आपका विवरण यहाँ दिखाई देगा।',
-      'post.contactPrivacy': 'इस पूर्वावलोकन में आपकी संपर्क जानकारी नहीं दिखाई जाती।',
+      'post.contactPrivacy':
+          'इस पूर्वावलोकन में आपकी संपर्क जानकारी नहीं दिखाई जाती।',
       'post.restoreTitle': 'अपना अधूरा विज्ञापन जारी रखें?',
       'post.restoreBody': 'इस डिवाइस पर भरी गई जानकारी हमने सहेज रखी है।',
       'post.restoreProgress': 'जारी रखें',
@@ -587,12 +635,14 @@ class Strings {
       'post.contactPhoneAndMessages': 'फ़ोन और संदेश',
       'post.contactPhone': 'मेरा फ़ोन नंबर दिखाएँ',
       'post.attributeSection': 'श्रेणी की जानकारी',
-      'post.attributeHint': 'सही लोगों तक लिस्टिंग पहुँचाने वाली उपयोगी जानकारी जोड़ें।',
+      'post.attributeHint':
+          'सही लोगों तक लिस्टिंग पहुँचाने वाली उपयोगी जानकारी जोड़ें।',
       'post.attributeRequired': 'यह जानकारी ज़रूरी है',
       'post.attributeYes': 'हाँ',
       'post.attributeNo': 'नहीं',
       'post.attributeSelectDate': 'तारीख़ चुनें',
-      'post.attributeCapacityHint': 'इकाई भी लिखें, जैसे 250 L, 7 kg या 1.5 ton।',
+      'post.attributeCapacityHint':
+          'इकाई भी लिखें, जैसे 250 L, 7 kg या 1.5 ton।',
       'post.attributeNumber': 'सही संख्या दर्ज करें',
       'post.attributeMinimum': 'न्यूनतम {value} है',
       'post.attributeMaximum': 'अधिकतम {value} है',
@@ -607,13 +657,17 @@ class Strings {
       'deviceLock.title': 'डिवाइस लॉक',
       'deviceLock.checking': 'जाँच जारी है…',
       'deviceLock.require': 'डिवाइस लॉक ज़रूरी करें',
-      'deviceLock.biometric': 'LocZ खोलने से पहले फ़िंगरप्रिंट, चेहरा या स्क्रीन लॉक माँगें।',
+      'deviceLock.biometric':
+          'LocZ खोलने से पहले फ़िंगरप्रिंट, चेहरा या स्क्रीन लॉक माँगें।',
       'deviceLock.credential': 'LocZ खोलने से पहले स्क्रीन लॉक माँगें।',
-      'deviceLock.notEnrolled': 'इसे इस्तेमाल करने के लिए फ़ोन सेटिंग में स्क्रीन लॉक बनाएँ।',
+      'deviceLock.notEnrolled':
+          'इसे इस्तेमाल करने के लिए फ़ोन सेटिंग में स्क्रीन लॉक बनाएँ।',
       'deviceLock.unsupported': 'यह फ़ोन यह सुविधा नहीं देता।',
-      'deviceLock.notChanged': 'कोई बदलाव नहीं — डिवाइस लॉक की पुष्टि नहीं हुई।',
+      'deviceLock.notChanged':
+          'कोई बदलाव नहीं — डिवाइस लॉक की पुष्टि नहीं हुई।',
       'deviceLock.locked': 'LocZ लॉक है',
-      'deviceLock.unlockHint': 'जारी रखने के लिए फ़िंगरप्रिंट, चेहरा या स्क्रीन लॉक खोलें।',
+      'deviceLock.unlockHint':
+          'जारी रखने के लिए फ़िंगरप्रिंट, चेहरा या स्क्रीन लॉक खोलें।',
       'deviceLock.unlock': 'अनलॉक करें',
       'auth.signInTitle': 'LocZ में साइन इन करें',
       'auth.signInSubtitle': 'अपने मोबाइल नंबर और पासवर्ड का उपयोग करें।',
@@ -626,7 +680,8 @@ class Strings {
       'auth.code': 'सत्यापन कोड',
       'auth.verify': 'सत्यापित करें',
       'register.title': 'अपना खाता बनाएँ',
-      'register.subtitle': 'अपने आस-पास खरीदें और बेचें। LocZ से जुड़ना पूरी तरह मुफ़्त है।',
+      'register.subtitle':
+          'अपने आस-पास खरीदें और बेचें। LocZ से जुड़ना पूरी तरह मुफ़्त है।',
       'register.brandLabel': 'LocZ',
       'register.freeAccount': 'मुफ़्त स्थानीय सदस्य खाता',
       'register.name': 'आपका नाम',
@@ -651,7 +706,8 @@ class Strings {
       'report.submit': 'रिपोर्ट भेजें',
       'report.sending': 'भेज रहे हैं…',
       'report.chooseReason': 'कोई कारण चुनें',
-      'report.success': 'धन्यवाद — हमारी सुरक्षा टीम इसकी जाँच करेगी और नतीजे की सूचना देगी।',
+      'report.success':
+          'धन्यवाद — हमारी सुरक्षा टीम इसकी जाँच करेगी और नतीजे की सूचना देगी।',
       'report.done': 'हो गया',
       'report.reason.spam': 'स्पैम या बार-बार पोस्ट किया गया',
       'report.reason.fraud': 'धोखाधड़ी या स्कैम',
@@ -694,7 +750,8 @@ class StringsDelegate extends LocalizationsDelegate<Strings> {
   final AppLocaleOption option;
 
   @override
-  bool isSupported(Locale locale) => ['en', 'te', 'hi'].contains(locale.languageCode);
+  bool isSupported(Locale locale) =>
+      ['en', 'te', 'hi'].contains(locale.languageCode);
 
   @override
   Future<Strings> load(Locale locale) async => Strings(option);

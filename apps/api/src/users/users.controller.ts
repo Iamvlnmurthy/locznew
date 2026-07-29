@@ -16,6 +16,7 @@ import {
   CurrentUser,
   RequestWithUser,
 } from '../common/decorators/current-user.decorator';
+import { Public } from '../rbac/rbac.decorators';
 import {
   DeleteAccountRequestDto,
   DeviceDto,
@@ -24,12 +25,30 @@ import {
   UserProfileDto,
 } from './dto/user.dto';
 import { UsersService } from './users.service';
+import { SellerProfileService } from './seller-profile.service';
+import { SellerProfileDto } from './dto/seller-profile.dto';
 
 @ApiTags('users')
 @ApiBearerAuth()
 @Controller('users')
 export class UsersController {
-  constructor(private readonly users: UsersService) {}
+  constructor(
+    private readonly users: UsersService,
+    private readonly sellerProfiles: SellerProfileService,
+  ) {}
+
+  @Public()
+  @Get(':id/profile')
+  @ApiOperation({
+    summary: 'What LocZ can honestly say about a seller',
+    description:
+      'Derived from what the platform observed, never from what the seller typed. Carries no ' +
+      'phone and no email: a number published on one listing stays on that listing.',
+  })
+  @ApiResponse({ status: 200, type: SellerProfileDto })
+  getSellerProfile(@Param('id') id: string): Promise<SellerProfileDto> {
+    return this.sellerProfiles.get(id);
+  }
 
   @Get('me')
   @ApiOperation({ summary: 'Current user profile' })

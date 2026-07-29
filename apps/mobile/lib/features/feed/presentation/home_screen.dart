@@ -45,23 +45,35 @@ class HomeScreen extends ConsumerWidget {
                     onTap: () => context.push('/location'),
                     borderRadius: BorderRadius.circular(18),
                     child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 7),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 9,
+                        vertical: 7,
+                      ),
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           Icon(
                             Icons.location_on_outlined,
                             size: 15,
-                            color: Theme.of(context).colorScheme.onPrimaryContainer,
+                            color: Theme.of(context)
+                                .colorScheme
+                                .onPrimaryContainer,
                           ),
                           const SizedBox(width: 4),
                           Flexible(
                             child: Text(
-                              city?.pincode ?? city?.name ?? strings('location.change'),
+                              city?.pincode ??
+                                  city?.name ??
+                                  strings('location.change'),
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
-                              style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                                    color: Theme.of(context).colorScheme.onPrimaryContainer,
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .labelMedium
+                                  ?.copyWith(
+                                    color: Theme.of(context)
+                                        .colorScheme
+                                        .onPrimaryContainer,
                                   ),
                             ),
                           ),
@@ -69,7 +81,9 @@ class HomeScreen extends ConsumerWidget {
                           Icon(
                             Icons.keyboard_arrow_down_rounded,
                             size: 16,
-                            color: Theme.of(context).colorScheme.onPrimaryContainer,
+                            color: Theme.of(context)
+                                .colorScheme
+                                .onPrimaryContainer,
                           ),
                         ],
                       ),
@@ -123,7 +137,10 @@ class HomeScreen extends ConsumerWidget {
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(15),
                   side: BorderSide(
-                    color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.55),
+                    color: Theme.of(context)
+                        .colorScheme
+                        .outline
+                        .withValues(alpha: 0.55),
                   ),
                 ),
                 clipBehavior: Clip.antiAlias,
@@ -192,18 +209,14 @@ class HomeScreen extends ConsumerWidget {
                   child: Padding(
                     padding: const EdgeInsets.fromLTRB(
                       LoczSpacing.x4,
-                      LoczSpacing.x2,
+                      LoczSpacing.x3,
                       LoczSpacing.x4,
                       0,
                     ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          strings('brand.tagline'),
-                          style: Theme.of(context).textTheme.headlineSmall,
-                        ),
-                      ],
+                    child: _DiscoveryIntro(
+                      eyebrow: strings('feed.heroEyebrow'),
+                      title: strings('feed.heroTitle'),
+                      hint: strings('feed.heroHint'),
                     ),
                   ),
                 ),
@@ -218,12 +231,46 @@ class HomeScreen extends ConsumerWidget {
                             padding: const EdgeInsets.symmetric(
                               horizontal: LoczSpacing.x4,
                             ),
-                            child: Text(
-                              strings('feed.${section.key}'),
-                              style: Theme.of(context).textTheme.titleLarge,
+                            child: Row(
+                              children: [
+                                Container(
+                                  width: 4,
+                                  height: 18,
+                                  decoration: BoxDecoration(
+                                    color:
+                                        Theme.of(context).colorScheme.secondary,
+                                    borderRadius:
+                                        BorderRadius.circular(LoczRadius.full),
+                                  ),
+                                ),
+                                const SizedBox(width: LoczSpacing.x2),
+                                Expanded(
+                                  child: Text(
+                                    strings('feed.${section.key}'),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style:
+                                        Theme.of(context).textTheme.titleLarge,
+                                  ),
+                                ),
+                                TextButton(
+                                  onPressed: () => context.push('/search'),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Text(strings('feed.seeAll')),
+                                      const SizedBox(width: 2),
+                                      const Icon(
+                                        Icons.arrow_forward_rounded,
+                                        size: 15,
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
                             ),
                           ),
-                          const SizedBox(height: LoczSpacing.x3),
+                          const SizedBox(height: LoczSpacing.x2),
                           SizedBox(
                             height: listingCardRailHeight(textScale),
                             child: ListView.separated(
@@ -232,13 +279,15 @@ class HomeScreen extends ConsumerWidget {
                                 horizontal: LoczSpacing.x4,
                               ),
                               itemCount: section.items.length,
-                              separatorBuilder: (_, __) => const SizedBox(width: LoczSpacing.x3),
+                              separatorBuilder: (_, __) =>
+                                  const SizedBox(width: LoczSpacing.x3),
                               itemBuilder: (context, index) {
                                 final listing = section.items[index];
                                 return ListingCard(
                                   listing: listing,
                                   width: 168,
-                                  onTap: () => context.push('/ad/${listing.slug}'),
+                                  onTap: () =>
+                                      context.push('/ad/${listing.slug}'),
                                 );
                               },
                             ),
@@ -254,6 +303,83 @@ class HomeScreen extends ConsumerWidget {
             );
           },
         ),
+      ),
+    );
+  }
+}
+
+class _DiscoveryIntro extends StatelessWidget {
+  const _DiscoveryIntro({
+    required this.eyebrow,
+    required this.title,
+    required this.hint,
+  });
+
+  final String eyebrow;
+  final String title;
+  final String hint;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.fromLTRB(16, 15, 16, 16),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            theme.colorScheme.primaryContainer,
+            isDark
+                ? theme.colorScheme.surfaceContainerHigh
+                : theme.colorScheme.secondaryContainer.withValues(alpha: 0.62),
+          ],
+        ),
+        borderRadius: BorderRadius.circular(LoczRadius.xl),
+        border: Border.all(color: theme.colorScheme.outlineVariant),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 16,
+                height: 2,
+                decoration: BoxDecoration(
+                  color: theme.colorScheme.secondary,
+                  borderRadius: BorderRadius.circular(LoczRadius.full),
+                ),
+              ),
+              const SizedBox(width: 7),
+              Expanded(
+                child: Text(
+                  eyebrow,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: theme.textTheme.labelSmall?.copyWith(
+                    color: theme.colorScheme.primary,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: 0.7,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Text(
+            title,
+            style: theme.textTheme.titleLarge?.copyWith(
+              fontSize: 20,
+              letterSpacing: -0.35,
+            ),
+          ),
+          const SizedBox(height: 3),
+          Text(hint, style: theme.textTheme.bodyMedium),
+        ],
       ),
     );
   }
