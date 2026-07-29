@@ -60,4 +60,67 @@ void main() {
       expect(tester.takeException(), isNull);
     });
   }
+
+  testWidgets('discovery feed stays composed at 320px in dark mode', (
+    tester,
+  ) async {
+    SharedPreferences.setMockInitialValues({});
+    tester.view.physicalSize = const Size(320, 700);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    final listing = ListingSummary(
+      id: 'listing-1',
+      slug: 'nearby-phone',
+      type: 'PRODUCT',
+      title: 'Phone in excellent condition',
+      status: 'PUBLISHED',
+      price: 32900,
+      isNegotiable: true,
+      cityName: 'Hyderabad',
+      localityName: 'Madhapur',
+      thumbUrl: null,
+      isFeatured: false,
+      viewCount: 12,
+      publishedAt: DateTime(2026, 7, 29),
+    );
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          feedProvider.overrideWith(
+            (_) async => Feed(
+              cityId: 'hyderabad',
+              cityName: 'Hyderabad',
+              sections: [
+                FeedSection(key: 'latest_products', items: [listing]),
+              ],
+            ),
+          ),
+        ],
+        child: MaterialApp(
+          theme: AppTheme.light,
+          darkTheme: AppTheme.dark,
+          themeMode: ThemeMode.dark,
+          locale: const Locale('en'),
+          supportedLocales: const [Locale('en'), Locale('te'), Locale('hi')],
+          localizationsDelegates: const [
+            StringsDelegate(AppLocaleOption.en),
+            GlobalMaterialLocalizations.delegate,
+            GlobalWidgetsLocalizations.delegate,
+            GlobalCupertinoLocalizations.delegate,
+          ],
+          home: const HomeScreen(),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('Good finds, right around you'), findsOneWidget);
+    expect(find.text('Latest items for sale'), findsOneWidget);
+    expect(find.text('See all'), findsOneWidget);
+    expect(find.text('₹32,900'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
 }
