@@ -495,6 +495,17 @@
     "required": "यह जानकारी ज़रूरी है",
     "loginRequired": "मुफ़्त विज्ञापन पोस्ट करने के लिए साइन इन करें"
   },
+  "sellerProfile": {
+    "back": "खोज पर वापस",
+    "kicker": "स्थानीय विक्रेता",
+    "memberSince": "{date} से LocZ सदस्य",
+    "activity": "विक्रेता गतिविधि",
+    "liveAds": "लाइव विज्ञापन",
+    "sold": "बेचा हुआ बताया",
+    "responseRate": "जवाब दर",
+    "responseMinutes": "औसत जवाब मिनट",
+    "privacy": "संपर्क जानकारी निजी रहती है, जब तक विक्रेता उसे किसी लिस्टिंग पर साझा न करे।"
+  },
   "businessOnboarding": {
     "addressHint": "शुरुआत के लिए मोहल्ले तक का पता काफ़ी है।",
     "addressPlaceholder": "दुकान नंबर, सड़क और मोहल्ला",

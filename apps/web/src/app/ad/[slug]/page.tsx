@@ -396,7 +396,9 @@ export default async function ListingPage({ params }: { params: Promise<{ slug: 
             </span>
             <div>
               <span className="detail__seller-label">{t('listing.seller')}</span>
-              <p>{listing.owner.displayName}</p>
+              <p>
+                <Link href={`/seller/${listing.owner.id}`}>{listing.owner.displayName}</Link>
+              </p>
               <p className="detail__meta">
                 {t('listing.memberSince', {
                   date: new Date(listing.owner.memberSince).toLocaleDateString(`${locale}-IN`, {

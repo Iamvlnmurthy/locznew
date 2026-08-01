@@ -487,7 +487,11 @@ export class ListingSearchQueryDto extends PaginationQueryDto {
     description: 'Category attribute filters as key:value; ranges as key:min..max',
   })
   @IsOptional()
-  @Transform(({ value }) => (Array.isArray(value) ? value : [value]))
+  @Transform(({ value }: { value: unknown }) =>
+    Array.isArray(value)
+      ? value.filter((entry): entry is string => typeof entry === 'string')
+      : [String(value)],
+  )
   @IsArray()
   @ArrayMaxSize(10)
   @IsString({ each: true })

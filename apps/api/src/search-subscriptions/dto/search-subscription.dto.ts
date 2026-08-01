@@ -1,5 +1,5 @@
 import { ApiProperty, ApiPropertyOptional, PickType } from '@nestjs/swagger';
-import { IsBoolean, IsOptional, IsString, MaxLength, MinLength } from 'class-validator';
+import { IsBoolean, IsString, MaxLength, MinLength } from 'class-validator';
 import { ListingSearchQueryDto } from '../../listings/dto/listing.dto';
 
 /**

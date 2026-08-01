@@ -527,6 +527,17 @@
     "required": "This field is required",
     "loginRequired": "Sign in to post your free ad"
   },
+  "sellerProfile": {
+    "back": "Back to search",
+    "kicker": "Local seller",
+    "memberSince": "LocZ member since {date}",
+    "activity": "Seller activity",
+    "liveAds": "Live ads",
+    "sold": "Marked sold",
+    "responseRate": "Response rate",
+    "responseMinutes": "Median reply minutes",
+    "privacy": "Contact details stay private unless this seller chooses to share them on a listing."
+  },
   "businessOnboarding": {
     "addressHint": "A neighbourhood-level address is enough to get started.",
     "addressPlaceholder": "Shop number, road and neighbourhood",

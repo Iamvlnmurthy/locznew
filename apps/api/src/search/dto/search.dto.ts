@@ -96,7 +96,11 @@ export class SearchQueryDto extends PaginationQueryDto {
    */
   @ApiPropertyOptional({ isArray: true, type: String, example: ['fuel_type:PETROL'] })
   @IsOptional()
-  @Transform(({ value }) => (Array.isArray(value) ? value : [value]))
+  @Transform(({ value }: { value: unknown }) =>
+    Array.isArray(value)
+      ? value.filter((entry): entry is string => typeof entry === 'string')
+      : [String(value)],
+  )
   @IsArray()
   @ArrayMaxSize(10)
   @IsString({ each: true })

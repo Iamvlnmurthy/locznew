@@ -14894,3 +14894,59 @@ body {
     font-size: clamp(2rem, 10vw, 2.75rem);
   }
 }
+.seller-profile-page {
+  min-height: 70vh;
+}
+
+.seller-profile-hero {
+  margin-top: 1rem;
+  padding: clamp(1.5rem, 5vw, 3rem);
+  text-align: center;
+  background:
+    radial-gradient(
+      circle at 20% 0%,
+      color-mix(in srgb, var(--locz-primary) 14%, transparent),
+      transparent 42%
+    ),
+    var(--locz-surface);
+}
+
+.seller-profile-hero__avatar {
+  width: 5rem;
+  height: 5rem;
+  margin: 0 auto 1rem;
+  font-size: 1.8rem;
+}
+
+.seller-profile-hero__bio {
+  max-width: 42rem;
+  margin: 1rem auto 0;
+}
+
+.seller-profile-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr));
+  gap: 0.75rem;
+  margin-top: 1rem;
+}
+
+.seller-profile-stats article {
+  display: grid;
+  place-items: center;
+  gap: 0.35rem;
+  padding: 1.25rem;
+  text-align: center;
+}
+
+.seller-profile-stats strong {
+  font-size: 1.7rem;
+}
+
+.seller-profile-privacy {
+  display: flex;
+  justify-content: center;
+  gap: 0.5rem;
+  margin: 1rem auto;
+  color: var(--locz-text-muted);
+  font-size: 0.82rem;
+}
