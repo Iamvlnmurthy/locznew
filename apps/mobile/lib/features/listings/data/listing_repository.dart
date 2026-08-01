@@ -130,6 +130,7 @@ class ListingRepository {
   }
 
   Future<Map<String, dynamic>> createListing({
+    String type = 'PRODUCT',
     required String title,
     required String description,
     required String categoryId,
@@ -141,11 +142,16 @@ class ListingRepository {
     String contactPreference = 'IN_APP_ONLY',
     bool saveAsDraft = false,
     List<Map<String, dynamic>>? attributes,
+    num? budgetMin,
+    num? budgetMax,
+    DateTime? requiredBy,
+    int? quantity,
+    String? preferredCondition,
   }) {
     return _api.post<Map<String, dynamic>>(
       '/listings',
       body: {
-        'type': 'PRODUCT',
+        'type': type,
         'title': title,
         'description': description,
         'categoryId': categoryId,
@@ -154,12 +160,21 @@ class ListingRepository {
         'showPhonePublicly': contactPreference != 'IN_APP_ONLY',
         'saveAsDraft': saveAsDraft,
         if (attributes != null) 'attributes': attributes,
-        'marketplace': {
-          if (price != null) 'price': price,
-          'isFree': isFree,
-          'isNegotiable': isNegotiable,
-          'condition': condition,
-        },
+        if (type == 'BUYER_REQUIREMENT')
+          'buyerRequirement': {
+            if (budgetMin != null) 'budgetMin': budgetMin,
+            if (budgetMax != null) 'budgetMax': budgetMax,
+            if (requiredBy != null) 'requiredBy': requiredBy.toIso8601String(),
+            if (quantity != null) 'quantity': quantity,
+            if (preferredCondition != null) 'preferredCondition': preferredCondition,
+          }
+        else
+          'marketplace': {
+            if (price != null) 'price': price,
+            'isFree': isFree,
+            'isNegotiable': isNegotiable,
+            'condition': condition,
+          },
       },
     );
   }
@@ -264,6 +279,108 @@ class ListingRepository {
     );
     return Category.fromJson(json);
   }
+
+  Future<List<String>> modelSuggestions(
+    String categorySlug, {
+    String? brand,
+    String? query,
+  }) async {
+    final json = await _api.get<List<dynamic>>(
+      '/categories/${Uri.encodeComponent(categorySlug)}/models',
+      query: {
+        if (brand != null && brand.isNotEmpty) 'brand': brand,
+        if (query != null && query.isNotEmpty) 'q': query,
+        'limit': 12,
+      },
+      auth: false,
+    );
+    return json.cast<String>();
+  }
+
+  Future<List<RequirementResponse>> requirementResponses(String listingId) async {
+    final json = await _api.get<List<dynamic>>('/requirements/$listingId/responses');
+    return json
+        .map((entry) => RequirementResponse.fromJson(entry as Map<String, dynamic>))
+        .toList();
+  }
+
+  Future<RequirementResponse> respondToRequirement({
+    required String listingId,
+    required String kind,
+    num? offeredPrice,
+    DateTime? availableFrom,
+    String? message,
+    String? offeredListingId,
+    String? businessId,
+  }) async {
+    final json = await _api.post<Map<String, dynamic>>(
+      '/requirements/$listingId/responses',
+      body: {
+        'kind': kind,
+        if (offeredPrice != null) 'offeredPrice': offeredPrice,
+        if (availableFrom != null) 'availableFrom': availableFrom.toIso8601String(),
+        if (message != null && message.isNotEmpty) 'message': message,
+        if (offeredListingId != null) 'offeredListingId': offeredListingId,
+        if (businessId != null) 'businessId': businessId,
+      },
+    );
+    return RequirementResponse.fromJson(json);
+  }
+
+  Future<void> withdrawRequirementResponse(String responseId) =>
+      _api.delete<void>('/requirements/responses/$responseId');
+
+  Future<String> openRequirementChat(String responseId, String message) async {
+    final json = await _api.post<Map<String, dynamic>>(
+      '/requirements/responses/$responseId/chat',
+      body: {'message': message},
+    );
+    return json['conversationId'] as String;
+  }
+
+  Future<void> markRequirementFulfilled(String listingId, {required bool fulfilled}) =>
+      _api.put<void>('/requirements/$listingId/fulfilled', body: {'fulfilled': fulfilled});
+
+  Future<SellerProfile> sellerProfile(String userId) async {
+    final json = await _api.get<Map<String, dynamic>>('/users/$userId/profile', auth: false);
+    return SellerProfile.fromJson(json);
+  }
+
+  Future<List<SavedSearch>> savedSearches() async {
+    final json = await _api.get<List<dynamic>>('/saved-searches');
+    return json.map((entry) => SavedSearch.fromJson(entry as Map<String, dynamic>)).toList();
+  }
+
+  Future<SavedSearch> saveSearch({
+    required String label,
+    String? query,
+    String? type,
+    String? categoryId,
+    String? cityId,
+    num? priceMin,
+    num? priceMax,
+    List<String> attributes = const [],
+  }) async {
+    final json = await _api.post<Map<String, dynamic>>(
+      '/saved-searches',
+      body: {
+        'label': label,
+        if (query != null && query.isNotEmpty) 'q': query,
+        if (type != null) 'type': type,
+        if (categoryId != null) 'categoryId': categoryId,
+        if (cityId != null && cityId.isNotEmpty) 'cityId': cityId,
+        if (priceMin != null) 'priceMin': priceMin,
+        if (priceMax != null) 'priceMax': priceMax,
+        if (attributes.isNotEmpty) 'attr': attributes,
+      },
+    );
+    return SavedSearch.fromJson(json);
+  }
+
+  Future<void> setSavedSearchActive(String id, {required bool active}) =>
+      _api.put<void>('/saved-searches/$id/active', body: {'isActive': active});
+
+  Future<void> deleteSavedSearch(String id) => _api.delete<void>('/saved-searches/$id');
 
   Future<List<City>> cities({bool launchedOnly = false, String? query}) async {
     final json = await _api.get<List<dynamic>>(

@@ -73,6 +73,11 @@ class ApiClient {
         true,
       );
 
+  Future<T> put<T>(String path, {Object? body}) => _send<T>(
+        () => _dio.put(path, data: body, options: _options(true)),
+        true,
+      );
+
   Future<T> delete<T>(String path) =>
       _send<T>(() => _dio.delete(path, options: _options(true)), true);
 

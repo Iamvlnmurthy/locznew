@@ -162,6 +162,117 @@ class ListingDetail {
       );
 }
 
+class RequirementResponse {
+  const RequirementResponse({
+    required this.id,
+    required this.listingId,
+    required this.responderId,
+    required this.kind,
+    required this.createdAt,
+    this.businessId,
+    this.offeredPrice,
+    this.availableFrom,
+    this.message,
+    this.offeredListingId,
+    this.conversationId,
+  });
+
+  final String id;
+  final String listingId;
+  final String responderId;
+  final String? businessId;
+  final String kind;
+  final num? offeredPrice;
+  final DateTime? availableFrom;
+  final String? message;
+  final String? offeredListingId;
+  final String? conversationId;
+  final DateTime createdAt;
+
+  factory RequirementResponse.fromJson(Map<String, dynamic> json) => RequirementResponse(
+        id: json['id'] as String,
+        listingId: json['listingId'] as String,
+        responderId: json['responderId'] as String,
+        businessId: json['businessId'] as String?,
+        kind: json['kind'] as String,
+        offeredPrice: json['offeredPrice'] as num?,
+        availableFrom: json['availableFrom'] == null
+            ? null
+            : DateTime.tryParse(json['availableFrom'] as String),
+        message: json['message'] as String?,
+        offeredListingId: json['offeredListingId'] as String?,
+        conversationId: json['conversationId'] as String?,
+        createdAt: DateTime.parse(json['createdAt'] as String),
+      );
+}
+
+class SellerProfile {
+  const SellerProfile({
+    required this.id,
+    required this.displayName,
+    required this.memberSince,
+    required this.publishedListings,
+    required this.soldListings,
+    this.bio,
+    this.responseRate,
+    this.medianResponseMinutes,
+  });
+
+  final String id;
+  final String displayName;
+  final String? bio;
+  final DateTime memberSince;
+  final int publishedListings;
+  final int soldListings;
+  final num? responseRate;
+  final num? medianResponseMinutes;
+
+  factory SellerProfile.fromJson(Map<String, dynamic> json) => SellerProfile(
+        id: json['id'] as String,
+        displayName: json['displayName'] as String,
+        bio: json['bio'] as String?,
+        memberSince: DateTime.parse(json['memberSince'] as String),
+        publishedListings: (json['publishedListings'] as num?)?.toInt() ?? 0,
+        soldListings: (json['soldListings'] as num?)?.toInt() ?? 0,
+        responseRate: json['responseRate'] as num?,
+        medianResponseMinutes: json['medianResponseMinutes'] as num?,
+      );
+}
+
+class SavedSearch {
+  const SavedSearch({
+    required this.id,
+    required this.label,
+    required this.filters,
+    required this.isActive,
+    required this.createdAt,
+    this.query,
+    this.cityId,
+    this.lastMatchedAt,
+  });
+
+  final String id;
+  final String label;
+  final String? query;
+  final String? cityId;
+  final Map<String, dynamic> filters;
+  final bool isActive;
+  final DateTime? lastMatchedAt;
+  final DateTime createdAt;
+
+  factory SavedSearch.fromJson(Map<String, dynamic> json) => SavedSearch(
+        id: json['id'] as String,
+        label: json['label'] as String,
+        query: json['q'] as String?,
+        cityId: json['cityId'] as String?,
+        filters: Map<String, dynamic>.from(json['filters'] as Map? ?? const {}),
+        isActive: json['isActive'] as bool? ?? true,
+        lastMatchedAt:
+            json['lastMatchedAt'] == null ? null : DateTime.tryParse(json['lastMatchedAt'] as String),
+        createdAt: DateTime.parse(json['createdAt'] as String),
+      );
+}
+
 class FeedSection {
   const FeedSection({required this.key, required this.items});
 
