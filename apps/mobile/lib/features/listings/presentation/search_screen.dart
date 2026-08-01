@@ -18,11 +18,13 @@ class SearchScreen extends ConsumerStatefulWidget {
   const SearchScreen({
     super.key,
     this.initialQuery,
+    this.initialType,
     this.initialCategoryId,
     this.initialCategoryLabel,
   });
 
   final String? initialQuery;
+  final String? initialType;
   final String? initialCategoryId;
   final String? initialCategoryLabel;
 
@@ -38,6 +40,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
   List<String> _recentSearches = const [];
 
   String _query = '';
+  String? _type;
   int? _radiusKm;
   String _sort = 'relevance';
   String? _categoryId;
@@ -51,6 +54,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
     final initialQuery = widget.initialQuery?.trim() ?? '';
     _controller = TextEditingController(text: initialQuery);
     _query = initialQuery;
+    _type = widget.initialType;
     _categoryId = widget.initialCategoryId;
     _categoryLabel = widget.initialCategoryLabel;
     _focusNode.addListener(_handleFocusChanged);
@@ -62,6 +66,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
   void didUpdateWidget(covariant SearchScreen oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.initialQuery == widget.initialQuery &&
+        oldWidget.initialType == widget.initialType &&
         oldWidget.initialCategoryId == widget.initialCategoryId) {
       return;
     }
@@ -70,6 +75,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
       ..text = nextQuery
       ..selection = TextSelection.collapsed(offset: nextQuery.length);
     _query = nextQuery;
+    _type = widget.initialType;
     _categoryId = widget.initialCategoryId;
     _categoryLabel = widget.initialCategoryLabel;
     _run();
@@ -140,7 +146,8 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
     final city = ref.read(selectedCityProvider);
     setState(() {
       _results = ref.read(listingRepositoryProvider).search(
-            query: _query,
+            query: _query.isEmpty ? null : _query,
+            type: _type,
             cityId: (city?.id.isEmpty ?? true) ? null : city!.id,
             pincode: city?.pincode,
             latitude: city?.latitude,
@@ -184,6 +191,20 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
       _ => strings('search.sortBest'),
     };
   }
+
+  String _typeLabel(Strings strings) => switch (_type) {
+        'JOB' => strings('feed.intentJobs'),
+        'SERVICE' => strings('feed.intentServices'),
+        'PRODUCT' => strings('feed.intentBuy'),
+        _ => '',
+      };
+
+  IconData get _typeIcon => switch (_type) {
+        'JOB' => Icons.work_outline_rounded,
+        'SERVICE' => Icons.handyman_outlined,
+        'PRODUCT' => Icons.shopping_bag_outlined,
+        _ => Icons.explore_outlined,
+      };
 
   @override
   Widget build(BuildContext context) {
@@ -304,6 +325,20 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                   vertical: 6,
                 ),
                 children: [
+                  if (_type != null)
+                    Padding(
+                      padding: const EdgeInsets.only(right: 6),
+                      child: FilterChip(
+                        avatar: Icon(_typeIcon, size: 16),
+                        label: Text(_typeLabel(strings)),
+                        selected: true,
+                        showCheckmark: false,
+                        onSelected: (_) {
+                          setState(() => _type = null);
+                          _run();
+                        },
+                      ),
+                    ),
                   Padding(
                     padding: const EdgeInsets.only(right: 6),
                     child: FilterChip(

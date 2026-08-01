@@ -14,6 +14,34 @@ import 'package:locz/features/listings/presentation/search_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
+  testWidgets('intent search visibly filters by listing type', (tester) async {
+    SharedPreferences.setMockInitialValues({});
+    final listings = _FakeListingRepository();
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [listingRepositoryProvider.overrideWithValue(listings)],
+        child: MaterialApp(
+          theme: AppTheme.light,
+          locale: const Locale('en'),
+          supportedLocales: const [Locale('en'), Locale('te'), Locale('hi')],
+          localizationsDelegates: const [
+            StringsDelegate(AppLocaleOption.en),
+            GlobalMaterialLocalizations.delegate,
+            GlobalWidgetsLocalizations.delegate,
+            GlobalCupertinoLocalizations.delegate,
+          ],
+          home: const SearchScreen(initialType: 'JOB'),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('Find work'), findsOneWidget);
+    expect(listings.calls.last.type, 'JOB');
+    expect(listings.calls.last.query, isNull);
+  });
+
   testWidgets('search never claims a radius without coordinates and forwards sorting',
       (tester) async {
     SharedPreferences.setMockInitialValues({});
@@ -187,12 +215,14 @@ class _SearchCall {
     this.query,
     this.radiusKm,
     this.categoryId,
+    this.type,
   });
 
   final String sort;
   final String? query;
   final int? radiusKm;
   final String? categoryId;
+  final String? type;
   final List<String> attributes;
 }
 
@@ -223,6 +253,7 @@ class _FakeListingRepository extends ListingRepository {
         query: query,
         radiusKm: radiusKm,
         categoryId: categoryId,
+        type: type,
         attributes: [...attributes],
       ),
     );

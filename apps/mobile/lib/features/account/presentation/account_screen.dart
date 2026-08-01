@@ -60,8 +60,7 @@ class AccountScreen extends ConsumerWidget {
                           ),
                           const SizedBox(height: LoczSpacing.x3),
                           FilledButton.icon(
-                            onPressed: () =>
-                                context.push('/signin?next=/account'),
+                            onPressed: () => context.push('/signin?next=/account'),
                             icon: const Icon(Icons.login_rounded, size: 17),
                             label: Text(strings('nav.signIn')),
                           ),
@@ -110,13 +109,7 @@ class AccountScreen extends ConsumerWidget {
       length: 2,
       child: Scaffold(
         appBar: AppBar(
-          title: Text(auth.user!.displayName),
-          bottom: TabBar(
-            tabs: [
-              Tab(text: strings('account.myAds')),
-              Tab(text: strings('account.savedAds')),
-            ],
-          ),
+          title: Text(strings('nav.account')),
           actions: [
             IconButton(
               icon: const Icon(Icons.notifications_none),
@@ -155,19 +148,167 @@ class AccountScreen extends ConsumerWidget {
             ),
           ],
         ),
-        body: TabBarView(
+        body: Column(
           children: [
-            _ListingsTab(
-              provider: myListingsProvider,
-              emptyMessage: strings('account.noAds'),
-              showActions: true,
+            _AccountHeader(
+              displayName: auth.user!.displayName,
+              phone: auth.user!.phone,
+              hint: strings('account.signInHint'),
+              postLabel: strings('feed.postFree'),
+              onPost: () => context.push('/post'),
             ),
-            _ListingsTab(
-              provider: savedListingsProvider,
-              emptyMessage: strings('feed.empty'),
-              showActions: false,
+            Padding(
+              padding: const EdgeInsets.fromLTRB(
+                LoczSpacing.x4,
+                0,
+                LoczSpacing.x4,
+                LoczSpacing.x2,
+              ),
+              child: Container(
+                padding: const EdgeInsets.all(4),
+                decoration: BoxDecoration(
+                  color: Theme.of(context).colorScheme.surfaceContainerHigh,
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                child: TabBar(
+                  dividerColor: Colors.transparent,
+                  indicatorSize: TabBarIndicatorSize.tab,
+                  indicator: BoxDecoration(
+                    color: Theme.of(context).colorScheme.surface,
+                    borderRadius: BorderRadius.circular(10),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Theme.of(context).colorScheme.shadow.withValues(alpha: 0.06),
+                        blurRadius: 8,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
+                  ),
+                  tabs: [
+                    Tab(text: strings('account.myAds')),
+                    Tab(text: strings('account.savedAds')),
+                  ],
+                ),
+              ),
+            ),
+            Expanded(
+              child: TabBarView(
+                children: [
+                  _ListingsTab(
+                    provider: myListingsProvider,
+                    emptyMessage: strings('account.noAds'),
+                    showActions: true,
+                  ),
+                  _ListingsTab(
+                    provider: savedListingsProvider,
+                    emptyMessage: strings('feed.empty'),
+                    showActions: false,
+                  ),
+                ],
+              ),
             ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+class _AccountHeader extends StatelessWidget {
+  const _AccountHeader({
+    required this.displayName,
+    required this.phone,
+    required this.hint,
+    required this.postLabel,
+    required this.onPost,
+  });
+
+  final String displayName;
+  final String phone;
+  final String hint;
+  final String postLabel;
+  final VoidCallback onPost;
+
+  String get _maskedPhone {
+    final digits = phone.replaceAll(RegExp(r'\D'), '');
+    if (digits.length < 4) return phone;
+    return '••••••${digits.substring(digits.length - 4)}';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final initial = displayName.trim().isEmpty ? 'L' : displayName.trim()[0].toUpperCase();
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 4, 16, 18),
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              theme.colorScheme.primaryContainer,
+              theme.colorScheme.surface,
+            ],
+          ),
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: theme.colorScheme.outlineVariant),
+        ),
+        child: LayoutBuilder(
+          builder: (context, constraints) => Row(
+            children: [
+              Container(
+                width: 52,
+                height: 52,
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                  color: theme.colorScheme.primary,
+                  borderRadius: BorderRadius.circular(17),
+                ),
+                child: Text(
+                  initial,
+                  style: theme.textTheme.titleLarge?.copyWith(
+                    color: theme.colorScheme.onPrimary,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(displayName, style: theme.textTheme.titleMedium),
+                    const SizedBox(height: 2),
+                    Text(_maskedPhone, style: theme.textTheme.labelSmall),
+                    const SizedBox(height: 4),
+                    Text(
+                      hint,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: theme.textTheme.labelSmall,
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 8),
+              if (constraints.maxWidth < 300)
+                IconButton.filled(
+                  onPressed: onPost,
+                  tooltip: postLabel,
+                  icon: const Icon(Icons.add_rounded, size: 19),
+                )
+              else
+                FilledButton.icon(
+                  onPressed: onPost,
+                  icon: const Icon(Icons.add_rounded, size: 17),
+                  label: Text(postLabel),
+                  style: FilledButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(horizontal: 12),
+                  ),
+                ),
+            ],
+          ),
         ),
       ),
     );
@@ -308,8 +449,7 @@ class _ListingsTab extends ConsumerWidget {
             padding: const EdgeInsets.all(LoczSpacing.x4),
             itemCount: items.length,
             separatorBuilder: (_, __) => const SizedBox(height: LoczSpacing.x3),
-            itemBuilder: (context, index) =>
-                _OwnListingRow(listing: items[index]),
+            itemBuilder: (context, index) => _OwnListingRow(listing: items[index]),
           );
         },
       ),
@@ -329,8 +469,7 @@ class _OwnListingRow extends ConsumerWidget {
 
     // Only the transitions the API will accept for the current status are offered.
     final commands = <String, String>{
-      if (listing.status == 'PUBLISHED')
-        'pause': strings('account.actionPause'),
+      if (listing.status == 'PUBLISHED') 'pause': strings('account.actionPause'),
       if (listing.status == 'PAUSED') 'resume': strings('account.actionResume'),
       if (listing.status == 'PUBLISHED' || listing.status == 'PAUSED')
         'sold': strings('account.actionSold'),
@@ -393,9 +532,7 @@ class _OwnListingRow extends ConsumerWidget {
                       style: OutlinedButton.styleFrom(
                         minimumSize: const Size(0, 36),
                         padding: const EdgeInsets.symmetric(horizontal: 12),
-                        foregroundColor: entry.key == 'delete'
-                            ? theme.colorScheme.error
-                            : null,
+                        foregroundColor: entry.key == 'delete' ? theme.colorScheme.error : null,
                         side: entry.key == 'delete'
                             ? BorderSide(color: theme.colorScheme.error)
                             : null,
@@ -409,8 +546,7 @@ class _OwnListingRow extends ConsumerWidget {
                               content: Text(strings('account.deleteConfirm')),
                               actions: [
                                 TextButton(
-                                  onPressed: () =>
-                                      Navigator.pop(context, false),
+                                  onPressed: () => Navigator.pop(context, false),
                                   child: Text(strings('common.cancel')),
                                 ),
                                 FilledButton(

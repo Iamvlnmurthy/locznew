@@ -72,10 +72,10 @@ class HomeScreen extends ConsumerWidget {
                         delay: const Duration(milliseconds: 70),
                         child: _IntentDeck(
                           strings: strings,
-                          onBuy: () => context.go('/search'),
+                          onBuy: () => context.go('/search?type=PRODUCT'),
                           onSell: () => context.push('/post'),
-                          onJobs: () => context.go('/search?q=job'),
-                          onServices: () => context.go('/search?q=service'),
+                          onJobs: () => context.go('/search?type=JOB'),
+                          onServices: () => context.go('/search?type=SERVICE'),
                         ),
                       ),
                       const SizedBox(height: 20),
