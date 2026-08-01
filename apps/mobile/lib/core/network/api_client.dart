@@ -129,7 +129,8 @@ class ApiClient {
 
   Future<bool> _refreshOnce() {
     // Single-flight: everyone who arrives during a refresh awaits the same future.
-    return _refreshInFlight ??= _performRefresh().whenComplete(() => _refreshInFlight = null);
+    return _refreshInFlight ??=
+        _performRefresh().whenComplete(() => _refreshInFlight = null);
   }
 
   Future<bool> _performRefresh() async {
@@ -146,7 +147,8 @@ class ApiClient {
       if ((response.statusCode ?? 500) >= 400) return false;
 
       final payload = response.data as Map<String, dynamic>;
-      final tokens = (payload['data'] as Map<String, dynamic>)['tokens'] as Map<String, dynamic>;
+      final tokens = (payload['data'] as Map<String, dynamic>)['tokens']
+          as Map<String, dynamic>;
 
       await _tokens.saveTokens(
         accessToken: tokens['accessToken'] as String,

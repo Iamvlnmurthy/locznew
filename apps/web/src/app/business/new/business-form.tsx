@@ -16,6 +16,7 @@ interface BusinessOption {
 
 interface BusinessDraft {
   name: string;
+  businessType: string;
   categoryId: string;
   cityId: string;
   description: string;
@@ -28,6 +29,7 @@ interface BusinessDraft {
 
 const INITIAL_DRAFT: BusinessDraft = {
   name: '',
+  businessType: 'RETAIL_STORE',
   categoryId: '',
   cityId: '',
   description: '',
@@ -304,6 +306,31 @@ export function BusinessForm({
                 <p className="field__error">{state.fieldErrors.name}</p>
               ) : null}
             </div>
+
+            <fieldset className="business-category">
+              <legend>{l.businessType}</legend>
+              <p className="field__hint">{l.businessTypeHint}</p>
+              <div className="business-category__quick">
+                {[
+                  ['RETAIL_STORE', l.typeRetail, 'store'],
+                  ['HOME_BUSINESS', l.typeHome, 'home'],
+                  ['SERVICE_PROVIDER', l.typeService, 'tools'],
+                  ['PROFESSIONAL', l.typeProfessional, 'briefcase'],
+                ].map(([value, label, icon]) => (
+                  <button
+                    key={value}
+                    type="button"
+                    className={draft.businessType === value ? 'is-selected' : ''}
+                    onClick={() => updateDraft('businessType', value)}
+                  >
+                    <span><Icon name={icon} /></span>
+                    {label}
+                    <i><Icon name="check" /></i>
+                  </button>
+                ))}
+              </div>
+              <input type="hidden" name="businessType" value={draft.businessType} />
+            </fieldset>
 
             <fieldset
               className={`business-category${state.fieldErrors?.categoryId ? ' field--error' : ''}`}

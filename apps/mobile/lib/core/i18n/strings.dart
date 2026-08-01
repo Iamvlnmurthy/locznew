@@ -14,10 +14,12 @@ class Strings {
   final AppLocaleOption locale;
 
   static Strings of(BuildContext context) =>
-      Localizations.of<Strings>(context, Strings) ?? const Strings(AppLocaleOption.en);
+      Localizations.of<Strings>(context, Strings) ??
+      const Strings(AppLocaleOption.en);
 
   String call(String key, [Map<String, Object>? values]) {
-    final message = _catalogue[locale]?[key] ?? _catalogue[AppLocaleOption.en]![key] ?? key;
+    final message =
+        _catalogue[locale]?[key] ?? _catalogue[AppLocaleOption.en]![key] ?? key;
     if (values == null) return message;
 
     var output = message;
@@ -28,7 +30,8 @@ class Strings {
   }
 
   /// Lets tests distinguish a real translation from the intentional English fallback.
-  bool hasOwnTranslation(String key) => _catalogue[locale]?.containsKey(key) ?? false;
+  bool hasOwnTranslation(String key) =>
+      _catalogue[locale]?.containsKey(key) ?? false;
 
   static const Map<AppLocaleOption, Map<String, String>> _catalogue = {
     AppLocaleOption.en: {
@@ -46,11 +49,15 @@ class Strings {
       'location.searchCity': 'Search for a city',
       'location.pincodeLabel': 'Or enter your pincode',
       'location.pincodeGo': 'Go',
-      'location.pincodeUnknown': 'That pincode does not look right. Check the six digits.',
-      'location.permissionDenied': 'Location permission was declined. Pick a city instead.',
-      'location.outsideLaunchArea': 'LocZ is not live in your area yet. Pick a city to browse.',
+      'location.pincodeUnknown':
+          'That pincode does not look right. Check the six digits.',
+      'location.permissionDenied':
+          'Location permission was declined. Pick a city instead.',
+      'location.outsideLaunchArea':
+          'LocZ is not live in your area yet. Pick a city to browse.',
       'location.soon': 'soon',
-      'location.loadError': 'Could not load cities. Check your connection and try again.',
+      'location.loadError':
+          'Could not load cities. Check your connection and try again.',
       'location.noCities': 'No cities are available right now.',
       'location.noMatches': 'No city matches that search.',
       'search.placeholder': 'Search phones, jobs, rooms…',
@@ -85,10 +92,11 @@ class Strings {
       'feed.heroTitle': 'Good finds, right around you',
       'feed.heroHint': 'Fresh local picks from people and businesses nearby.',
       'feed.actionTitle': 'What brings you here?',
-      'feed.actionHint': 'Start with a goal. LocZ will narrow the neighbourhood for you.',
-      'feed.intentBuy': 'Buy nearby',
+      'feed.actionHint':
+          'Start with a goal. LocZ will narrow the neighbourhood for you.',
+      'feed.intentBuy': 'I want to buy',
       'feed.intentBuyHint': 'Useful things, close enough to inspect',
-      'feed.intentSell': 'Sell something',
+      'feed.intentSell': 'I want to sell',
       'feed.intentSellHint': 'Post free in a few clear steps',
       'feed.intentJobs': 'Find work',
       'feed.intentJobsHint': 'Local jobs without the long commute',
@@ -134,20 +142,23 @@ class Strings {
       'post.progressHint':
           'Clear details, the right location and a good photo help nearby people respond.',
       'post.editTitle': 'Edit your ad',
-      'post.editSubtitle': 'Keep the details accurate so local buyers know what to expect.',
+      'post.editSubtitle':
+          'Keep the details accurate so local buyers know what to expect.',
       'post.saveChanges': 'Save changes',
       'post.savingChanges': 'Saving…',
       'post.updateSuccess': 'Your changes were saved.',
       'post.moderationWarning':
           'Changing a live ad sends it through moderation again. It may be hidden while we review it.',
-      'post.removedCannotEdit': 'This listing was removed by a moderator and cannot be edited.',
+      'post.removedCannotEdit':
+          'This listing was removed by a moderator and cannot be edited.',
       'post.saveDraft': 'Save as draft',
       'post.draftSaved': 'Your draft is saved. You can finish it from My ads.',
       'post.preview': 'Preview',
       'post.previewTitle': 'Buyer preview',
       'post.previewUntitled': 'Your listing title',
       'post.previewNoDescription': 'Your description will appear here.',
-      'post.contactPrivacy': 'Your contact details are not shown in this preview.',
+      'post.contactPrivacy':
+          'Your contact details are not shown in this preview.',
       'post.restoreTitle': 'Continue your unfinished ad?',
       'post.restoreBody': 'We saved the details you entered on this device.',
       'post.restoreProgress': 'Continue',
@@ -155,7 +166,8 @@ class Strings {
       'post.detailsSection': 'What are you listing?',
       'post.priceSection': 'Price and condition',
       'post.locationSection': 'Location and contact',
-      'post.photoSafety': 'Only upload photos you own. Images are checked before publication.',
+      'post.photoSafety':
+          'Only upload photos you own. Images are checked before publication.',
       'post.fieldTitle': 'Title',
       'post.fieldDescription': 'Description',
       'post.fieldPrice': 'Price (₹)',
@@ -184,12 +196,14 @@ class Strings {
       'post.contactPhoneAndMessages': 'Phone and messages',
       'post.contactPhone': 'Show my phone number',
       'post.attributeSection': 'Category details',
-      'post.attributeHint': 'Add the details that help the right people find this listing.',
+      'post.attributeHint':
+          'Add the details that help the right people find this listing.',
       'post.attributeRequired': 'This detail is required',
       'post.attributeYes': 'Yes',
       'post.attributeNo': 'No',
       'post.attributeSelectDate': 'Choose a date',
-      'post.attributeCapacityHint': 'Include the unit, for example 250 L, 7 kg or 1.5 ton.',
+      'post.attributeCapacityHint':
+          'Include the unit, for example 250 L, 7 kg or 1.5 ton.',
       'post.attributeNumber': 'Enter a valid number',
       'post.attributeMinimum': 'Minimum is {value}',
       'post.attributeMaximum': 'Maximum is {value}',
@@ -204,14 +218,17 @@ class Strings {
       'deviceLock.title': 'Device lock',
       'deviceLock.checking': 'Checking…',
       'deviceLock.require': 'Require device lock',
-      'deviceLock.biometric': 'Ask for your fingerprint, face or screen lock before opening LocZ.',
+      'deviceLock.biometric':
+          'Ask for your fingerprint, face or screen lock before opening LocZ.',
       'deviceLock.credential': 'Ask for your screen lock before opening LocZ.',
       'deviceLock.notEnrolled':
           'Set up a fingerprint or screen lock in your phone settings to use this.',
       'deviceLock.unsupported': 'This phone cannot do this.',
-      'deviceLock.notChanged': 'Not changed — the device lock was not confirmed.',
+      'deviceLock.notChanged':
+          'Not changed — the device lock was not confirmed.',
       'deviceLock.locked': 'LocZ is locked',
-      'deviceLock.unlockHint': 'Unlock with your fingerprint, face or screen lock to continue.',
+      'deviceLock.unlockHint':
+          'Unlock with your fingerprint, face or screen lock to continue.',
       'deviceLock.unlock': 'Unlock',
       'auth.signInTitle': 'Sign in to LocZ',
       'auth.signInSubtitle': 'Use your mobile number and password.',
@@ -229,7 +246,8 @@ class Strings {
       'auth.devCode': 'Development mode — your code is {code}',
       'auth.privacy': 'Your number stays private',
       'register.title': 'Create your account',
-      'register.subtitle': 'Buy and sell near you. Joining LocZ is completely free.',
+      'register.subtitle':
+          'Buy and sell near you. Joining LocZ is completely free.',
       'register.brandLabel': 'LocZ',
       'register.freeAccount': 'Free local member account',
       'register.name': 'Your name',
@@ -244,11 +262,13 @@ class Strings {
       'register.haveAccount': 'Already have an account?',
       'register.newHere': 'New to LocZ?',
       'register.createAccount': 'Create an account',
-      'register.privacy': 'Your number stays private unless you choose to share it.',
+      'register.privacy':
+          'Your number stays private unless you choose to share it.',
       'register.invalidName': 'Enter at least 2 characters for your name',
       'register.shortPassword': 'Use at least 8 characters for your password',
       'register.passwordMismatch': 'The passwords do not match',
-      'register.phoneTaken': 'That mobile number already has an account. Sign in instead.',
+      'register.phoneTaken':
+          'That mobile number already has an account. Sign in instead.',
       'report.reason': 'Why are you reporting this?',
       'report.details': 'Anything else we should know? (optional)',
       'report.submit': 'Send report',
@@ -291,6 +311,74 @@ class Strings {
       'account.deleteTitle': 'Delete this ad?',
       'account.deleteConfirm':
           'This permanently removes the ad and cannot be undone. Are you sure?',
+      'post.intentQuestion': 'What do you want to do?',
+      'post.intentBuy': 'I want to buy',
+      'post.intentSell': 'I want to sell',
+      'post.intentBuyHint':
+          'Tell nearby sellers exactly what you need. They can answer with availability and price.',
+      'post.intentSellHint':
+          'Show nearby buyers what you have, with honest details and photos.',
+      'post.budgetSection': 'Budget and preference',
+      'post.budgetMin': 'Budget from',
+      'post.budgetMax': 'Budget up to',
+      'post.budgetOrder': 'Maximum budget must be higher than minimum',
+      'post.quantity': 'Quantity needed',
+      'requirements.answers': 'Seller answers',
+      'requirements.yourAnswer': 'Your answer',
+      'requirements.answersHint':
+          'Compare real offers, then start a private chat with the best match.',
+      'requirements.respondHint':
+          'Answer once with honest availability. You can update it if things change.',
+      'requirements.respond': 'I can help',
+      'requirements.viewAnswers': 'View answers',
+      'requirements.responseSaved': 'Your answer was sent to the buyer.',
+      'requirements.empty': 'No answers yet',
+      'requirements.emptyHint':
+          'Nearby sellers have been notified. New answers will appear here.',
+      'requirements.startChat': 'Start a private chat',
+      'requirements.chatHint': 'Ask the seller a useful first question',
+      'requirements.openChat': 'Open chat',
+      'requirements.continueChat': 'Continue chat',
+      'requirements.markFulfilled': 'I found what I needed',
+      'requirements.closing': 'Closing…',
+      'requirements.availability': 'Availability',
+      'requirements.offeredPrice': 'Your price (optional)',
+      'requirements.note': 'Short note (optional)',
+      'requirements.sendResponse': 'Send answer',
+      'requirements.kind.AVAILABLE': 'Available now',
+      'requirements.kind.AVAILABLE_AT_DIFFERENT_PRICE':
+          'Available at another price',
+      'requirements.kind.SIMILAR_AVAILABLE': 'Similar item available',
+      'requirements.kind.CAN_ARRANGE': 'Can arrange',
+      'requirements.kind.MADE_TO_ORDER': 'Made to order',
+      'requirements.kind.AVAILABLE_LATER': 'Available later',
+      'requirements.kind.NOT_AVAILABLE': 'Not available',
+      'sellerProfile.title': 'Seller profile',
+      'sellerProfile.liveAds': 'Live ads',
+      'sellerProfile.sold': 'Sold',
+      'sellerProfile.reliability': 'Response reliability',
+      'sellerProfile.responseRate': '{rate}% response rate',
+      'sellerProfile.responseTime': 'Usually replies in {minutes} minutes',
+      'sellerProfile.privacy':
+          'Contact details stay private unless the seller shares them on a listing.',
+      'savedSearches.title': 'Saved searches',
+      'savedSearches.saveTitle': 'Alert me to new matches',
+      'savedSearches.saveHint':
+          'Save these filters and LocZ will notify you when a matching listing goes live.',
+      'savedSearches.name': 'Name this search',
+      'savedSearches.defaultLabel': 'My local search',
+      'savedSearches.saved': 'Search saved. Alerts are on.',
+      'savedSearches.empty': 'No saved searches yet',
+      'savedSearches.emptyHint':
+          'Run a search, choose your filters, then tap the alert icon.',
+      'savedSearches.alertsOn': 'Alerts on',
+      'savedSearches.alertsPaused': 'Alerts paused',
+      'savedSearches.pause': 'Pause alerts',
+      'savedSearches.resume': 'Resume alerts',
+      'savedSearches.delete': 'Delete',
+      'savedSearches.deleteTitle': 'Delete this saved search?',
+      'savedSearches.deleteHint':
+          'You will stop receiving new-match alerts for it.',
       'common.retry': 'Try again',
       'common.error': 'Something went wrong',
       'common.offline': 'No internet connection',
@@ -314,9 +402,11 @@ class Strings {
       'location.searchCity': 'నగరం వెతకండి',
       'location.pincodeLabel': 'లేదా మీ పిన్‌కోడ్ ఇవ్వండి',
       'location.pincodeGo': 'వెళ్లు',
-      'location.pincodeUnknown': 'ఈ పిన్‌కోడ్ సరైనది కాదు. ఆరు అంకెలు సరిచూడండి.',
+      'location.pincodeUnknown':
+          'ఈ పిన్‌కోడ్ సరైనది కాదు. ఆరు అంకెలు సరిచూడండి.',
       'location.soon': 'త్వరలో',
-      'location.loadError': 'నగరాలను లోడ్ చేయలేకపోయాం. కనెక్షన్ చూసి మళ్లీ ప్రయత్నించండి.',
+      'location.loadError':
+          'నగరాలను లోడ్ చేయలేకపోయాం. కనెక్షన్ చూసి మళ్లీ ప్రయత్నించండి.',
       'location.noCities': 'ప్రస్తుతం నగరాలు అందుబాటులో లేవు.',
       'location.noMatches': 'ఆ వెతుకులాటకు సరిపోయే నగరం లేదు.',
       'search.placeholder': 'ఫోన్లు, ఉద్యోగాలు, గదులు…',
@@ -349,12 +439,14 @@ class Strings {
       'search.chooseDate': 'తేదీని ఎంచుకోండి',
       'feed.heroEyebrow': 'మీ పరిసరాలు, మరింత దగ్గరగా',
       'feed.heroTitle': 'మీ దగ్గరలోనే మంచి విషయాలు',
-      'feed.heroHint': 'సమీపంలోని వ్యక్తులు, వ్యాపారాల నుండి కొత్త స్థానిక ఎంపికలు.',
+      'feed.heroHint':
+          'సమీపంలోని వ్యక్తులు, వ్యాపారాల నుండి కొత్త స్థానిక ఎంపికలు.',
       'feed.actionTitle': 'మీరు దేనికోసం వచ్చారు?',
-      'feed.actionHint': 'మీ అవసరాన్ని ఎంచుకోండి. LocZ మీ పరిసరాల్లో సరైనవి చూపిస్తుంది.',
-      'feed.intentBuy': 'దగ్గరలో కొనండి',
+      'feed.actionHint':
+          'మీ అవసరాన్ని ఎంచుకోండి. LocZ మీ పరిసరాల్లో సరైనవి చూపిస్తుంది.',
+      'feed.intentBuy': 'నేను కొనాలనుకుంటున్నాను',
       'feed.intentBuyHint': 'చూసి కొనగలిగే ఉపయోగకరమైన వస్తువులు',
-      'feed.intentSell': 'ఏదైనా అమ్మండి',
+      'feed.intentSell': 'నేను అమ్మాలనుకుంటున్నాను',
       'feed.intentSellHint': 'సులభమైన దశల్లో ఉచితంగా పోస్ట్ చేయండి',
       'feed.intentJobs': 'పని వెతకండి',
       'feed.intentJobsHint': 'దూర ప్రయాణం లేని స్థానిక ఉద్యోగాలు',
@@ -391,7 +483,8 @@ class Strings {
       'post.progressHint':
           'స్పష్టమైన వివరాలు, సరైన ప్రాంతం, మంచి ఫోటో దగ్గరలోని వారికి స్పందించడానికి సహాయపడతాయి.',
       'post.editTitle': 'మీ ప్రకటనను సవరించండి',
-      'post.editSubtitle': 'స్థానిక కొనుగోలుదారులకు స్పష్టంగా ఉండేలా వివరాలను సరిగా ఉంచండి.',
+      'post.editSubtitle':
+          'స్థానిక కొనుగోలుదారులకు స్పష్టంగా ఉండేలా వివరాలను సరిగా ఉంచండి.',
       'post.saveChanges': 'మార్పులను సేవ్ చేయండి',
       'post.savingChanges': 'సేవ్ చేస్తోంది…',
       'post.updateSuccess': 'మీ మార్పులు సేవ్ అయ్యాయి.',
@@ -399,12 +492,14 @@ class Strings {
           'ప్రత్యక్ష ప్రకటనను మార్చితే మళ్లీ సమీక్షకు వెళ్తుంది. సమీక్ష సమయంలో అది కనిపించకపోవచ్చు.',
       'post.removedCannotEdit': 'మోడరేటర్ తొలగించిన ఈ ప్రకటనను సవరించలేరు.',
       'post.saveDraft': 'డ్రాఫ్ట్‌గా సేవ్ చేయండి',
-      'post.draftSaved': 'మీ డ్రాఫ్ట్ సేవ్ అయింది. నా ప్రకటనల నుంచి పూర్తి చేయవచ్చు.',
+      'post.draftSaved':
+          'మీ డ్రాఫ్ట్ సేవ్ అయింది. నా ప్రకటనల నుంచి పూర్తి చేయవచ్చు.',
       'post.preview': 'ముందుగా చూడండి',
       'post.previewTitle': 'కొనుగోలుదారుకు కనిపించే రూపం',
       'post.previewUntitled': 'మీ ప్రకటన శీర్షిక',
       'post.previewNoDescription': 'మీ వివరణ ఇక్కడ కనిపిస్తుంది.',
-      'post.contactPrivacy': 'ఈ ముందస్తు చూపులో మీ సంప్రదింపు వివరాలు కనిపించవు.',
+      'post.contactPrivacy':
+          'ఈ ముందస్తు చూపులో మీ సంప్రదింపు వివరాలు కనిపించవు.',
       'post.restoreTitle': 'పూర్తికాని ప్రకటనను కొనసాగించాలా?',
       'post.restoreBody': 'ఈ పరికరంలో మీరు నమోదు చేసిన వివరాలను సేవ్ చేశాము.',
       'post.restoreProgress': 'కొనసాగించండి',
@@ -429,12 +524,14 @@ class Strings {
       'post.contactPhoneAndMessages': 'ఫోన్ మరియు సందేశాలు',
       'post.contactPhone': 'నా ఫోన్ నంబర్ చూపించు',
       'post.attributeSection': 'వర్గానికి సంబంధించిన వివరాలు',
-      'post.attributeHint': 'ఈ లిస్టింగ్ సరైన వారికి చేరేలా ఉపయోగకరమైన వివరాలు జోడించండి.',
+      'post.attributeHint':
+          'ఈ లిస్టింగ్ సరైన వారికి చేరేలా ఉపయోగకరమైన వివరాలు జోడించండి.',
       'post.attributeRequired': 'ఈ వివరాన్ని తప్పనిసరిగా ఇవ్వాలి',
       'post.attributeYes': 'అవును',
       'post.attributeNo': 'కాదు',
       'post.attributeSelectDate': 'తేదీని ఎంచుకోండి',
-      'post.attributeCapacityHint': 'యూనిట్‌ను కూడా రాయండి, ఉదాహరణకు 250 L, 7 kg లేదా 1.5 ton.',
+      'post.attributeCapacityHint':
+          'యూనిట్‌ను కూడా రాయండి, ఉదాహరణకు 250 L, 7 kg లేదా 1.5 ton.',
       'post.attributeNumber': 'సరైన సంఖ్యను నమోదు చేయండి',
       'post.attributeMinimum': 'కనిష్ఠ విలువ {value}',
       'post.attributeMaximum': 'గరిష్ఠ విలువ {value}',
@@ -449,13 +546,16 @@ class Strings {
       'deviceLock.title': 'పరికర లాక్',
       'deviceLock.checking': 'తనిఖీ చేస్తోంది…',
       'deviceLock.require': 'పరికర లాక్ అవసరం',
-      'deviceLock.biometric': 'LocZ తెరవడానికి వేలిముద్ర, ముఖం లేదా స్క్రీన్ లాక్ అడగండి.',
+      'deviceLock.biometric':
+          'LocZ తెరవడానికి వేలిముద్ర, ముఖం లేదా స్క్రీన్ లాక్ అడగండి.',
       'deviceLock.credential': 'LocZ తెరవడానికి స్క్రీన్ లాక్ అడగండి.',
-      'deviceLock.notEnrolled': 'దీన్ని ఉపయోగించడానికి ఫోన్ సెట్టింగ్‌లలో లాక్ ఏర్పాటు చేయండి.',
+      'deviceLock.notEnrolled':
+          'దీన్ని ఉపయోగించడానికి ఫోన్ సెట్టింగ్‌లలో లాక్ ఏర్పాటు చేయండి.',
       'deviceLock.unsupported': 'ఈ ఫోన్‌లో ఈ సదుపాయం లేదు.',
       'deviceLock.notChanged': 'మార్పు లేదు — పరికర లాక్ నిర్ధారించబడలేదు.',
       'deviceLock.locked': 'LocZ లాక్ అయింది',
-      'deviceLock.unlockHint': 'కొనసాగించడానికి వేలిముద్ర, ముఖం లేదా స్క్రీన్ లాక్‌తో తెరవండి.',
+      'deviceLock.unlockHint':
+          'కొనసాగించడానికి వేలిముద్ర, ముఖం లేదా స్క్రీన్ లాక్‌తో తెరవండి.',
       'deviceLock.unlock': 'తెరవండి',
       'auth.signInTitle': 'LocZ లోకి సైన్ ఇన్',
       'auth.signInSubtitle': 'మీ మొబైల్ నంబర్ మరియు పాస్‌వర్డ్ ఉపయోగించండి.',
@@ -469,7 +569,8 @@ class Strings {
       'auth.verify': 'ధృవీకరించండి',
       'auth.privacy': 'మీ నంబర్ గోప్యంగా ఉంటుంది',
       'register.title': 'మీ ఖాతాను సృష్టించండి',
-      'register.subtitle': 'మీ దగ్గర కొనండి, అమ్మండి. LocZలో చేరడం పూర్తిగా ఉచితం.',
+      'register.subtitle':
+          'మీ దగ్గర కొనండి, అమ్మండి. LocZలో చేరడం పూర్తిగా ఉచితం.',
       'register.brandLabel': 'LocZ',
       'register.freeAccount': 'ఉచిత స్థానిక సభ్యత్వ ఖాతా',
       'register.name': 'మీ పేరు',
@@ -484,11 +585,13 @@ class Strings {
       'register.haveAccount': 'ఇప్పటికే ఖాతా ఉందా?',
       'register.newHere': 'LocZకు కొత్తా?',
       'register.createAccount': 'ఖాతా సృష్టించండి',
-      'register.privacy': 'మీరు పంచుకోవాలని ఎంచుకుంటే తప్ప మీ నంబర్ గోప్యంగా ఉంటుంది.',
+      'register.privacy':
+          'మీరు పంచుకోవాలని ఎంచుకుంటే తప్ప మీ నంబర్ గోప్యంగా ఉంటుంది.',
       'register.invalidName': 'మీ పేరుకు కనీసం 2 అక్షరాలు నమోదు చేయండి',
       'register.shortPassword': 'పాస్‌వర్డ్‌కు కనీసం 8 అక్షరాలు ఉపయోగించండి',
       'register.passwordMismatch': 'పాస్‌వర్డ్‌లు సరిపోలడం లేదు',
-      'register.phoneTaken': 'ఈ మొబైల్ నంబర్‌కు ఇప్పటికే ఖాతా ఉంది. సైన్ ఇన్ చేయండి.',
+      'register.phoneTaken':
+          'ఈ మొబైల్ నంబర్‌కు ఇప్పటికే ఖాతా ఉంది. సైన్ ఇన్ చేయండి.',
       'report.reason': 'మీరు దీన్ని ఎందుకు నివేదిస్తున్నారు?',
       'report.details': 'మేము ఇంకా ఏమైనా తెలుసుకోవాలా? (ఐచ్ఛికం)',
       'report.submit': 'నివేదిక పంపండి',
@@ -509,7 +612,8 @@ class Strings {
       'report.reason.other': 'వేరే కారణం',
       'chats.title': 'సందేశాలు',
       'account.appearance': 'రూపం',
-      'account.signInHint': 'మీ ప్రకటనలు, సేవ్ చేసినవి మరియు సందేశాలను నిర్వహించండి.',
+      'account.signInHint':
+          'మీ ప్రకటనలు, సేవ్ చేసినవి మరియు సందేశాలను నిర్వహించండి.',
       'account.themeSystem': 'ఫోన్ సెట్టింగ్',
       'account.themeLight': 'లైట్',
       'account.themeDark': 'డార్క్',
@@ -523,6 +627,73 @@ class Strings {
       'account.deleteTitle': 'ఈ ప్రకటనను తొలగించాలా?',
       'account.deleteConfirm':
           'ఇది ప్రకటనను శాశ్వతంగా తొలగిస్తుంది, తిరిగి పొందలేరు. కొనసాగించాలా?',
+      'post.intentQuestion': 'మీరు ఏమి చేయాలనుకుంటున్నారు?',
+      'post.intentBuy': 'నేను కొనాలనుకుంటున్నాను',
+      'post.intentSell': 'నేను అమ్మాలనుకుంటున్నాను',
+      'post.intentBuyHint':
+          'మీకు కావలసినది దగ్గరలోని విక్రేతలకు చెప్పండి. వారు ధర, లభ్యతతో స్పందిస్తారు.',
+      'post.intentSellHint':
+          'మీ దగ్గర ఉన్న వస్తువును నిజమైన వివరాలు, ఫోటోలతో చూపండి.',
+      'post.budgetSection': 'బడ్జెట్ మరియు అభిరుచి',
+      'post.budgetMin': 'బడ్జెట్ ప్రారంభం',
+      'post.budgetMax': 'బడ్జెట్ వరకు',
+      'post.budgetOrder': 'గరిష్ఠ బడ్జెట్ కనిష్ఠం కంటే ఎక్కువగా ఉండాలి',
+      'post.quantity': 'కావాల్సిన పరిమాణం',
+      'requirements.answers': 'విక్రేతల సమాధానాలు',
+      'requirements.yourAnswer': 'మీ సమాధానం',
+      'requirements.answersHint':
+          'ఆఫర్లను పోల్చి సరైన విక్రేతతో ప్రైవేట్ చాట్ ప్రారంభించండి.',
+      'requirements.respondHint':
+          'లభ్యతను నిజాయితీగా చెప్పండి. మారితే నవీకరించవచ్చు.',
+      'requirements.respond': 'నేను సహాయం చేయగలను',
+      'requirements.viewAnswers': 'సమాధానాలు చూడండి',
+      'requirements.responseSaved': 'మీ సమాధానం కొనుగోలుదారుకు పంపబడింది.',
+      'requirements.empty': 'ఇంకా సమాధానాలు లేవు',
+      'requirements.emptyHint':
+          'దగ్గరలోని విక్రేతలకు తెలియజేశాం. సమాధానాలు ఇక్కడ కనిపిస్తాయి.',
+      'requirements.startChat': 'ప్రైవేట్ చాట్ ప్రారంభించండి',
+      'requirements.chatHint': 'విక్రేతను ఉపయోగకరమైన ప్రశ్న అడగండి',
+      'requirements.openChat': 'చాట్ తెరవండి',
+      'requirements.continueChat': 'చాట్ కొనసాగించండి',
+      'requirements.markFulfilled': 'నాకు కావాల్సింది దొరికింది',
+      'requirements.closing': 'ముగిస్తోంది…',
+      'requirements.availability': 'లభ్యత',
+      'requirements.offeredPrice': 'మీ ధర (ఐచ్ఛికం)',
+      'requirements.note': 'చిన్న గమనిక (ఐచ్ఛికం)',
+      'requirements.sendResponse': 'సమాధానం పంపండి',
+      'requirements.kind.AVAILABLE': 'ఇప్పుడు లభ్యం',
+      'requirements.kind.AVAILABLE_AT_DIFFERENT_PRICE': 'వేరే ధరకు లభ్యం',
+      'requirements.kind.SIMILAR_AVAILABLE': 'సమానమైనది లభ్యం',
+      'requirements.kind.CAN_ARRANGE': 'ఏర్పాటు చేయగలను',
+      'requirements.kind.MADE_TO_ORDER': 'ఆర్డర్‌పై తయారీ',
+      'requirements.kind.AVAILABLE_LATER': 'తర్వాత లభ్యం',
+      'requirements.kind.NOT_AVAILABLE': 'లభ్యం కాదు',
+      'sellerProfile.title': 'విక్రేత ప్రొఫైల్',
+      'sellerProfile.liveAds': 'లైవ్ ప్రకటనలు',
+      'sellerProfile.sold': 'అమ్మినవి',
+      'sellerProfile.reliability': 'స్పందన నమ్మకత్వం',
+      'sellerProfile.responseRate': '{rate}% స్పందన రేటు',
+      'sellerProfile.responseTime':
+          'సాధారణంగా {minutes} నిమిషాల్లో స్పందిస్తారు',
+      'sellerProfile.privacy':
+          'విక్రేత ప్రకటనలో పంచుకుంటే తప్ప సంప్రదింపు వివరాలు ప్రైవేట్‌గా ఉంటాయి.',
+      'savedSearches.title': 'సేవ్ చేసిన శోధనలు',
+      'savedSearches.saveTitle': 'కొత్త ఫలితాలకు అలర్ట్',
+      'savedSearches.saveHint':
+          'ఈ ఫిల్టర్లను సేవ్ చేస్తే సరిపోయే ప్రకటన వచ్చినప్పుడు LocZ తెలియజేస్తుంది.',
+      'savedSearches.name': 'ఈ శోధనకు పేరు',
+      'savedSearches.defaultLabel': 'నా స్థానిక శోధన',
+      'savedSearches.saved': 'శోధన సేవ్ అయింది. అలర్ట్లు ఆన్‌లో ఉన్నాయి.',
+      'savedSearches.empty': 'సేవ్ చేసిన శోధనలు లేవు',
+      'savedSearches.emptyHint':
+          'శోధించి, ఫిల్టర్లు ఎంచుకుని, అలర్ట్ గుర్తును నొక్కండి.',
+      'savedSearches.alertsOn': 'అలర్ట్లు ఆన్',
+      'savedSearches.alertsPaused': 'అలర్ట్లు నిలిపివేశారు',
+      'savedSearches.pause': 'అలర్ట్లు నిలిపివేయండి',
+      'savedSearches.resume': 'అలర్ట్లు కొనసాగించండి',
+      'savedSearches.delete': 'తొలగించండి',
+      'savedSearches.deleteTitle': 'ఈ శోధనను తొలగించాలా?',
+      'savedSearches.deleteHint': 'దీనికి కొత్త ఫలితాల అలర్ట్లు ఇక రావు.',
       'common.retry': 'మళ్లీ ప్రయత్నించండి',
       'common.error': 'ఏదో తప్పు జరిగింది',
       'common.cancel': 'రద్దు',
@@ -545,7 +716,8 @@ class Strings {
       'location.pincodeUnknown': 'यह पिनकोड सही नहीं लगता। छह अंक जाँच लें।',
       'location.searchCity': 'शहर खोजें',
       'location.soon': 'जल्द',
-      'location.loadError': 'शहर लोड नहीं हो सके। कनेक्शन जाँचकर फिर कोशिश करें।',
+      'location.loadError':
+          'शहर लोड नहीं हो सके। कनेक्शन जाँचकर फिर कोशिश करें।',
       'location.noCities': 'अभी कोई शहर उपलब्ध नहीं है।',
       'location.noMatches': 'इस खोज से मिलता कोई शहर नहीं है।',
       'search.placeholder': 'फ़ोन, नौकरी, कमरा…',
@@ -581,10 +753,11 @@ class Strings {
       'feed.heroTitle': 'अच्छी चीज़ें, आपके आसपास',
       'feed.heroHint': 'पास के लोगों और व्यवसायों से नई स्थानीय पसंद।',
       'feed.actionTitle': 'आप यहाँ किस काम से आए हैं?',
-      'feed.actionHint': 'अपना लक्ष्य चुनें। LocZ आपके आसपास सही विकल्प दिखाएगा।',
-      'feed.intentBuy': 'पास में खरीदें',
+      'feed.actionHint':
+          'अपना लक्ष्य चुनें। LocZ आपके आसपास सही विकल्प दिखाएगा।',
+      'feed.intentBuy': 'मैं खरीदना चाहता हूँ',
       'feed.intentBuyHint': 'ऐसी उपयोगी चीज़ें जिन्हें आप देखकर खरीद सकें',
-      'feed.intentSell': 'कुछ बेचें',
+      'feed.intentSell': 'मैं बेचना चाहता हूँ',
       'feed.intentSellHint': 'कुछ आसान चरणों में मुफ़्त पोस्ट करें',
       'feed.intentJobs': 'काम खोजें',
       'feed.intentJobsHint': 'लंबे सफ़र के बिना स्थानीय नौकरियाँ',
@@ -620,20 +793,24 @@ class Strings {
       'post.progressHint':
           'साफ़ जानकारी, सही जगह और अच्छी तस्वीर से आसपास के लोग जल्दी जवाब देते हैं।',
       'post.editTitle': 'अपना विज्ञापन संपादित करें',
-      'post.editSubtitle': 'जानकारी सही रखें ताकि स्थानीय खरीदारों को स्पष्ट बात पता चले।',
+      'post.editSubtitle':
+          'जानकारी सही रखें ताकि स्थानीय खरीदारों को स्पष्ट बात पता चले।',
       'post.saveChanges': 'बदलाव सहेजें',
       'post.savingChanges': 'सहेज रहे हैं…',
       'post.updateSuccess': 'आपके बदलाव सहेज दिए गए हैं।',
       'post.moderationWarning':
           'लाइव विज्ञापन बदलने पर उसकी दोबारा जाँच होगी। जाँच के दौरान वह छिप सकता है।',
-      'post.removedCannotEdit': 'मॉडरेटर द्वारा हटाए गए इस विज्ञापन को संपादित नहीं किया जा सकता।',
+      'post.removedCannotEdit':
+          'मॉडरेटर द्वारा हटाए गए इस विज्ञापन को संपादित नहीं किया जा सकता।',
       'post.saveDraft': 'ड्राफ़्ट सहेजें',
-      'post.draftSaved': 'आपका ड्राफ़्ट सहेज लिया गया है। इसे मेरे विज्ञापन से पूरा करें।',
+      'post.draftSaved':
+          'आपका ड्राफ़्ट सहेज लिया गया है। इसे मेरे विज्ञापन से पूरा करें।',
       'post.preview': 'पूर्वावलोकन',
       'post.previewTitle': 'खरीदार को ऐसा दिखेगा',
       'post.previewUntitled': 'आपके विज्ञापन का शीर्षक',
       'post.previewNoDescription': 'आपका विवरण यहाँ दिखाई देगा।',
-      'post.contactPrivacy': 'इस पूर्वावलोकन में आपकी संपर्क जानकारी नहीं दिखाई जाती।',
+      'post.contactPrivacy':
+          'इस पूर्वावलोकन में आपकी संपर्क जानकारी नहीं दिखाई जाती।',
       'post.restoreTitle': 'अपना अधूरा विज्ञापन जारी रखें?',
       'post.restoreBody': 'इस डिवाइस पर भरी गई जानकारी हमने सहेज रखी है।',
       'post.restoreProgress': 'जारी रखें',
@@ -659,12 +836,14 @@ class Strings {
       'post.contactPhoneAndMessages': 'फ़ोन और संदेश',
       'post.contactPhone': 'मेरा फ़ोन नंबर दिखाएँ',
       'post.attributeSection': 'श्रेणी की जानकारी',
-      'post.attributeHint': 'सही लोगों तक लिस्टिंग पहुँचाने वाली उपयोगी जानकारी जोड़ें।',
+      'post.attributeHint':
+          'सही लोगों तक लिस्टिंग पहुँचाने वाली उपयोगी जानकारी जोड़ें।',
       'post.attributeRequired': 'यह जानकारी ज़रूरी है',
       'post.attributeYes': 'हाँ',
       'post.attributeNo': 'नहीं',
       'post.attributeSelectDate': 'तारीख़ चुनें',
-      'post.attributeCapacityHint': 'इकाई भी लिखें, जैसे 250 L, 7 kg या 1.5 ton।',
+      'post.attributeCapacityHint':
+          'इकाई भी लिखें, जैसे 250 L, 7 kg या 1.5 ton।',
       'post.attributeNumber': 'सही संख्या दर्ज करें',
       'post.attributeMinimum': 'न्यूनतम {value} है',
       'post.attributeMaximum': 'अधिकतम {value} है',
@@ -679,13 +858,17 @@ class Strings {
       'deviceLock.title': 'डिवाइस लॉक',
       'deviceLock.checking': 'जाँच जारी है…',
       'deviceLock.require': 'डिवाइस लॉक ज़रूरी करें',
-      'deviceLock.biometric': 'LocZ खोलने से पहले फ़िंगरप्रिंट, चेहरा या स्क्रीन लॉक माँगें।',
+      'deviceLock.biometric':
+          'LocZ खोलने से पहले फ़िंगरप्रिंट, चेहरा या स्क्रीन लॉक माँगें।',
       'deviceLock.credential': 'LocZ खोलने से पहले स्क्रीन लॉक माँगें।',
-      'deviceLock.notEnrolled': 'इसे इस्तेमाल करने के लिए फ़ोन सेटिंग में स्क्रीन लॉक बनाएँ।',
+      'deviceLock.notEnrolled':
+          'इसे इस्तेमाल करने के लिए फ़ोन सेटिंग में स्क्रीन लॉक बनाएँ।',
       'deviceLock.unsupported': 'यह फ़ोन यह सुविधा नहीं देता।',
-      'deviceLock.notChanged': 'कोई बदलाव नहीं — डिवाइस लॉक की पुष्टि नहीं हुई।',
+      'deviceLock.notChanged':
+          'कोई बदलाव नहीं — डिवाइस लॉक की पुष्टि नहीं हुई।',
       'deviceLock.locked': 'LocZ लॉक है',
-      'deviceLock.unlockHint': 'जारी रखने के लिए फ़िंगरप्रिंट, चेहरा या स्क्रीन लॉक खोलें।',
+      'deviceLock.unlockHint':
+          'जारी रखने के लिए फ़िंगरप्रिंट, चेहरा या स्क्रीन लॉक खोलें।',
       'deviceLock.unlock': 'अनलॉक करें',
       'auth.signInTitle': 'LocZ में साइन इन करें',
       'auth.signInSubtitle': 'अपने मोबाइल नंबर और पासवर्ड का उपयोग करें।',
@@ -698,7 +881,8 @@ class Strings {
       'auth.code': 'सत्यापन कोड',
       'auth.verify': 'सत्यापित करें',
       'register.title': 'अपना खाता बनाएँ',
-      'register.subtitle': 'अपने आस-पास खरीदें और बेचें। LocZ से जुड़ना पूरी तरह मुफ़्त है।',
+      'register.subtitle':
+          'अपने आस-पास खरीदें और बेचें। LocZ से जुड़ना पूरी तरह मुफ़्त है।',
       'register.brandLabel': 'LocZ',
       'register.freeAccount': 'मुफ़्त स्थानीय सदस्य खाता',
       'register.name': 'आपका नाम',
@@ -723,7 +907,8 @@ class Strings {
       'report.submit': 'रिपोर्ट भेजें',
       'report.sending': 'भेज रहे हैं…',
       'report.chooseReason': 'कोई कारण चुनें',
-      'report.success': 'धन्यवाद — हमारी सुरक्षा टीम इसकी जाँच करेगी और नतीजे की सूचना देगी।',
+      'report.success':
+          'धन्यवाद — हमारी सुरक्षा टीम इसकी जाँच करेगी और नतीजे की सूचना देगी।',
       'report.done': 'हो गया',
       'report.reason.spam': 'स्पैम या बार-बार पोस्ट किया गया',
       'report.reason.fraud': 'धोखाधड़ी या स्कैम',
@@ -751,6 +936,73 @@ class Strings {
       'account.deleteTitle': 'यह विज्ञापन हटाएँ?',
       'account.deleteConfirm':
           'यह विज्ञापन हमेशा के लिए हट जाएगा और वापस नहीं आ सकता। क्या आप निश्चित हैं?',
+      'post.intentQuestion': 'आप क्या करना चाहते हैं?',
+      'post.intentBuy': 'मैं खरीदना चाहता हूँ',
+      'post.intentSell': 'मैं बेचना चाहता हूँ',
+      'post.intentBuyHint':
+          'पास के विक्रेताओं को साफ़ बताएँ कि आपको क्या चाहिए। वे उपलब्धता और कीमत भेज सकते हैं।',
+      'post.intentSellHint':
+          'ईमानदार जानकारी और फ़ोटो के साथ पास के खरीदारों को अपनी चीज़ दिखाएँ।',
+      'post.budgetSection': 'बजट और पसंद',
+      'post.budgetMin': 'बजट शुरू',
+      'post.budgetMax': 'बजट अधिकतम',
+      'post.budgetOrder': 'अधिकतम बजट न्यूनतम से ज़्यादा होना चाहिए',
+      'post.quantity': 'कितनी संख्या चाहिए',
+      'requirements.answers': 'विक्रेताओं के जवाब',
+      'requirements.yourAnswer': 'आपका जवाब',
+      'requirements.answersHint':
+          'सही ऑफ़र चुनें और उस विक्रेता से निजी चैट शुरू करें।',
+      'requirements.respondHint':
+          'उपलब्धता ईमानदारी से बताएँ। बदलाव होने पर अपडेट कर सकते हैं।',
+      'requirements.respond': 'मैं मदद कर सकता हूँ',
+      'requirements.viewAnswers': 'जवाब देखें',
+      'requirements.responseSaved': 'आपका जवाब खरीदार को भेज दिया गया।',
+      'requirements.empty': 'अभी कोई जवाब नहीं',
+      'requirements.emptyHint':
+          'पास के विक्रेताओं को सूचना दी गई है। जवाब यहाँ दिखेंगे।',
+      'requirements.startChat': 'निजी चैट शुरू करें',
+      'requirements.chatHint': 'विक्रेता से उपयोगी पहला सवाल पूछें',
+      'requirements.openChat': 'चैट खोलें',
+      'requirements.continueChat': 'चैट जारी रखें',
+      'requirements.markFulfilled': 'मुझे चाहिए था वह मिल गया',
+      'requirements.closing': 'बंद हो रहा है…',
+      'requirements.availability': 'उपलब्धता',
+      'requirements.offeredPrice': 'आपकी कीमत (वैकल्पिक)',
+      'requirements.note': 'छोटा नोट (वैकल्पिक)',
+      'requirements.sendResponse': 'जवाब भेजें',
+      'requirements.kind.AVAILABLE': 'अभी उपलब्ध',
+      'requirements.kind.AVAILABLE_AT_DIFFERENT_PRICE': 'दूसरी कीमत पर उपलब्ध',
+      'requirements.kind.SIMILAR_AVAILABLE': 'मिलती-जुलती चीज़ उपलब्ध',
+      'requirements.kind.CAN_ARRANGE': 'व्यवस्था कर सकते हैं',
+      'requirements.kind.MADE_TO_ORDER': 'ऑर्डर पर बनेगा',
+      'requirements.kind.AVAILABLE_LATER': 'बाद में उपलब्ध',
+      'requirements.kind.NOT_AVAILABLE': 'उपलब्ध नहीं',
+      'sellerProfile.title': 'विक्रेता प्रोफ़ाइल',
+      'sellerProfile.liveAds': 'लाइव विज्ञापन',
+      'sellerProfile.sold': 'बेचे गए',
+      'sellerProfile.reliability': 'जवाब की विश्वसनीयता',
+      'sellerProfile.responseRate': '{rate}% जवाब दर',
+      'sellerProfile.responseTime': 'आमतौर पर {minutes} मिनट में जवाब',
+      'sellerProfile.privacy':
+          'संपर्क जानकारी निजी रहती है, जब तक विक्रेता उसे किसी विज्ञापन पर साझा न करे।',
+      'savedSearches.title': 'सहेजी खोजें',
+      'savedSearches.saveTitle': 'नए मिलान की सूचना दें',
+      'savedSearches.saveHint':
+          'ये फ़िल्टर सहेजें और नई मिलती लिस्टिंग आने पर LocZ आपको बताएगा।',
+      'savedSearches.name': 'इस खोज का नाम',
+      'savedSearches.defaultLabel': 'मेरी स्थानीय खोज',
+      'savedSearches.saved': 'खोज सहेजी गई। सूचनाएँ चालू हैं।',
+      'savedSearches.empty': 'अभी कोई सहेजी खोज नहीं',
+      'savedSearches.emptyHint':
+          'खोज करें, फ़िल्टर चुनें, फिर अलर्ट आइकन दबाएँ।',
+      'savedSearches.alertsOn': 'सूचनाएँ चालू',
+      'savedSearches.alertsPaused': 'सूचनाएँ रुकी हैं',
+      'savedSearches.pause': 'सूचनाएँ रोकें',
+      'savedSearches.resume': 'सूचनाएँ फिर चालू करें',
+      'savedSearches.delete': 'हटाएँ',
+      'savedSearches.deleteTitle': 'यह सहेजी खोज हटाएँ?',
+      'savedSearches.deleteHint':
+          'इसके नए मिलान की सूचनाएँ मिलना बंद हो जाएँगी।',
       'common.retry': 'फिर कोशिश करें',
       'common.error': 'कुछ गड़बड़ हुई',
       'common.cancel': 'रद्द करें',
@@ -766,7 +1018,8 @@ class StringsDelegate extends LocalizationsDelegate<Strings> {
   final AppLocaleOption option;
 
   @override
-  bool isSupported(Locale locale) => ['en', 'te', 'hi'].contains(locale.languageCode);
+  bool isSupported(Locale locale) =>
+      ['en', 'te', 'hi'].contains(locale.languageCode);
 
   @override
   Future<Strings> load(Locale locale) async => Strings(option);

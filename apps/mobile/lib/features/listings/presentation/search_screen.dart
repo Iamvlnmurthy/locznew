@@ -7,6 +7,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../core/config/env.dart';
 import '../../../core/i18n/strings.dart';
+import '../../../core/network/api_exception.dart';
 import '../../../core/providers.dart';
 import '../../../core/theme/tokens.g.dart';
 import '../data/listing_repository.dart';
@@ -99,7 +100,8 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
     final preferences = await SharedPreferences.getInstance();
     if (!mounted) return;
     setState(() {
-      _recentSearches = (preferences.getStringList(_recentKey) ?? const []).take(8).toList();
+      _recentSearches =
+          (preferences.getStringList(_recentKey) ?? const []).take(8).toList();
     });
   }
 
@@ -158,6 +160,70 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
             attributes: _attributes,
           );
     });
+  }
+
+  Future<void> _saveSearch() async {
+    final auth = ref.read(authProvider);
+    if (!auth.isSignedIn) {
+      await context.push('/signin?next=/search');
+      return;
+    }
+    final strings = Strings.of(context);
+    final controller = TextEditingController(
+      text: _query.isNotEmpty
+          ? _query
+          : (_categoryLabel ?? strings('savedSearches.defaultLabel')),
+    );
+    final label = await showDialog<String>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(strings('savedSearches.saveTitle')),
+        content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(strings('savedSearches.saveHint')),
+              const SizedBox(height: LoczSpacing.x3),
+              TextField(
+                controller: controller,
+                autofocus: true,
+                maxLength: 120,
+                decoration:
+                    InputDecoration(labelText: strings('savedSearches.name')),
+              ),
+            ]),
+        actions: [
+          TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: Text(strings('common.cancel'))),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, controller.text.trim()),
+            child: Text(strings('listing.save')),
+          ),
+        ],
+      ),
+    );
+    if (label == null || label.length < 2 || !mounted) return;
+    try {
+      final city = ref.read(selectedCityProvider);
+      await ref.read(listingRepositoryProvider).saveSearch(
+            label: label,
+            query: _query,
+            type: _type,
+            categoryId: _categoryId,
+            cityId: city?.id,
+            attributes: _attributes,
+          );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(strings('savedSearches.saved'))),
+        );
+      }
+    } on ApiException catch (error) {
+      if (mounted)
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text(error.message)));
+    }
   }
 
   Future<void> _showCategoryFilters() async {
@@ -252,10 +318,19 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
             _run();
           },
         ),
+        actions: [
+          IconButton(
+            onPressed: _saveSearch,
+            tooltip: strings('savedSearches.saveTitle'),
+            icon: const Icon(Icons.notifications_active_outlined),
+          ),
+        ],
       ),
       body: Column(
         children: [
-          if (_focusNode.hasFocus && _controller.text.trim().isEmpty && _recentSearches.isNotEmpty)
+          if (_focusNode.hasFocus &&
+              _controller.text.trim().isEmpty &&
+              _recentSearches.isNotEmpty)
             Material(
               color: Theme.of(context).colorScheme.surface,
               elevation: 3,
@@ -312,7 +387,10 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
               color: Theme.of(context).colorScheme.surface,
               border: Border(
                 bottom: BorderSide(
-                  color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.4),
+                  color: Theme.of(context)
+                      .colorScheme
+                      .outline
+                      .withValues(alpha: 0.4),
                 ),
               ),
             ),
@@ -357,7 +435,8 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                     Padding(
                       padding: const EdgeInsets.only(right: 6),
                       child: ActionChip(
-                        avatar: const Icon(Icons.location_on_outlined, size: 16),
+                        avatar:
+                            const Icon(Icons.location_on_outlined, size: 16),
                         label: Text(strings('search.chooseArea')),
                         onPressed: () async {
                           await context.push('/location');
@@ -490,7 +569,9 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                       ),
                       child: Text(
                         strings(
-                          items.length == 1 ? 'search.resultCountOne' : 'search.resultCountMany',
+                          items.length == 1
+                              ? 'search.resultCountOne'
+                              : 'search.resultCountMany',
                           {'count': items.length},
                         ),
                         style: Theme.of(context).textTheme.labelMedium,
@@ -551,7 +632,8 @@ class _SearchAttributeFilters extends StatefulWidget {
   final Strings strings;
 
   @override
-  State<_SearchAttributeFilters> createState() => _SearchAttributeFiltersState();
+  State<_SearchAttributeFilters> createState() =>
+      _SearchAttributeFiltersState();
 }
 
 class _SearchAttributeFiltersState extends State<_SearchAttributeFilters> {
@@ -578,15 +660,18 @@ class _SearchAttributeFiltersState extends State<_SearchAttributeFilters> {
       if (_categoryId != null) {
         selected = _findMobileCategory(categories, _categoryId!);
       }
-      final detail =
-          selected == null ? null : await widget.repository.categoryDetail(selected.slug);
+      final detail = selected == null
+          ? null
+          : await widget.repository.categoryDetail(selected.slug);
       if (!mounted) return;
       setState(() {
         _categories = categories;
-        _definitions =
-            (detail?.attributes ?? const []).where((attribute) => attribute.isFilterable).toList();
-        _categoryLabel =
-            selected == null ? null : _mobileCategoryName(selected, widget.strings.locale);
+        _definitions = (detail?.attributes ?? const [])
+            .where((attribute) => attribute.isFilterable)
+            .toList();
+        _categoryLabel = selected == null
+            ? null
+            : _mobileCategoryName(selected, widget.strings.locale);
         _loading = false;
       });
     } catch (error) {
@@ -615,7 +700,9 @@ class _SearchAttributeFiltersState extends State<_SearchAttributeFilters> {
       if (!mounted || _categoryId != id) return;
       setState(() {
         _categoryLabel = _mobileCategoryName(category, widget.strings.locale);
-        _definitions = detail.attributes.where((attribute) => attribute.isFilterable).toList();
+        _definitions = detail.attributes
+            .where((attribute) => attribute.isFilterable)
+            .toList();
         _loading = false;
       });
     } catch (error) {
@@ -640,7 +727,9 @@ class _SearchAttributeFiltersState extends State<_SearchAttributeFilters> {
     setState(() {
       _attributes = [
         ..._attributes.where((value) => !value.startsWith(prefix)),
-        ...values.where((value) => value.isNotEmpty).map((value) => '$prefix$value'),
+        ...values
+            .where((value) => value.isNotEmpty)
+            .map((value) => '$prefix$value'),
       ];
     });
   }
@@ -670,13 +759,17 @@ class _SearchAttributeFiltersState extends State<_SearchAttributeFilters> {
               Expanded(
                 child: TextFormField(
                   initialValue: initialMinimum,
-                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                  decoration: InputDecoration(labelText: strings('search.minimum')),
+                  keyboardType:
+                      const TextInputType.numberWithOptions(decimal: true),
+                  decoration:
+                      InputDecoration(labelText: strings('search.minimum')),
                   onChanged: (value) {
                     minimum = value.trim();
                     _replace(
                       attribute.key,
-                      minimum.isEmpty && maximum.isEmpty ? const [] : ['$minimum..$maximum'],
+                      minimum.isEmpty && maximum.isEmpty
+                          ? const []
+                          : ['$minimum..$maximum'],
                     );
                   },
                 ),
@@ -685,13 +778,17 @@ class _SearchAttributeFiltersState extends State<_SearchAttributeFilters> {
               Expanded(
                 child: TextFormField(
                   initialValue: initialMaximum,
-                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                  decoration: InputDecoration(labelText: strings('search.maximum')),
+                  keyboardType:
+                      const TextInputType.numberWithOptions(decimal: true),
+                  decoration:
+                      InputDecoration(labelText: strings('search.maximum')),
                   onChanged: (value) {
                     maximum = value.trim();
                     _replace(
                       attribute.key,
-                      minimum.isEmpty && maximum.isEmpty ? const [] : ['$minimum..$maximum'],
+                      minimum.isEmpty && maximum.isEmpty
+                          ? const []
+                          : ['$minimum..$maximum'],
                     );
                   },
                 ),
@@ -842,7 +939,8 @@ class _SearchAttributeFiltersState extends State<_SearchAttributeFilters> {
                   key: ValueKey('search-category-$_categoryId'),
                   initialValue: _categoryId ?? '',
                   isExpanded: true,
-                  decoration: InputDecoration(labelText: strings('search.category')),
+                  decoration:
+                      InputDecoration(labelText: strings('search.category')),
                   items: [
                     DropdownMenuItem(
                       value: '',
@@ -855,7 +953,8 @@ class _SearchAttributeFiltersState extends State<_SearchAttributeFilters> {
                       ),
                     ),
                   ],
-                  onChanged: (value) => _selectCategory((value?.isEmpty ?? true) ? null : value),
+                  onChanged: (value) =>
+                      _selectCategory((value?.isEmpty ?? true) ? null : value),
                 ),
                 if (_loading) ...[
                   const SizedBox(height: LoczSpacing.x4),
@@ -922,7 +1021,8 @@ Category? _findMobileCategory(List<Category> categories, String id) {
   return null;
 }
 
-String _mobileCategoryName(Category category, AppLocaleOption locale) => switch (locale) {
+String _mobileCategoryName(Category category, AppLocaleOption locale) =>
+    switch (locale) {
       AppLocaleOption.te => category.nameTe ?? category.name,
       AppLocaleOption.hi => category.nameHi ?? category.name,
       AppLocaleOption.en => category.name,

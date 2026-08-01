@@ -21,10 +21,12 @@ class RequirementResponsesScreen extends ConsumerStatefulWidget {
   final bool isOwner;
 
   @override
-  ConsumerState<RequirementResponsesScreen> createState() => _RequirementResponsesScreenState();
+  ConsumerState<RequirementResponsesScreen> createState() =>
+      _RequirementResponsesScreenState();
 }
 
-class _RequirementResponsesScreenState extends ConsumerState<RequirementResponsesScreen> {
+class _RequirementResponsesScreenState
+    extends ConsumerState<RequirementResponsesScreen> {
   late Future<List<RequirementResponse>> _responses;
   bool _closing = false;
 
@@ -35,7 +37,9 @@ class _RequirementResponsesScreenState extends ConsumerState<RequirementResponse
   }
 
   void _reload() {
-    _responses = ref.read(listingRepositoryProvider).requirementResponses(widget.listingId);
+    _responses = ref
+        .read(listingRepositoryProvider)
+        .requirementResponses(widget.listingId);
   }
 
   Future<void> _respond() async {
@@ -56,11 +60,14 @@ class _RequirementResponsesScreenState extends ConsumerState<RequirementResponse
       setState(_reload);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(Strings.of(context)('requirements.responseSaved'))),
+          SnackBar(
+              content: Text(Strings.of(context)('requirements.responseSaved'))),
         );
       }
     } on ApiException catch (error) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(error.message)));
+      if (mounted)
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text(error.message)));
     }
   }
 
@@ -79,10 +86,13 @@ class _RequirementResponsesScreenState extends ConsumerState<RequirementResponse
           controller: controller,
           autofocus: true,
           maxLines: 3,
-          decoration: InputDecoration(hintText: strings('requirements.chatHint')),
+          decoration:
+              InputDecoration(hintText: strings('requirements.chatHint')),
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: Text(strings('common.cancel'))),
+          TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: Text(strings('common.cancel'))),
           FilledButton(
             onPressed: () => Navigator.pop(context, controller.text.trim()),
             child: Text(strings('requirements.openChat')),
@@ -97,7 +107,9 @@ class _RequirementResponsesScreenState extends ConsumerState<RequirementResponse
           .openRequirementChat(response.id, message);
       if (mounted) await context.push('/chats/$id');
     } on ApiException catch (error) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(error.message)));
+      if (mounted)
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text(error.message)));
     }
   }
 
@@ -111,7 +123,8 @@ class _RequirementResponsesScreenState extends ConsumerState<RequirementResponse
     } on ApiException catch (error) {
       if (mounted) {
         setState(() => _closing = false);
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(error.message)));
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text(error.message)));
       }
     }
   }
@@ -121,7 +134,10 @@ class _RequirementResponsesScreenState extends ConsumerState<RequirementResponse
     final strings = Strings.of(context);
     final theme = Theme.of(context);
     return Scaffold(
-      appBar: AppBar(title: Text(widget.isOwner ? strings('requirements.answers') : strings('requirements.yourAnswer'))),
+      appBar: AppBar(
+          title: Text(widget.isOwner
+              ? strings('requirements.answers')
+              : strings('requirements.yourAnswer'))),
       floatingActionButton: widget.isOwner
           ? null
           : FloatingActionButton.extended(
@@ -138,14 +154,16 @@ class _RequirementResponsesScreenState extends ConsumerState<RequirementResponse
           future: _responses,
           builder: (context, snapshot) {
             final responses = snapshot.data;
-            if (responses == null && snapshot.connectionState != ConnectionState.done) {
+            if (responses == null &&
+                snapshot.connectionState != ConnectionState.done) {
               return const Center(child: CircularProgressIndicator());
             }
             if (snapshot.hasError) {
               return ListView(children: [
                 Padding(
                   padding: const EdgeInsets.all(LoczSpacing.x6),
-                  child: Text(snapshot.error.toString(), textAlign: TextAlign.center),
+                  child: Text(snapshot.error.toString(),
+                      textAlign: TextAlign.center),
                 ),
               ]);
             }
@@ -158,27 +176,33 @@ class _RequirementResponsesScreenState extends ConsumerState<RequirementResponse
                     color: theme.colorScheme.primaryContainer,
                     borderRadius: BorderRadius.circular(LoczRadius.lg),
                   ),
-                  child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                    Text(widget.title, style: theme.textTheme.titleMedium),
-                    const SizedBox(height: 4),
-                    Text(
-                      widget.isOwner
-                          ? strings('requirements.answersHint')
-                          : strings('requirements.respondHint'),
-                      style: theme.textTheme.bodySmall,
-                    ),
-                  ]),
+                  child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(widget.title, style: theme.textTheme.titleMedium),
+                        const SizedBox(height: 4),
+                        Text(
+                          widget.isOwner
+                              ? strings('requirements.answersHint')
+                              : strings('requirements.respondHint'),
+                          style: theme.textTheme.bodySmall,
+                        ),
+                      ]),
                 ),
                 const SizedBox(height: LoczSpacing.x4),
                 if ((responses ?? const []).isEmpty)
                   Padding(
-                    padding: const EdgeInsets.symmetric(vertical: LoczSpacing.x8),
+                    padding:
+                        const EdgeInsets.symmetric(vertical: LoczSpacing.x8),
                     child: Column(children: [
-                      Icon(Icons.mark_chat_unread_outlined, size: 42, color: theme.colorScheme.primary),
+                      Icon(Icons.mark_chat_unread_outlined,
+                          size: 42, color: theme.colorScheme.primary),
                       const SizedBox(height: LoczSpacing.x3),
-                      Text(strings('requirements.empty'), style: theme.textTheme.titleMedium),
+                      Text(strings('requirements.empty'),
+                          style: theme.textTheme.titleMedium),
                       const SizedBox(height: 5),
-                      Text(strings('requirements.emptyHint'), textAlign: TextAlign.center),
+                      Text(strings('requirements.emptyHint'),
+                          textAlign: TextAlign.center),
                     ]),
                   )
                 else
@@ -209,7 +233,8 @@ class _RequirementResponsesScreenState extends ConsumerState<RequirementResponse
 }
 
 class _ResponseCard extends ConsumerWidget {
-  const _ResponseCard({required this.response, required this.isOwner, required this.onChat});
+  const _ResponseCard(
+      {required this.response, required this.isOwner, required this.onChat});
   final RequirementResponse response;
   final bool isOwner;
   final VoidCallback onChat;
@@ -223,7 +248,9 @@ class _ResponseCard extends ConsumerWidget {
         padding: const EdgeInsets.all(LoczSpacing.x4),
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           FutureBuilder<SellerProfile>(
-            future: ref.read(listingRepositoryProvider).sellerProfile(response.responderId),
+            future: ref
+                .read(listingRepositoryProvider)
+                .sellerProfile(response.responderId),
             builder: (context, snapshot) => Row(children: [
               const CircleAvatar(child: Icon(Icons.storefront_outlined)),
               const SizedBox(width: LoczSpacing.x3),
@@ -238,7 +265,8 @@ class _ResponseCard extends ConsumerWidget {
           ),
           if (response.offeredPrice != null) ...[
             const SizedBox(height: LoczSpacing.x3),
-            Text('₹${response.offeredPrice}', style: Theme.of(context).textTheme.titleLarge),
+            Text('₹${response.offeredPrice}',
+                style: Theme.of(context).textTheme.titleLarge),
           ],
           if (response.message != null && response.message!.isNotEmpty) ...[
             const SizedBox(height: LoczSpacing.x2),
@@ -299,49 +327,60 @@ class _ResponseComposerState extends State<_ResponseComposer> {
           LoczSpacing.x4,
           MediaQuery.viewInsetsOf(context).bottom + LoczSpacing.x4,
         ),
-        child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Text(strings('requirements.respond'), style: Theme.of(context).textTheme.titleLarge),
-          const SizedBox(height: LoczSpacing.x3),
-          DropdownButtonFormField<String>(
-            initialValue: _kind,
-            decoration: InputDecoration(labelText: strings('requirements.availability')),
-            items: const [
-              'AVAILABLE',
-              'AVAILABLE_AT_DIFFERENT_PRICE',
-              'SIMILAR_AVAILABLE',
-              'CAN_ARRANGE',
-              'MADE_TO_ORDER',
-              'AVAILABLE_LATER',
-              'NOT_AVAILABLE',
-            ]
-                .map((kind) => DropdownMenuItem(value: kind, child: Text(strings('requirements.kind.$kind'))))
-                .toList(),
-            onChanged: (value) => setState(() => _kind = value ?? _kind),
-          ),
-          const SizedBox(height: LoczSpacing.x3),
-          TextField(
-            controller: _price,
-            keyboardType: TextInputType.number,
-            decoration: InputDecoration(labelText: strings('requirements.offeredPrice'), prefixText: '₹ '),
-          ),
-          const SizedBox(height: LoczSpacing.x3),
-          TextField(
-            controller: _message,
-            maxLength: 500,
-            maxLines: 3,
-            decoration: InputDecoration(labelText: strings('requirements.note')),
-          ),
-          SizedBox(
-            width: double.infinity,
-            child: FilledButton(
-              onPressed: () => Navigator.pop(
-                context,
-                _ResponseDraft(_kind, num.tryParse(_price.text.trim()), _message.text.trim()),
+        child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(strings('requirements.respond'),
+                  style: Theme.of(context).textTheme.titleLarge),
+              const SizedBox(height: LoczSpacing.x3),
+              DropdownButtonFormField<String>(
+                initialValue: _kind,
+                decoration: InputDecoration(
+                    labelText: strings('requirements.availability')),
+                items: const [
+                  'AVAILABLE',
+                  'AVAILABLE_AT_DIFFERENT_PRICE',
+                  'SIMILAR_AVAILABLE',
+                  'CAN_ARRANGE',
+                  'MADE_TO_ORDER',
+                  'AVAILABLE_LATER',
+                  'NOT_AVAILABLE',
+                ]
+                    .map((kind) => DropdownMenuItem(
+                        value: kind,
+                        child: Text(strings('requirements.kind.$kind'))))
+                    .toList(),
+                onChanged: (value) => setState(() => _kind = value ?? _kind),
               ),
-              child: Text(strings('requirements.sendResponse')),
-            ),
-          ),
-        ]),
+              const SizedBox(height: LoczSpacing.x3),
+              TextField(
+                controller: _price,
+                keyboardType: TextInputType.number,
+                decoration: InputDecoration(
+                    labelText: strings('requirements.offeredPrice'),
+                    prefixText: '₹ '),
+              ),
+              const SizedBox(height: LoczSpacing.x3),
+              TextField(
+                controller: _message,
+                maxLength: 500,
+                maxLines: 3,
+                decoration:
+                    InputDecoration(labelText: strings('requirements.note')),
+              ),
+              SizedBox(
+                width: double.infinity,
+                child: FilledButton(
+                  onPressed: () => Navigator.pop(
+                    context,
+                    _ResponseDraft(_kind, num.tryParse(_price.text.trim()),
+                        _message.text.trim()),
+                  ),
+                  child: Text(strings('requirements.sendResponse')),
+                ),
+              ),
+            ]),
       ),
     );
   }

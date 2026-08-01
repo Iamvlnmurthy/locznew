@@ -45,8 +45,13 @@ class _PostAdScreenState extends ConsumerState<PostAdScreen> {
   final _titleController = TextEditingController();
   final _descriptionController = TextEditingController();
   final _priceController = TextEditingController();
+  final _budgetMinController = TextEditingController();
+  final _budgetMaxController = TextEditingController();
+  final _quantityController = TextEditingController(text: '1');
 
+  String _listingType = 'PRODUCT';
   String? _categoryId;
+  String? _categorySlug;
   String? _cityId;
   String _condition = 'GOOD';
   bool _isFree = false;
@@ -78,6 +83,9 @@ class _PostAdScreenState extends ConsumerState<PostAdScreen> {
       _titleController.addListener(_onFormChanged);
       _descriptionController.addListener(_onFormChanged);
       _priceController.addListener(_onFormChanged);
+      _budgetMinController.addListener(_onFormChanged);
+      _budgetMaxController.addListener(_onFormChanged);
+      _quantityController.addListener(_onFormChanged);
       unawaited(_offerProgressRestore());
     } else {
       _loadingListing = true;
@@ -97,20 +105,27 @@ class _PostAdScreenState extends ConsumerState<PostAdScreen> {
       final cities = results[1] as List<City>;
       final categories = results[2] as List<Category>;
       final category = _findCategory(categories, listing.categoryId);
-      final categoryDetail =
-          category == null ? null : await repository.categoryDetail(category.slug);
+      final categoryDetail = category == null
+          ? null
+          : await repository.categoryDetail(category.slug);
       if (!mounted) return;
       final marketplace = listing.marketplace;
       setState(() {
         _titleController.text = listing.summary.title;
+        _listingType = listing.summary.type;
         _descriptionController.text = listing.description;
         _priceController.text = marketplace['price']?.toString() ?? '';
         _categoryId = listing.categoryId;
+        _categorySlug = category?.slug;
         _cityId = listing.cityId ??
-            cities.where((city) => city.name == listing.summary.cityName).firstOrNull?.id;
+            cities
+                .where((city) => city.name == listing.summary.cityName)
+                .firstOrNull
+                ?.id;
         _condition = marketplace['condition'] as String? ?? 'GOOD';
         _isFree = marketplace['isFree'] as bool? ?? listing.summary.isFree;
-        _isNegotiable = marketplace['isNegotiable'] as bool? ?? listing.summary.isNegotiable;
+        _isNegotiable = marketplace['isNegotiable'] as bool? ??
+            listing.summary.isNegotiable;
         _contactPreference = listing.contactPreference;
         _originalStatus = listing.summary.status;
         _createdSlug = listing.summary.slug;
@@ -135,6 +150,9 @@ class _PostAdScreenState extends ConsumerState<PostAdScreen> {
     _titleController.dispose();
     _descriptionController.dispose();
     _priceController.dispose();
+    _budgetMinController.dispose();
+    _budgetMaxController.dispose();
+    _quantityController.dispose();
     super.dispose();
   }
 
@@ -156,9 +174,13 @@ class _PostAdScreenState extends ConsumerState<PostAdScreen> {
       _titleController.text.trim().length >= 5,
       _categoryId != null,
       _descriptionController.text.trim().length >= 10,
-      _isFree || _priceController.text.trim().isNotEmpty,
+      _listingType == 'BUYER_REQUIREMENT' ||
+          _isFree ||
+          _priceController.text.trim().isNotEmpty,
       _cityId != null,
-      _images.isNotEmpty || widget.listingId != null,
+      _listingType == 'BUYER_REQUIREMENT' ||
+          _images.isNotEmpty ||
+          widget.listingId != null,
     ];
     return checks.where((value) => value).length / checks.length;
   }
@@ -177,8 +199,12 @@ class _PostAdScreenState extends ConsumerState<PostAdScreen> {
       _progressKey,
       jsonEncode({
         'title': _titleController.text,
+        'listingType': _listingType,
         'description': _descriptionController.text,
         'price': _priceController.text,
+        'budgetMin': _budgetMinController.text,
+        'budgetMax': _budgetMaxController.text,
+        'quantity': _quantityController.text,
         'categoryId': _categoryId,
         'cityId': _cityId,
         'condition': _condition,
@@ -238,14 +264,19 @@ class _PostAdScreenState extends ConsumerState<PostAdScreen> {
     _restoringProgress = true;
     setState(() {
       _titleController.text = saved['title'] as String? ?? '';
+      _listingType = saved['listingType'] as String? ?? 'PRODUCT';
       _descriptionController.text = saved['description'] as String? ?? '';
       _priceController.text = saved['price'] as String? ?? '';
+      _budgetMinController.text = saved['budgetMin'] as String? ?? '';
+      _budgetMaxController.text = saved['budgetMax'] as String? ?? '';
+      _quantityController.text = saved['quantity'] as String? ?? '1';
       _categoryId = saved['categoryId'] as String?;
       _cityId = saved['cityId'] as String? ?? _cityId;
       _condition = saved['condition'] as String? ?? 'GOOD';
       _isFree = saved['isFree'] as bool? ?? false;
       _isNegotiable = saved['isNegotiable'] as bool? ?? false;
-      _contactPreference = saved['contactPreference'] as String? ?? 'IN_APP_ONLY';
+      _contactPreference =
+          saved['contactPreference'] as String? ?? 'IN_APP_ONLY';
       _attributeValues = Map<String, dynamic>.from(
         saved['attributes'] as Map<String, dynamic>? ?? const {},
       );
@@ -267,7 +298,8 @@ class _PostAdScreenState extends ConsumerState<PostAdScreen> {
     if (picked.isEmpty) return;
 
     setState(() {
-      for (final file in picked.take(Env.maxImagesPerListing - _images.length)) {
+      for (final file
+          in picked.take(Env.maxImagesPerListing - _images.length)) {
         _images.add(_PendingImage(File(file.path)));
       }
     });
@@ -280,9 +312,12 @@ class _PostAdScreenState extends ConsumerState<PostAdScreen> {
       _attributesAttempted = true;
       _categoryAttributes = const [];
       _attributeValues = {};
+      _categorySlug = category.slug;
     });
     try {
-      final detail = await ref.read(listingRepositoryProvider).categoryDetail(category.slug);
+      final detail = await ref
+          .read(listingRepositoryProvider)
+          .categoryDetail(category.slug);
       if (!mounted || _categoryId != category.id) return;
       setState(() {
         _categoryAttributes = detail.attributes;
@@ -328,6 +363,7 @@ class _PostAdScreenState extends ConsumerState<PostAdScreen> {
 
       final created = widget.listingId == null
           ? await repository.createListing(
+              type: _listingType,
               title: _titleController.text.trim(),
               description: _descriptionController.text.trim(),
               categoryId: _categoryId!,
@@ -339,6 +375,10 @@ class _PostAdScreenState extends ConsumerState<PostAdScreen> {
               contactPreference: _contactPreference,
               saveAsDraft: saveAsDraft,
               attributes: _attributePayload(),
+              budgetMin: num.tryParse(_budgetMinController.text.trim()),
+              budgetMax: num.tryParse(_budgetMaxController.text.trim()),
+              quantity: int.tryParse(_quantityController.text.trim()),
+              preferredCondition: _condition,
             )
           : await repository.updateListing(
               listingId: widget.listingId!,
@@ -354,7 +394,9 @@ class _PostAdScreenState extends ConsumerState<PostAdScreen> {
               attributes: _attributePayload(),
             );
 
-      if (widget.listingId != null && _originalStatus == 'DRAFT' && !saveAsDraft) {
+      if (widget.listingId != null &&
+          _originalStatus == 'DRAFT' &&
+          !saveAsDraft) {
         await repository.listingCommand(widget.listingId!, 'submit');
       }
 
@@ -401,7 +443,8 @@ class _PostAdScreenState extends ConsumerState<PostAdScreen> {
   Future<void> _showPreview() {
     final strings = Strings.of(context);
     final theme = Theme.of(context);
-    final price = _isFree ? strings('listing.free') : _priceController.text.trim();
+    final price =
+        _isFree ? strings('listing.free') : _priceController.text.trim();
 
     return showModalBottomSheet<void>(
       context: context,
@@ -488,7 +531,8 @@ class _PostAdScreenState extends ConsumerState<PostAdScreen> {
     return attribute.unit == null ? base : '$base (${attribute.unit})';
   }
 
-  String _optionLabel(CategoryAttributeOption option, Strings strings) => switch (strings.locale) {
+  String _optionLabel(CategoryAttributeOption option, Strings strings) =>
+      switch (strings.locale) {
         AppLocaleOption.te => option.labelTe ?? option.label,
         AppLocaleOption.hi => option.labelHi ?? option.label,
         AppLocaleOption.en => option.label,
@@ -498,8 +542,11 @@ class _PostAdScreenState extends ConsumerState<PostAdScreen> {
     final label = _attributeLabel(attribute, strings);
     final current = _attributeValues[attribute.key];
     String? requiredValidator(dynamic value) {
-      final missing = value == null || value == '' || (value is List && value.isEmpty);
-      return attribute.isRequired && missing ? strings('post.attributeRequired') : null;
+      final missing =
+          value == null || value == '' || (value is List && value.isEmpty);
+      return attribute.isRequired && missing
+          ? strings('post.attributeRequired')
+          : null;
     }
 
     if (attribute.dataType == 'SELECT') {
@@ -533,8 +580,10 @@ class _PostAdScreenState extends ConsumerState<PostAdScreen> {
         initialValue: current is bool ? current : null,
         decoration: InputDecoration(labelText: label),
         items: [
-          DropdownMenuItem(value: true, child: Text(strings('post.attributeYes'))),
-          DropdownMenuItem(value: false, child: Text(strings('post.attributeNo'))),
+          DropdownMenuItem(
+              value: true, child: Text(strings('post.attributeYes'))),
+          DropdownMenuItem(
+              value: false, child: Text(strings('post.attributeNo'))),
         ],
         onChanged: (value) {
           setState(() => _attributeValues[attribute.key] = value);
@@ -545,7 +594,9 @@ class _PostAdScreenState extends ConsumerState<PostAdScreen> {
     }
 
     if (attribute.dataType == 'MULTI_SELECT') {
-      final selected = (current as List<dynamic>? ?? const []).map((value) => '$value').toSet();
+      final selected = (current as List<dynamic>? ?? const [])
+          .map((value) => '$value')
+          .toSet();
       return FormField<List<String>>(
         initialValue: selected.toList(),
         validator: requiredValidator,
@@ -592,7 +643,8 @@ class _PostAdScreenState extends ConsumerState<PostAdScreen> {
               context: context,
               firstDate: DateTime(1900),
               lastDate: DateTime(2100),
-              initialDate: DateTime.tryParse(field.value ?? '') ?? DateTime.now(),
+              initialDate:
+                  DateTime.tryParse(field.value ?? '') ?? DateTime.now(),
             );
             if (picked == null) return;
             final value = picked.toIso8601String().substring(0, 10);
@@ -612,6 +664,25 @@ class _PostAdScreenState extends ConsumerState<PostAdScreen> {
       );
     }
 
+    if (attribute.key == 'model' && _categorySlug != null) {
+      return _ModelSuggestionField(
+        initialValue: current?.toString() ?? '',
+        label: label,
+        load: (query) => ref.read(listingRepositoryProvider).modelSuggestions(
+              _categorySlug!,
+              brand: _attributeValues['brand']?.toString(),
+              query: query,
+            ),
+        onChanged: (value) {
+          _attributeValues[attribute.key] = value;
+          _scheduleProgressSave();
+        },
+        validator: (value) => attribute.isRequired && value.trim().isEmpty
+            ? strings('post.attributeRequired')
+            : null,
+      );
+    }
+
     return TextFormField(
       key: ValueKey('attribute-${attribute.key}'),
       initialValue: current?.toString() ?? '',
@@ -620,7 +691,9 @@ class _PostAdScreenState extends ConsumerState<PostAdScreen> {
           : TextInputType.text,
       decoration: InputDecoration(
         labelText: label,
-        helperText: attribute.key == 'capacity' ? strings('post.attributeCapacityHint') : null,
+        helperText: attribute.key == 'capacity'
+            ? strings('post.attributeCapacityHint')
+            : null,
       ),
       onChanged: (value) {
         _attributeValues[attribute.key] = value;
@@ -628,15 +701,18 @@ class _PostAdScreenState extends ConsumerState<PostAdScreen> {
       },
       validator: (value) {
         final missing = value == null || value.trim().isEmpty;
-        if (attribute.isRequired && missing) return strings('post.attributeRequired');
+        if (attribute.isRequired && missing)
+          return strings('post.attributeRequired');
         if (!missing && attribute.dataType == 'NUMBER') {
           final number = num.tryParse(value);
           if (number == null) return strings('post.attributeNumber');
           if (attribute.minValue != null && number < attribute.minValue!) {
-            return strings('post.attributeMinimum', {'value': attribute.minValue!});
+            return strings(
+                'post.attributeMinimum', {'value': attribute.minValue!});
           }
           if (attribute.maxValue != null && number > attribute.maxValue!) {
-            return strings('post.attributeMaximum', {'value': attribute.maxValue!});
+            return strings(
+                'post.attributeMaximum', {'value': attribute.maxValue!});
           }
         }
         return null;
@@ -758,7 +834,9 @@ class _PostAdScreenState extends ConsumerState<PostAdScreen> {
     return Scaffold(
       appBar: AppBar(
         title: Text(
-          widget.listingId == null ? strings('post.title') : strings('post.editTitle'),
+          widget.listingId == null
+              ? strings('post.title')
+              : strings('post.editTitle'),
         ),
       ),
       body: Form(
@@ -772,10 +850,52 @@ class _PostAdScreenState extends ConsumerState<PostAdScreen> {
               children: [
                 Text(
                   strings(
-                    widget.listingId == null ? 'post.subtitle' : 'post.editSubtitle',
+                    widget.listingId == null
+                        ? 'post.subtitle'
+                        : 'post.editSubtitle',
                   ),
                   style: Theme.of(context).textTheme.bodyMedium,
                 ),
+                if (widget.listingId == null) ...[
+                  const SizedBox(height: LoczSpacing.x4),
+                  Text(strings('post.intentQuestion'),
+                      style: Theme.of(context).textTheme.titleMedium),
+                  const SizedBox(height: LoczSpacing.x2),
+                  SegmentedButton<String>(
+                    segments: [
+                      ButtonSegment(
+                        value: 'PRODUCT',
+                        icon: const Icon(Icons.sell_outlined),
+                        label: Text(strings('post.intentSell')),
+                      ),
+                      ButtonSegment(
+                        value: 'BUYER_REQUIREMENT',
+                        icon: const Icon(Icons.search_rounded),
+                        label: Text(strings('post.intentBuy')),
+                      ),
+                    ],
+                    selected: {_listingType},
+                    onSelectionChanged: (selection) {
+                      setState(() {
+                        _listingType = selection.first;
+                        _categoryId = null;
+                        _categorySlug = null;
+                        _categoryAttributes = const [];
+                        _attributeValues = {};
+                        _attributesResolved = false;
+                        _attributesAttempted = false;
+                      });
+                      _scheduleProgressSave();
+                    },
+                  ),
+                  const SizedBox(height: 5),
+                  Text(
+                    strings(_listingType == 'PRODUCT'
+                        ? 'post.intentSellHint'
+                        : 'post.intentBuyHint'),
+                    style: Theme.of(context).textTheme.bodySmall,
+                  ),
+                ],
                 if (widget.listingId == null) ...[
                   const SizedBox(height: LoczSpacing.x4),
                   Container(
@@ -795,8 +915,13 @@ class _PostAdScreenState extends ConsumerState<PostAdScreen> {
                                   'post.progressTitle',
                                   {'percent': (_completion * 100).round()},
                                 ),
-                                style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                                      color: Theme.of(context).colorScheme.onPrimaryContainer,
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .titleSmall
+                                    ?.copyWith(
+                                      color: Theme.of(context)
+                                          .colorScheme
+                                          .onPrimaryContainer,
                                     ),
                               ),
                             ),
@@ -815,16 +940,21 @@ class _PostAdScreenState extends ConsumerState<PostAdScreen> {
                           child: LinearProgressIndicator(
                             value: _completion,
                             minHeight: 6,
-                            backgroundColor:
-                                Theme.of(context).colorScheme.surface.withValues(alpha: 0.54),
+                            backgroundColor: Theme.of(context)
+                                .colorScheme
+                                .surface
+                                .withValues(alpha: 0.54),
                           ),
                         ),
                         const SizedBox(height: 8),
                         Text(
                           strings('post.progressHint'),
-                          style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                                color: Theme.of(context).colorScheme.onPrimaryContainer,
-                              ),
+                          style:
+                              Theme.of(context).textTheme.labelSmall?.copyWith(
+                                    color: Theme.of(context)
+                                        .colorScheme
+                                        .onPrimaryContainer,
+                                  ),
                         ),
                       ],
                     ),
@@ -841,7 +971,8 @@ class _PostAdScreenState extends ConsumerState<PostAdScreen> {
                     child: Text(
                       strings('post.moderationWarning'),
                       style: TextStyle(
-                        color: Theme.of(context).colorScheme.onTertiaryContainer,
+                        color:
+                            Theme.of(context).colorScheme.onTertiaryContainer,
                       ),
                     ),
                   ),
@@ -886,9 +1017,12 @@ class _PostAdScreenState extends ConsumerState<PostAdScreen> {
                 TextFormField(
                   controller: _titleController,
                   maxLength: 160,
-                  decoration: InputDecoration(labelText: strings('post.fieldTitle')),
+                  decoration:
+                      InputDecoration(labelText: strings('post.fieldTitle')),
                   validator: (value) =>
-                      (value == null || value.trim().length < 5) ? strings('common.error') : null,
+                      (value == null || value.trim().length < 5)
+                          ? strings('common.error')
+                          : null,
                 ),
                 categories.when(
                   loading: () => const LinearProgressIndicator(),
@@ -911,8 +1045,9 @@ class _PostAdScreenState extends ConsumerState<PostAdScreen> {
                         }
                       }
                     }
-                    final selectedCategory =
-                        _categoryId == null ? null : _findCategory(list, _categoryId!);
+                    final selectedCategory = _categoryId == null
+                        ? null
+                        : _findCategory(list, _categoryId!);
                     if (selectedCategory != null &&
                         !_attributesResolved &&
                         !_attributesAttempted &&
@@ -941,12 +1076,18 @@ class _PostAdScreenState extends ConsumerState<PostAdScreen> {
                           )
                           .toList(),
                       onChanged: (value) {
-                        setState(() => _categoryId = value);
-                        final category = value == null ? null : _findCategory(list, value);
-                        if (category != null) unawaited(_loadCategoryAttributes(category));
+                        setState(() {
+                          _categoryId = value;
+                          _categorySlug = null;
+                        });
+                        final category =
+                            value == null ? null : _findCategory(list, value);
+                        if (category != null)
+                          unawaited(_loadCategoryAttributes(category));
                         _scheduleProgressSave();
                       },
-                      validator: (value) => value == null ? strings('common.error') : null,
+                      validator: (value) =>
+                          value == null ? strings('common.error') : null,
                     );
                   },
                 ),
@@ -980,42 +1121,88 @@ class _PostAdScreenState extends ConsumerState<PostAdScreen> {
                     labelText: strings('post.fieldDescription'),
                   ),
                   validator: (value) =>
-                      (value == null || value.trim().length < 10) ? strings('common.error') : null,
+                      (value == null || value.trim().length < 10)
+                          ? strings('common.error')
+                          : null,
                 ),
                 const SizedBox(height: LoczSpacing.x5),
                 _SectionHeading(
                   index: '02',
-                  label: strings('post.priceSection'),
+                  label: strings(_listingType == 'BUYER_REQUIREMENT'
+                      ? 'post.budgetSection'
+                      : 'post.priceSection'),
                 ),
                 const SizedBox(height: LoczSpacing.x3),
-                TextFormField(
-                  controller: _priceController,
-                  enabled: !_isFree,
-                  keyboardType: TextInputType.number,
-                  inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                  decoration: InputDecoration(
-                    labelText: strings('post.fieldPrice'),
-                    prefixText: '₹ ',
+                if (_listingType == 'BUYER_REQUIREMENT') ...[
+                  Row(children: [
+                    Expanded(
+                        child: TextFormField(
+                      controller: _budgetMinController,
+                      keyboardType: TextInputType.number,
+                      inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                      decoration: InputDecoration(
+                          labelText: strings('post.budgetMin'),
+                          prefixText: '₹ '),
+                    )),
+                    const SizedBox(width: LoczSpacing.x3),
+                    Expanded(
+                        child: TextFormField(
+                      controller: _budgetMaxController,
+                      keyboardType: TextInputType.number,
+                      inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                      decoration: InputDecoration(
+                          labelText: strings('post.budgetMax'),
+                          prefixText: '₹ '),
+                      validator: (value) {
+                        final min = num.tryParse(_budgetMinController.text);
+                        final max = num.tryParse(value ?? '');
+                        return min != null && max != null && min > max
+                            ? strings('post.budgetOrder')
+                            : null;
+                      },
+                    )),
+                  ]),
+                  const SizedBox(height: LoczSpacing.x3),
+                  TextFormField(
+                    controller: _quantityController,
+                    keyboardType: TextInputType.number,
+                    inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                    decoration:
+                        InputDecoration(labelText: strings('post.quantity')),
+                    validator: (value) => (int.tryParse(value ?? '') ?? 0) < 1
+                        ? strings('common.error')
+                        : null,
                   ),
-                ),
-                SwitchListTile.adaptive(
-                  value: _isFree,
-                  onChanged: (value) {
-                    setState(() => _isFree = value);
-                    _scheduleProgressSave();
-                  },
-                  title: Text(strings('listing.free')),
-                  contentPadding: EdgeInsets.zero,
-                ),
-                SwitchListTile.adaptive(
-                  value: _isNegotiable,
-                  onChanged: (value) {
-                    setState(() => _isNegotiable = value);
-                    _scheduleProgressSave();
-                  },
-                  title: Text(strings('listing.negotiable')),
-                  contentPadding: EdgeInsets.zero,
-                ),
+                ] else ...[
+                  TextFormField(
+                    controller: _priceController,
+                    enabled: !_isFree,
+                    keyboardType: TextInputType.number,
+                    inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                    decoration: InputDecoration(
+                      labelText: strings('post.fieldPrice'),
+                      prefixText: '₹ ',
+                    ),
+                  ),
+                  SwitchListTile.adaptive(
+                    value: _isFree,
+                    onChanged: (value) {
+                      setState(() => _isFree = value);
+                      _scheduleProgressSave();
+                    },
+                    title: Text(strings('listing.free')),
+                    contentPadding: EdgeInsets.zero,
+                  ),
+                  SwitchListTile.adaptive(
+                    value: _isNegotiable,
+                    onChanged: (value) {
+                      setState(() => _isNegotiable = value);
+                      _scheduleProgressSave();
+                    },
+                    title: Text(strings('listing.negotiable')),
+                    contentPadding: EdgeInsets.zero,
+                  ),
+                ],
                 DropdownButtonFormField<String>(
                   key: ValueKey('condition-$_condition'),
                   initialValue: _condition,
@@ -1062,7 +1249,8 @@ class _PostAdScreenState extends ConsumerState<PostAdScreen> {
                     key: ValueKey('city-$_cityId'),
                     initialValue: _cityId,
                     isExpanded: true,
-                    decoration: InputDecoration(labelText: strings('post.fieldCity')),
+                    decoration:
+                        InputDecoration(labelText: strings('post.fieldCity')),
                     items: list
                         .map(
                           (city) => DropdownMenuItem(
@@ -1075,7 +1263,8 @@ class _PostAdScreenState extends ConsumerState<PostAdScreen> {
                       setState(() => _cityId = value);
                       _scheduleProgressSave();
                     },
-                    validator: (value) => value == null ? strings('common.error') : null,
+                    validator: (value) =>
+                        value == null ? strings('common.error') : null,
                   ),
                 ),
                 const SizedBox(height: LoczSpacing.x4),
@@ -1107,114 +1296,122 @@ class _PostAdScreenState extends ConsumerState<PostAdScreen> {
                     _scheduleProgressSave();
                   },
                 ),
-                const SizedBox(height: LoczSpacing.x6),
-                _SectionHeading(
-                  index: '04',
-                  label: strings('post.photos'),
-                ),
-                Text(
-                  strings('post.photosHint'),
-                  style: Theme.of(context).textTheme.labelSmall,
-                ),
-                const SizedBox(height: 4),
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Icon(
-                      Icons.verified_user_outlined,
-                      size: 14,
-                      color: Theme.of(context).colorScheme.primary,
-                    ),
-                    const SizedBox(width: 6),
-                    Expanded(
-                      child: Text(
-                        strings('post.photoSafety'),
-                        style: Theme.of(context).textTheme.labelSmall,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: LoczSpacing.x3),
-                SizedBox(
-                  height: 96,
-                  child: ListView(
-                    scrollDirection: Axis.horizontal,
+                if (_listingType != 'BUYER_REQUIREMENT') ...[
+                  const SizedBox(height: LoczSpacing.x6),
+                  _SectionHeading(
+                    index: '04',
+                    label: strings('post.photos'),
+                  ),
+                  Text(
+                    strings('post.photosHint'),
+                    style: Theme.of(context).textTheme.labelSmall,
+                  ),
+                  const SizedBox(height: 4),
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      for (final image in _images)
-                        Padding(
-                          padding: const EdgeInsets.only(right: LoczSpacing.x2),
-                          child: Stack(
-                            children: [
-                              ClipRRect(
-                                borderRadius: BorderRadius.circular(LoczRadius.md),
-                                child: Image.file(
-                                  image.file,
-                                  width: 96,
-                                  height: 96,
-                                  fit: BoxFit.cover,
-                                ),
-                              ),
-                              if (_submitting && image.progress < 1 && !image.failed)
-                                Positioned.fill(
-                                  child: ColoredBox(
-                                    color: Colors.black45,
-                                    child: Center(
-                                      child: CircularProgressIndicator(
-                                        value: image.progress,
-                                        strokeWidth: 2,
-                                        color: Colors.white,
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              if (image.failed)
-                                const Positioned.fill(
-                                  child: ColoredBox(
-                                    color: Colors.black45,
-                                    child: Icon(
-                                      Icons.error_outline,
-                                      color: Colors.white,
-                                    ),
-                                  ),
-                                ),
-                              if (!_submitting)
-                                Positioned(
-                                  top: 0,
-                                  right: 0,
-                                  child: GestureDetector(
-                                    onTap: () => setState(() => _images.remove(image)),
-                                    child: const CircleAvatar(
-                                      radius: 12,
-                                      backgroundColor: Colors.black54,
-                                      child: Icon(
-                                        Icons.close,
-                                        size: 14,
-                                        color: Colors.white,
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                            ],
-                          ),
+                      Icon(
+                        Icons.verified_user_outlined,
+                        size: 14,
+                        color: Theme.of(context).colorScheme.primary,
+                      ),
+                      const SizedBox(width: 6),
+                      Expanded(
+                        child: Text(
+                          strings('post.photoSafety'),
+                          style: Theme.of(context).textTheme.labelSmall,
                         ),
-                      if (_images.length < Env.maxImagesPerListing)
-                        InkWell(
-                          onTap: _submitting ? null : _pickImages,
-                          child: Container(
-                            width: 96,
-                            height: 96,
-                            decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(LoczRadius.md),
-                              border: Border.all(
-                                color: Theme.of(context).colorScheme.outline,
-                              ),
-                            ),
-                            child: const Icon(Icons.add_a_photo_outlined),
-                          ),
-                        ),
+                      ),
                     ],
                   ),
-                ),
+                  const SizedBox(height: LoczSpacing.x3),
+                  SizedBox(
+                    height: 96,
+                    child: ListView(
+                      scrollDirection: Axis.horizontal,
+                      children: [
+                        for (final image in _images)
+                          Padding(
+                            padding:
+                                const EdgeInsets.only(right: LoczSpacing.x2),
+                            child: Stack(
+                              children: [
+                                ClipRRect(
+                                  borderRadius:
+                                      BorderRadius.circular(LoczRadius.md),
+                                  child: Image.file(
+                                    image.file,
+                                    width: 96,
+                                    height: 96,
+                                    fit: BoxFit.cover,
+                                  ),
+                                ),
+                                if (_submitting &&
+                                    image.progress < 1 &&
+                                    !image.failed)
+                                  Positioned.fill(
+                                    child: ColoredBox(
+                                      color: Colors.black45,
+                                      child: Center(
+                                        child: CircularProgressIndicator(
+                                          value: image.progress,
+                                          strokeWidth: 2,
+                                          color: Colors.white,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                if (image.failed)
+                                  const Positioned.fill(
+                                    child: ColoredBox(
+                                      color: Colors.black45,
+                                      child: Icon(
+                                        Icons.error_outline,
+                                        color: Colors.white,
+                                      ),
+                                    ),
+                                  ),
+                                if (!_submitting)
+                                  Positioned(
+                                    top: 0,
+                                    right: 0,
+                                    child: GestureDetector(
+                                      onTap: () =>
+                                          setState(() => _images.remove(image)),
+                                      child: const CircleAvatar(
+                                        radius: 12,
+                                        backgroundColor: Colors.black54,
+                                        child: Icon(
+                                          Icons.close,
+                                          size: 14,
+                                          color: Colors.white,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                              ],
+                            ),
+                          ),
+                        if (_images.length < Env.maxImagesPerListing)
+                          InkWell(
+                            onTap: _submitting ? null : _pickImages,
+                            child: Container(
+                              width: 96,
+                              height: 96,
+                              decoration: BoxDecoration(
+                                borderRadius:
+                                    BorderRadius.circular(LoczRadius.md),
+                                border: Border.all(
+                                  color: Theme.of(context).colorScheme.outline,
+                                ),
+                              ),
+                              child: const Icon(Icons.add_a_photo_outlined),
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
+                ],
                 const SizedBox(height: LoczSpacing.x8),
                 OutlinedButton.icon(
                   onPressed: _submitting ? null : _showPreview,
@@ -1232,14 +1429,20 @@ class _PostAdScreenState extends ConsumerState<PostAdScreen> {
                   const SizedBox(height: LoczSpacing.x2),
                 ],
                 FilledButton(
-                  onPressed: _submitting || _originalStatus == 'REMOVED' ? null : () => _submit(),
+                  onPressed: _submitting || _originalStatus == 'REMOVED'
+                      ? null
+                      : () => _submit(),
                   child: Text(
                     _submitting
                         ? strings(
-                            widget.listingId == null ? 'post.publishing' : 'post.savingChanges',
+                            widget.listingId == null
+                                ? 'post.publishing'
+                                : 'post.savingChanges',
                           )
                         : strings(
-                            widget.listingId == null ? 'post.publish' : 'post.saveChanges',
+                            widget.listingId == null
+                                ? 'post.publish'
+                                : 'post.saveChanges',
                           ),
                   ),
                 ),
@@ -1260,6 +1463,100 @@ Category? _findCategory(List<Category> categories, String id) {
     if (child != null) return child;
   }
   return null;
+}
+
+class _ModelSuggestionField extends StatefulWidget {
+  const _ModelSuggestionField({
+    required this.initialValue,
+    required this.label,
+    required this.load,
+    required this.onChanged,
+    required this.validator,
+  });
+
+  final String initialValue;
+  final String label;
+  final Future<List<String>> Function(String query) load;
+  final ValueChanged<String> onChanged;
+  final String? Function(String value) validator;
+
+  @override
+  State<_ModelSuggestionField> createState() => _ModelSuggestionFieldState();
+}
+
+class _ModelSuggestionFieldState extends State<_ModelSuggestionField> {
+  late final TextEditingController _controller =
+      TextEditingController(text: widget.initialValue);
+  Timer? _debounce;
+  List<String> _suggestions = const [];
+  bool _loading = false;
+
+  @override
+  void dispose() {
+    _debounce?.cancel();
+    _controller.dispose();
+    super.dispose();
+  }
+
+  void _changed(String value) {
+    widget.onChanged(value);
+    _debounce?.cancel();
+    _debounce = Timer(const Duration(milliseconds: 260), () async {
+      if (mounted) setState(() => _loading = true);
+      try {
+        final results = await widget.load(value.trim());
+        if (mounted && _controller.text == value)
+          setState(() => _suggestions = results);
+      } finally {
+        if (mounted) setState(() => _loading = false);
+      }
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) => Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          TextFormField(
+            controller: _controller,
+            decoration: InputDecoration(
+              labelText: widget.label,
+              suffixIcon: _loading
+                  ? const Padding(
+                      padding: EdgeInsets.all(14),
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : const Icon(Icons.auto_awesome_outlined),
+            ),
+            onChanged: _changed,
+            validator: (value) => widget.validator(value ?? ''),
+          ),
+          if (_suggestions.isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.only(top: 7),
+              child: Wrap(
+                spacing: 7,
+                runSpacing: 7,
+                children: _suggestions
+                    .take(8)
+                    .map(
+                      (model) => ActionChip(
+                        label: Text(model),
+                        onPressed: () {
+                          _controller
+                            ..text = model
+                            ..selection =
+                                TextSelection.collapsed(offset: model.length);
+                          widget.onChanged(model);
+                          setState(() => _suggestions = const []);
+                        },
+                      ),
+                    )
+                    .toList(),
+              ),
+            ),
+        ],
+      );
 }
 
 class _SectionHeading extends StatelessWidget {
@@ -1328,7 +1625,9 @@ class _SuccessScreen extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             children: [
               Icon(
-                published ? Icons.check_circle_outline : Icons.hourglass_top_outlined,
+                published
+                    ? Icons.check_circle_outline
+                    : Icons.hourglass_top_outlined,
                 size: 56,
                 color: published ? LoczColors.success : LoczColors.warning,
               ),

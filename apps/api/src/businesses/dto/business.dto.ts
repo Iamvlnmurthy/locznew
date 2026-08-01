@@ -1,5 +1,5 @@
 import { ApiProperty, ApiPropertyOptional, PartialType } from '@nestjs/swagger';
-import { VerificationStatus } from '@prisma/client';
+import { BusinessType, VerificationStatus } from '@prisma/client';
 import { Type } from 'class-transformer';
 import {
   ArrayMaxSize,
@@ -53,6 +53,11 @@ export class CreateBusinessDto {
   @MinLength(2)
   @MaxLength(180)
   name!: string;
+
+  @ApiPropertyOptional({ enum: BusinessType, default: BusinessType.RETAIL_STORE })
+  @IsOptional()
+  @IsEnum(BusinessType)
+  businessType?: BusinessType;
 
   @ApiProperty()
   @IsUUID()
@@ -126,6 +131,7 @@ export class BusinessSummaryDto {
   @ApiProperty() id!: string;
   @ApiProperty() name!: string;
   @ApiProperty() slug!: string;
+  @ApiProperty({ enum: BusinessType }) businessType!: BusinessType;
   @ApiProperty() categoryName!: string;
   @ApiProperty() cityName!: string;
   @ApiPropertyOptional() logoUrl!: string | null;

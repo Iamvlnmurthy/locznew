@@ -39,7 +39,17 @@ import {
 import { PrismaPg } from '@prisma/adapter-pg';
 import { databaseUrl } from './connection';
 import { BANNED_KEYWORDS } from './banned-keywords';
+import { readFileSync } from 'node:fs';
 import { v7 as uuid } from 'uuid';
+
+/** What people type when they want a category. See the file's own comment for why. */
+const CATEGORY_SEARCH_TERMS = Object.fromEntries(
+  Object.entries(
+    JSON.parse(
+      readFileSync(path.join(__dirname, 'data', 'category-search-terms.json'), 'utf8'),
+    ) as Record<string, unknown>,
+  ).filter((entry): entry is [string, string[]] => Array.isArray(entry[1])),
+);
 import * as argon2 from 'argon2';
 import { CHILD_SAFETY_PERMISSIONS } from '../src/rbac/child-safety-role';
 
@@ -1551,9 +1561,14 @@ async function seedCategoryTree(
   let sortOrder = 0;
 
   for (const node of nodes) {
+    // Vocabulary lives in a data file, not in this tree: it is corrected far more often
+    // than the categories themselves, and by different people.
+    const searchTerms = CATEGORY_SEARCH_TERMS[node.slug] ?? [];
+
     const category = await prisma.category.upsert({
       where: { slug: node.slug },
       update: {
+        searchTerms,
         name: node.name,
         nameTe: node.nameTe,
         nameHi: node.nameHi,
@@ -1566,6 +1581,7 @@ async function seedCategoryTree(
       create: {
         id: uuid(),
         parentId,
+        searchTerms,
         name: node.name,
         nameTe: node.nameTe,
         nameHi: node.nameHi,

@@ -49,6 +49,7 @@ export async function createBusinessAction(
   formData: FormData,
 ): Promise<BusinessFormState> {
   const name = text(formData, 'name');
+  const businessType = text(formData, 'businessType') ?? 'RETAIL_STORE';
   const categoryId = text(formData, 'categoryId');
   const cityId = text(formData, 'cityId');
   const rawPhone = text(formData, 'primaryPhone');
@@ -88,6 +89,7 @@ export async function createBusinessAction(
       auth: true,
       body: {
         name,
+        businessType,
         categoryId,
         cityId,
         description: text(formData, 'description'),
@@ -113,6 +115,7 @@ export async function updateBusinessAction(
   formData: FormData,
 ): Promise<BusinessUpdateState> {
   const name = text(formData, 'name');
+  const businessType = text(formData, 'businessType') ?? 'RETAIL_STORE';
   const categoryId = text(formData, 'categoryId');
   const cityId = text(formData, 'cityId');
   const rawPhone = text(formData, 'primaryPhone');
@@ -160,6 +163,7 @@ export async function updateBusinessAction(
       auth: true,
       body: {
         name,
+        businessType,
         categoryId,
         cityId,
         description: text(formData, 'description') ?? '',

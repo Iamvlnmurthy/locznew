@@ -866,6 +866,21 @@ model Category {
   nameTe         String?       @db.VarChar(160)
   nameHi         String?       @db.VarChar(160)
   slug           String        @unique @db.VarChar(160)
+
+  /// What people actually type when they want this category.
+  ///
+  /// The problem this solves: a directory record scraped from an open dataset has a name, a
+  /// category and a location, and nothing else. It has no menu. Somebody searching "biryani"
+  /// will never match "Paradise Restaurant" on its own text — but the category knows that a
+  /// restaurant is where biryani comes from, so the search terms carry it.
+  ///
+  /// Data rather than code, and per category rather than per record, so a few hundred terms
+  /// make four million imported businesses findable. Generating phrase combinations instead
+  /// would be larger, never complete, and stale the moment somebody opens a shawarma stall.
+  ///
+  /// All three languages in one list. A Telugu speaker typing బిర్యానీ and an English speaker
+  /// typing biryani are looking for the same shop.
+  searchTerms String[]
   description    String?       @db.VarChar(500)
   iconKey        String?       @db.VarChar(80)
   // Which listing types may use this category — lets one tree serve products, jobs and offers.

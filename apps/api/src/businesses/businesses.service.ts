@@ -150,6 +150,7 @@ export class BusinessesService {
           id: uuid(),
           ownerId: userId,
           name: dto.name.trim(),
+          businessType: dto.businessType,
           slug,
           categoryId: dto.categoryId,
           cityId: dto.cityId,
@@ -265,6 +266,7 @@ export class BusinessesService {
     const updated = await this.prisma.business.update({
       where: { id: businessId },
       data: {
+        businessType: dto.businessType,
         name: dto.name?.trim(),
         description: dto.description,
         latitude: dto.latitude,
@@ -581,6 +583,7 @@ export class BusinessesService {
       id: business.id,
       name: business.name,
       slug: business.slug,
+      businessType: business.businessType,
       categoryName: business.category.name,
       cityName: business.city.name,
       logoUrl: business.logoMediaId ? this.storage.publicUrl(business.logoMediaId) : null,

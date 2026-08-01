@@ -11,7 +11,10 @@ import '../../features/feed/presentation/home_screen.dart';
 import '../../features/listings/presentation/listing_detail_screen.dart';
 import '../../features/listings/presentation/listing_navigation.dart';
 import '../../features/listings/presentation/report_listing_screen.dart';
+import '../../features/listings/presentation/requirement_responses_screen.dart';
+import '../../features/listings/presentation/saved_searches_screen.dart';
 import '../../features/listings/presentation/search_screen.dart';
+import '../../features/listings/presentation/seller_profile_screen.dart';
 import '../../features/location/presentation/city_picker_screen.dart';
 import '../../features/notifications/presentation/notifications_screen.dart';
 import '../../features/post/presentation/post_ad_screen.dart';
@@ -48,7 +51,8 @@ final routerProvider = Provider<GoRouter>((ref) {
       // The tabbed shell keeps the bottom bar mounted across tab switches, so scroll
       // position and in-flight requests survive navigation.
       StatefulShellRoute.indexedStack(
-        builder: (context, state, navigationShell) => _TabScaffold(shell: navigationShell),
+        builder: (context, state, navigationShell) =>
+            _TabScaffold(shell: navigationShell),
         branches: [
           StatefulShellBranch(
             routes: [
@@ -105,7 +109,8 @@ final routerProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: '/post',
-        pageBuilder: (context, state) => _motionPage(context, state, const PostAdScreen()),
+        pageBuilder: (context, state) =>
+            _motionPage(context, state, const PostAdScreen()),
       ),
       GoRoute(
         path: '/post/:id/edit',
@@ -117,11 +122,13 @@ final routerProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: '/location',
-        pageBuilder: (context, state) => _motionPage(context, state, const CityPickerScreen()),
+        pageBuilder: (context, state) =>
+            _motionPage(context, state, const CityPickerScreen()),
       ),
       GoRoute(
         path: '/notifications',
-        pageBuilder: (context, state) => _motionPage(context, state, const NotificationsScreen()),
+        pageBuilder: (context, state) =>
+            _motionPage(context, state, const NotificationsScreen()),
       ),
       GoRoute(
         path: '/chats/:id',
@@ -151,8 +158,35 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: '/report',
         builder: (context, state) {
           final listingId = state.uri.queryParameters['listing'];
-          return listingId == null ? const HomeScreen() : ReportListingScreen(listingId: listingId);
+          return listingId == null
+              ? const HomeScreen()
+              : ReportListingScreen(listingId: listingId);
         },
+      ),
+      GoRoute(
+        path: '/seller/:id',
+        pageBuilder: (context, state) => _motionPage(
+          context,
+          state,
+          SellerProfileScreen(userId: state.pathParameters['id']!),
+        ),
+      ),
+      GoRoute(
+        path: '/saved-searches',
+        pageBuilder: (context, state) =>
+            _motionPage(context, state, const SavedSearchesScreen()),
+      ),
+      GoRoute(
+        path: '/requirements/:id/responses',
+        pageBuilder: (context, state) => _motionPage(
+          context,
+          state,
+          RequirementResponsesScreen(
+            listingId: state.pathParameters['id']!,
+            title: state.uri.queryParameters['title'] ?? '',
+            isOwner: state.uri.queryParameters['owner'] == '1',
+          ),
+        ),
       ),
     ],
   );
@@ -295,7 +329,8 @@ class _LoczBottomBar extends StatelessWidget {
                             ),
                             boxShadow: [
                               BoxShadow(
-                                color: theme.colorScheme.primary.withValues(alpha: 0.22),
+                                color: theme.colorScheme.primary
+                                    .withValues(alpha: 0.22),
                                 blurRadius: 14,
                                 offset: const Offset(0, 5),
                               ),
@@ -352,7 +387,9 @@ class _BottomDestination extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final color = selected ? theme.colorScheme.primary : theme.colorScheme.onSurfaceVariant;
+    final color = selected
+        ? theme.colorScheme.primary
+        : theme.colorScheme.onSurfaceVariant;
 
     return Expanded(
       child: InkResponse(
@@ -374,7 +411,9 @@ class _BottomDestination extends StatelessWidget {
                 width: selected ? 38 : 30,
                 height: 25,
                 decoration: BoxDecoration(
-                  color: selected ? theme.colorScheme.primaryContainer : Colors.transparent,
+                  color: selected
+                      ? theme.colorScheme.primaryContainer
+                      : Colors.transparent,
                   borderRadius: BorderRadius.circular(LoczRadius.full),
                 ),
                 child: AnimatedScale(

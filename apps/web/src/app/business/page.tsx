@@ -28,6 +28,7 @@ interface BusinessSummary {
   id: string;
   name: string;
   slug: string;
+  businessType: string;
   categoryName: string;
   cityName: string;
   logoUrl: string | null;
@@ -380,6 +381,11 @@ function BusinessCard({
           )}
         </span>
         <div className="business-directory-card__badges">
+          {business.businessType === 'HOME_BUSINESS' ? (
+            <span className="is-home-business">
+              <Icon name="home" /> {t('businessDirectory.homeBusiness')}
+            </span>
+          ) : null}
           {business.verificationStatus === 'VERIFIED' ? (
             <span className="is-verified">
               <Icon name="shield" /> {t('businessDirectory.verified')}

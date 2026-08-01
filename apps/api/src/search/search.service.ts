@@ -17,6 +17,8 @@ export interface ListingDocument {
   description: string;
   categoryId: string;
   categoryName: string;
+  /// What people type when they want this category, in all three languages.
+  categoryTerms: string[];
   subcategoryId: string | null;
   cityId: string;
   cityName: string;
@@ -166,6 +168,7 @@ export class SearchService implements OnModuleInit {
         'title',
         'brand',
         'categoryName',
+        'categoryTerms',
         'description',
         'localityName',
         'cityName',
@@ -220,7 +223,7 @@ export class SearchService implements OnModuleInit {
     const listing = await this.prisma.listing.findFirst({
       where: { id: listingId, deletedAt: null },
       include: {
-        category: { select: { name: true } },
+        category: { select: { name: true, searchTerms: true } },
         city: { select: { name: true } },
         locality: { select: { name: true } },
         marketplace: true,
@@ -245,6 +248,9 @@ export class SearchService implements OnModuleInit {
       description: listing.description.slice(0, 2000),
       categoryId: listing.categoryId,
       categoryName: listing.category.name,
+      // Carries the category's vocabulary onto every listing in it, so a search for what a
+      // shop sells finds the shop even when its own words never mention it.
+      categoryTerms: listing.category.searchTerms ?? [],
       subcategoryId: listing.subcategoryId,
       cityId: listing.cityId,
       cityName: listing.city.name,

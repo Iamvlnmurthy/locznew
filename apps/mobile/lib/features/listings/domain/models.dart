@@ -53,8 +53,9 @@ class ListingSummary {
         thumbUrl: json['thumbUrl'] as String?,
         isFeatured: json['isFeatured'] as bool? ?? false,
         viewCount: json['viewCount'] as int? ?? 0,
-        publishedAt:
-            json['publishedAt'] == null ? null : DateTime.tryParse(json['publishedAt'] as String),
+        publishedAt: json['publishedAt'] == null
+            ? null
+            : DateTime.tryParse(json['publishedAt'] as String),
         distanceMeters: json['distanceMeters'] as num?,
         isSaved: json['isSaved'] as bool?,
       );
@@ -157,7 +158,8 @@ class ListingDetail {
         addressLine: json['addressLine'] as String?,
         cityId: json['cityId'] as String?,
         pincodeCode: json['pincodeCode'] as String?,
-        contactPreference: json['contactPreference'] as String? ?? 'IN_APP_ONLY',
+        contactPreference:
+            json['contactPreference'] as String? ?? 'IN_APP_ONLY',
         marketplace: (json['marketplace'] as Map<String, dynamic>?) ?? const {},
       );
 }
@@ -189,7 +191,8 @@ class RequirementResponse {
   final String? conversationId;
   final DateTime createdAt;
 
-  factory RequirementResponse.fromJson(Map<String, dynamic> json) => RequirementResponse(
+  factory RequirementResponse.fromJson(Map<String, dynamic> json) =>
+      RequirementResponse(
         id: json['id'] as String,
         listingId: json['listingId'] as String,
         responderId: json['responderId'] as String,
@@ -267,8 +270,9 @@ class SavedSearch {
         cityId: json['cityId'] as String?,
         filters: Map<String, dynamic>.from(json['filters'] as Map? ?? const {}),
         isActive: json['isActive'] as bool? ?? true,
-        lastMatchedAt:
-            json['lastMatchedAt'] == null ? null : DateTime.tryParse(json['lastMatchedAt'] as String),
+        lastMatchedAt: json['lastMatchedAt'] == null
+            ? null
+            : DateTime.tryParse(json['lastMatchedAt'] as String),
         createdAt: DateTime.parse(json['createdAt'] as String),
       );
 }
@@ -358,7 +362,8 @@ class CategoryAttributeOption {
   final String? labelTe;
   final String? labelHi;
 
-  factory CategoryAttributeOption.fromJson(Map<String, dynamic> json) => CategoryAttributeOption(
+  factory CategoryAttributeOption.fromJson(Map<String, dynamic> json) =>
+      CategoryAttributeOption(
         value: json['value'] as String,
         label: json['label'] as String,
         labelTe: json['labelTe'] as String?,
@@ -393,7 +398,8 @@ class CategoryAttribute {
   final num? minValue;
   final num? maxValue;
 
-  factory CategoryAttribute.fromJson(Map<String, dynamic> json) => CategoryAttribute(
+  factory CategoryAttribute.fromJson(Map<String, dynamic> json) =>
+      CategoryAttribute(
         key: json['key'] as String,
         label: json['label'] as String,
         labelTe: json['labelTe'] as String?,
@@ -401,7 +407,8 @@ class CategoryAttribute {
         dataType: json['dataType'] as String,
         options: (json['options'] as List<dynamic>? ?? [])
             .map(
-              (entry) => CategoryAttributeOption.fromJson(entry as Map<String, dynamic>),
+              (entry) => CategoryAttributeOption.fromJson(
+                  entry as Map<String, dynamic>),
             )
             .toList(),
         unit: json['unit'] as String?,
@@ -442,7 +449,8 @@ class Category {
         iconKey: json['iconKey'] as String?,
         attributes: (json['attributes'] as List<dynamic>? ?? [])
             .map(
-              (entry) => CategoryAttribute.fromJson(entry as Map<String, dynamic>),
+              (entry) =>
+                  CategoryAttribute.fromJson(entry as Map<String, dynamic>),
             )
             .toList(),
         children: (json['children'] as List<dynamic>? ?? [])
@@ -470,7 +478,8 @@ class ConversationSummary {
   final String? lastMessagePreview;
   final DateTime? lastMessageAt;
 
-  factory ConversationSummary.fromJson(Map<String, dynamic> json) => ConversationSummary(
+  factory ConversationSummary.fromJson(Map<String, dynamic> json) =>
+      ConversationSummary(
         id: json['id'] as String,
         otherPartyName: json['otherPartyName'] as String,
         unreadCount: json['unreadCount'] as int? ?? 0,
