@@ -55,7 +55,9 @@ void main() {
     );
     await tester.pump(LoczMotion.quick);
     expect(
-        tester.widget<AnimatedScale>(find.byType(AnimatedScale)).scale, 0.975);
+      tester.widget<AnimatedScale>(find.byType(AnimatedScale)).scale,
+      0.975,
+    );
     await gesture.up();
     await tester.pumpAndSettle();
     expect(taps, 1);
