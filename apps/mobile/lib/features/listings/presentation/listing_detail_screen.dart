@@ -30,8 +30,7 @@ class ListingDetailScreen extends ConsumerStatefulWidget {
   final String? heroTag;
 
   @override
-  ConsumerState<ListingDetailScreen> createState() =>
-      _ListingDetailScreenState();
+  ConsumerState<ListingDetailScreen> createState() => _ListingDetailScreenState();
 }
 
 class _ListingDetailScreenState extends ConsumerState<ListingDetailScreen> {
@@ -78,15 +77,12 @@ class _ListingDetailScreenState extends ConsumerState<ListingDetailScreen> {
     setState(() => _savedOverride = next);
 
     try {
-      await ref
-          .read(listingRepositoryProvider)
-          .toggleSave(listing.summary.id, save: next);
+      await ref.read(listingRepositoryProvider).toggleSave(listing.summary.id, save: next);
       ref.invalidate(savedListingsProvider);
     } on ApiException catch (error) {
       if (!mounted) return;
       setState(() => _savedOverride = !next);
-      ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text(error.message)));
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(error.message)));
     }
   }
 
@@ -117,8 +113,7 @@ class _ListingDetailScreenState extends ConsumerState<ListingDetailScreen> {
               controller: controller,
               autofocus: true,
               maxLines: 3,
-              decoration:
-                  InputDecoration(hintText: strings('chats.messageHint')),
+              decoration: InputDecoration(hintText: strings('chats.messageHint')),
             ),
             const SizedBox(height: LoczSpacing.x3),
             FilledButton(
@@ -134,16 +129,14 @@ class _ListingDetailScreenState extends ConsumerState<ListingDetailScreen> {
     if (message == null || message.isEmpty || !mounted) return;
 
     try {
-      final conversationId = await ref
-          .read(chatRepositoryProvider)
-          .startEnquiry(listing.summary.id, message);
+      final conversationId =
+          await ref.read(chatRepositoryProvider).startEnquiry(listing.summary.id, message);
       if (!mounted) return;
       ref.invalidate(conversationsProvider);
       await context.push('/chats/$conversationId');
     } on ApiException catch (error) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text(error.message)));
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(error.message)));
     }
   }
 
@@ -167,8 +160,7 @@ class _ListingDetailScreenState extends ConsumerState<ListingDetailScreen> {
                 Text(error.toString(), textAlign: TextAlign.center),
                 const SizedBox(height: LoczSpacing.x4),
                 OutlinedButton(
-                  onPressed: () =>
-                      ref.invalidate(listingDetailProvider(widget.slug)),
+                  onPressed: () => ref.invalidate(listingDetailProvider(widget.slug)),
                   child: Text(strings('common.retry')),
                 ),
               ],
@@ -190,25 +182,20 @@ class _ListingDetailScreenState extends ConsumerState<ListingDetailScreen> {
     final isSaved = _savedOverride ?? summary.isSaved ?? false;
     final auth = ref.watch(authProvider);
     final isOwner = auth.user?.id == listing.owner.id;
-    final images =
-        listing.media.where((media) => media.fullUrl != null).toList();
+    final images = listing.media.where((media) => media.fullUrl != null).toList();
 
     return CustomScrollView(
       slivers: [
         SliverAppBar(
-          expandedHeight:
-              (MediaQuery.sizeOf(context).width * 0.82).clamp(280, 390),
+          expandedHeight: (MediaQuery.sizeOf(context).width * 0.82).clamp(280, 390),
           pinned: true,
           actions: [
             IconButton(
               icon: Icon(
-                isSaved
-                    ? Icons.favorite_rounded
-                    : Icons.favorite_border_rounded,
+                isSaved ? Icons.favorite_rounded : Icons.favorite_border_rounded,
               ),
               color: isSaved ? LoczColors.danger : null,
-              tooltip:
-                  isSaved ? strings('listing.saved') : strings('listing.save'),
+              tooltip: isSaved ? strings('listing.saved') : strings('listing.save'),
               onPressed: () => _toggleSave(listing),
             ),
             IconButton(
@@ -234,8 +221,7 @@ class _ListingDetailScreenState extends ConsumerState<ListingDetailScreen> {
                     children: [
                       PageView.builder(
                         itemCount: images.length,
-                        onPageChanged: (index) =>
-                            setState(() => _galleryIndex = index),
+                        onPageChanged: (index) => setState(() => _galleryIndex = index),
                         itemBuilder: (context, index) {
                           final image = CachedNetworkImage(
                             imageUrl: images[index].fullUrl!,
@@ -255,8 +241,7 @@ class _ListingDetailScreenState extends ConsumerState<ListingDetailScreen> {
                           );
                           if (index != 0) return image;
                           return Hero(
-                            tag: widget.heroTag ??
-                                'listing-image-detail-${summary.id}',
+                            tag: widget.heroTag ?? 'listing-image-detail-${summary.id}',
                             flightShuttleBuilder: loczImageFlight,
                             child: image,
                           );
@@ -272,10 +257,8 @@ class _ListingDetailScreenState extends ConsumerState<ListingDetailScreen> {
                               vertical: 5,
                             ),
                             decoration: BoxDecoration(
-                              color:
-                                  LoczColors.neutral900.withValues(alpha: 0.76),
-                              borderRadius:
-                                  BorderRadius.circular(LoczRadius.full),
+                              color: LoczColors.neutral900.withValues(alpha: 0.76),
+                              borderRadius: BorderRadius.circular(LoczRadius.full),
                             ),
                             child: Text(
                               '${_galleryIndex + 1} / ${images.length}',
@@ -297,9 +280,7 @@ class _ListingDetailScreenState extends ConsumerState<ListingDetailScreen> {
             delegate: SliverChildListDelegate([
               if (summary.price != null)
                 Text(
-                  summary.isFree
-                      ? strings('listing.free')
-                      : formatPrice(summary.price!),
+                  summary.isFree ? strings('listing.free') : formatPrice(summary.price!),
                   style: theme.textTheme.displaySmall?.copyWith(
                     color: summary.isFree ? LoczColors.success : null,
                   ),
@@ -349,6 +330,56 @@ class _ListingDetailScreenState extends ConsumerState<ListingDetailScreen> {
                   ),
                 ),
               ],
+              const SizedBox(height: LoczSpacing.x4),
+              Container(
+                padding: const EdgeInsets.all(LoczSpacing.x3),
+                decoration: BoxDecoration(
+                  color: theme.colorScheme.primaryContainer,
+                  borderRadius: BorderRadius.circular(LoczRadius.lg),
+                  border: Border.all(
+                    color: theme.colorScheme.primary.withValues(alpha: 0.18),
+                  ),
+                ),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Container(
+                      width: 34,
+                      height: 34,
+                      decoration: BoxDecoration(
+                        color: theme.colorScheme.primary.withValues(alpha: 0.12),
+                        shape: BoxShape.circle,
+                      ),
+                      child: Icon(
+                        Icons.verified_user_outlined,
+                        size: 18,
+                        color: theme.colorScheme.primary,
+                      ),
+                    ),
+                    const SizedBox(width: LoczSpacing.x3),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            strings('listing.safetyTitle'),
+                            style: theme.textTheme.titleSmall?.copyWith(
+                              color: theme.colorScheme.onPrimaryContainer,
+                            ),
+                          ),
+                          const SizedBox(height: 3),
+                          Text(
+                            strings('listing.safetyHint'),
+                            style: theme.textTheme.labelSmall?.copyWith(
+                              color: theme.colorScheme.onPrimaryContainer,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
               const SizedBox(height: LoczSpacing.x5),
               const Divider(),
               const SizedBox(height: LoczSpacing.x5),
@@ -377,8 +408,7 @@ class _ListingDetailScreenState extends ConsumerState<ListingDetailScreen> {
               const SizedBox(height: LoczSpacing.x5),
               Card(
                 child: ListTile(
-                  contentPadding:
-                      const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
                   leading: CircleAvatar(
                     backgroundColor: theme.colorScheme.primaryContainer,
                     child: Icon(
@@ -388,8 +418,15 @@ class _ListingDetailScreenState extends ConsumerState<ListingDetailScreen> {
                   ),
                   title: Text(listing.owner.displayName),
                   subtitle: Text(
-                    strings('listing.seller'),
+                    strings(
+                      'listing.memberSince',
+                      {'year': listing.owner.memberSince.year},
+                    ),
                     style: theme.textTheme.labelSmall,
+                  ),
+                  trailing: Icon(
+                    Icons.chevron_right_rounded,
+                    color: theme.colorScheme.onSurfaceVariant,
                   ),
                 ),
               ),
@@ -443,8 +480,7 @@ class _DetailLoading extends StatefulWidget {
   State<_DetailLoading> createState() => _DetailLoadingState();
 }
 
-class _DetailLoadingState extends State<_DetailLoading>
-    with SingleTickerProviderStateMixin {
+class _DetailLoadingState extends State<_DetailLoading> with SingleTickerProviderStateMixin {
   late final AnimationController _pulse = AnimationController(
     vsync: this,
     duration: const Duration(milliseconds: 950),
@@ -496,8 +532,7 @@ class _DetailLoadingState extends State<_DetailLoading>
                     ),
                   )
                 : Hero(
-                    tag:
-                        widget.heroTag ?? 'listing-image-detail-${preview!.id}',
+                    tag: widget.heroTag ?? 'listing-image-detail-${preview!.id}',
                     flightShuttleBuilder: loczImageFlight,
                     child: CachedNetworkImage(
                       imageUrl: image,
@@ -518,8 +553,8 @@ class _DetailLoadingState extends State<_DetailLoading>
             child: AnimatedBuilder(
               animation: _pulse,
               builder: (context, _) {
-                final color = theme.colorScheme.surfaceContainerHighest
-                    .withValues(alpha: _pulse.value);
+                final color =
+                    theme.colorScheme.surfaceContainerHighest.withValues(alpha: _pulse.value);
                 return Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -622,9 +657,7 @@ class _ContactBar extends StatelessWidget {
               IconButton.outlined(
                 onPressed: onSave,
                 icon: Icon(isSaved ? Icons.favorite : Icons.favorite_border),
-                tooltip: isSaved
-                    ? strings('listing.saved')
-                    : strings('listing.save'),
+                tooltip: isSaved ? strings('listing.saved') : strings('listing.save'),
                 color: isSaved ? LoczColors.danger : null,
               ),
               const SizedBox(width: LoczSpacing.x2),

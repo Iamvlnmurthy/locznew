@@ -228,6 +228,57 @@ enum NotificationType {
   SECURITY_ALERT
 }
 
+/// What kind of operation a business is.
+///
+/// The vision asks for home businesses to have a proper identity rather than looking like
+/// random classified sellers, and this is the field that carries it. A home baker, a kirana
+/// store and a wholesaler need different forms, different badges and different search
+/// treatment, and none of that is expressible while they are all just "a business".
+///
+/// Also what makes an imported directory record honest: a scraped shop is a RETAIL_STORE
+/// nobody has claimed, not a seller who signed up.
+enum BusinessType {
+  RETAIL_STORE
+  HOME_BUSINESS
+  SERVICE_PROVIDER
+  PROFESSIONAL
+  MANUFACTURER
+  WHOLESALER
+  DEALER
+  OTHER
+}
+
+/// How an individual is selling, when they are not trading as a business at all.
+///
+/// Deliberately separate from `BusinessType` and deliberately not a permanent label: a user
+/// is a buyer and a seller at once, and this describes the posting rather than the person.
+enum SellerType {
+  INDIVIDUAL
+  HOME_BUSINESS
+  RETAIL_STORE
+  SERVICE_PROVIDER
+  PROPERTY_OWNER
+  BROKER
+  EMPLOYER
+  EVENT_ORGANISER
+}
+
+/// Whether a directory record has found its real owner yet.
+///
+/// An imported business is real but unclaimed: LocZ knows the shop exists because an open
+/// dataset said so, and nobody from that shop has ever logged in. Saying so plainly is the
+/// difference between a directory that is useful and one that is misleading.
+enum BusinessClaimStatus {
+  /// Created by someone who signed up. The ordinary case.
+  OWNER_CREATED
+  /// Imported from an open dataset; nobody has claimed it.
+  UNCLAIMED
+  /// Someone has asked to claim it and is waiting on review.
+  CLAIM_PENDING
+  /// Claimed, reviewed and handed over.
+  CLAIMED
+}
+
 enum ConversationContext {
   LISTING_ENQUIRY
   BUSINESS_ENQUIRY
@@ -301,12 +352,16 @@ model User {
   updatedAt           DateTime   @updatedAt
   deletedAt           DateTime?
 
-  roles                 UserRole[]
-  devices               Device[]
-  sessions              Session[]
-  savedLocations        SavedLocation[]
-  ownedBusinesses       Business[]               @relation("BusinessOwner")
-  businessStaffOf       BusinessStaff[]
+  roles           UserRole[]
+  devices         Device[]
+  sessions        Session[]
+  savedLocations  SavedLocation[]
+  ownedBusinesses Business[]      @relation("BusinessOwner")
+  businessStaffOf BusinessStaff[]
+  /// How this person sells, when they are not trading as a business. Describes the posting,
+  /// not the person: everyone is a buyer and a seller here, and nobody is asked to choose.
+  sellerType      SellerType      @default(INDIVIDUAL)
+
   listings              Listing[]                @relation("ListingOwner")
   requirementResponses  RequirementResponse[]    @relation("RequirementResponder")
   savedListings         SavedListing[]
@@ -665,35 +720,57 @@ model SavedLocation {
 // =====================================================================
 
 model Business {
-  id                 String                                 @id @db.Uuid
-  ownerId            String                                 @db.Uuid
-  name               String                                 @db.VarChar(180)
-  slug               String                                 @unique @db.VarChar(200)
-  categoryId         String                                 @db.Uuid
-  description        String?                                @db.Text
-  logoMediaId        String?                                @db.Uuid
-  coverMediaId       String?                                @db.Uuid
-  addressId          String?                                @db.Uuid
-  cityId             String                                 @db.Uuid
-  latitude           Decimal?                               @db.Decimal(10, 7)
-  longitude          Decimal?                               @db.Decimal(10, 7)
-  geo                Unsupported("geography(Point, 4326)")?
-  primaryPhone       String?                                @db.VarChar(20)
-  secondaryPhone     String?                                @db.VarChar(20)
-  whatsappNumber     String?                                @db.VarChar(20)
-  email              String?                                @db.VarChar(180)
-  website            String?                                @db.VarChar(255)
-  verificationStatus VerificationStatus                     @default(UNVERIFIED)
+  id             String                                 @id @db.Uuid
+  /// Nullable because a directory record has no owner and never did. A placeholder user
+  /// would be a lie the whole platform then has to work around; `ownerId IS NULL` is
+  /// exactly the "unclaimed" query, and it is honest.
+  ownerId        String?                                @db.Uuid
+  name           String                                 @db.VarChar(180)
+  slug           String                                 @unique @db.VarChar(200)
+  categoryId     String                                 @db.Uuid
+  description    String?                                @db.Text
+  logoMediaId    String?                                @db.Uuid
+  coverMediaId   String?                                @db.Uuid
+  addressId      String?                                @db.Uuid
+  cityId         String                                 @db.Uuid
+  latitude       Decimal?                               @db.Decimal(10, 7)
+  longitude      Decimal?                               @db.Decimal(10, 7)
+  geo            Unsupported("geography(Point, 4326)")?
+  primaryPhone   String?                                @db.VarChar(20)
+  secondaryPhone String?                                @db.VarChar(20)
+  whatsappNumber String?                                @db.VarChar(20)
+  email          String?                                @db.VarChar(180)
+  website        String?                                @db.VarChar(255)
+  businessType   BusinessType                           @default(RETAIL_STORE)
+  claimStatus    BusinessClaimStatus                    @default(OWNER_CREATED)
+
+  /// The pincode this business sits in. Cities are districts here, so a city alone cannot
+  /// answer "what is in 500081", which is the unit people actually search by.
+  pincodeCode String? @db.VarChar(6)
+
+  /// Where an imported record came from, and under what licence.
+  ///
+  /// Not optional bookkeeping: ODbL and CDLA both require attribution to travel with the
+  /// data. Importing without these would breach the licence, and a record whose provenance
+  /// is unknown cannot be defended if someone disputes it.
+  sourceName      String?  @db.VarChar(120)
+  sourceRecordId  String?  @db.VarChar(200)
+  licenceName     String?  @db.VarChar(80)
+  attributionText String?  @db.VarChar(400)
+  /// How much the pipeline trusts this record, 0 to 1. Null for anything a person created.
+  confidenceScore Decimal? @db.Decimal(3, 2)
+
+  verificationStatus VerificationStatus @default(UNVERIFIED)
   verifiedAt         DateTime?
-  isPremium          Boolean                                @default(false) // premium profile — inactive in Phase 1
-  isActive           Boolean                                @default(true)
-  viewCount          Int                                    @default(0)
-  saveCount          Int                                    @default(0)
-  createdAt          DateTime                               @default(now())
-  updatedAt          DateTime                               @updatedAt
+  isPremium          Boolean            @default(false) // premium profile — inactive in Phase 1
+  isActive           Boolean            @default(true)
+  viewCount          Int                @default(0)
+  saveCount          Int                @default(0)
+  createdAt          DateTime           @default(now())
+  updatedAt          DateTime           @updatedAt
   deletedAt          DateTime?
 
-  owner                User                  @relation("BusinessOwner", fields: [ownerId], references: [id])
+  owner                User?                 @relation("BusinessOwner", fields: [ownerId], references: [id])
   category             Category              @relation(fields: [categoryId], references: [id])
   address              Address?              @relation(fields: [addressId], references: [id])
   city                 City                  @relation(fields: [cityId], references: [id])
@@ -705,10 +782,14 @@ model Business {
   requirementResponses RequirementResponse[]
   savedBy              SavedBusiness[]
 
+  /// One import cannot create the same source record twice.
+  @@unique([sourceName, sourceRecordId])
   @@index([ownerId])
   // City + category browse, the main business directory query.
   @@index([cityId, categoryId, isActive])
   @@index([verificationStatus])
+  @@index([businessType])
+  @@index([pincodeCode, claimStatus])
   @@map("businesses")
 }
 

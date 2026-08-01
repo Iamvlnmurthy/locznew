@@ -491,6 +491,10 @@ export class BusinessesService {
         : status === VerificationStatus.REJECTED
           ? 'not approved'
           : status.toLowerCase();
+    // An unclaimed directory business has nobody to tell. Skipping is correct: the
+    // alternative is inventing a recipient for a decision nobody asked for.
+    if (!business.ownerId) return;
+
     await this.notifications.create({
       userId: business.ownerId,
       type: NotificationType.BUSINESS_VERIFICATION_UPDATE,

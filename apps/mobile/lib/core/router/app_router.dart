@@ -48,8 +48,7 @@ final routerProvider = Provider<GoRouter>((ref) {
       // The tabbed shell keeps the bottom bar mounted across tab switches, so scroll
       // position and in-flight requests survive navigation.
       StatefulShellRoute.indexedStack(
-        builder: (context, state, navigationShell) =>
-            _TabScaffold(shell: navigationShell),
+        builder: (context, state, navigationShell) => _TabScaffold(shell: navigationShell),
         branches: [
           StatefulShellBranch(
             routes: [
@@ -61,6 +60,7 @@ final routerProvider = Provider<GoRouter>((ref) {
               GoRoute(
                 path: '/search',
                 builder: (_, state) => SearchScreen(
+                  key: ValueKey('search-${state.uri.query}'),
                   initialQuery: state.uri.queryParameters['q'],
                   initialCategoryId: state.uri.queryParameters['category'],
                   initialCategoryLabel: state.uri.queryParameters['label'],
@@ -104,8 +104,7 @@ final routerProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: '/post',
-        pageBuilder: (context, state) =>
-            _motionPage(context, state, const PostAdScreen()),
+        pageBuilder: (context, state) => _motionPage(context, state, const PostAdScreen()),
       ),
       GoRoute(
         path: '/post/:id/edit',
@@ -117,13 +116,11 @@ final routerProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: '/location',
-        pageBuilder: (context, state) =>
-            _motionPage(context, state, const CityPickerScreen()),
+        pageBuilder: (context, state) => _motionPage(context, state, const CityPickerScreen()),
       ),
       GoRoute(
         path: '/notifications',
-        pageBuilder: (context, state) =>
-            _motionPage(context, state, const NotificationsScreen()),
+        pageBuilder: (context, state) => _motionPage(context, state, const NotificationsScreen()),
       ),
       GoRoute(
         path: '/chats/:id',
@@ -153,9 +150,7 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: '/report',
         builder: (context, state) {
           final listingId = state.uri.queryParameters['listing'];
-          return listingId == null
-              ? const HomeScreen()
-              : ReportListingScreen(listingId: listingId);
+          return listingId == null ? const HomeScreen() : ReportListingScreen(listingId: listingId);
         },
       ),
     ],
@@ -240,26 +235,27 @@ class _LoczBottomBar extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        color: theme.colorScheme.surface,
-        border: Border(
-          top: BorderSide(color: theme.colorScheme.outlineVariant),
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: theme.colorScheme.shadow.withValues(
-              alpha: theme.brightness == Brightness.dark ? 0.26 : 0.08,
+    return SafeArea(
+      top: false,
+      minimum: const EdgeInsets.fromLTRB(10, 4, 10, 8),
+      child: Container(
+        height: 64,
+        decoration: BoxDecoration(
+          color: theme.colorScheme.surface,
+          borderRadius: BorderRadius.circular(22),
+          border: Border.all(color: theme.colorScheme.outlineVariant),
+          boxShadow: [
+            BoxShadow(
+              color: theme.colorScheme.shadow.withValues(
+                alpha: theme.brightness == Brightness.dark ? 0.30 : 0.10,
+              ),
+              blurRadius: 24,
+              offset: const Offset(0, 7),
             ),
-            blurRadius: 18,
-            offset: const Offset(0, -4),
-          ),
-        ],
-      ),
-      child: SafeArea(
-        top: false,
-        child: SizedBox(
-          height: 68,
+          ],
+        ),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(22),
           child: Row(
             children: [
               _BottomDestination(
@@ -287,19 +283,18 @@ class _LoczBottomBar extends StatelessWidget {
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         Container(
-                          width: 40,
-                          height: 40,
+                          width: 42,
+                          height: 42,
                           decoration: BoxDecoration(
                             color: theme.colorScheme.primary,
-                            borderRadius: BorderRadius.circular(14),
+                            borderRadius: BorderRadius.circular(15),
                             border: Border.all(
                               color: theme.colorScheme.surface,
                               width: 2,
                             ),
                             boxShadow: [
                               BoxShadow(
-                                color: theme.colorScheme.primary
-                                    .withValues(alpha: 0.22),
+                                color: theme.colorScheme.primary.withValues(alpha: 0.22),
                                 blurRadius: 14,
                                 offset: const Offset(0, 5),
                               ),
@@ -309,17 +304,6 @@ class _LoczBottomBar extends StatelessWidget {
                             Icons.add_rounded,
                             size: 23,
                             color: theme.colorScheme.onPrimary,
-                          ),
-                        ),
-                        const SizedBox(height: 2),
-                        Text(
-                          strings('nav.post'),
-                          maxLines: 1,
-                          overflow: TextOverflow.fade,
-                          style: TextStyle(
-                            color: theme.colorScheme.primary,
-                            fontSize: 9.5,
-                            fontWeight: FontWeight.w700,
                           ),
                         ),
                       ],
@@ -367,9 +351,7 @@ class _BottomDestination extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final color = selected
-        ? theme.colorScheme.primary
-        : theme.colorScheme.onSurfaceVariant;
+    final color = selected ? theme.colorScheme.primary : theme.colorScheme.onSurfaceVariant;
 
     return Expanded(
       child: InkResponse(
@@ -388,12 +370,10 @@ class _BottomDestination extends StatelessWidget {
               AnimatedContainer(
                 duration: LoczMotion.standard,
                 curve: LoczMotion.enterCurve,
-                width: selected ? 36 : 30,
-                height: 27,
+                width: selected ? 38 : 30,
+                height: 25,
                 decoration: BoxDecoration(
-                  color: selected
-                      ? theme.colorScheme.primaryContainer
-                      : Colors.transparent,
+                  color: selected ? theme.colorScheme.primaryContainer : Colors.transparent,
                   borderRadius: BorderRadius.circular(LoczRadius.full),
                 ),
                 child: AnimatedScale(
@@ -407,7 +387,7 @@ class _BottomDestination extends StatelessWidget {
                   ),
                 ),
               ),
-              const SizedBox(height: 4),
+              const SizedBox(height: 3),
               Text(
                 label,
                 maxLines: 1,

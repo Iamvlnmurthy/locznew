@@ -33,6 +33,7 @@ export function makeUser(overrides: Partial<User> = {}): User {
 
   return {
     id: uuid(),
+    sellerType: 'INDIVIDUAL',
     phoneE164: `+9198765${String(43210 + index).slice(0, 5)}`,
     phoneVerifiedAt: new Date('2026-01-01T00:00:00Z'),
     email: `user${index}@locz.test`,

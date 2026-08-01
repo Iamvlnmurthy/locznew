@@ -118,6 +118,8 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Good finds, right around you'), findsOneWidget);
+    await tester.drag(find.byType(CustomScrollView), const Offset(0, -620));
+    await tester.pumpAndSettle();
     expect(find.text('Latest items for sale'), findsOneWidget);
     expect(find.text('See all'), findsOneWidget);
     expect(find.text('₹32,900'), findsOneWidget);

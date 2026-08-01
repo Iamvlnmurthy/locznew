@@ -75,9 +75,9 @@ class _PostAdScreenState extends ConsumerState<PostAdScreen> {
     super.initState();
     if (widget.listingId == null) {
       _cityId = ref.read(selectedCityProvider)?.id;
-      _titleController.addListener(_scheduleProgressSave);
-      _descriptionController.addListener(_scheduleProgressSave);
-      _priceController.addListener(_scheduleProgressSave);
+      _titleController.addListener(_onFormChanged);
+      _descriptionController.addListener(_onFormChanged);
+      _priceController.addListener(_onFormChanged);
       unawaited(_offerProgressRestore());
     } else {
       _loadingListing = true;
@@ -144,6 +144,23 @@ class _PostAdScreenState extends ConsumerState<PostAdScreen> {
     _progressTimer = Timer(const Duration(milliseconds: 350), () {
       unawaited(_saveProgress());
     });
+  }
+
+  void _onFormChanged() {
+    if (mounted) setState(() {});
+    _scheduleProgressSave();
+  }
+
+  double get _completion {
+    final checks = <bool>[
+      _titleController.text.trim().length >= 5,
+      _categoryId != null,
+      _descriptionController.text.trim().length >= 10,
+      _isFree || _priceController.text.trim().isNotEmpty,
+      _cityId != null,
+      _images.isNotEmpty || widget.listingId != null,
+    ];
+    return checks.where((value) => value).length / checks.length;
   }
 
   Future<void> _saveProgress() async {
@@ -759,6 +776,60 @@ class _PostAdScreenState extends ConsumerState<PostAdScreen> {
                   ),
                   style: Theme.of(context).textTheme.bodyMedium,
                 ),
+                if (widget.listingId == null) ...[
+                  const SizedBox(height: LoczSpacing.x4),
+                  Container(
+                    padding: const EdgeInsets.all(LoczSpacing.x3),
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).colorScheme.primaryContainer,
+                      borderRadius: BorderRadius.circular(LoczRadius.lg),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Expanded(
+                              child: Text(
+                                strings(
+                                  'post.progressTitle',
+                                  {'percent': (_completion * 100).round()},
+                                ),
+                                style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                                      color: Theme.of(context).colorScheme.onPrimaryContainer,
+                                    ),
+                              ),
+                            ),
+                            Icon(
+                              _completion == 1
+                                  ? Icons.check_circle_rounded
+                                  : Icons.auto_awesome_outlined,
+                              size: 20,
+                              color: Theme.of(context).colorScheme.primary,
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 8),
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(LoczRadius.full),
+                          child: LinearProgressIndicator(
+                            value: _completion,
+                            minHeight: 6,
+                            backgroundColor:
+                                Theme.of(context).colorScheme.surface.withValues(alpha: 0.54),
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          strings('post.progressHint'),
+                          style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                                color: Theme.of(context).colorScheme.onPrimaryContainer,
+                              ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
                 if (_originalStatus == 'PUBLISHED') ...[
                   const SizedBox(height: LoczSpacing.x3),
                   Container(
