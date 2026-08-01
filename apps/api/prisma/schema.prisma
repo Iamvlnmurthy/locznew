@@ -217,6 +217,10 @@ enum NotificationType {
   NEW_ENQUIRY
   NEW_MESSAGE
   SAVED_SEARCH_MATCH
+  /// A seller is told a buyer nearby wants what they sell.
+  REQUIREMENT_MATCH
+  /// A buyer is told a seller answered their requirement.
+  REQUIREMENT_RESPONSE
   NEARBY_OFFER
   JOB_ENQUIRY
   BUSINESS_VERIFICATION_UPDATE
@@ -228,6 +232,30 @@ enum ConversationContext {
   LISTING_ENQUIRY
   BUSINESS_ENQUIRY
   JOB_ENQUIRY
+  // A seller answering a buyer's requirement. Distinct from LISTING_ENQUIRY because the
+  // roles are reversed: here the seller opens the conversation, about something the buyer
+  // asked for rather than something the seller listed.
+  REQUIREMENT_ENQUIRY
+}
+
+/// How a seller answers a buyer requirement. Deliberately more than yes and no: most real
+/// answers are conditional, and forcing them into "available" loses the condition that
+/// decides whether the buyer is interested.
+enum RequirementResponseKind {
+  AVAILABLE
+  AVAILABLE_AT_DIFFERENT_PRICE
+  SIMILAR_AVAILABLE
+  CAN_ARRANGE
+  MADE_TO_ORDER
+  AVAILABLE_LATER
+  NOT_AVAILABLE
+}
+
+/// How the buyer would like to receive the thing they are asking for.
+enum FulfilmentPreference {
+  PICKUP
+  DELIVERY
+  EITHER
 }
 
 enum DevicePlatform {
@@ -280,6 +308,7 @@ model User {
   ownedBusinesses       Business[]               @relation("BusinessOwner")
   businessStaffOf       BusinessStaff[]
   listings              Listing[]                @relation("ListingOwner")
+  requirementResponses  RequirementResponse[]    @relation("RequirementResponder")
   savedListings         SavedListing[]
   savedBusinesses       SavedBusiness[]
   recentlyViewed        RecentlyViewed[]
@@ -664,16 +693,17 @@ model Business {
   updatedAt          DateTime                               @updatedAt
   deletedAt          DateTime?
 
-  owner        User              @relation("BusinessOwner", fields: [ownerId], references: [id])
-  category     Category          @relation(fields: [categoryId], references: [id])
-  address      Address?          @relation(fields: [addressId], references: [id])
-  city         City              @relation(fields: [cityId], references: [id])
-  staff        BusinessStaff[]
-  hours        BusinessHour[]
-  holidays     BusinessHoliday[]
-  serviceAreas ServiceArea[]
-  listings     Listing[]
-  savedBy      SavedBusiness[]
+  owner                User                  @relation("BusinessOwner", fields: [ownerId], references: [id])
+  category             Category              @relation(fields: [categoryId], references: [id])
+  address              Address?              @relation(fields: [addressId], references: [id])
+  city                 City                  @relation(fields: [cityId], references: [id])
+  staff                BusinessStaff[]
+  hours                BusinessHour[]
+  holidays             BusinessHoliday[]
+  serviceAreas         ServiceArea[]
+  listings             Listing[]
+  requirementResponses RequirementResponse[]
+  savedBy              SavedBusiness[]
 
   @@index([ownerId])
   // City + category browse, the main business directory query.
@@ -903,21 +933,22 @@ model Listing {
   locality    Locality? @relation(fields: [localityId], references: [id])
   pincode     Pincode?  @relation(fields: [pincodeCode], references: [code])
 
-  media             ListingMedia[]
-  attributeValues   ListingAttributeValue[]
-  marketplace       MarketplaceDetail?
-  buyerRequirement  BuyerRequirementDetail?
-  offer             OfferDetail?
-  job               JobDetail?
-  service           ServiceDetail?
-  rental            RentalDetail?
-  event             EventDetail?
-  savedBy           SavedListing[]
-  views             RecentlyViewed[]
-  conversations     Conversation[]
-  reports           Report[]
-  moderationActions ModerationAction[]
-  placements        FeaturedPlacement[]
+  media                  ListingMedia[]
+  attributeValues        ListingAttributeValue[]
+  marketplace            MarketplaceDetail?
+  buyerRequirement       BuyerRequirementDetail?
+  offeredForRequirements RequirementResponse[]   @relation("OfferedForRequirement")
+  offer                  OfferDetail?
+  job                    JobDetail?
+  service                ServiceDetail?
+  rental                 RentalDetail?
+  event                  EventDetail?
+  savedBy                SavedListing[]
+  views                  RecentlyViewed[]
+  conversations          Conversation[]
+  reports                Report[]
+  moderationActions      ModerationAction[]
+  placements             FeaturedPlacement[]
 
   // Home feed and city landing pages: filter by type+status+city, sort by recency.
   @@index([type, status, cityId, publishedAt(sort: Desc)])
@@ -1008,10 +1039,72 @@ model BuyerRequirementDetail {
   quantity           Int?
   preferredCondition ItemCondition?
 
-  listing Listing @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  /// How far the buyer is willing to look. Distinct from `Listing.serviceRadiusKm`, which
+  /// describes how far a *seller* travels; a requirement is asking the opposite question.
+  searchRadiusKm Int?
+
+  fulfilment FulfilmentPreference @default(EITHER)
+
+  /// Closed by the buyer once they have what they needed. Kept rather than deleted: an
+  /// unfulfilled requirement that expired is the most valuable signal the platform
+  /// collects, because it names demand nobody in the area could meet.
+  fulfilledAt DateTime?
+
+  /// Denormalised so a requirement card can show "3 sellers replied" without counting rows
+  /// for every card in a feed. Maintained in the same transaction as the response.
+  responseCount Int @default(0)
+
+  listing   Listing               @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  responses RequirementResponse[]
 
   @@index([budgetMax])
+  @@index([fulfilledAt])
   @@map("buyer_requirement_details")
+}
+
+/// A seller's answer to a buyer requirement.
+///
+/// Its own table rather than a message, because an answer is structured: a buyer scanning
+/// six replies wants to see "available, 1,400" against "can arrange, by Friday" without
+/// reading six conversations. The chat is where the deal happens; this is how it starts.
+model RequirementResponse {
+  id          String                  @id @db.Uuid
+  listingId   String                  @db.Uuid
+  responderId String                  @db.Uuid
+  /// Set when answering on behalf of a business, so the buyer sees the shop rather than the
+  /// staff member who happened to be logged in.
+  businessId  String?                 @db.Uuid
+  kind        RequirementResponseKind
+
+  /// What the seller is asking, when it differs from the buyer's budget.
+  offeredPrice     Decimal?  @db.Decimal(12, 2)
+  /// For CAN_ARRANGE, MADE_TO_ORDER and AVAILABLE_LATER, when it could be ready.
+  availableFrom    DateTime?
+  /// A short note. Not a substitute for the chat, which is where the conversation goes.
+  message          String?   @db.VarChar(500)
+  /// The seller's own listing, when they have one for exactly this.
+  offeredListingId String?   @db.Uuid
+
+  /// Opened when the buyer engages, so a response and its conversation stay linked.
+  conversationId String? @db.Uuid
+
+  withdrawnAt DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  requirement    BuyerRequirementDetail @relation(fields: [listingId], references: [listingId], onDelete: Cascade)
+  responder      User                   @relation("RequirementResponder", fields: [responderId], references: [id], onDelete: Cascade)
+  business       Business?              @relation(fields: [businessId], references: [id], onDelete: SetNull)
+  offeredListing Listing?               @relation("OfferedForRequirement", fields: [offeredListingId], references: [id], onDelete: SetNull)
+
+  /// One answer per seller per requirement. A seller who changes their mind edits their
+  /// response; they do not add a second. This is the cheapest and most effective anti-spam
+  /// control available here, and it is enforced by the database rather than by a service
+  /// that could be bypassed by a second code path.
+  @@unique([listingId, responderId])
+  @@index([listingId, createdAt(sort: Desc)])
+  @@index([responderId, createdAt(sort: Desc)])
+  @@map("requirement_responses")
 }
 
 model OfferDetail {

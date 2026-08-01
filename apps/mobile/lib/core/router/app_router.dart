@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -8,12 +9,15 @@ import '../../features/auth/presentation/sign_in_screen.dart';
 import '../../features/chat/presentation/chat_screens.dart';
 import '../../features/feed/presentation/home_screen.dart';
 import '../../features/listings/presentation/listing_detail_screen.dart';
+import '../../features/listings/presentation/listing_navigation.dart';
 import '../../features/listings/presentation/report_listing_screen.dart';
 import '../../features/listings/presentation/search_screen.dart';
 import '../../features/location/presentation/city_picker_screen.dart';
 import '../../features/notifications/presentation/notifications_screen.dart';
 import '../../features/post/presentation/post_ad_screen.dart';
 import '../i18n/strings.dart';
+import '../motion/locz_motion.dart';
+import '../theme/tokens.g.dart';
 
 /// Converts the compact campaign URI `locz://ad/<slug>` into the same path used by
 /// verified web links. Keeping this pure makes the platform boundary easy to test.
@@ -80,34 +84,66 @@ final routerProvider = Provider<GoRouter>((ref) {
       // screen rather than competing with a nav bar.
       GoRoute(
         path: '/ad/:slug',
-        builder: (context, state) =>
-            ListingDetailScreen(slug: state.pathParameters['slug']!),
+        pageBuilder: (context, state) => _motionPage(
+          context,
+          state,
+          ListingDetailScreen(
+            slug: state.pathParameters['slug']!,
+            preview: state.extra is ListingNavigationPreview
+                ? (state.extra! as ListingNavigationPreview).listing
+                : null,
+            heroTag: state.extra is ListingNavigationPreview
+                ? (state.extra! as ListingNavigationPreview).heroTag
+                : null,
+          ),
+        ),
       ),
-      GoRoute(path: '/post', builder: (_, __) => const PostAdScreen()),
+      GoRoute(
+        path: '/post',
+        pageBuilder: (context, state) =>
+            _motionPage(context, state, const PostAdScreen()),
+      ),
       GoRoute(
         path: '/post/:id/edit',
-        builder: (_, state) =>
-            PostAdScreen(listingId: state.pathParameters['id']),
+        pageBuilder: (context, state) => _motionPage(
+          context,
+          state,
+          PostAdScreen(listingId: state.pathParameters['id']),
+        ),
       ),
-      GoRoute(path: '/location', builder: (_, __) => const CityPickerScreen()),
+      GoRoute(
+        path: '/location',
+        pageBuilder: (context, state) =>
+            _motionPage(context, state, const CityPickerScreen()),
+      ),
       GoRoute(
         path: '/notifications',
-        builder: (_, __) => const NotificationsScreen(),
+        pageBuilder: (context, state) =>
+            _motionPage(context, state, const NotificationsScreen()),
       ),
       GoRoute(
         path: '/chats/:id',
-        builder: (context, state) =>
-            ChatScreen(conversationId: state.pathParameters['id']!),
+        pageBuilder: (context, state) => _motionPage(
+          context,
+          state,
+          ChatScreen(conversationId: state.pathParameters['id']!),
+        ),
       ),
       GoRoute(
         path: '/signin',
-        builder: (context, state) =>
-            SignInScreen(redirectTo: state.uri.queryParameters['next']),
+        pageBuilder: (context, state) => _motionPage(
+          context,
+          state,
+          SignInScreen(redirectTo: state.uri.queryParameters['next']),
+        ),
       ),
       GoRoute(
         path: '/register',
-        builder: (context, state) =>
-            RegisterScreen(redirectTo: state.uri.queryParameters['next']),
+        pageBuilder: (context, state) => _motionPage(
+          context,
+          state,
+          RegisterScreen(redirectTo: state.uri.queryParameters['next']),
+        ),
       ),
       GoRoute(
         path: '/report',
@@ -121,6 +157,40 @@ final routerProvider = Provider<GoRouter>((ref) {
     ],
   );
 });
+
+CustomTransitionPage<void> _motionPage(
+  BuildContext context,
+  GoRouterState state,
+  Widget child,
+) {
+  return CustomTransitionPage<void>(
+    key: state.pageKey,
+    transitionDuration: LoczMotion.emphasized,
+    reverseTransitionDuration: LoczMotion.standard,
+    child: child,
+    transitionsBuilder: (context, animation, secondaryAnimation, child) {
+      if (!LoczMotion.enabled(context)) return child;
+      final entrance = CurvedAnimation(
+        parent: animation,
+        curve: LoczMotion.enterCurve,
+        reverseCurve: LoczMotion.exitCurve,
+      );
+      return FadeTransition(
+        opacity: entrance,
+        child: SlideTransition(
+          position: Tween<Offset>(
+            begin: const Offset(0, 0.035),
+            end: Offset.zero,
+          ).animate(entrance),
+          child: ScaleTransition(
+            scale: Tween<double>(begin: 0.992, end: 1).animate(entrance),
+            child: child,
+          ),
+        ),
+      );
+    },
+  );
+}
 
 class _TabScaffold extends StatelessWidget {
   const _TabScaffold({required this.shell});
@@ -140,7 +210,10 @@ class _TabScaffold extends StatelessWidget {
           index,
           initialLocation: index == shell.currentIndex,
         ),
-        onPost: () => context.push('/post'),
+        onPost: () {
+          HapticFeedback.mediumImpact();
+          context.push('/post');
+        },
       ),
     );
   }
@@ -296,7 +369,10 @@ class _BottomDestination extends StatelessWidget {
 
     return Expanded(
       child: InkResponse(
-        onTap: onTap,
+        onTap: () {
+          HapticFeedback.selectionClick();
+          onTap();
+        },
         radius: 30,
         child: Semantics(
           selected: selected,
@@ -305,7 +381,28 @@ class _BottomDestination extends StatelessWidget {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(selected ? selectedIcon : icon, size: 21, color: color),
+              AnimatedContainer(
+                duration: LoczMotion.standard,
+                curve: LoczMotion.enterCurve,
+                width: selected ? 36 : 30,
+                height: 27,
+                decoration: BoxDecoration(
+                  color: selected
+                      ? theme.colorScheme.primaryContainer
+                      : Colors.transparent,
+                  borderRadius: BorderRadius.circular(LoczRadius.full),
+                ),
+                child: AnimatedScale(
+                  scale: selected ? 1.04 : 1,
+                  duration: LoczMotion.standard,
+                  curve: LoczMotion.enterCurve,
+                  child: Icon(
+                    selected ? selectedIcon : icon,
+                    size: 20,
+                    color: color,
+                  ),
+                ),
+              ),
               const SizedBox(height: 4),
               Text(
                 label,

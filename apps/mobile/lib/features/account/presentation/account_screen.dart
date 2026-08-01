@@ -8,6 +8,7 @@ import '../../../core/network/api_exception.dart';
 import '../../../core/providers.dart';
 import '../../../core/theme/tokens.g.dart';
 import '../../listings/domain/models.dart';
+import '../../listings/presentation/listing_navigation.dart';
 import '../../listings/presentation/widgets/listing_card.dart';
 
 /// Account: own ads, saved ads, language and sign-out.
@@ -59,7 +60,8 @@ class AccountScreen extends ConsumerWidget {
                           ),
                           const SizedBox(height: LoczSpacing.x3),
                           FilledButton.icon(
-                            onPressed: () => context.push('/signin?next=/account'),
+                            onPressed: () =>
+                                context.push('/signin?next=/account'),
                             icon: const Icon(Icons.login_rounded, size: 17),
                             label: Text(strings('nav.signIn')),
                           ),
@@ -289,7 +291,14 @@ class _ListingsTab extends ConsumerWidget {
               itemCount: items.length,
               itemBuilder: (context, index) => ListingCard(
                 listing: items[index],
-                onTap: () => context.push('/ad/${items[index].slug}'),
+                heroTag: 'account-${items[index].id}',
+                onTap: () => context.push(
+                  '/ad/${items[index].slug}',
+                  extra: ListingNavigationPreview(
+                    listing: items[index],
+                    heroTag: 'account-${items[index].id}',
+                  ),
+                ),
               ),
             );
           }
@@ -299,7 +308,8 @@ class _ListingsTab extends ConsumerWidget {
             padding: const EdgeInsets.all(LoczSpacing.x4),
             itemCount: items.length,
             separatorBuilder: (_, __) => const SizedBox(height: LoczSpacing.x3),
-            itemBuilder: (context, index) => _OwnListingRow(listing: items[index]),
+            itemBuilder: (context, index) =>
+                _OwnListingRow(listing: items[index]),
           );
         },
       ),
@@ -319,7 +329,8 @@ class _OwnListingRow extends ConsumerWidget {
 
     // Only the transitions the API will accept for the current status are offered.
     final commands = <String, String>{
-      if (listing.status == 'PUBLISHED') 'pause': strings('account.actionPause'),
+      if (listing.status == 'PUBLISHED')
+        'pause': strings('account.actionPause'),
       if (listing.status == 'PAUSED') 'resume': strings('account.actionResume'),
       if (listing.status == 'PUBLISHED' || listing.status == 'PAUSED')
         'sold': strings('account.actionSold'),
@@ -382,7 +393,9 @@ class _OwnListingRow extends ConsumerWidget {
                       style: OutlinedButton.styleFrom(
                         minimumSize: const Size(0, 36),
                         padding: const EdgeInsets.symmetric(horizontal: 12),
-                        foregroundColor: entry.key == 'delete' ? theme.colorScheme.error : null,
+                        foregroundColor: entry.key == 'delete'
+                            ? theme.colorScheme.error
+                            : null,
                         side: entry.key == 'delete'
                             ? BorderSide(color: theme.colorScheme.error)
                             : null,
@@ -396,7 +409,8 @@ class _OwnListingRow extends ConsumerWidget {
                               content: Text(strings('account.deleteConfirm')),
                               actions: [
                                 TextButton(
-                                  onPressed: () => Navigator.pop(context, false),
+                                  onPressed: () =>
+                                      Navigator.pop(context, false),
                                   child: Text(strings('common.cancel')),
                                 ),
                                 FilledButton(

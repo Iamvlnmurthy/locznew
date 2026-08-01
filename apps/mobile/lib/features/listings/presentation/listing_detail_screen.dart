@@ -1,5 +1,8 @@
+import 'dart:async';
+
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:share_plus/share_plus.dart';
@@ -8,18 +11,27 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../../core/config/env.dart';
 import '../../../core/i18n/strings.dart';
 import '../../../core/network/api_exception.dart';
+import '../../../core/motion/locz_motion.dart';
 import '../../../core/providers.dart';
 import '../../../core/theme/tokens.g.dart';
 import '../domain/models.dart';
 import 'widgets/listing_card.dart';
 
 class ListingDetailScreen extends ConsumerStatefulWidget {
-  const ListingDetailScreen({super.key, required this.slug});
+  const ListingDetailScreen({
+    super.key,
+    required this.slug,
+    this.preview,
+    this.heroTag,
+  });
 
   final String slug;
+  final ListingSummary? preview;
+  final String? heroTag;
 
   @override
-  ConsumerState<ListingDetailScreen> createState() => _ListingDetailScreenState();
+  ConsumerState<ListingDetailScreen> createState() =>
+      _ListingDetailScreenState();
 }
 
 class _ListingDetailScreenState extends ConsumerState<ListingDetailScreen> {
@@ -36,6 +48,7 @@ class _ListingDetailScreenState extends ConsumerState<ListingDetailScreen> {
   }
 
   Future<void> _shareListing(ListingSummary listing, Strings strings) {
+    HapticFeedback.lightImpact();
     return Share.share(_shareText(listing, strings));
   }
 
@@ -57,17 +70,23 @@ class _ListingDetailScreenState extends ConsumerState<ListingDetailScreen> {
     }
 
     final next = !(_savedOverride ?? listing.summary.isSaved ?? false);
+    unawaited(
+      next ? HapticFeedback.mediumImpact() : HapticFeedback.selectionClick(),
+    );
     // Optimistic: saving is trivially reversible, so waiting on the round trip costs
     // more than the rare correction.
     setState(() => _savedOverride = next);
 
     try {
-      await ref.read(listingRepositoryProvider).toggleSave(listing.summary.id, save: next);
+      await ref
+          .read(listingRepositoryProvider)
+          .toggleSave(listing.summary.id, save: next);
       ref.invalidate(savedListingsProvider);
     } on ApiException catch (error) {
       if (!mounted) return;
       setState(() => _savedOverride = !next);
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(error.message)));
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text(error.message)));
     }
   }
 
@@ -98,7 +117,8 @@ class _ListingDetailScreenState extends ConsumerState<ListingDetailScreen> {
               controller: controller,
               autofocus: true,
               maxLines: 3,
-              decoration: InputDecoration(hintText: strings('chats.messageHint')),
+              decoration:
+                  InputDecoration(hintText: strings('chats.messageHint')),
             ),
             const SizedBox(height: LoczSpacing.x3),
             FilledButton(
@@ -114,14 +134,16 @@ class _ListingDetailScreenState extends ConsumerState<ListingDetailScreen> {
     if (message == null || message.isEmpty || !mounted) return;
 
     try {
-      final conversationId =
-          await ref.read(chatRepositoryProvider).startEnquiry(listing.summary.id, message);
+      final conversationId = await ref
+          .read(chatRepositoryProvider)
+          .startEnquiry(listing.summary.id, message);
       if (!mounted) return;
       ref.invalidate(conversationsProvider);
       await context.push('/chats/$conversationId');
     } on ApiException catch (error) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(error.message)));
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text(error.message)));
     }
   }
 
@@ -132,7 +154,10 @@ class _ListingDetailScreenState extends ConsumerState<ListingDetailScreen> {
 
     return Scaffold(
       body: detail.when(
-        loading: () => const Center(child: CircularProgressIndicator()),
+        loading: () => _DetailLoading(
+          preview: widget.preview,
+          heroTag: widget.heroTag,
+        ),
         error: (error, _) => Center(
           child: Padding(
             padding: const EdgeInsets.all(LoczSpacing.x8),
@@ -142,7 +167,8 @@ class _ListingDetailScreenState extends ConsumerState<ListingDetailScreen> {
                 Text(error.toString(), textAlign: TextAlign.center),
                 const SizedBox(height: LoczSpacing.x4),
                 OutlinedButton(
-                  onPressed: () => ref.invalidate(listingDetailProvider(widget.slug)),
+                  onPressed: () =>
+                      ref.invalidate(listingDetailProvider(widget.slug)),
                   child: Text(strings('common.retry')),
                 ),
               ],
@@ -164,20 +190,25 @@ class _ListingDetailScreenState extends ConsumerState<ListingDetailScreen> {
     final isSaved = _savedOverride ?? summary.isSaved ?? false;
     final auth = ref.watch(authProvider);
     final isOwner = auth.user?.id == listing.owner.id;
-    final images = listing.media.where((media) => media.fullUrl != null).toList();
+    final images =
+        listing.media.where((media) => media.fullUrl != null).toList();
 
     return CustomScrollView(
       slivers: [
         SliverAppBar(
-          expandedHeight: (MediaQuery.sizeOf(context).width * 0.82).clamp(280, 390),
+          expandedHeight:
+              (MediaQuery.sizeOf(context).width * 0.82).clamp(280, 390),
           pinned: true,
           actions: [
             IconButton(
               icon: Icon(
-                isSaved ? Icons.favorite_rounded : Icons.favorite_border_rounded,
+                isSaved
+                    ? Icons.favorite_rounded
+                    : Icons.favorite_border_rounded,
               ),
               color: isSaved ? LoczColors.danger : null,
-              tooltip: isSaved ? strings('listing.saved') : strings('listing.save'),
+              tooltip:
+                  isSaved ? strings('listing.saved') : strings('listing.save'),
               onPressed: () => _toggleSave(listing),
             ),
             IconButton(
@@ -203,24 +234,33 @@ class _ListingDetailScreenState extends ConsumerState<ListingDetailScreen> {
                     children: [
                       PageView.builder(
                         itemCount: images.length,
-                        onPageChanged: (index) => setState(() => _galleryIndex = index),
-                        itemBuilder: (context, index) => CachedNetworkImage(
-                          imageUrl: images[index].fullUrl!,
-                          fit: BoxFit.cover,
-                          placeholder: (context, _) => ColoredBox(
-                            color: theme.colorScheme.surfaceContainerHighest,
-                          ),
-                          // Never expose a transport exception as visible or spoken product
-                          // copy. Media can fail independently of the listing itself.
-                          errorWidget: (context, _, __) => ColoredBox(
-                            color: theme.colorScheme.surfaceContainerHighest,
-                            child: Icon(
-                              Icons.image_not_supported_outlined,
-                              size: 36,
-                              color: theme.colorScheme.onSurfaceVariant,
+                        onPageChanged: (index) =>
+                            setState(() => _galleryIndex = index),
+                        itemBuilder: (context, index) {
+                          final image = CachedNetworkImage(
+                            imageUrl: images[index].fullUrl!,
+                            fit: BoxFit.cover,
+                            placeholder: (context, _) => ColoredBox(
+                              color: theme.colorScheme.surfaceContainerHighest,
                             ),
-                          ),
-                        ),
+                            // Media can fail independently of the listing itself.
+                            errorWidget: (context, _, __) => ColoredBox(
+                              color: theme.colorScheme.surfaceContainerHighest,
+                              child: Icon(
+                                Icons.image_not_supported_outlined,
+                                size: 36,
+                                color: theme.colorScheme.onSurfaceVariant,
+                              ),
+                            ),
+                          );
+                          if (index != 0) return image;
+                          return Hero(
+                            tag: widget.heroTag ??
+                                'listing-image-detail-${summary.id}',
+                            flightShuttleBuilder: loczImageFlight,
+                            child: image,
+                          );
+                        },
                       ),
                       if (images.length > 1)
                         Positioned(
@@ -232,8 +272,10 @@ class _ListingDetailScreenState extends ConsumerState<ListingDetailScreen> {
                               vertical: 5,
                             ),
                             decoration: BoxDecoration(
-                              color: LoczColors.neutral900.withValues(alpha: 0.76),
-                              borderRadius: BorderRadius.circular(LoczRadius.full),
+                              color:
+                                  LoczColors.neutral900.withValues(alpha: 0.76),
+                              borderRadius:
+                                  BorderRadius.circular(LoczRadius.full),
                             ),
                             child: Text(
                               '${_galleryIndex + 1} / ${images.length}',
@@ -255,7 +297,9 @@ class _ListingDetailScreenState extends ConsumerState<ListingDetailScreen> {
             delegate: SliverChildListDelegate([
               if (summary.price != null)
                 Text(
-                  summary.isFree ? strings('listing.free') : formatPrice(summary.price!),
+                  summary.isFree
+                      ? strings('listing.free')
+                      : formatPrice(summary.price!),
                   style: theme.textTheme.displaySmall?.copyWith(
                     color: summary.isFree ? LoczColors.success : null,
                   ),
@@ -333,7 +377,8 @@ class _ListingDetailScreenState extends ConsumerState<ListingDetailScreen> {
               const SizedBox(height: LoczSpacing.x5),
               Card(
                 child: ListTile(
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                  contentPadding:
+                      const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
                   leading: CircleAvatar(
                     backgroundColor: theme.colorScheme.primaryContainer,
                     child: Icon(
@@ -388,6 +433,146 @@ class _ListingDetailScreenState extends ConsumerState<ListingDetailScreen> {
   }
 }
 
+class _DetailLoading extends StatefulWidget {
+  const _DetailLoading({required this.preview, required this.heroTag});
+
+  final ListingSummary? preview;
+  final String? heroTag;
+
+  @override
+  State<_DetailLoading> createState() => _DetailLoadingState();
+}
+
+class _DetailLoadingState extends State<_DetailLoading>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _pulse = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 950),
+    lowerBound: 0.42,
+    upperBound: 0.82,
+    value: 0.62,
+  );
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (LoczMotion.enabled(context)) {
+      if (!_pulse.isAnimating) _pulse.repeat(reverse: true);
+    } else {
+      _pulse.stop();
+      _pulse.value = 0.62;
+    }
+  }
+
+  @override
+  void dispose() {
+    _pulse.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final preview = widget.preview;
+    final image = preview?.thumbUrl;
+
+    return CustomScrollView(
+      physics: const NeverScrollableScrollPhysics(),
+      slivers: [
+        SliverAppBar(
+          expandedHeight: (MediaQuery.sizeOf(context).width * 0.82).clamp(
+            280,
+            390,
+          ),
+          pinned: true,
+          flexibleSpace: FlexibleSpaceBar(
+            background: image == null
+                ? ColoredBox(
+                    color: theme.colorScheme.surfaceContainerHighest,
+                    child: Icon(
+                      Icons.photo_outlined,
+                      size: 44,
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
+                  )
+                : Hero(
+                    tag:
+                        widget.heroTag ?? 'listing-image-detail-${preview!.id}',
+                    flightShuttleBuilder: loczImageFlight,
+                    child: CachedNetworkImage(
+                      imageUrl: image,
+                      fit: BoxFit.cover,
+                      placeholder: (context, _) => ColoredBox(
+                        color: theme.colorScheme.surfaceContainerHighest,
+                      ),
+                      errorWidget: (context, _, __) => ColoredBox(
+                        color: theme.colorScheme.surfaceContainerHighest,
+                      ),
+                    ),
+                  ),
+          ),
+        ),
+        SliverPadding(
+          padding: const EdgeInsets.all(LoczSpacing.x4),
+          sliver: SliverToBoxAdapter(
+            child: AnimatedBuilder(
+              animation: _pulse,
+              builder: (context, _) {
+                final color = theme.colorScheme.surfaceContainerHighest
+                    .withValues(alpha: _pulse.value);
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _SkeletonLine(color: color, width: 128, height: 28),
+                    const SizedBox(height: 10),
+                    _SkeletonLine(color: color, width: 64, height: 11),
+                    const SizedBox(height: 14),
+                    _SkeletonLine(color: color, width: double.infinity),
+                    const SizedBox(height: 7),
+                    _SkeletonLine(color: color, width: 220),
+                    const SizedBox(height: 26),
+                    _SkeletonLine(color: color, width: 96, height: 16),
+                    const SizedBox(height: 12),
+                    _SkeletonLine(color: color, width: double.infinity),
+                    const SizedBox(height: 8),
+                    _SkeletonLine(color: color, width: double.infinity),
+                    const SizedBox(height: 8),
+                    _SkeletonLine(color: color, width: 180),
+                  ],
+                );
+              },
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _SkeletonLine extends StatelessWidget {
+  const _SkeletonLine({
+    required this.color,
+    required this.width,
+    this.height = 12,
+  });
+
+  final Color color;
+  final double width;
+  final double height;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: width,
+      height: height,
+      decoration: BoxDecoration(
+        color: color,
+        borderRadius: BorderRadius.circular(LoczRadius.full),
+      ),
+    );
+  }
+}
+
 /// Pins the contact bar to the bottom of the scroll view.
 extension on Widget {
   Widget withBottomBar(Widget? bar) {
@@ -437,7 +622,9 @@ class _ContactBar extends StatelessWidget {
               IconButton.outlined(
                 onPressed: onSave,
                 icon: Icon(isSaved ? Icons.favorite : Icons.favorite_border),
-                tooltip: isSaved ? strings('listing.saved') : strings('listing.save'),
+                tooltip: isSaved
+                    ? strings('listing.saved')
+                    : strings('listing.save'),
                 color: isSaved ? LoczColors.danger : null,
               ),
               const SizedBox(width: LoczSpacing.x2),

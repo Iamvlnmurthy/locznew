@@ -14,6 +14,7 @@ import 'core/notifications/firebase_config.dart';
 import 'core/notifications/push_service.dart';
 import 'core/notifications/push_token_registrar.dart';
 import 'core/observability/mobile_error_reporter.dart';
+import 'core/motion/locz_motion.dart';
 import 'core/providers.dart';
 import 'core/router/app_router.dart';
 import 'core/security/device_lock_gate.dart';
@@ -180,6 +181,8 @@ class _LoczAppState extends ConsumerState<LoczApp> {
         theme: AppTheme.light,
         darkTheme: AppTheme.dark,
         themeMode: themeMode,
+        themeAnimationDuration: LoczMotion.emphasized,
+        themeAnimationCurve: LoczMotion.enterCurve,
         debugShowCheckedModeBanner: false,
         home: AnimatedLaunchScreen(
           tagline: Strings(locale)('brand.tagline'),
@@ -194,6 +197,8 @@ class _LoczAppState extends ConsumerState<LoczApp> {
       theme: AppTheme.light,
       darkTheme: AppTheme.dark,
       themeMode: themeMode,
+      themeAnimationDuration: LoczMotion.emphasized,
+      themeAnimationCurve: LoczMotion.enterCurve,
       locale: Locale(locale.name),
       supportedLocales: const [Locale('en'), Locale('te'), Locale('hi')],
       localizationsDelegates: [
@@ -205,7 +210,8 @@ class _LoczAppState extends ConsumerState<LoczApp> {
       builder: (context, child) {
         // Caps text scaling: Android allows up to 2.0, which breaks price rows and
         // bottom bars. 1.4 keeps large-text users supported without a broken layout.
-        final scale = MediaQuery.textScalerOf(context).clamp(maxScaleFactor: 1.4);
+        final scale =
+            MediaQuery.textScalerOf(context).clamp(maxScaleFactor: 1.4);
         return MediaQuery(
           data: MediaQuery.of(context).copyWith(textScaler: scale),
           // Wraps the whole app rather than individual screens: what the device lock

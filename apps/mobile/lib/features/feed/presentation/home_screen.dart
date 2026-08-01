@@ -3,8 +3,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/i18n/strings.dart';
+import '../../../core/motion/locz_motion.dart';
 import '../../../core/providers.dart';
 import '../../../core/theme/tokens.g.dart';
+import '../../listings/presentation/listing_navigation.dart';
 import '../../listings/presentation/widgets/listing_card.dart';
 
 /// Home feed — horizontal rails per section, mirroring the web app.
@@ -99,11 +101,20 @@ class HomeScreen extends ConsumerWidget {
             key: const Key('home-theme-toggle'),
             visualDensity: VisualDensity.compact,
             constraints: const BoxConstraints.tightFor(width: 40, height: 40),
-            icon: Icon(
-              Theme.of(context).brightness == Brightness.dark
-                  ? Icons.light_mode_outlined
-                  : Icons.dark_mode_outlined,
-              size: 20,
+            icon: AnimatedSwitcher(
+              duration: LoczMotion.standard,
+              switchInCurve: LoczMotion.enterCurve,
+              transitionBuilder: (child, animation) => RotationTransition(
+                turns: Tween<double>(begin: -0.16, end: 0).animate(animation),
+                child: ScaleTransition(scale: animation, child: child),
+              ),
+              child: Icon(
+                Theme.of(context).brightness == Brightness.dark
+                    ? Icons.light_mode_outlined
+                    : Icons.dark_mode_outlined,
+                key: ValueKey(Theme.of(context).brightness),
+                size: 20,
+              ),
             ),
             onPressed: () => ref.read(themeModeProvider.notifier).select(
                   Theme.of(context).brightness == Brightness.dark
@@ -213,86 +224,104 @@ class HomeScreen extends ConsumerWidget {
                       LoczSpacing.x4,
                       0,
                     ),
-                    child: _DiscoveryIntro(
-                      eyebrow: strings('feed.heroEyebrow'),
-                      title: strings('feed.heroTitle'),
-                      hint: strings('feed.heroHint'),
+                    child: LoczEntrance(
+                      child: _DiscoveryIntro(
+                        eyebrow: strings('feed.heroEyebrow'),
+                        title: strings('feed.heroTitle'),
+                        hint: strings('feed.heroHint'),
+                      ),
                     ),
                   ),
                 ),
-                for (final section in data.sections)
+                for (final (index, section) in data.sections.indexed)
                   SliverToBoxAdapter(
-                    child: Padding(
-                      padding: const EdgeInsets.only(top: LoczSpacing.x6),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Padding(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: LoczSpacing.x4,
-                            ),
-                            child: Row(
-                              children: [
-                                Container(
-                                  width: 4,
-                                  height: 18,
-                                  decoration: BoxDecoration(
-                                    color:
-                                        Theme.of(context).colorScheme.secondary,
-                                    borderRadius:
-                                        BorderRadius.circular(LoczRadius.full),
-                                  ),
-                                ),
-                                const SizedBox(width: LoczSpacing.x2),
-                                Expanded(
-                                  child: Text(
-                                    strings('feed.${section.key}'),
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                    style:
-                                        Theme.of(context).textTheme.titleLarge,
-                                  ),
-                                ),
-                                TextButton(
-                                  onPressed: () => context.push('/search'),
-                                  child: Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      Text(strings('feed.seeAll')),
-                                      const SizedBox(width: 2),
-                                      const Icon(
-                                        Icons.arrow_forward_rounded,
-                                        size: 15,
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          const SizedBox(height: LoczSpacing.x2),
-                          SizedBox(
-                            height: listingCardRailHeight(textScale),
-                            child: ListView.separated(
-                              scrollDirection: Axis.horizontal,
+                    child: LoczEntrance(
+                      delay: Duration(
+                        milliseconds: 90 + ((index.clamp(0, 4)) * 65),
+                      ),
+                      child: Padding(
+                        padding: const EdgeInsets.only(top: LoczSpacing.x6),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Padding(
                               padding: const EdgeInsets.symmetric(
                                 horizontal: LoczSpacing.x4,
                               ),
-                              itemCount: section.items.length,
-                              separatorBuilder: (_, __) =>
-                                  const SizedBox(width: LoczSpacing.x3),
-                              itemBuilder: (context, index) {
-                                final listing = section.items[index];
-                                return ListingCard(
-                                  listing: listing,
-                                  width: 168,
-                                  onTap: () =>
-                                      context.push('/ad/${listing.slug}'),
-                                );
-                              },
+                              child: Row(
+                                children: [
+                                  Container(
+                                    width: 4,
+                                    height: 18,
+                                    decoration: BoxDecoration(
+                                      color: Theme.of(context)
+                                          .colorScheme
+                                          .secondary,
+                                      borderRadius: BorderRadius.circular(
+                                        LoczRadius.full,
+                                      ),
+                                    ),
+                                  ),
+                                  const SizedBox(width: LoczSpacing.x2),
+                                  Expanded(
+                                    child: Text(
+                                      strings('feed.${section.key}'),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .titleLarge,
+                                    ),
+                                  ),
+                                  TextButton(
+                                    onPressed: () => context.push('/search'),
+                                    child: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        Text(strings('feed.seeAll')),
+                                        const SizedBox(width: 2),
+                                        const Icon(
+                                          Icons.arrow_forward_rounded,
+                                          size: 15,
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ],
+                              ),
                             ),
-                          ),
-                        ],
+                            const SizedBox(height: LoczSpacing.x2),
+                            SizedBox(
+                              height: listingCardRailHeight(textScale),
+                              child: ListView.separated(
+                                scrollDirection: Axis.horizontal,
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: LoczSpacing.x4,
+                                ),
+                                itemCount: section.items.length,
+                                separatorBuilder: (_, __) =>
+                                    const SizedBox(width: LoczSpacing.x3),
+                                itemBuilder: (context, index) {
+                                  final listing = section.items[index];
+                                  return ListingCard(
+                                    listing: listing,
+                                    width: 168,
+                                    heroTag:
+                                        'home-${section.key}-${listing.id}',
+                                    onTap: () => context.push(
+                                      '/ad/${listing.slug}',
+                                      extra: ListingNavigationPreview(
+                                        listing: listing,
+                                        heroTag:
+                                            'home-${section.key}-${listing.id}',
+                                      ),
+                                    ),
+                                  );
+                                },
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                     ),
                   ),
