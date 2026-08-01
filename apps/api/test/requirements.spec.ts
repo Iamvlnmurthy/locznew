@@ -65,7 +65,10 @@ describe('RequirementsService', () => {
     // what these cases need — they assert which writes were attempted, not isolation.
     prisma.$transaction = jest.fn(async (fn: (tx: unknown) => Promise<unknown>) => fn(prisma));
 
-    const conversations = { start: jest.fn().mockResolvedValue({ id: 'conv-1' }) };
+    const conversations = {
+      start: jest.fn().mockResolvedValue({ id: 'conv-1' }),
+      startRequirementThread: jest.fn().mockResolvedValue({ id: 'conv-1' }),
+    };
     const notifications = {
       create: jest.fn().mockResolvedValue(undefined),
       createOnce: jest.fn().mockResolvedValue(true),
@@ -204,16 +207,23 @@ describe('RequirementsService', () => {
       prisma.requirementResponse.findFirst.mockResolvedValue({
         id: 'resp-1',
         listingId: 'req-1',
+        responderId: 'seller-1',
         businessId: null,
-        offeredListingId: 'offered-1',
+        offeredListingId: null,
         withdrawnAt: null,
       });
 
       await service.openConversation('buyer-1', 'resp-1', 'Is it still available?');
 
-      // A second way to create a conversation is a second set of rules to keep in step, and
-      // the rules that would drift are the ones that stop harassment.
-      expect(conversations.start).toHaveBeenCalled();
+      // The thread is about the requirement, between the buyer and the seller who answered —
+      // not about a listing the seller may never have offered. It still goes through the
+      // conversation service, so blocking and rate limiting apply exactly as elsewhere.
+      expect(conversations.startRequirementThread).toHaveBeenCalledWith(
+        'buyer-1',
+        'seller-1',
+        'req-1',
+        'Is it still available?',
+      );
     });
 
     it('lets only the buyer open it', async () => {

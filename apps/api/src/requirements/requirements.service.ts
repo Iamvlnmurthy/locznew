@@ -179,11 +179,14 @@ export class RequirementsService {
       throw new ForbiddenException('Only the buyer can open this conversation');
     }
 
-    const conversation = await this.conversations.start(userId, {
-      listingId: response.offeredListingId ?? undefined,
-      businessId: response.offeredListingId ? undefined : (response.businessId ?? undefined),
+    // About the requirement, between the buyer and the seller who answered — not about the
+    // seller's own listing, which they may not have offered one of.
+    const conversation = await this.conversations.startRequirementThread(
+      userId,
+      response.responderId,
+      response.listingId,
       message,
-    } as never);
+    );
 
     await this.prisma.requirementResponse.update({
       where: { id: responseId },

@@ -55,6 +55,62 @@ export class ConversationsService {
     private readonly redis: RedisService,
   ) {}
 
+  /**
+   * The thread between a buyer and a seller about the buyer's requirement.
+   *
+   * `start` cannot express this: it derives the recipient from whoever owns the listing, and
+   * here the listing is the buyer's own requirement. Both parties would resolve to the buyer.
+   *
+   * A separate entry point rather than a flag on `start`, but deliberately not a separate
+   * implementation — it reuses the same blocking check, the same rate limit and the same
+   * message append. A second set of conversation rules would drift from the first, and the
+   * rules that would drift are the ones that stop harassment.
+   */
+  async startRequirementThread(
+    initiatorId: string,
+    recipientId: string,
+    requirementListingId: string,
+    message: string,
+  ): Promise<ConversationDetailDto> {
+    if (initiatorId === recipientId) {
+      throw new BadRequestException('You cannot start a conversation with yourself');
+    }
+
+    await this.assertNotBlocked(initiatorId, recipientId);
+    await this.assertEnquiryRateLimit(initiatorId);
+
+    // One thread per pair per requirement, whichever of them opened it. Without this, a
+    // buyer messaging a seller who had already messaged them would start a second thread and
+    // neither would see the other's replies.
+    const existing = await this.prisma.conversation.findFirst({
+      where: {
+        listingId: requirementListingId,
+        context: ConversationContext.REQUIREMENT_ENQUIRY,
+        OR: [
+          { initiatorId, recipientId },
+          { initiatorId: recipientId, recipientId: initiatorId },
+        ],
+      },
+      include: CONVERSATION_INCLUDE,
+    });
+
+    const conversation =
+      existing ??
+      (await this.prisma.conversation.create({
+        data: {
+          id: uuid(),
+          context: ConversationContext.REQUIREMENT_ENQUIRY,
+          listingId: requirementListingId,
+          initiatorId,
+          recipientId,
+        },
+        include: CONVERSATION_INCLUDE,
+      }));
+
+    await this.appendMessage(conversation.id, initiatorId, message);
+    return this.getDetail(conversation.id, initiatorId);
+  }
+
   async start(userId: string, dto: StartConversationDto): Promise<ConversationDetailDto> {
     if (!dto.listingId && !dto.businessId) {
       throw new BadRequestException('An enquiry must reference a listing or a business');

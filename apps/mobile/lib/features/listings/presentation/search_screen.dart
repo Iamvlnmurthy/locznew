@@ -15,7 +15,16 @@ import 'listing_navigation.dart';
 import 'widgets/listing_card.dart';
 
 class SearchScreen extends ConsumerStatefulWidget {
-  const SearchScreen({super.key});
+  const SearchScreen({
+    super.key,
+    this.initialQuery,
+    this.initialCategoryId,
+    this.initialCategoryLabel,
+  });
+
+  final String? initialQuery;
+  final String? initialCategoryId;
+  final String? initialCategoryLabel;
 
   @override
   ConsumerState<SearchScreen> createState() => _SearchScreenState();
@@ -23,7 +32,7 @@ class SearchScreen extends ConsumerStatefulWidget {
 
 class _SearchScreenState extends ConsumerState<SearchScreen> {
   static const _recentKey = 'locz.recent-searches.v1';
-  final _controller = TextEditingController();
+  late final TextEditingController _controller;
   final _focusNode = FocusNode();
   Timer? _debounce;
   List<String> _recentSearches = const [];
@@ -39,6 +48,11 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
   @override
   void initState() {
     super.initState();
+    final initialQuery = widget.initialQuery?.trim() ?? '';
+    _controller = TextEditingController(text: initialQuery);
+    _query = initialQuery;
+    _categoryId = widget.initialCategoryId;
+    _categoryLabel = widget.initialCategoryLabel;
     _focusNode.addListener(_handleFocusChanged);
     unawaited(_loadRecentSearches());
     _run();
