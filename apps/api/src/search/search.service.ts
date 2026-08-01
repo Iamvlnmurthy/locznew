@@ -164,6 +164,32 @@ export class SearchService implements OnModuleInit {
 
     await index.updateSettings({
       // Order matters: a match in the title outranks the same word in the description.
+      /**
+       * Words that carry no meaning in a local search, and must not be required to match.
+       *
+       * `matchingStrategy: all` below requires every query word to appear, which is right —
+       * it stopped "iphone 13 madhapur" returning 4,171 listings by ignoring two of the three
+       * words. But it also meant "best biryani near me" returned nothing at all, because no
+       * listing contains "best", "near" or "me". That is how people actually type, and
+       * answering their most natural query with an empty page is worse than either problem.
+       *
+       * Stop words fix it without weakening the rule: these are removed before matching, so
+       * "best biryani near me" is matched as "biryani" while "iphone 13 madhapur" still
+       * requires all three. Every remaining word still has to mean something.
+       *
+       * Includes the Hindi and Telugu equivalents, because the same sentence shape appears in
+       * all three languages.
+       */
+      stopWords: [
+        'a', 'an', 'the', 'in', 'at', 'on', 'of', 'for', 'to', 'and', 'or',
+        'is', 'are', 'my', 'me', 'i', 'we', 'you',
+        'near', 'nearby', 'around', 'close', 'closest', 'nearest',
+        'best', 'good', 'top', 'cheap', 'cheapest', 'low', 'price',
+        'here', 'this', 'that', 'any', 'some', 'available', 'need', 'want', 'looking',
+        'shop', 'shops', 'place', 'places',
+        'పక్కన', 'దగ్గర', 'నాకు', 'కావాలి', 'మంచి',
+        'पास', 'नजदीक', 'मुझे', 'चाहिए', 'अच्छा', 'सबसे',
+      ],
       searchableAttributes: [
         'title',
         'brand',
