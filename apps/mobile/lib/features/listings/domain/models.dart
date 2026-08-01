@@ -122,6 +122,7 @@ class ListingDetail {
     this.pincodeCode,
     this.contactPreference = 'IN_APP_ONLY',
     this.marketplace = const {},
+    this.buyerRequirement = const {},
   });
 
   final ListingSummary summary;
@@ -139,6 +140,7 @@ class ListingDetail {
   final String? pincodeCode;
   final String contactPreference;
   final Map<String, dynamic> marketplace;
+  final Map<String, dynamic> buyerRequirement;
 
   factory ListingDetail.fromJson(Map<String, dynamic> json) => ListingDetail(
         summary: ListingSummary.fromJson(json),
@@ -161,6 +163,8 @@ class ListingDetail {
         contactPreference:
             json['contactPreference'] as String? ?? 'IN_APP_ONLY',
         marketplace: (json['marketplace'] as Map<String, dynamic>?) ?? const {},
+        buyerRequirement:
+            (json['buyerRequirement'] as Map<String, dynamic>?) ?? const {},
       );
 }
 
@@ -408,7 +412,8 @@ class CategoryAttribute {
         options: (json['options'] as List<dynamic>? ?? [])
             .map(
               (entry) => CategoryAttributeOption.fromJson(
-                  entry as Map<String, dynamic>),
+                entry as Map<String, dynamic>,
+              ),
             )
             .toList(),
         unit: json['unit'] as String?,

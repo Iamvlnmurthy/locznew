@@ -324,6 +324,8 @@ class Strings {
       'post.budgetOrder': 'Maximum budget must be higher than minimum',
       'post.quantity': 'Quantity needed',
       'requirements.answers': 'Seller answers',
+      'requirements.budget': 'Budget',
+      'requirements.fulfilled': 'Requirement fulfilled',
       'requirements.yourAnswer': 'Your answer',
       'requirements.answersHint':
           'Compare real offers, then start a private chat with the best match.',
@@ -640,6 +642,8 @@ class Strings {
       'post.budgetOrder': 'గరిష్ఠ బడ్జెట్ కనిష్ఠం కంటే ఎక్కువగా ఉండాలి',
       'post.quantity': 'కావాల్సిన పరిమాణం',
       'requirements.answers': 'విక్రేతల సమాధానాలు',
+      'requirements.budget': 'బడ్జెట్',
+      'requirements.fulfilled': 'అవసరం పూర్తైంది',
       'requirements.yourAnswer': 'మీ సమాధానం',
       'requirements.answersHint':
           'ఆఫర్లను పోల్చి సరైన విక్రేతతో ప్రైవేట్ చాట్ ప్రారంభించండి.',
@@ -949,6 +953,8 @@ class Strings {
       'post.budgetOrder': 'अधिकतम बजट न्यूनतम से ज़्यादा होना चाहिए',
       'post.quantity': 'कितनी संख्या चाहिए',
       'requirements.answers': 'विक्रेताओं के जवाब',
+      'requirements.budget': 'बजट',
+      'requirements.fulfilled': 'ज़रूरत पूरी हुई',
       'requirements.yourAnswer': 'आपका जवाब',
       'requirements.answersHint':
           'सही ऑफ़र चुनें और उस विक्रेता से निजी चैट शुरू करें।',

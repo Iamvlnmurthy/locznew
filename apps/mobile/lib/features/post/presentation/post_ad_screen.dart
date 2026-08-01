@@ -99,7 +99,7 @@ class _PostAdScreenState extends ConsumerState<PostAdScreen> {
       final results = await Future.wait([
         repository.detail(widget.listingId!),
         repository.cities(launchedOnly: true),
-        repository.categories(listingType: 'PRODUCT'),
+        repository.categories(),
       ]);
       final listing = results[0] as ListingDetail;
       final cities = results[1] as List<City>;
@@ -115,6 +115,12 @@ class _PostAdScreenState extends ConsumerState<PostAdScreen> {
         _listingType = listing.summary.type;
         _descriptionController.text = listing.description;
         _priceController.text = marketplace['price']?.toString() ?? '';
+        _budgetMinController.text =
+            listing.buyerRequirement['budgetMin']?.toString() ?? '';
+        _budgetMaxController.text =
+            listing.buyerRequirement['budgetMax']?.toString() ?? '';
+        _quantityController.text =
+            listing.buyerRequirement['quantity']?.toString() ?? '1';
         _categoryId = listing.categoryId;
         _categorySlug = category?.slug;
         _cityId = listing.cityId ??
@@ -382,6 +388,7 @@ class _PostAdScreenState extends ConsumerState<PostAdScreen> {
             )
           : await repository.updateListing(
               listingId: widget.listingId!,
+              type: _listingType,
               title: _titleController.text.trim(),
               description: _descriptionController.text.trim(),
               categoryId: _categoryId!,
@@ -392,6 +399,10 @@ class _PostAdScreenState extends ConsumerState<PostAdScreen> {
               isNegotiable: _isNegotiable,
               contactPreference: _contactPreference,
               attributes: _attributePayload(),
+              budgetMin: num.tryParse(_budgetMinController.text.trim()),
+              budgetMax: num.tryParse(_budgetMaxController.text.trim()),
+              quantity: int.tryParse(_quantityController.text.trim()),
+              preferredCondition: _condition,
             );
 
       if (widget.listingId != null &&
@@ -581,9 +592,13 @@ class _PostAdScreenState extends ConsumerState<PostAdScreen> {
         decoration: InputDecoration(labelText: label),
         items: [
           DropdownMenuItem(
-              value: true, child: Text(strings('post.attributeYes'))),
+            value: true,
+            child: Text(strings('post.attributeYes')),
+          ),
           DropdownMenuItem(
-              value: false, child: Text(strings('post.attributeNo'))),
+            value: false,
+            child: Text(strings('post.attributeNo')),
+          ),
         ],
         onChanged: (value) {
           setState(() => _attributeValues[attribute.key] = value);
@@ -701,18 +716,23 @@ class _PostAdScreenState extends ConsumerState<PostAdScreen> {
       },
       validator: (value) {
         final missing = value == null || value.trim().isEmpty;
-        if (attribute.isRequired && missing)
+        if (attribute.isRequired && missing) {
           return strings('post.attributeRequired');
+        }
         if (!missing && attribute.dataType == 'NUMBER') {
           final number = num.tryParse(value);
           if (number == null) return strings('post.attributeNumber');
           if (attribute.minValue != null && number < attribute.minValue!) {
             return strings(
-                'post.attributeMinimum', {'value': attribute.minValue!});
+              'post.attributeMinimum',
+              {'value': attribute.minValue!},
+            );
           }
           if (attribute.maxValue != null && number > attribute.maxValue!) {
             return strings(
-                'post.attributeMaximum', {'value': attribute.maxValue!});
+              'post.attributeMaximum',
+              {'value': attribute.maxValue!},
+            );
           }
         }
         return null;
@@ -858,8 +878,10 @@ class _PostAdScreenState extends ConsumerState<PostAdScreen> {
                 ),
                 if (widget.listingId == null) ...[
                   const SizedBox(height: LoczSpacing.x4),
-                  Text(strings('post.intentQuestion'),
-                      style: Theme.of(context).textTheme.titleMedium),
+                  Text(
+                    strings('post.intentQuestion'),
+                    style: Theme.of(context).textTheme.titleMedium,
+                  ),
                   const SizedBox(height: LoczSpacing.x2),
                   SegmentedButton<String>(
                     segments: [
@@ -890,9 +912,11 @@ class _PostAdScreenState extends ConsumerState<PostAdScreen> {
                   ),
                   const SizedBox(height: 5),
                   Text(
-                    strings(_listingType == 'PRODUCT'
-                        ? 'post.intentSellHint'
-                        : 'post.intentBuyHint'),
+                    strings(
+                      _listingType == 'PRODUCT'
+                          ? 'post.intentSellHint'
+                          : 'post.intentBuyHint',
+                    ),
                     style: Theme.of(context).textTheme.bodySmall,
                   ),
                 ],
@@ -1082,8 +1106,9 @@ class _PostAdScreenState extends ConsumerState<PostAdScreen> {
                         });
                         final category =
                             value == null ? null : _findCategory(list, value);
-                        if (category != null)
+                        if (category != null) {
                           unawaited(_loadCategoryAttributes(category));
+                        }
                         _scheduleProgressSave();
                       },
                       validator: (value) =>
@@ -1128,40 +1153,52 @@ class _PostAdScreenState extends ConsumerState<PostAdScreen> {
                 const SizedBox(height: LoczSpacing.x5),
                 _SectionHeading(
                   index: '02',
-                  label: strings(_listingType == 'BUYER_REQUIREMENT'
-                      ? 'post.budgetSection'
-                      : 'post.priceSection'),
+                  label: strings(
+                    _listingType == 'BUYER_REQUIREMENT'
+                        ? 'post.budgetSection'
+                        : 'post.priceSection',
+                  ),
                 ),
                 const SizedBox(height: LoczSpacing.x3),
                 if (_listingType == 'BUYER_REQUIREMENT') ...[
-                  Row(children: [
-                    Expanded(
+                  Row(
+                    children: [
+                      Expanded(
                         child: TextFormField(
-                      controller: _budgetMinController,
-                      keyboardType: TextInputType.number,
-                      inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                      decoration: InputDecoration(
-                          labelText: strings('post.budgetMin'),
-                          prefixText: '₹ '),
-                    )),
-                    const SizedBox(width: LoczSpacing.x3),
-                    Expanded(
+                          controller: _budgetMinController,
+                          keyboardType: TextInputType.number,
+                          inputFormatters: [
+                            FilteringTextInputFormatter.digitsOnly,
+                          ],
+                          decoration: InputDecoration(
+                            labelText: strings('post.budgetMin'),
+                            prefixText: '₹ ',
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: LoczSpacing.x3),
+                      Expanded(
                         child: TextFormField(
-                      controller: _budgetMaxController,
-                      keyboardType: TextInputType.number,
-                      inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                      decoration: InputDecoration(
-                          labelText: strings('post.budgetMax'),
-                          prefixText: '₹ '),
-                      validator: (value) {
-                        final min = num.tryParse(_budgetMinController.text);
-                        final max = num.tryParse(value ?? '');
-                        return min != null && max != null && min > max
-                            ? strings('post.budgetOrder')
-                            : null;
-                      },
-                    )),
-                  ]),
+                          controller: _budgetMaxController,
+                          keyboardType: TextInputType.number,
+                          inputFormatters: [
+                            FilteringTextInputFormatter.digitsOnly,
+                          ],
+                          decoration: InputDecoration(
+                            labelText: strings('post.budgetMax'),
+                            prefixText: '₹ ',
+                          ),
+                          validator: (value) {
+                            final min = num.tryParse(_budgetMinController.text);
+                            final max = num.tryParse(value ?? '');
+                            return min != null && max != null && min > max
+                                ? strings('post.budgetOrder')
+                                : null;
+                          },
+                        ),
+                      ),
+                    ],
+                  ),
                   const SizedBox(height: LoczSpacing.x3),
                   TextFormField(
                     controller: _quantityController,
@@ -1505,8 +1542,9 @@ class _ModelSuggestionFieldState extends State<_ModelSuggestionField> {
       if (mounted) setState(() => _loading = true);
       try {
         final results = await widget.load(value.trim());
-        if (mounted && _controller.text == value)
+        if (mounted && _controller.text == value) {
           setState(() => _suggestions = results);
+        }
       } finally {
         if (mounted) setState(() => _loading = false);
       }

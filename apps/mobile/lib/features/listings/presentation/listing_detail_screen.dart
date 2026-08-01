@@ -335,6 +335,49 @@ class _ListingDetailScreenState extends ConsumerState<ListingDetailScreen> {
                   ),
                 ],
               ),
+              if (summary.type == 'BUYER_REQUIREMENT' &&
+                  listing.buyerRequirement.isNotEmpty) ...[
+                const SizedBox(height: LoczSpacing.x4),
+                Container(
+                  padding: const EdgeInsets.all(LoczSpacing.x4),
+                  decoration: BoxDecoration(
+                    color: theme.colorScheme.secondaryContainer,
+                    borderRadius: BorderRadius.circular(LoczRadius.lg),
+                  ),
+                  child: Wrap(
+                    spacing: LoczSpacing.x5,
+                    runSpacing: LoczSpacing.x3,
+                    children: [
+                      if (listing.buyerRequirement['budgetMin'] != null ||
+                          listing.buyerRequirement['budgetMax'] != null)
+                        _RequirementFact(
+                          icon: Icons.currency_rupee_rounded,
+                          label: strings('requirements.budget'),
+                          value: _budgetLabel(listing.buyerRequirement),
+                        ),
+                      if (listing.buyerRequirement['quantity'] != null)
+                        _RequirementFact(
+                          icon: Icons.inventory_2_outlined,
+                          label: strings('post.quantity'),
+                          value: '${listing.buyerRequirement['quantity']}',
+                        ),
+                      _RequirementFact(
+                        icon: Icons.forum_outlined,
+                        label: strings('requirements.answers'),
+                        value:
+                            '${listing.buyerRequirement['responseCount'] ?? 0}',
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+              if (listing.buyerRequirement['fulfilledAt'] != null) ...[
+                const SizedBox(height: LoczSpacing.x3),
+                Chip(
+                  avatar: const Icon(Icons.task_alt_rounded),
+                  label: Text(strings('requirements.fulfilled')),
+                ),
+              ],
               if (summary.isSold) ...[
                 const SizedBox(height: LoczSpacing.x4),
                 Container(
@@ -479,6 +522,7 @@ class _ListingDetailScreenState extends ConsumerState<ListingDetailScreen> {
       summary.type == 'BUYER_REQUIREMENT'
           ? _RequirementBar(
               isOwner: isOwner,
+              fulfilled: listing.buyerRequirement['fulfilledAt'] != null,
               onPressed: () {
                 if (!auth.isSignedIn) {
                   context.push('/signin?next=/ad/${widget.slug}');
@@ -514,9 +558,14 @@ class _ListingDetailScreenState extends ConsumerState<ListingDetailScreen> {
 }
 
 class _RequirementBar extends StatelessWidget {
-  const _RequirementBar(
-      {required this.isOwner, required this.onPressed, required this.strings});
+  const _RequirementBar({
+    required this.isOwner,
+    required this.fulfilled,
+    required this.onPressed,
+    required this.strings,
+  });
   final bool isOwner;
+  final bool fulfilled;
   final VoidCallback onPressed;
   final Strings strings;
 
@@ -525,22 +574,70 @@ class _RequirementBar extends StatelessWidget {
         top: false,
         child: Container(
           padding: const EdgeInsets.fromLTRB(
-              LoczSpacing.x4, LoczSpacing.x3, LoczSpacing.x4, LoczSpacing.x3),
+            LoczSpacing.x4,
+            LoczSpacing.x3,
+            LoczSpacing.x4,
+            LoczSpacing.x3,
+          ),
           decoration: BoxDecoration(
             color: Theme.of(context).colorScheme.surface,
             border: Border(
-                top: BorderSide(
-                    color: Theme.of(context).colorScheme.outlineVariant)),
+              top: BorderSide(
+                color: Theme.of(context).colorScheme.outlineVariant,
+              ),
+            ),
           ),
           child: FilledButton.icon(
-            onPressed: onPressed,
+            onPressed: fulfilled && !isOwner ? null : onPressed,
             icon:
                 Icon(isOwner ? Icons.forum_outlined : Icons.handshake_outlined),
-            label: Text(isOwner
-                ? strings('requirements.viewAnswers')
-                : strings('requirements.respond')),
+            label: Text(
+              fulfilled
+                  ? strings('requirements.fulfilled')
+                  : isOwner
+                      ? strings('requirements.viewAnswers')
+                      : strings('requirements.respond'),
+            ),
           ),
         ),
+      );
+}
+
+String _budgetLabel(Map<String, dynamic> details) {
+  final min = details['budgetMin'] as num?;
+  final max = details['budgetMax'] as num?;
+  if (min != null && max != null) {
+    return '${formatPrice(min)} – ${formatPrice(max)}';
+  }
+  if (max != null) return formatPrice(max);
+  if (min != null) return '${formatPrice(min)}+';
+  return '—';
+}
+
+class _RequirementFact extends StatelessWidget {
+  const _RequirementFact({
+    required this.icon,
+    required this.label,
+    required this.value,
+  });
+  final IconData icon;
+  final String label;
+  final String value;
+
+  @override
+  Widget build(BuildContext context) => Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 19),
+          const SizedBox(width: 7),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(label, style: Theme.of(context).textTheme.labelSmall),
+              Text(value, style: Theme.of(context).textTheme.titleSmall),
+            ],
+          ),
+        ],
       );
 }
 

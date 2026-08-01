@@ -323,9 +323,13 @@ export function BusinessForm({
                     className={draft.businessType === value ? 'is-selected' : ''}
                     onClick={() => updateDraft('businessType', value)}
                   >
-                    <span><Icon name={icon} /></span>
+                    <span>
+                      <Icon name={icon} />
+                    </span>
                     {label}
-                    <i><Icon name="check" /></i>
+                    <i>
+                      <Icon name="check" />
+                    </i>
                   </button>
                 ))}
               </div>

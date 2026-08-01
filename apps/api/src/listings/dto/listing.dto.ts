@@ -321,6 +321,7 @@ export class ListingDetailDto extends ListingSummaryDto {
   })
   attributes!: Record<string, unknown>;
   @ApiPropertyOptional() marketplace!: Record<string, unknown> | null;
+  @ApiPropertyOptional() buyerRequirement!: Record<string, unknown> | null;
   @ApiPropertyOptional() expiresAt!: Date | null;
   @ApiProperty() saveCount!: number;
 }

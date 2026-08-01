@@ -15,7 +15,50 @@ import 'package:locz/features/post/presentation/post_ad_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
-  testWidgets('edit pre-fills listing and warns before re-moderating a live ad', (tester) async {
+  testWidgets(
+      'post intent changes the form from selling to a buyer requirement',
+      (tester) async {
+    SharedPreferences.setMockInitialValues({});
+    tester.view.physicalSize = const Size(360, 900);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          authRepositoryProvider.overrideWithValue(_EditAuthRepository()),
+          listingRepositoryProvider.overrideWithValue(_EditListingRepository()),
+        ],
+        child: MaterialApp(
+          theme: AppTheme.light,
+          locale: const Locale('en'),
+          supportedLocales: const [Locale('en'), Locale('te'), Locale('hi')],
+          localizationsDelegates: const [
+            StringsDelegate(AppLocaleOption.en),
+            GlobalMaterialLocalizations.delegate,
+            GlobalWidgetsLocalizations.delegate,
+            GlobalCupertinoLocalizations.delegate,
+          ],
+          home: const PostAdScreen(),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('I want to sell'), findsOneWidget);
+    expect(find.text('I want to buy'), findsOneWidget);
+    await tester.tap(find.text('I want to buy'));
+    await tester.pumpAndSettle();
+    expect(find.text('Budget from'), findsWidgets);
+    expect(find.text('Budget up to'), findsWidgets);
+    expect(find.text('Quantity needed'), findsWidgets);
+    expect(find.text('Price (₹)'), findsNothing);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('edit pre-fills listing and warns before re-moderating a live ad',
+      (tester) async {
     tester.view.physicalSize = const Size(320, 900);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.resetPhysicalSize);
@@ -75,7 +118,8 @@ void main() {
     );
   });
 
-  testWidgets('unfinished post details can be restored from this device', (tester) async {
+  testWidgets('unfinished post details can be restored from this device',
+      (tester) async {
     SharedPreferences.setMockInitialValues({
       'locz.post-progress.v1':
           '{"title":"Saved bicycle","description":"Saved locally before leaving.",'
@@ -209,5 +253,6 @@ class _EditListingRepository extends ListingRepository {
   Future<Category> categoryDetail(String slug) async => category;
 
   @override
-  Future<List<City>> cities({bool launchedOnly = false, String? query}) async => const [city];
+  Future<List<City>> cities({bool launchedOnly = false, String? query}) async =>
+      const [city];
 }

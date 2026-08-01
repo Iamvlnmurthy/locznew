@@ -185,6 +185,7 @@ class ListingRepository {
 
   Future<Map<String, dynamic>> updateListing({
     required String listingId,
+    String type = 'PRODUCT',
     required String title,
     required String description,
     required String categoryId,
@@ -195,6 +196,11 @@ class ListingRepository {
     bool isNegotiable = false,
     String contactPreference = 'IN_APP_ONLY',
     List<Map<String, dynamic>>? attributes,
+    num? budgetMin,
+    num? budgetMax,
+    DateTime? requiredBy,
+    int? quantity,
+    String? preferredCondition,
   }) {
     return _api.patch<Map<String, dynamic>>(
       '/listings/$listingId',
@@ -206,12 +212,22 @@ class ListingRepository {
         'contactPreference': contactPreference,
         'showPhonePublicly': contactPreference != 'IN_APP_ONLY',
         if (attributes != null) 'attributes': attributes,
-        'marketplace': {
-          if (price != null) 'price': price,
-          'isFree': isFree,
-          'isNegotiable': isNegotiable,
-          'condition': condition,
-        },
+        if (type == 'BUYER_REQUIREMENT')
+          'buyerRequirement': {
+            if (budgetMin != null) 'budgetMin': budgetMin,
+            if (budgetMax != null) 'budgetMax': budgetMax,
+            if (requiredBy != null) 'requiredBy': requiredBy.toIso8601String(),
+            if (quantity != null) 'quantity': quantity,
+            if (preferredCondition != null)
+              'preferredCondition': preferredCondition,
+          }
+        else
+          'marketplace': {
+            if (price != null) 'price': price,
+            'isFree': isFree,
+            'isNegotiable': isNegotiable,
+            'condition': condition,
+          },
       },
     );
   }
@@ -305,12 +321,15 @@ class ListingRepository {
   }
 
   Future<List<RequirementResponse>> requirementResponses(
-      String listingId) async {
+    String listingId,
+  ) async {
     final json =
         await _api.get<List<dynamic>>('/requirements/$listingId/responses');
     return json
-        .map((entry) =>
-            RequirementResponse.fromJson(entry as Map<String, dynamic>))
+        .map(
+          (entry) =>
+              RequirementResponse.fromJson(entry as Map<String, dynamic>),
+        )
         .toList();
   }
 
@@ -349,14 +368,20 @@ class ListingRepository {
     return json['conversationId'] as String;
   }
 
-  Future<void> markRequirementFulfilled(String listingId,
-          {required bool fulfilled}) =>
-      _api.put<void>('/requirements/$listingId/fulfilled',
-          body: {'fulfilled': fulfilled});
+  Future<void> markRequirementFulfilled(
+    String listingId, {
+    required bool fulfilled,
+  }) =>
+      _api.put<void>(
+        '/requirements/$listingId/fulfilled',
+        body: {'fulfilled': fulfilled},
+      );
 
   Future<SellerProfile> sellerProfile(String userId) async {
-    final json = await _api.get<Map<String, dynamic>>('/users/$userId/profile',
-        auth: false);
+    final json = await _api.get<Map<String, dynamic>>(
+      '/users/$userId/profile',
+      auth: false,
+    );
     return SellerProfile.fromJson(json);
   }
 

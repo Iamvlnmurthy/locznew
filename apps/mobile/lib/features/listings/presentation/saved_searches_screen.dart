@@ -33,9 +33,10 @@ class _SavedSearchesScreenState extends ConsumerState<SavedSearchesScreen> {
           .setSavedSearchActive(search.id, active: active);
       setState(_reload);
     } on ApiException catch (error) {
-      if (mounted)
+      if (mounted) {
         ScaffoldMessenger.of(context)
             .showSnackBar(SnackBar(content: Text(error.message)));
+      }
     }
   }
 
@@ -49,10 +50,10 @@ class _SavedSearchesScreenState extends ConsumerState<SavedSearchesScreen> {
         actions: [
           TextButton(
               onPressed: () => Navigator.pop(context, false),
-              child: Text(strings('common.cancel'))),
+              child: Text(strings('common.cancel')),),
           FilledButton(
               onPressed: () => Navigator.pop(context, true),
-              child: Text(strings('savedSearches.delete'))),
+              child: Text(strings('savedSearches.delete')),),
         ],
       ),
     );
@@ -67,7 +68,7 @@ class _SavedSearchesScreenState extends ConsumerState<SavedSearchesScreen> {
       if (search.query != null) 'q': search.query!,
       if (filters['type'] != null) 'type': '${filters['type']}',
       if (filters['categoryId'] != null) 'category': '${filters['categoryId']}',
-    }).toString());
+    },).toString(),);
   }
 
   @override
@@ -78,10 +79,12 @@ class _SavedSearchesScreenState extends ConsumerState<SavedSearchesScreen> {
       body: FutureBuilder<List<SavedSearch>>(
         future: _items,
         builder: (context, snapshot) {
-          if (!snapshot.hasData && !snapshot.hasError)
+          if (!snapshot.hasData && !snapshot.hasError) {
             return const Center(child: CircularProgressIndicator());
-          if (snapshot.hasError)
+          }
+          if (snapshot.hasError) {
             return Center(child: Text(snapshot.error.toString()));
+          }
           final items = snapshot.data!;
           if (items.isEmpty) {
             return Center(
@@ -91,12 +94,12 @@ class _SavedSearchesScreenState extends ConsumerState<SavedSearchesScreen> {
                 const Icon(Icons.notifications_active_outlined, size: 48),
                 const SizedBox(height: LoczSpacing.x3),
                 Text(strings('savedSearches.empty'),
-                    style: Theme.of(context).textTheme.titleLarge),
+                    style: Theme.of(context).textTheme.titleLarge,),
                 const SizedBox(height: 5),
                 Text(strings('savedSearches.emptyHint'),
-                    textAlign: TextAlign.center),
-              ]),
-            ));
+                    textAlign: TextAlign.center,),
+              ],),
+            ),);
           }
           return ListView.separated(
             padding: const EdgeInsets.all(LoczSpacing.x4),
@@ -110,11 +113,11 @@ class _SavedSearchesScreenState extends ConsumerState<SavedSearchesScreen> {
                 leading: CircleAvatar(
                     child: Icon(item.isActive
                         ? Icons.notifications_active
-                        : Icons.notifications_off_outlined)),
+                        : Icons.notifications_off_outlined,),),
                 title: Text(item.label),
                 subtitle: Text(item.isActive
                     ? strings('savedSearches.alertsOn')
-                    : strings('savedSearches.alertsPaused')),
+                    : strings('savedSearches.alertsPaused'),),
                 trailing: PopupMenuButton<String>(
                   onSelected: (value) => value == 'delete'
                       ? _delete(item)
@@ -124,13 +127,13 @@ class _SavedSearchesScreenState extends ConsumerState<SavedSearchesScreen> {
                         value: 'toggle',
                         child: Text(item.isActive
                             ? strings('savedSearches.pause')
-                            : strings('savedSearches.resume'))),
+                            : strings('savedSearches.resume'),),),
                     PopupMenuItem(
                         value: 'delete',
-                        child: Text(strings('savedSearches.delete'))),
+                        child: Text(strings('savedSearches.delete')),),
                   ],
                 ),
-              ));
+              ),);
             },
           );
         },

@@ -27,7 +27,7 @@ class SellerProfileScreen extends ConsumerWidget {
               padding: const EdgeInsets.all(LoczSpacing.x6),
               child:
                   Text(snapshot.error.toString(), textAlign: TextAlign.center),
-            ));
+            ),);
           }
           final profile = snapshot.data!;
           final theme = Theme.of(context);
@@ -40,7 +40,7 @@ class SellerProfileScreen extends ConsumerWidget {
                   gradient: LinearGradient(colors: [
                     theme.colorScheme.primaryContainer,
                     theme.colorScheme.secondaryContainer,
-                  ]),
+                  ],),
                   borderRadius: BorderRadius.circular(LoczRadius.xl),
                 ),
                 child: Column(children: [
@@ -55,28 +55,28 @@ class SellerProfileScreen extends ConsumerWidget {
                   ),
                   const SizedBox(height: LoczSpacing.x3),
                   Text(profile.displayName,
-                      style: theme.textTheme.headlineSmall),
+                      style: theme.textTheme.headlineSmall,),
                   const SizedBox(height: 4),
                   Text(strings('listing.memberSince',
-                      {'year': profile.memberSince.year})),
+                      {'year': profile.memberSince.year},),),
                   if (profile.bio != null && profile.bio!.isNotEmpty) ...[
                     const SizedBox(height: LoczSpacing.x3),
                     Text(profile.bio!, textAlign: TextAlign.center),
                   ],
-                ]),
+                ],),
               ),
               const SizedBox(height: LoczSpacing.x4),
               Row(children: [
                 Expanded(
                     child: _Stat(
                         value: '${profile.publishedListings}',
-                        label: strings('sellerProfile.liveAds'))),
+                        label: strings('sellerProfile.liveAds'),),),
                 const SizedBox(width: LoczSpacing.x3),
                 Expanded(
                     child: _Stat(
                         value: '${profile.soldListings}',
-                        label: strings('sellerProfile.sold'))),
-              ]),
+                        label: strings('sellerProfile.sold'),),),
+              ],),
               if (profile.responseRate != null ||
                   profile.medianResponseMinutes != null) ...[
                 const SizedBox(height: LoczSpacing.x4),
@@ -87,33 +87,33 @@ class SellerProfileScreen extends ConsumerWidget {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(strings('sellerProfile.reliability'),
-                              style: theme.textTheme.titleMedium),
+                              style: theme.textTheme.titleMedium,),
                           const SizedBox(height: LoczSpacing.x3),
                           if (profile.responseRate != null)
                             _TrustRow(
                                 Icons.reply_all_rounded,
                                 strings('sellerProfile.responseRate',
-                                    {'rate': profile.responseRate!.round()})),
+                                    {'rate': profile.responseRate!.round()},),),
                           if (profile.medianResponseMinutes != null)
                             _TrustRow(
                                 Icons.schedule_rounded,
                                 strings('sellerProfile.responseTime', {
                                   'minutes':
-                                      profile.medianResponseMinutes!.round()
-                                })),
-                        ]),
+                                      profile.medianResponseMinutes!.round(),
+                                }),),
+                        ],),
                   ),
                 ),
               ],
               const SizedBox(height: LoczSpacing.x3),
               Row(children: [
                 Icon(Icons.privacy_tip_outlined,
-                    size: 16, color: theme.colorScheme.primary),
+                    size: 16, color: theme.colorScheme.primary,),
                 const SizedBox(width: 7),
                 Expanded(
                     child: Text(strings('sellerProfile.privacy'),
-                        style: theme.textTheme.bodySmall)),
-              ]),
+                        style: theme.textTheme.bodySmall,),),
+              ],),
             ],
           );
         },
@@ -133,7 +133,7 @@ class _Stat extends StatelessWidget {
           child: Column(children: [
             Text(value, style: Theme.of(context).textTheme.headlineMedium),
             Text(label, style: Theme.of(context).textTheme.labelMedium),
-          ]),
+          ],),
         ),
       );
 }
@@ -148,7 +148,7 @@ class _TrustRow extends StatelessWidget {
         child: Row(children: [
           Icon(icon, size: 19),
           const SizedBox(width: 9),
-          Expanded(child: Text(label))
-        ]),
+          Expanded(child: Text(label)),
+        ],),
       );
 }

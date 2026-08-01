@@ -191,11 +191,11 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                 decoration:
                     InputDecoration(labelText: strings('savedSearches.name')),
               ),
-            ]),
+            ],),
         actions: [
           TextButton(
               onPressed: () => Navigator.pop(context),
-              child: Text(strings('common.cancel'))),
+              child: Text(strings('common.cancel')),),
           FilledButton(
             onPressed: () => Navigator.pop(context, controller.text.trim()),
             child: Text(strings('listing.save')),
@@ -220,9 +220,10 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
         );
       }
     } on ApiException catch (error) {
-      if (mounted)
+      if (mounted) {
         ScaffoldMessenger.of(context)
             .showSnackBar(SnackBar(content: Text(error.message)));
+      }
     }
   }
 

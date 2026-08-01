@@ -288,6 +288,7 @@ export class ListingsService {
         category: { select: { id: true, name: true } },
         owner: { select: { id: true, displayName: true, createdAt: true, phoneE164: true } },
         attributeValues: { include: { attribute: true } },
+        buyerRequirement: true,
       },
     });
 
@@ -315,6 +316,7 @@ export class ListingsService {
         category: { select: { id: true, name: true } },
         owner: { select: { id: true, displayName: true, createdAt: true, phoneE164: true } },
         attributeValues: { include: { attribute: true } },
+        buyerRequirement: true,
       },
     });
     if (!listing) throw new NotFoundException('Listing not found');
@@ -576,6 +578,27 @@ export class ListingsService {
                   deliveryAvailable: dto.marketplace.deliveryAvailable,
                   pickupAvailable: dto.marketplace.pickupAvailable,
                   quantity: dto.marketplace.quantity,
+                },
+              },
+            }
+          : {}),
+        ...(dto.buyerRequirement
+          ? {
+              buyerRequirement: {
+                update: {
+                  budgetMin:
+                    dto.buyerRequirement.budgetMin !== undefined
+                      ? new Prisma.Decimal(dto.buyerRequirement.budgetMin)
+                      : undefined,
+                  budgetMax:
+                    dto.buyerRequirement.budgetMax !== undefined
+                      ? new Prisma.Decimal(dto.buyerRequirement.budgetMax)
+                      : undefined,
+                  requiredBy: dto.buyerRequirement.requiredBy
+                    ? new Date(dto.buyerRequirement.requiredBy)
+                    : undefined,
+                  quantity: dto.buyerRequirement.quantity,
+                  preferredCondition: dto.buyerRequirement.preferredCondition,
                 },
               },
             }
@@ -1237,6 +1260,17 @@ export class ListingsService {
         valueDate: Date | null;
         valueJson: Prisma.JsonValue | null;
       }>;
+      buyerRequirement: {
+        budgetMin: Prisma.Decimal | null;
+        budgetMax: Prisma.Decimal | null;
+        requiredBy: Date | null;
+        quantity: number | null;
+        preferredCondition: string | null;
+        searchRadiusKm: number | null;
+        fulfilment: string;
+        fulfilledAt: Date | null;
+        responseCount: number;
+      } | null;
     },
     viewerId?: string,
   ): Promise<ListingDetailDto> {
@@ -1290,6 +1324,23 @@ export class ListingsService {
             deliveryAvailable: listing.marketplace.deliveryAvailable,
             pickupAvailable: listing.marketplace.pickupAvailable,
             quantity: listing.marketplace.quantity,
+          }
+        : null,
+      buyerRequirement: listing.buyerRequirement
+        ? {
+            budgetMin: listing.buyerRequirement.budgetMin
+              ? Number(listing.buyerRequirement.budgetMin)
+              : null,
+            budgetMax: listing.buyerRequirement.budgetMax
+              ? Number(listing.buyerRequirement.budgetMax)
+              : null,
+            requiredBy: listing.buyerRequirement.requiredBy,
+            quantity: listing.buyerRequirement.quantity,
+            preferredCondition: listing.buyerRequirement.preferredCondition,
+            searchRadiusKm: listing.buyerRequirement.searchRadiusKm,
+            fulfilment: listing.buyerRequirement.fulfilment,
+            fulfilledAt: listing.buyerRequirement.fulfilledAt,
+            responseCount: listing.buyerRequirement.responseCount,
           }
         : null,
       expiresAt: listing.expiresAt,

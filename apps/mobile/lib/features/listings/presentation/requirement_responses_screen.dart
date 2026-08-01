@@ -61,13 +61,14 @@ class _RequirementResponsesScreenState
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-              content: Text(Strings.of(context)('requirements.responseSaved'))),
+              content: Text(Strings.of(context)('requirements.responseSaved')),),
         );
       }
     } on ApiException catch (error) {
-      if (mounted)
+      if (mounted) {
         ScaffoldMessenger.of(context)
             .showSnackBar(SnackBar(content: Text(error.message)));
+      }
     }
   }
 
@@ -92,7 +93,7 @@ class _RequirementResponsesScreenState
         actions: [
           TextButton(
               onPressed: () => Navigator.pop(context),
-              child: Text(strings('common.cancel'))),
+              child: Text(strings('common.cancel')),),
           FilledButton(
             onPressed: () => Navigator.pop(context, controller.text.trim()),
             child: Text(strings('requirements.openChat')),
@@ -107,9 +108,10 @@ class _RequirementResponsesScreenState
           .openRequirementChat(response.id, message);
       if (mounted) await context.push('/chats/$id');
     } on ApiException catch (error) {
-      if (mounted)
+      if (mounted) {
         ScaffoldMessenger.of(context)
             .showSnackBar(SnackBar(content: Text(error.message)));
+      }
     }
   }
 
@@ -137,7 +139,7 @@ class _RequirementResponsesScreenState
       appBar: AppBar(
           title: Text(widget.isOwner
               ? strings('requirements.answers')
-              : strings('requirements.yourAnswer'))),
+              : strings('requirements.yourAnswer'),),),
       floatingActionButton: widget.isOwner
           ? null
           : FloatingActionButton.extended(
@@ -163,9 +165,9 @@ class _RequirementResponsesScreenState
                 Padding(
                   padding: const EdgeInsets.all(LoczSpacing.x6),
                   child: Text(snapshot.error.toString(),
-                      textAlign: TextAlign.center),
+                      textAlign: TextAlign.center,),
                 ),
-              ]);
+              ],);
             }
             return ListView(
               padding: const EdgeInsets.all(LoczSpacing.x4),
@@ -187,7 +189,7 @@ class _RequirementResponsesScreenState
                               : strings('requirements.respondHint'),
                           style: theme.textTheme.bodySmall,
                         ),
-                      ]),
+                      ],),
                 ),
                 const SizedBox(height: LoczSpacing.x4),
                 if ((responses ?? const []).isEmpty)
@@ -196,14 +198,14 @@ class _RequirementResponsesScreenState
                         const EdgeInsets.symmetric(vertical: LoczSpacing.x8),
                     child: Column(children: [
                       Icon(Icons.mark_chat_unread_outlined,
-                          size: 42, color: theme.colorScheme.primary),
+                          size: 42, color: theme.colorScheme.primary,),
                       const SizedBox(height: LoczSpacing.x3),
                       Text(strings('requirements.empty'),
-                          style: theme.textTheme.titleMedium),
+                          style: theme.textTheme.titleMedium,),
                       const SizedBox(height: 5),
                       Text(strings('requirements.emptyHint'),
-                          textAlign: TextAlign.center),
-                    ]),
+                          textAlign: TextAlign.center,),
+                    ],),
                   )
                 else
                   for (final response in responses!)
@@ -219,7 +221,7 @@ class _RequirementResponsesScreenState
                     icon: const Icon(Icons.task_alt_rounded),
                     label: Text(_closing
                         ? strings('requirements.closing')
-                        : strings('requirements.markFulfilled')),
+                        : strings('requirements.markFulfilled'),),
                   ),
                 ],
                 const SizedBox(height: 90),
@@ -234,7 +236,7 @@ class _RequirementResponsesScreenState
 
 class _ResponseCard extends ConsumerWidget {
   const _ResponseCard(
-      {required this.response, required this.isOwner, required this.onChat});
+      {required this.response, required this.isOwner, required this.onChat,});
   final RequirementResponse response;
   final bool isOwner;
   final VoidCallback onChat;
@@ -261,12 +263,12 @@ class _ResponseCard extends ConsumerWidget {
                 ),
               ),
               Chip(label: Text(strings('requirements.kind.${response.kind}'))),
-            ]),
+            ],),
           ),
           if (response.offeredPrice != null) ...[
             const SizedBox(height: LoczSpacing.x3),
             Text('₹${response.offeredPrice}',
-                style: Theme.of(context).textTheme.titleLarge),
+                style: Theme.of(context).textTheme.titleLarge,),
           ],
           if (response.message != null && response.message!.isNotEmpty) ...[
             const SizedBox(height: LoczSpacing.x2),
@@ -281,11 +283,11 @@ class _ResponseCard extends ConsumerWidget {
                 icon: const Icon(Icons.chat_bubble_outline_rounded),
                 label: Text(response.conversationId == null
                     ? strings('requirements.openChat')
-                    : strings('requirements.continueChat')),
+                    : strings('requirements.continueChat'),),
               ),
             ),
           ],
-        ]),
+        ],),
       ),
     );
   }
@@ -332,12 +334,12 @@ class _ResponseComposerState extends State<_ResponseComposer> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(strings('requirements.respond'),
-                  style: Theme.of(context).textTheme.titleLarge),
+                  style: Theme.of(context).textTheme.titleLarge,),
               const SizedBox(height: LoczSpacing.x3),
               DropdownButtonFormField<String>(
                 initialValue: _kind,
                 decoration: InputDecoration(
-                    labelText: strings('requirements.availability')),
+                    labelText: strings('requirements.availability'),),
                 items: const [
                   'AVAILABLE',
                   'AVAILABLE_AT_DIFFERENT_PRICE',
@@ -349,7 +351,7 @@ class _ResponseComposerState extends State<_ResponseComposer> {
                 ]
                     .map((kind) => DropdownMenuItem(
                         value: kind,
-                        child: Text(strings('requirements.kind.$kind'))))
+                        child: Text(strings('requirements.kind.$kind')),),)
                     .toList(),
                 onChanged: (value) => setState(() => _kind = value ?? _kind),
               ),
@@ -359,7 +361,7 @@ class _ResponseComposerState extends State<_ResponseComposer> {
                 keyboardType: TextInputType.number,
                 decoration: InputDecoration(
                     labelText: strings('requirements.offeredPrice'),
-                    prefixText: '₹ '),
+                    prefixText: '₹ ',),
               ),
               const SizedBox(height: LoczSpacing.x3),
               TextField(
@@ -375,12 +377,12 @@ class _ResponseComposerState extends State<_ResponseComposer> {
                   onPressed: () => Navigator.pop(
                     context,
                     _ResponseDraft(_kind, num.tryParse(_price.text.trim()),
-                        _message.text.trim()),
+                        _message.text.trim(),),
                   ),
                   child: Text(strings('requirements.sendResponse')),
                 ),
               ),
-            ]),
+            ],),
       ),
     );
   }
