@@ -10,6 +10,7 @@ import {
 import {
   Listing,
   ListingStatus,
+  ListingType,
   ModerationDecision,
   ModerationStatus,
   ReportTargetType,
@@ -23,7 +24,12 @@ import { AuditService } from '../audit/audit.service';
 import { TokenService } from '../auth/token.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { SearchIndexPublisher } from '../search/search-index.publisher';
-import { JOB_MATCH_SAVED_SEARCHES, QUEUE_SAVED_SEARCHES } from '../queue/queue.constants';
+import {
+  JOB_MATCH_REQUIREMENT_SELLERS,
+  JOB_MATCH_SAVED_SEARCHES,
+  QUEUE_REQUIREMENTS,
+  QUEUE_SAVED_SEARCHES,
+} from '../queue/queue.constants';
 import { ModerationQueueItemDto } from './dto/moderation.dto';
 import {
   MODERATION_PROVIDER,
@@ -48,6 +54,7 @@ export class ModerationService {
     private readonly searchIndex: SearchIndexPublisher,
     private readonly tokens: TokenService,
     @InjectQueue(QUEUE_SAVED_SEARCHES) private readonly savedSearches: Queue,
+    @InjectQueue(QUEUE_REQUIREMENTS) private readonly requirementMatches: Queue,
   ) {}
 
   /**
@@ -271,6 +278,22 @@ export class ModerationService {
           `Could not queue saved-search alerts for ${listingId}: ${error instanceof Error ? error.message : String(error)}`,
         );
       });
+
+    // A requirement held for review becomes news to sellers only when a moderator lets it
+    // through, which is here rather than at creation.
+    if (updated.type === ListingType.BUYER_REQUIREMENT) {
+      await this.requirementMatches
+        .add(
+          JOB_MATCH_REQUIREMENT_SELLERS,
+          { listingId },
+          { jobId: `requirement-${listingId}`, removeOnComplete: true },
+        )
+        .catch((error: unknown) => {
+          this.logger.error(
+            `Could not queue seller alerts for requirement ${listingId}: ${error instanceof Error ? error.message : String(error)}`,
+          );
+        });
+    }
 
     return updated;
   }

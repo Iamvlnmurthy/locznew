@@ -6,6 +6,7 @@ export const QUEUE_SEARCH = 'search';
 export const QUEUE_NOTIFICATIONS = 'notifications';
 export const QUEUE_LIFECYCLE = 'lifecycle';
 export const QUEUE_SAVED_SEARCHES = 'saved-searches';
+export const QUEUE_REQUIREMENTS = 'requirements';
 
 export const JOB_INDEX_LISTING = 'index-listing';
 export const JOB_REMOVE_LISTING = 'remove-listing';
@@ -25,6 +26,13 @@ export const JOB_SEND_NOTIFICATION = 'send-notification';
 export const JOB_MATCH_SAVED_SEARCHES = 'match-saved-searches';
 
 export interface MatchSavedSearchesJob {
+  listingId: string;
+}
+
+/** Telling nearby sellers that a buyer wants something they deal in. */
+export const JOB_MATCH_REQUIREMENT_SELLERS = 'match-requirement-sellers';
+
+export interface MatchRequirementJob {
   listingId: string;
 }
 

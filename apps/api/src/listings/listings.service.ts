@@ -28,7 +28,12 @@ import { GeoRepository } from '../prisma/geo.repository';
 import { PrismaService } from '../prisma/prisma.service';
 import { RbacService } from '../rbac/rbac.service';
 import { SearchIndexPublisher } from '../search/search-index.publisher';
-import { JOB_MATCH_SAVED_SEARCHES, QUEUE_SAVED_SEARCHES } from '../queue/queue.constants';
+import {
+  JOB_MATCH_REQUIREMENT_SELLERS,
+  JOB_MATCH_SAVED_SEARCHES,
+  QUEUE_REQUIREMENTS,
+  QUEUE_SAVED_SEARCHES,
+} from '../queue/queue.constants';
 import { SearchKeyword } from './search-keyword';
 import { ListingDetailsBuilder } from './listing-details.builder';
 import {
@@ -82,6 +87,7 @@ export class ListingsService {
     private readonly searchIndex: SearchIndexPublisher,
     private readonly details: ListingDetailsBuilder,
     @InjectQueue(QUEUE_SAVED_SEARCHES) private readonly savedSearches: Queue,
+    @InjectQueue(QUEUE_REQUIREMENTS) private readonly requirementMatches: Queue,
   ) {}
 
   // -------------------------------------------------------------------
@@ -225,6 +231,13 @@ export class ListingsService {
       // open yet is worse than telling them a few hours later.
       if (outcome.status === ListingStatus.PUBLISHED) {
         await this.enqueueSavedSearchMatch(listing.id);
+
+        // A requirement is demand, so it travels the other way: sellers who deal in this
+        // category nearby are told somebody wants it. Without this the buyer posts into
+        // silence, and silence teaches people the feature does not work.
+        if (listing.type === ListingType.BUYER_REQUIREMENT) {
+          await this.enqueueRequirementMatch(listing.id);
+        }
       }
     }
 
@@ -1047,6 +1060,21 @@ export class ListingsService {
       .catch((error: unknown) => {
         this.logger.error(
           `Could not queue saved-search alerts for ${listingId}: ${error instanceof Error ? error.message : String(error)}`,
+        );
+      });
+  }
+
+  /** Asks the requirement matcher to tell nearby sellers about a buyer's new requirement. */
+  private async enqueueRequirementMatch(listingId: string): Promise<void> {
+    await this.requirementMatches
+      .add(
+        JOB_MATCH_REQUIREMENT_SELLERS,
+        { listingId },
+        { jobId: `requirement-${listingId}`, removeOnComplete: true },
+      )
+      .catch((error: unknown) => {
+        this.logger.error(
+          `Could not queue seller alerts for requirement ${listingId}: ${error instanceof Error ? error.message : String(error)}`,
         );
       });
   }

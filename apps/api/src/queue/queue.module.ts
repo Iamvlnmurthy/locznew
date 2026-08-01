@@ -4,6 +4,7 @@ import { AppConfig } from '../config/config.module';
 import {
   QUEUE_LIFECYCLE,
   QUEUE_NOTIFICATIONS,
+  QUEUE_REQUIREMENTS,
   QUEUE_SAVED_SEARCHES,
   QUEUE_SEARCH,
 } from './queue.constants';
@@ -39,6 +40,7 @@ import {
       { name: QUEUE_NOTIFICATIONS },
       { name: QUEUE_LIFECYCLE },
       { name: QUEUE_SAVED_SEARCHES },
+      { name: QUEUE_REQUIREMENTS },
     ),
   ],
   exports: [BullModule],

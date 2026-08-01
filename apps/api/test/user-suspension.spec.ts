@@ -39,6 +39,8 @@ describe('ModerationService.suspendUser', () => {
       tokens as never,
       // Saved-search alert queue. Suspension never reaches it, but the constructor wants it.
       { add: jest.fn().mockResolvedValue({}) } as never,
+      // Requirement matcher queue: sellers are told about new buyer requirements from here.
+      { add: jest.fn().mockResolvedValue({}) } as never,
     );
 
     return { service, prisma, tokens, audit };
@@ -132,6 +134,8 @@ describe('ModerationService.reinstateUser', () => {
       {} as never,
       { revokeAllForUser: jest.fn() } as never,
       { add: jest.fn().mockResolvedValue({}) } as never,
+      // Requirement matcher queue: sellers are told about new buyer requirements from here.
+      { add: jest.fn().mockResolvedValue({}) } as never,
     );
     return { service, prisma, audit };
   }
@@ -178,6 +182,8 @@ describe('timed suspensions', () => {
       { record: jest.fn() } as never,
       {} as never,
       { revokeAllForUser: jest.fn().mockResolvedValue(1) } as never,
+      { add: jest.fn().mockResolvedValue({}) } as never,
+      // Requirement matcher queue: sellers are told about new buyer requirements from here.
       { add: jest.fn().mockResolvedValue({}) } as never,
     );
     return { service, prisma };
