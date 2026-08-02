@@ -88,6 +88,7 @@ export async function Header({ locale }: { locale: Locale }) {
                 displayName={user.displayName}
                 labels={{
                   account: t('nav.account'),
+                  profile: t('nav.profile'),
                   myAds: t('nav.myAds'),
                   messages: t('nav.messages'),
                   saved: t('nav.saved'),

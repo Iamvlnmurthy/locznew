@@ -4,6 +4,7 @@ import { Icon } from './icons';
 
 export interface AccountMenuLabels {
   account: string;
+  profile: string;
   myAds: string;
   messages: string;
   saved: string;
@@ -47,6 +48,7 @@ export function AccountMenu({
         </p>
 
         <nav className="account-menu__links">
+          <Link href="/account/profile">{labels.profile}</Link>
           <Link href="/dashboard">{labels.myAds}</Link>
           <Link href="/chats">{labels.messages}</Link>
           <Link href="/dashboard?tab=saved">{labels.saved}</Link>

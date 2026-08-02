@@ -85,7 +85,8 @@
     "businesses": "Your businesses",
     "verifyPhone": "Confirm mobile number",
     "location": "Change area",
-    "signedInAs": "Signed in as"
+    "signedInAs": "Signed in as",
+    "profile": "Your details"
   },
   "location": {
     "label": "Location",
@@ -1515,5 +1516,24 @@
     "tooManyAttempts": "Too many attempts. Wait a few minutes before trying again.",
     "alreadyTaken": "That number is already on another LocZ account.",
     "failed": "We could not confirm that number. Try again."
+  },
+  "profile": {
+    "title": "Your details",
+    "intro": "This is what buyers and sellers see when they talk to you.",
+    "name": "Your name",
+    "nameHint": "Shown on your ads and in messages.",
+    "email": "Email address",
+    "emailHint": "You sign in with this.",
+    "bio": "About you",
+    "bioHint": "Optional. A line or two about what you sell.",
+    "save": "Save changes",
+    "saved": "Your details are saved.",
+    "invalidName": "Enter your name.",
+    "invalidEmail": "Enter a valid email address.",
+    "emailTaken": "That email is already on another LocZ account.",
+    "failed": "We could not save that. Try again.",
+    "phoneTitle": "Mobile number",
+    "phoneConfirmed": "confirmed",
+    "phoneAction": "Confirm a mobile number"
   }
 }
