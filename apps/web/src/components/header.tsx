@@ -5,6 +5,7 @@ import { getCurrentUser, getSelectedCity } from '@/lib/session';
 import { LocationChip } from './location-chip';
 import { LocaleSwitcher } from './locale-switcher';
 import { Icon } from './icons';
+import { SignOutButton } from './sign-out-button';
 import { ThemeToggle } from './theme-toggle';
 import { RecentSearchInput } from './recent-search-input';
 
@@ -86,6 +87,7 @@ export async function Header({ locale }: { locale: Locale }) {
               <Link href="/dashboard" className="btn btn--ghost">
                 {t('nav.myAds')}
               </Link>
+              <SignOutButton label={t('nav.signOut')} />
             </>
           ) : (
             <Link href="/signin" className="btn btn--ghost">
