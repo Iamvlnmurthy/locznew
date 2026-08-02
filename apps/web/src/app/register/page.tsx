@@ -5,12 +5,15 @@ import { getCurrentUser, getLocale } from '@/lib/session';
 import { AuthShell } from '../signin/auth-shell';
 import { RegisterForm } from './register-form';
 
-export const metadata: Metadata = {
-  title: 'Create your LocZ account',
-  // Nothing here is worth indexing, and a sign-up form in search results attracts bots
-  // rather than buyers.
-  robots: { index: false, follow: false },
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const locale = await getLocale();
+  return {
+    title: getMessageGroup(locale, 'register').title,
+    // Nothing here is worth indexing, and a sign-up form in search results attracts bots
+    // rather than buyers.
+    robots: { index: false, follow: false },
+  };
+}
 
 export default async function RegisterPage() {
   const [locale, user] = await Promise.all([getLocale(), getCurrentUser()]);
@@ -42,27 +45,29 @@ export default async function RegisterPage() {
       }}
     >
       <RegisterForm
-            labels={{
-              title: s.title,
-              subtitle: s.subtitle,
-              name: s.name,
-              nameHint: s.nameHint,
-              phone: s.phone,
-              phoneHint: s.phoneHint,
-              password: s.password,
-              passwordHint: s.passwordHint,
-              confirmPassword: s.confirmPassword,
-              submit: s.submit,
-              submitting: s.submitting,
-              haveAccount: s.haveAccount,
-              signIn: s.signIn,
-              invalidName: s.invalidName,
-              invalidPhone: s.invalidPhone,
-              shortPassword: s.shortPassword,
-              passwordMismatch: s.passwordMismatch,
-              phoneTaken: s.phoneTaken,
-              error: s.error,
-            }}
+        labels={{
+          title: s.title,
+          subtitle: s.subtitle,
+          name: s.name,
+          nameHint: s.nameHint,
+          phone: s.phone,
+          phoneHint: s.phoneHint,
+          password: s.password,
+          passwordHint: s.passwordHint,
+          confirmPassword: s.confirmPassword,
+          submit: s.submit,
+          submitting: s.submitting,
+          haveAccount: s.haveAccount,
+          signIn: s.signIn,
+          invalidName: s.invalidName,
+          invalidPhone: s.invalidPhone,
+          shortPassword: s.shortPassword,
+          passwordMismatch: s.passwordMismatch,
+          phoneTaken: s.phoneTaken,
+          error: s.error,
+          showPassword: s.showPassword,
+          hidePassword: s.hidePassword,
+        }}
       />
     </AuthShell>
   );

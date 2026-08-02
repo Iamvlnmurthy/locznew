@@ -1304,6 +1304,31 @@
     "workspace": "Business workspace",
     "workspaceBody": "Keep the details neighbours rely on accurate and useful."
   },
+  "reportUi": {
+    "kicker": "Community safety",
+    "pageTitle": "Help us keep LocZ useful and safe.",
+    "pageBody": "Tell us what is wrong. A clear report helps the moderation team act quickly without exposing you to the person you report.",
+    "privateTitle": "Private and accountable",
+    "privateBody": "Your identity is not shown to the reported account.",
+    "formTitle": "Report this content",
+    "reason": "What is the main problem?",
+    "details": "Anything else we should know? (optional)",
+    "submit": "Send report",
+    "submitting": "Sending…",
+    "cancel": "Back to LocZ",
+    "successTitle": "Report received",
+    "success": "Thanks — our team will review this and notify you about the outcome.",
+    "reasonSpam": "Spam or repeated posting",
+    "reasonFraud": "Fraud or a scam",
+    "reasonProhibited": "Prohibited item or service",
+    "reasonPrice": "Misleading price",
+    "reasonCategory": "Wrong category",
+    "reasonDuplicate": "Duplicate ad",
+    "reasonSold": "Already sold or unavailable",
+    "reasonOffensive": "Offensive or inappropriate",
+    "reasonHarassment": "Harassment or abuse",
+    "reasonOther": "Something else"
+  },
   "auth": {
     "signInTitle": "Sign in to LocZ",
     "signInSubtitle": "Enter your mobile number and we'll send a code.",
@@ -1344,7 +1369,9 @@
     "submitP": "Sign in",
     "submittingP": "Signing in…",
     "missingPassword": "Enter your password.",
-    "badCredentials": "Incorrect mobile number or password."
+    "badCredentials": "Incorrect mobile number or password.",
+    "showPassword": "Show password",
+    "hidePassword": "Hide password"
   },
   "dashboard": {
     "title": "My LocZ",
@@ -1448,6 +1475,8 @@
     "phoneTaken": "That number already has an account. Sign in instead.",
     "error": "We could not create your account. Please try again.",
     "newHere": "New to LocZ?",
-    "createOne": "Create an account"
+    "createOne": "Create an account",
+    "showPassword": "Show password",
+    "hidePassword": "Hide password"
   }
 }

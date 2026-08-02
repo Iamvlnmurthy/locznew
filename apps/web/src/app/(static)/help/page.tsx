@@ -38,14 +38,14 @@ export default async function HelpPage() {
 
       <h1 className="page-title">{t('helpPage.title')}</h1>
 
-      <dl>
+      <div className="info-faq">
         {faq.map((entry) => (
-          <div key={entry.question} style={{ marginBottom: 'var(--locz-space-6)' }}>
-            <dt style={{ fontWeight: 600, marginBottom: 4 }}>{entry.question}</dt>
-            <dd style={{ margin: 0, color: 'var(--locz-text-secondary)' }}>{entry.answer}</dd>
-          </div>
+          <details key={entry.question}>
+            <summary>{entry.question}</summary>
+            <p>{entry.answer}</p>
+          </details>
         ))}
-      </dl>
+      </div>
 
       <p>
         {t('helpPage.contact')} <a href="mailto:help@locz.in">help@locz.in</a>.

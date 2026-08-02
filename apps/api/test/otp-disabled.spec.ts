@@ -26,6 +26,9 @@ describe('one-time-code routes, when disabled', () => {
       { grantRole: jest.fn() } as never,
       { record: jest.fn() } as never,
       config as never,
+      // Google sign-in: verifies the token and resolves the account. Not what these
+      // cases cover, so it is a stub.
+      { resolveUser: jest.fn(), isConfigured: false } as never,
     );
   }
 

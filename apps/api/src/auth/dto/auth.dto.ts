@@ -194,3 +194,19 @@ export class OtpRequestedDto {
   })
   debugCode?: string;
 }
+
+export class GoogleLoginDto {
+  @ApiProperty({
+    description:
+      'The ID token Google issued to your app. Verified here against Google signature, ' +
+      'audience and issuer — nothing the client asserts about identity is trusted.',
+  })
+  @IsString()
+  @Length(20, 4096)
+  idToken!: string;
+
+  @ApiProperty({ type: DeviceInfoDto })
+  @ValidateNested()
+  @Type(() => DeviceInfoDto)
+  device!: DeviceInfoDto;
+}

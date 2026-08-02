@@ -12,6 +12,7 @@ import { v7 as uuid } from 'uuid';
 import { AuditService } from '../audit/audit.service';
 import { AppConfig } from '../config/config.module';
 import { PrismaService } from '../prisma/prisma.service';
+import { GoogleAuthService } from './google-auth.service';
 import { RbacService } from '../rbac/rbac.service';
 import {
   AuthSessionDto,
@@ -22,6 +23,7 @@ import {
   OtpRequestedDto,
   RequestOtpDto,
   VerifyOtpDto,
+  GoogleLoginDto
 } from './dto/auth.dto';
 import { OtpService } from './otp/otp.service';
 import { TokenService } from './token.service';
@@ -43,6 +45,7 @@ export class AuthService {
     private readonly rbac: RbacService,
     private readonly audit: AuditService,
     private readonly config: AppConfig,
+    private readonly google: GoogleAuthService,
   ) {}
 
   /**
@@ -227,6 +230,26 @@ export class AuthService {
     }
 
     await this.prisma.authLockout.deleteMany({ where: { scope: 'IP', identifier: dto.phone } });
+
+    const device = await this.registerDevice(user.id, dto.device, context);
+    return this.buildSession(user, device, context, false);
+  }
+
+  /**
+   * Sign in with Google.
+   *
+   * The token is verified by `GoogleAuthService`; the session is issued here, through the
+   * same `buildSession` every other path uses. Keeping session creation in one place is what
+   * stops device registration, refresh rotation and lockout behaviour drifting apart between
+   * sign-in methods.
+   */
+  async loginWithGoogle(dto: GoogleLoginDto, context: RequestContext): Promise<AuthSessionDto> {
+    const { id } = await this.google.resolveUser(dto.idToken);
+
+    const user = await this.prisma.user.findUniqueOrThrow({ where: { id } });
+    if (user.status === UserStatus.SUSPENDED) {
+      throw new ForbiddenException('This account is suspended. Contact support.');
+    }
 
     const device = await this.registerDevice(user.id, dto.device, context);
     return this.buildSession(user, device, context, false);

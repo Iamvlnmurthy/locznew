@@ -5,10 +5,13 @@ import { apiSafe } from '@/lib/api';
 import { getCurrentUser, getLocale } from '@/lib/session';
 import { ReportForm } from './report-form';
 
-export const metadata: Metadata = {
-  title: 'Report content',
-  robots: { index: false, follow: false },
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const locale = await getLocale();
+  return {
+    title: getMessageGroup(locale, 'reportUi').pageTitle,
+    robots: { index: false, follow: false },
+  };
+}
 
 /**
  * Reporting form. Requires an account — anonymous reporting is trivially weaponised
@@ -67,7 +70,10 @@ export default async function ReportPage({
           <p>{labels.pageBody}</p>
           <div className="report-experience__promise">
             <span aria-hidden="true">24/7</span>
-            <p><strong>{labels.privateTitle}</strong>{labels.privateBody}</p>
+            <p>
+              <strong>{labels.privateTitle}</strong>
+              {labels.privateBody}
+            </p>
           </div>
         </aside>
         <ReportForm

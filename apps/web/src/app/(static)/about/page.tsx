@@ -17,9 +17,7 @@ export default async function AboutPage() {
   return (
     <>
       <h1 className="page-title">{t('aboutPage.title')}</h1>
-      <p className="page-subtitle" style={{ fontWeight: 600, color: 'var(--locz-text)' }}>
-        {t('aboutPage.tagline')}
-      </p>
+      <p className="page-subtitle info-card__lede">{t('aboutPage.tagline')}</p>
 
       <p>{t('aboutPage.intro')}</p>
 

@@ -38,16 +38,31 @@ export function AuthShell({
 
             <div className="auth-experience__proof">
               <article>
-                <span><Icon name="message" /></span>
-                <div><strong>{labels.messageTitle}</strong><small>{labels.messageText}</small></div>
+                <span>
+                  <Icon name="message" />
+                </span>
+                <div>
+                  <strong>{labels.messageTitle}</strong>
+                  <small>{labels.messageText}</small>
+                </div>
               </article>
               <article>
-                <span><Icon name="heart" /></span>
-                <div><strong>{labels.saveTitle}</strong><small>{labels.saveText}</small></div>
+                <span>
+                  <Icon name="heart" />
+                </span>
+                <div>
+                  <strong>{labels.saveTitle}</strong>
+                  <small>{labels.saveText}</small>
+                </div>
               </article>
               <article>
-                <span><Icon name="plus" /></span>
-                <div><strong>{labels.postTitle}</strong><small>{labels.postText}</small></div>
+                <span>
+                  <Icon name="plus" />
+                </span>
+                <div>
+                  <strong>{labels.postTitle}</strong>
+                  <small>{labels.postText}</small>
+                </div>
               </article>
             </div>
           </div>
@@ -68,11 +83,16 @@ export function AuthShell({
         <section className="auth-experience__panel">
           <div className="auth-experience__brand">
             <Image src="/brand/locz-mark.png" alt="" width="34" height="34" />
-            <span><strong>{labels.brand}</strong><small>{labels.secureAccess}</small></span>
+            <span>
+              <strong>{labels.brand}</strong>
+              <small>{labels.secureAccess}</small>
+            </span>
           </div>
           {children}
           <div className="auth-experience__trust">
-            <span><Icon name="shield" /></span>
+            <span>
+              <Icon name="shield" />
+            </span>
             <p>{labels.privacy}</p>
           </div>
         </section>

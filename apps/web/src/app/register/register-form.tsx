@@ -1,6 +1,6 @@
 'use client';
 
-import { useActionState } from 'react';
+import { useActionState, useState } from 'react';
 import { useFormStatus } from 'react-dom';
 import { Icon } from '@/components/icons';
 import { registerAction, type RegisterState } from './actions';
@@ -25,6 +25,8 @@ interface Labels {
   passwordMismatch: string;
   phoneTaken: string;
   error: string;
+  showPassword: string;
+  hidePassword: string;
 }
 
 function Submit({ idle, busy }: { idle: string; busy: string }) {
@@ -39,6 +41,7 @@ function Submit({ idle, busy }: { idle: string; busy: string }) {
 
 export function RegisterForm({ labels }: { labels: Labels }) {
   const [state, action] = useActionState<RegisterState, FormData>(registerAction, {});
+  const [showPassword, setShowPassword] = useState(false);
 
   // Every failure the action can return has its own sentence. A single "something went
   // wrong" would leave someone guessing which of four fields to change.
@@ -80,41 +83,53 @@ export function RegisterForm({ labels }: { labels: Labels }) {
         <small className="field__hint">{labels.nameHint}</small>
       </label>
 
-      <label className="field" htmlFor="register-phone">
+      <div className="field">
         <span>{labels.phone}</span>
-        <input
-          id="register-phone"
-          name="phone"
-          type="tel"
-          inputMode="numeric"
-          autoComplete="tel"
-          required
-          defaultValue={state.values?.phone ?? ''}
-        />
+        <div className="signin-phone">
+          <span>
+            <span aria-hidden="true">🇮🇳</span>+91
+          </span>
+          <input
+            id="register-phone"
+            name="phone"
+            type="tel"
+            inputMode="numeric"
+            autoComplete="tel-national"
+            minLength={10}
+            maxLength={10}
+            required
+            defaultValue={state.values?.phone?.replace(/^\+91/, '') ?? ''}
+          />
+        </div>
         <small className="field__hint">{labels.phoneHint}</small>
-      </label>
+      </div>
 
-      <label className="field" htmlFor="register-password">
-        <span>{labels.password}</span>
+      <div className="field">
+        <div className="auth-field-label">
+          <label htmlFor="register-password">{labels.password}</label>
+          <button type="button" onClick={() => setShowPassword((value) => !value)}>
+            {showPassword ? labels.hidePassword : labels.showPassword}
+          </button>
+        </div>
         {/* `new-password` so password managers offer to generate one rather than filling
             an existing credential into a sign-up form. */}
         <input
           id="register-password"
           name="password"
-          type="password"
+          type={showPassword ? 'text' : 'password'}
           autoComplete="new-password"
           minLength={8}
           required
         />
         <small className="field__hint">{labels.passwordHint}</small>
-      </label>
+      </div>
 
       <label className="field" htmlFor="register-confirm">
         <span>{labels.confirmPassword}</span>
         <input
           id="register-confirm"
           name="confirmPassword"
-          type="password"
+          type={showPassword ? 'text' : 'password'}
           autoComplete="new-password"
           minLength={8}
           required

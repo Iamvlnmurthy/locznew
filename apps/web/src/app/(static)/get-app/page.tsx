@@ -2,9 +2,10 @@ import type { Metadata } from 'next';
 import { getMessageGroup, getTranslator } from '@/i18n';
 import { getLocale } from '@/lib/session';
 
-export const metadata: Metadata = {
-  title: 'Get the LocZ app',
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const t = getTranslator(await getLocale());
+  return { title: t('getApp.title'), alternates: { canonical: '/get-app' } };
+}
 
 /**
  * The Android download page.
@@ -49,7 +50,7 @@ export default async function GetAppPage() {
   const href = manifest?.url ?? '/download/locz-latest.apk';
 
   return (
-    <main className="container static-page">
+    <div className="static-page get-app-card">
       <h1>{s.title}</h1>
       <p className="static-page__lede">{s.lede}</p>
 
@@ -80,6 +81,6 @@ export default async function GetAppPage() {
 
       <p className="static-page__note">{s.updateNote}</p>
       <p className="static-page__note">{t('getApp.iosNote')}</p>
-    </main>
+    </div>
   );
 }

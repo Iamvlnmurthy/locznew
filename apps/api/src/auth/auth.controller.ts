@@ -17,6 +17,7 @@ import {
   RefreshTokenDto,
   RequestOtpDto,
   VerifyOtpDto,
+  GoogleLoginDto
 } from './dto/auth.dto';
 
 @ApiTags('auth')
@@ -98,6 +99,26 @@ export class AuthController {
     @Req() request: RequestWithUser,
   ): Promise<AuthSessionDto> {
     return this.auth.loginWithPhone(dto, this.contextOf(request));
+  }
+
+  @Public()
+  @Post('login/google')
+  @HttpCode(HttpStatus.OK)
+  @Throttle({ default: { limit: 10, ttl: 60_000 } })
+  @ApiOperation({
+    summary: 'Sign in with Google',
+    description:
+      'Send the ID token Google issued. It is verified against Google signature, audience ' +
+      'and issuer here — nothing the client asserts about identity is trusted. An account ' +
+      'is created on first sign-in, and linked to an existing one only when Google reports ' +
+      'the email address as verified.',
+  })
+  @ApiResponse({ status: 200, type: AuthSessionDto })
+  loginWithGoogle(
+    @Body() dto: GoogleLoginDto,
+    @Req() request: RequestWithUser,
+  ): Promise<AuthSessionDto> {
+    return this.auth.loginWithGoogle(dto, this.contextOf(request));
   }
 
   @Public()

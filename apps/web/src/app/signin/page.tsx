@@ -5,10 +5,13 @@ import { getCurrentUser, getLocale } from '@/lib/session';
 import { AuthShell } from './auth-shell';
 import { PasswordSignInForm } from './password-sign-in-form';
 
-export const metadata: Metadata = {
-  title: 'Sign in',
-  robots: { index: false, follow: false },
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const locale = await getLocale();
+  return {
+    title: getTranslator(locale)('auth.signInTitleP'),
+    robots: { index: false, follow: false },
+  };
+}
 
 export default async function SignInPage({
   searchParams,
@@ -40,22 +43,24 @@ export default async function SignInPage({
   return (
     <AuthShell labels={shellLabels} mode="signin">
       <PasswordSignInForm
-            next={safeNext}
-            labels={{
-              title: t('auth.signInTitleP'),
-              subtitle: t('auth.signInSubtitleP'),
-              phone: t('auth.phone'),
-              phoneHint: t('auth.phoneHint'),
-              password: t('auth.passwordLabel'),
-              submit: t('auth.submitP'),
-              submitting: t('auth.submittingP'),
-              invalidPhone: t('auth.invalidPhone'),
-              missingPassword: t('auth.missingPassword'),
-              badCredentials: t('auth.badCredentials'),
-              error: t('auth.badCredentials'),
-              newHere: t('register.newHere'),
-              createOne: t('register.createOne'),
-            }}
+        next={safeNext}
+        labels={{
+          title: t('auth.signInTitleP'),
+          subtitle: t('auth.signInSubtitleP'),
+          phone: t('auth.phone'),
+          phoneHint: t('auth.phoneHint'),
+          password: t('auth.passwordLabel'),
+          submit: t('auth.submitP'),
+          submitting: t('auth.submittingP'),
+          invalidPhone: t('auth.invalidPhone'),
+          missingPassword: t('auth.missingPassword'),
+          badCredentials: t('auth.badCredentials'),
+          error: t('auth.badCredentials'),
+          newHere: t('register.newHere'),
+          createOne: t('register.createOne'),
+          showPassword: t('auth.showPassword'),
+          hidePassword: t('auth.hidePassword'),
+        }}
       />
     </AuthShell>
   );

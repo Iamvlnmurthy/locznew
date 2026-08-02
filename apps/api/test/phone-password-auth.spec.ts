@@ -52,6 +52,9 @@ describe('phone and password authentication', () => {
       { grantRole: jest.fn(), permissionsFor: jest.fn().mockResolvedValue([]) } as never,
       { record: jest.fn() } as never,
       config as never,
+      // Google sign-in: verifies the token and resolves the account. Not what these
+      // cases cover, so it is a stub.
+      { resolveUser: jest.fn(), isConfigured: false } as never,
     );
 
     // The session builder reaches into collaborators these tests do not model; the subject

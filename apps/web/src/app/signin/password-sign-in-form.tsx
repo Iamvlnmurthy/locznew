@@ -1,6 +1,6 @@
 'use client';
 
-import { useActionState } from 'react';
+import { useActionState, useState } from 'react';
 import { useFormStatus } from 'react-dom';
 import { Icon } from '@/components/icons';
 import { passwordSignInAction, type SignInState } from './actions';
@@ -19,6 +19,8 @@ interface Labels {
   error: string;
   newHere: string;
   createOne: string;
+  showPassword: string;
+  hidePassword: string;
 }
 
 function Submit({ idle, busy }: { idle: string; busy: string }) {
@@ -43,6 +45,7 @@ export function PasswordSignInForm({ labels, next }: { labels: Labels; next: str
   const [state, action] = useActionState<SignInState, FormData>(passwordSignInAction, {
     step: 'phone',
   });
+  const [showPassword, setShowPassword] = useState(false);
 
   const message = state.error
     ? ((
@@ -90,16 +93,21 @@ export function PasswordSignInForm({ labels, next }: { labels: Labels; next: str
         <small className="field__hint">{labels.phoneHint}</small>
       </div>
 
-      <label className="field" htmlFor="signin-password">
-        <span>{labels.password}</span>
+      <div className="field">
+        <div className="auth-field-label">
+          <label htmlFor="signin-password">{labels.password}</label>
+          <button type="button" onClick={() => setShowPassword((value) => !value)}>
+            {showPassword ? labels.hidePassword : labels.showPassword}
+          </button>
+        </div>
         <input
           id="signin-password"
           name="password"
-          type="password"
+          type={showPassword ? 'text' : 'password'}
           autoComplete="current-password"
           required
         />
-      </label>
+      </div>
 
       <Submit idle={labels.submit} busy={labels.submitting} />
 

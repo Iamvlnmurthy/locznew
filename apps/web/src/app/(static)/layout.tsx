@@ -5,16 +5,10 @@
  */
 export default function StaticLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div className="container">
-      <article
-        style={{
-          maxWidth: 720,
-          margin: '0 auto',
-          padding: 'var(--locz-space-8) 0 var(--locz-space-12)',
-        }}
-      >
-        {children}
-      </article>
-    </div>
+    <main className="info-experience">
+      <div className="container info-experience__layout">
+        <article className="info-card">{children}</article>
+      </div>
+    </main>
   );
 }

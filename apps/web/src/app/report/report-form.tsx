@@ -43,7 +43,9 @@ export function ReportForm({
   if (state.sent) {
     return (
       <div className="report-card report-card--success" role="status">
-        <span className="report-card__success-icon"><Icon name="check" /></span>
+        <span className="report-card__success-icon">
+          <Icon name="check" />
+        </span>
         <h2>{labels.successTitle}</h2>
         <p>{labels.success}</p>
         <Link href="/" className="btn btn--outline btn--block">
@@ -56,15 +58,13 @@ export function ReportForm({
   return (
     <form className="report-card" action={action}>
       <div className="report-card__heading">
-        <span><Icon name="shield" /></span>
+        <span>
+          <Icon name="shield" />
+        </span>
         <h2>{labels.title}</h2>
       </div>
 
-      {targetTitle ? (
-        <p className="report-card__target">
-          “{targetTitle}”
-        </p>
-      ) : null}
+      {targetTitle ? <p className="report-card__target">“{targetTitle}”</p> : null}
 
       {state.error ? (
         <div className="alert alert--error" role="alert">
