@@ -28,6 +28,13 @@ const nextConfig = {
           { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
           { key: 'Permissions-Policy', value: 'camera=(), microphone=(), geolocation=()' },
           {
+            // Google's sign-in popup calls window.postMessage back to this page. The
+            // stricter same-origin value severs that, and the sign-in silently never
+            // completes; -allow-popups keeps the isolation and permits the reply.
+            key: 'Cross-Origin-Opener-Policy',
+            value: 'same-origin-allow-popups',
+          },
+          {
             key: 'Content-Security-Policy',
             value: [
               "default-src 'self'",
