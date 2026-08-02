@@ -32,7 +32,9 @@ const nextConfig = {
             value: [
               "default-src 'self'",
               "img-src 'self' data: https: http://localhost:9000",
-              "style-src 'self' 'unsafe-inline'",
+              // Google serves the button's stylesheet from its own origin; without this the
+              // button renders but unstyled.
+              "style-src 'self' 'unsafe-inline' https://accounts.google.com",
               // accounts.google.com is here for console sign-in and nothing else. Named
               // explicitly rather than widened: this header is strict because the console
               // renders unmoderated user content, and a wildcard would give that content a
