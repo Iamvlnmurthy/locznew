@@ -702,7 +702,11 @@
     "visit": "Visit",
     "website": "Website",
     "wednesday": "Wednesday",
-    "yourMessage": "Your message"
+    "yourMessage": "Your message",
+    "descriptionGenerated": "Written from public listing data, not by the business.",
+    "peopleLookFor": "People look here for:",
+    "unclaimed": "Nobody has claimed this listing yet, so these details have not been confirmed by the business.",
+    "claimAction": "Is this your business?"
   },
   "dashboardUi": {
     "aboutYou": "About you",

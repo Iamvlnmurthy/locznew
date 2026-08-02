@@ -40,6 +40,12 @@ interface BusinessDetail {
   viewCount: number;
   isOwner: boolean;
   createdAt: string;
+  /** True when the API composed the description from the record rather than the owner writing it. */
+  descriptionIsGenerated: boolean;
+  /** Required under the source licence for an imported record. Null for anything a person made. */
+  attribution: string | null;
+  claimStatus: string;
+  keywords: string[];
 }
 
 const DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
@@ -240,10 +246,31 @@ export default async function BusinessPage({ params }: { params: Promise<{ slug:
             <span className="section-kicker">{p.meetBusiness}</span>
             <h2>{p.aboutBusiness.replace('{name}', business.name)}</h2>
             {business.description ? (
-              <p className="business-profile-about">{business.description}</p>
+              <>
+                <p className="business-profile-about">{business.description}</p>
+                {/* A reader cannot judge a description without knowing who wrote it, and this
+                    one was assembled from the record rather than written by the shop. */}
+                {business.descriptionIsGenerated ? (
+                  <p className="business-profile-note">{p.descriptionGenerated}</p>
+                ) : null}
+              </>
             ) : (
               <p className="business-profile-about is-empty">{p.noStory}</p>
             )}
+
+            {business.keywords.length > 0 ? (
+              <p className="business-profile-keywords">
+                {p.peopleLookFor} {business.keywords.slice(0, 8).join(', ')}
+              </p>
+            ) : null}
+
+            {/* Nobody has stood behind this record yet, and a buyer deciding whether to trust
+                the details deserves to know that before they act on them. */}
+            {business.claimStatus === 'UNCLAIMED' && !business.isOwner ? (
+              <p className="business-profile-unclaimed">
+                {p.unclaimed} <a href={`/b/${business.slug}/claim`}>{p.claimAction}</a>
+              </p>
+            ) : null}
             <div className="business-profile-promises">
               <div>
                 <Icon name="location" />
@@ -350,7 +377,13 @@ export default async function BusinessPage({ params }: { params: Promise<{ slug:
               {p.safetyTips} <Icon name="arrow" />
             </Link>
           </section>
-        </main>
+        {/* Not presentation polish. ODbL and CDLA both require attribution to travel with
+            the data, so a page rendering an imported record without this is using that
+            record outside its licence. */}
+        {business.attribution ? (
+          <p className="business-profile-attribution">{business.attribution}</p>
+        ) : null}
+      </main>
 
         <aside className="business-profile-contact">
           <section>

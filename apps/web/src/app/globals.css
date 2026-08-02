@@ -15900,3 +15900,32 @@ body {
   border-top: 1px solid var(--hairline, #e3e8e5);
   padding-top: 0.35rem;
 }
+
+/* ---------- Imported directory records ----------
+   A scraped business is a claim about a real, named shop that the shop never made. These
+   three notes are what keep the page honest about that: who wrote the description, that
+   nobody has stood behind the details, and where the data came from. */
+.business-profile-note,
+.business-profile-keywords,
+.business-profile-attribution {
+  font-size: 0.85rem;
+  opacity: 0.75;
+  margin: 0.5rem 0 0;
+}
+
+.business-profile-attribution {
+  /* Required by ODbL and CDLA. Quiet, but never absent. */
+  margin-top: 2rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--hairline, #e3e8e5);
+  text-align: center;
+  font-size: 0.75rem;
+}
+
+.business-profile-unclaimed {
+  margin: 1rem 0 0;
+  padding: 0.75rem 1rem;
+  border: 1px solid var(--hairline, #e3e8e5);
+  border-radius: 10px;
+  font-size: 0.9rem;
+}
