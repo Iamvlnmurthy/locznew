@@ -269,7 +269,17 @@ async function main() {
     const adPath = await browser.evaluate(
       `document.querySelector('a[href^="/ad/"]')?.getAttribute('href') ?? ''`,
     );
-    check('the deployed search exposes a public listing for share verification', Boolean(adPath));
+    // Distinguishes "sharing is broken" from "there is nothing published here to share".
+    // Since the demo listings were removed the platform is genuinely near-empty, and a gate
+    // that reported those two states identically would send somebody hunting a share bug
+    // that does not exist.
+    if (!adPath) {
+      throw new Error(
+        'No public listing in the browsed area, so the share behaviour cannot be verified. ' +
+          'This is a content state, not a sharing failure — publish a listing here and re-run.',
+      );
+    }
+    check('the deployed search exposes a public listing for share verification', true);
     await browser.navigate(adPath);
     const whatsAppShare = await browser.evaluate(`(() => {
       const link = document.querySelector('a[href^="https://wa.me/?text="]');
