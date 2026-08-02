@@ -44,6 +44,7 @@ export default async function SignInPage({
     <AuthShell labels={shellLabels} mode="signin">
       <PasswordSignInForm
         next={safeNext}
+        googleClientId={process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID}
         labels={{
           title: t('auth.signInTitleP'),
           subtitle: t('auth.signInSubtitleP'),
@@ -60,6 +61,11 @@ export default async function SignInPage({
           createOne: t('register.createOne'),
           showPassword: t('auth.showPassword'),
           hidePassword: t('auth.hidePassword'),
+          googleDivider: t('auth.googleDivider'),
+          googleButton: t('auth.googleButton'),
+          googleAccountRequired: t('auth.googleAccountRequired'),
+          googleUnavailable: t('auth.googleUnavailable'),
+          googleFailed: t('auth.googleFailed'),
         }}
       />
     </AuthShell>

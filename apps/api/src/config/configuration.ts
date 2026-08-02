@@ -49,6 +49,11 @@ export const envSchema = z.object({
   BREVO_SENDER_EMAIL: z.string().email().default('no-reply@locz.in'),
   BREVO_SENDER_NAME: z.string().default('LocZ'),
 
+  // Where a link in an email should point. The API cannot infer this: it answers on
+  // api.locz.in while the person reading the email needs locz.in, and a reset link to the
+  // wrong host is a reset link that does not work.
+  PUBLIC_SITE_URL: z.string().url().default('https://locz.in'),
+
   // Google sign-in. Optional for the same reason email is: the API must boot without it,
   // and password sign-in keeps working when it is absent.
   GOOGLE_CLIENT_ID: z.string().optional(),

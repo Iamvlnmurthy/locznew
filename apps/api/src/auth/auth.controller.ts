@@ -1,4 +1,6 @@
-import { Body, Controller, Get, HttpCode, HttpStatus, Post, Req } from '@nestjs/common';
+import { Body, Controller, Get, HttpCode, HttpStatus, Post, Req,
+  Query,
+} from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
 import {
@@ -8,6 +10,7 @@ import {
 } from '../common/decorators/current-user.decorator';
 import { Public } from '../rbac/rbac.decorators';
 import { AuthService, RequestContext } from './auth.service';
+import { PasswordResetService } from './password-reset.service';
 import {
   AuthSessionDto,
   EmailLoginDto,
@@ -17,13 +20,18 @@ import {
   RefreshTokenDto,
   RequestOtpDto,
   VerifyOtpDto,
-  GoogleLoginDto
+  GoogleLoginDto,
+  RequestPasswordResetDto,
+  CompletePasswordResetDto
 } from './dto/auth.dto';
 
 @ApiTags('auth')
 @Controller('auth')
 export class AuthController {
-  constructor(private readonly auth: AuthService) {}
+  constructor(
+    private readonly auth: AuthService,
+    private readonly passwordReset: PasswordResetService,
+  ) {}
 
   private contextOf(request: RequestWithUser): RequestContext {
     return {
@@ -99,6 +107,53 @@ export class AuthController {
     @Req() request: RequestWithUser,
   ): Promise<AuthSessionDto> {
     return this.auth.loginWithPhone(dto, this.contextOf(request));
+  }
+
+  @Public()
+  @Post('password/reset/request')
+  @HttpCode(HttpStatus.ACCEPTED)
+  @Throttle({ default: { limit: 5, ttl: 300_000 } })
+  @ApiOperation({
+    summary: 'Ask for a password reset link',
+    description:
+      'Always answers the same way, whether or not the address has an account. A form that ' +
+      'said "no such user" would be an account enumeration tool, and on a marketplace that ' +
+      'means learning who trades here.',
+  })
+  @ApiResponse({ status: 202 })
+  async requestPasswordReset(
+    @Body() dto: RequestPasswordResetDto,
+    @Req() request: RequestWithUser,
+  ): Promise<{ accepted: true }> {
+    await this.passwordReset.request(dto.email, this.contextOf(request).ip);
+    return { accepted: true };
+  }
+
+  @Public()
+  @Get('password/reset/check')
+  @ApiOperation({
+    summary: 'Whether a reset link can still be used',
+    description:
+      'Lets the form say a link has expired before somebody types a new password rather ' +
+      'than after. Answers only yes or no, never why.',
+  })
+  async checkPasswordReset(@Query('token') token: string): Promise<{ usable: boolean }> {
+    return { usable: await this.passwordReset.isUsable(token ?? '') };
+  }
+
+  @Public()
+  @Post('password/reset')
+  @HttpCode(HttpStatus.OK)
+  @Throttle({ default: { limit: 10, ttl: 300_000 } })
+  @ApiOperation({
+    summary: 'Set a new password using a reset link',
+    description:
+      'Signs every session out. If the password was changed because somebody else had it, ' +
+      'leaving their session alive would make the reset pointless.',
+  })
+  async completePasswordReset(@Body() dto: CompletePasswordResetDto): Promise<{ reset: true }> {
+    await this.passwordReset.complete(dto.token, dto.password);
+    return { reset: true };
   }
 
   @Public()

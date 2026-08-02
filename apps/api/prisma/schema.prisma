@@ -378,6 +378,7 @@ model User {
   notifications         Notification[]
   notificationPrefs     NotificationPreference[]
   searchSubscriptions   SearchSubscription[]
+  passwordResetTokens   PasswordResetToken[]
   auditLogs             AuditLog[]
 
   // "Active users near a city" and admin listings are the two common scans.
@@ -1692,6 +1693,36 @@ model NotificationPreference {
 /// searched for a word is what improves the platform, and knowing *who* only creates a
 /// record of what individuals were looking for. The city is kept because demand is local and
 /// the whole point is to learn what a particular area wants.
+/// A single-use token that lets somebody set a new password.
+///
+/// The token itself is never stored — only a SHA-256 of it. A reset table in a leaked backup
+/// would otherwise be a list of working keys to every account that had recently asked for
+/// one, and the window is measured in hours precisely because that is when the risk is real.
+///
+/// Consumed rather than deleted on use, and kept briefly afterwards, so a second attempt
+/// with the same link can be told apart from one that never existed. That distinction is
+/// what stops somebody probing whether a token was ever issued.
+model PasswordResetToken {
+  id     String @id @db.Uuid
+  userId String @db.Uuid
+
+  /// SHA-256 of the token that was emailed. The token is shown once and never written down.
+  tokenHash String @unique @db.VarChar(64)
+
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  /// What asked for it, for support and for spotting a pattern of attempts. Not the token.
+  requestedIp String? @db.VarChar(64)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt(sort: Desc)])
+  @@index([expiresAt])
+  @@map("password_reset_tokens")
+}
+
 model SearchQueryLog {
   id String @id @db.Uuid
 

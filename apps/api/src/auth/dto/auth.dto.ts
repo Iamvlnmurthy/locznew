@@ -210,3 +210,21 @@ export class GoogleLoginDto {
   @Type(() => DeviceInfoDto)
   device!: DeviceInfoDto;
 }
+
+export class RequestPasswordResetDto {
+  @ApiProperty({ example: 'you@example.com' })
+  @IsEmail()
+  email!: string;
+}
+
+export class CompletePasswordResetDto {
+  @ApiProperty({ description: 'The token from the emailed link' })
+  @IsString()
+  @Length(20, 200)
+  token!: string;
+
+  @ApiProperty({ minLength: PASSWORD_MIN })
+  @IsString()
+  @Length(PASSWORD_MIN, 128)
+  password!: string;
+}

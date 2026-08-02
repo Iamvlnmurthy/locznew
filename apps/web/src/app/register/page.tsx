@@ -45,6 +45,7 @@ export default async function RegisterPage() {
       }}
     >
       <RegisterForm
+        googleClientId={process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID}
         labels={{
           title: s.title,
           subtitle: s.subtitle,
@@ -67,6 +68,11 @@ export default async function RegisterPage() {
           error: s.error,
           showPassword: s.showPassword,
           hidePassword: s.hidePassword,
+          googleDivider: a.googleDivider,
+          googleButton: a.googleButton,
+          googleAccountRequired: a.googleAccountRequired,
+          googleUnavailable: a.googleUnavailable,
+          googleFailed: a.googleFailed,
         }}
       />
     </AuthShell>

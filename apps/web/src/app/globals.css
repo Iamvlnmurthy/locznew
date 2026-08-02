@@ -15227,6 +15227,53 @@ body {
   line-height: 1.45;
 }
 
+.google-signin {
+  width: 100%;
+  max-width: 420px;
+  margin: 20px auto 0;
+}
+
+.google-signin__divider {
+  margin-bottom: 14px;
+  display: grid;
+  grid-template-columns: minmax(20px, 1fr) auto minmax(20px, 1fr);
+  align-items: center;
+  gap: 12px;
+}
+
+.google-signin__divider span {
+  height: 1px;
+  background: var(--locz-border);
+}
+
+.google-signin__divider p {
+  margin: 0;
+  color: var(--locz-text-muted);
+  font-size: 0.7rem;
+  font-weight: 650;
+}
+
+.google-signin__button {
+  min-height: 44px;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  transition: opacity 160ms ease;
+}
+
+.google-signin__button iframe {
+  max-width: 100%;
+}
+
+.google-signin__button.is-pending {
+  pointer-events: none;
+  opacity: 0.55;
+}
+
+.google-signin__error {
+  margin-bottom: 12px;
+}
+
 @media (max-width: 880px) {
   .auth-experience__frame {
     grid-template-columns: minmax(0, 0.72fr) minmax(370px, 1fr);

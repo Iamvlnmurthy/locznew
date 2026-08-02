@@ -3,6 +3,7 @@
 import { useActionState, useState } from 'react';
 import { useFormStatus } from 'react-dom';
 import { Icon } from '@/components/icons';
+import { GoogleSignIn } from '../signin/google-sign-in';
 import { registerAction, type RegisterState } from './actions';
 
 interface Labels {
@@ -27,6 +28,11 @@ interface Labels {
   error: string;
   showPassword: string;
   hidePassword: string;
+  googleDivider: string;
+  googleButton: string;
+  googleAccountRequired: string;
+  googleUnavailable: string;
+  googleFailed: string;
 }
 
 function Submit({ idle, busy }: { idle: string; busy: string }) {
@@ -39,7 +45,13 @@ function Submit({ idle, busy }: { idle: string; busy: string }) {
   );
 }
 
-export function RegisterForm({ labels }: { labels: Labels }) {
+export function RegisterForm({
+  labels,
+  googleClientId,
+}: {
+  labels: Labels;
+  googleClientId?: string;
+}) {
   const [state, action] = useActionState<RegisterState, FormData>(registerAction, {});
   const [showPassword, setShowPassword] = useState(false);
 
@@ -137,6 +149,20 @@ export function RegisterForm({ labels }: { labels: Labels }) {
       </label>
 
       <Submit idle={labels.submit} busy={labels.submitting} />
+
+      {googleClientId ? (
+        <GoogleSignIn
+          clientId={googleClientId}
+          next="/"
+          labels={{
+            divider: labels.googleDivider,
+            button: labels.googleButton,
+            accountRequired: labels.googleAccountRequired,
+            unavailable: labels.googleUnavailable,
+            failed: labels.googleFailed,
+          }}
+        />
+      ) : null}
 
       <p className="signin-form__note">
         {labels.haveAccount} <a href="/signin">{labels.signIn}</a>

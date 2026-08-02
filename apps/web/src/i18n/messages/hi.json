@@ -1339,7 +1339,12 @@
     "missingPassword": "अपना पासवर्ड लिखें।",
     "badCredentials": "मोबाइल नंबर या पासवर्ड गलत है।",
     "showPassword": "पासवर्ड दिखाएँ",
-    "hidePassword": "पासवर्ड छिपाएँ"
+    "hidePassword": "पासवर्ड छिपाएँ",
+    "googleDivider": "या इससे जारी रखें",
+    "googleButton": "Google से जारी रखें",
+    "googleAccountRequired": "पहले अपने मोबाइल नंबर से LocZ खाता बनाएँ। उसके बाद आप Google से साइन इन कर सकते हैं।",
+    "googleUnavailable": "Google साइन-इन अभी उपलब्ध नहीं है। अपना मोबाइल नंबर और पासवर्ड इस्तेमाल करें।",
+    "googleFailed": "Google से साइन इन नहीं हो पाया। दोबारा कोशिश करें या अपना मोबाइल नंबर इस्तेमाल करें।"
   },
   "common": {
     "breadcrumb": "नेविगेशन क्रम",

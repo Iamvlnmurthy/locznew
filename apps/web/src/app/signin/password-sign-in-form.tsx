@@ -4,6 +4,7 @@ import { useActionState, useState } from 'react';
 import { useFormStatus } from 'react-dom';
 import { Icon } from '@/components/icons';
 import { passwordSignInAction, type SignInState } from './actions';
+import { GoogleSignIn } from './google-sign-in';
 
 interface Labels {
   title: string;
@@ -21,6 +22,11 @@ interface Labels {
   createOne: string;
   showPassword: string;
   hidePassword: string;
+  googleDivider: string;
+  googleButton: string;
+  googleAccountRequired: string;
+  googleUnavailable: string;
+  googleFailed: string;
 }
 
 function Submit({ idle, busy }: { idle: string; busy: string }) {
@@ -41,7 +47,15 @@ function Submit({ idle, busy }: { idle: string; busy: string }) {
  * proves knowledge of four digits rather than ownership of a number — worse than a password
  * while looking more secure. This is the honest version until real SMS is configured.
  */
-export function PasswordSignInForm({ labels, next }: { labels: Labels; next: string }) {
+export function PasswordSignInForm({
+  labels,
+  next,
+  googleClientId,
+}: {
+  labels: Labels;
+  next: string;
+  googleClientId?: string;
+}) {
   const [state, action] = useActionState<SignInState, FormData>(passwordSignInAction, {
     step: 'phone',
   });
@@ -110,6 +124,20 @@ export function PasswordSignInForm({ labels, next }: { labels: Labels; next: str
       </div>
 
       <Submit idle={labels.submit} busy={labels.submitting} />
+
+      {googleClientId ? (
+        <GoogleSignIn
+          clientId={googleClientId}
+          next={next}
+          labels={{
+            divider: labels.googleDivider,
+            button: labels.googleButton,
+            accountRequired: labels.googleAccountRequired,
+            unavailable: labels.googleUnavailable,
+            failed: labels.googleFailed,
+          }}
+        />
+      ) : null}
 
       <p className="signin-form__note">
         {labels.newHere} <a href="/register">{labels.createOne}</a>

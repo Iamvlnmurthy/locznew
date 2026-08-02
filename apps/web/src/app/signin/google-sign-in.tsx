@@ -1,0 +1,138 @@
+'use client';
+
+import Script from 'next/script';
+import { startTransition, useActionState, useCallback, useEffect, useRef, useState } from 'react';
+import { googleSignInAction, type GoogleSignInState } from './actions';
+
+interface GoogleCredentialResponse {
+  credential?: string;
+}
+
+interface GoogleIdentity {
+  accounts: {
+    id: {
+      initialize(options: {
+        client_id: string;
+        callback(response: GoogleCredentialResponse): void;
+      }): void;
+      renderButton(
+        element: HTMLElement,
+        options: {
+          type: 'standard';
+          theme: 'outline' | 'filled_black';
+          size: 'large';
+          shape: 'pill';
+          text: 'continue_with';
+          logo_alignment: 'left';
+          width: number;
+        },
+      ): void;
+    };
+  };
+}
+
+declare global {
+  interface Window {
+    google?: GoogleIdentity;
+  }
+}
+
+interface Labels {
+  divider: string;
+  button: string;
+  accountRequired: string;
+  unavailable: string;
+  failed: string;
+}
+
+export function GoogleSignIn({
+  clientId,
+  next,
+  labels,
+}: {
+  clientId: string;
+  next: string;
+  labels: Labels;
+}) {
+  const buttonRef = useRef<HTMLDivElement>(null);
+  const [scriptReady, setScriptReady] = useState(false);
+  const [state, action, pending] = useActionState<GoogleSignInState, FormData>(
+    googleSignInAction,
+    {},
+  );
+
+  const handleCredential = useCallback(
+    (response: GoogleCredentialResponse) => {
+      if (!response.credential) return;
+      const data = new FormData();
+      data.set('idToken', response.credential);
+      data.set('next', next);
+      startTransition(() => action(data));
+    },
+    [action, next],
+  );
+
+  useEffect(() => {
+    const google = window.google;
+    const container = buttonRef.current;
+    if (!scriptReady || !google || !container) return;
+
+    google.accounts.id.initialize({ client_id: clientId, callback: handleCredential });
+
+    const render = () => {
+      container.replaceChildren();
+      google.accounts.id.renderButton(container, {
+        type: 'standard',
+        theme: document.documentElement.dataset.theme === 'dark' ? 'filled_black' : 'outline',
+        size: 'large',
+        shape: 'pill',
+        text: 'continue_with',
+        logo_alignment: 'left',
+        width: Math.min(400, Math.max(240, Math.round(container.clientWidth))),
+      });
+    };
+
+    render();
+    window.addEventListener('resize', render);
+    const theme = new MutationObserver(render);
+    theme.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+    return () => {
+      window.removeEventListener('resize', render);
+      theme.disconnect();
+    };
+  }, [clientId, handleCredential, scriptReady]);
+
+  const message = state.error
+    ? {
+        accountRequired: labels.accountRequired,
+        unavailable: labels.unavailable,
+        failed: labels.failed,
+      }[state.error]
+    : null;
+
+  return (
+    <section className="google-signin" aria-label={labels.button} aria-busy={pending}>
+      <Script
+        src="https://accounts.google.com/gsi/client"
+        strategy="afterInteractive"
+        onReady={() => setScriptReady(true)}
+        onError={() => setScriptReady(false)}
+      />
+      <div className="google-signin__divider">
+        <span />
+        <p>{labels.divider}</p>
+        <span />
+      </div>
+      {message ? (
+        <p className="signin-form__error google-signin__error" role="alert">
+          {message}
+        </p>
+      ) : null}
+      <div
+        ref={buttonRef}
+        className={`google-signin__button${pending ? ' is-pending' : ''}`}
+        aria-label={labels.button}
+      />
+    </section>
+  );
+}
