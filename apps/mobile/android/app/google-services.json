@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "312143222288",
+    "project_id": "locz-b349e",
+    "storage_bucket": "locz-b349e.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:312143222288:android:e08b535c9ad063d04c9c95",
+        "android_client_info": {
+          "package_name": "com.locz.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyB7OqcZv-vgrRPOQdEQhRIaYxdWYcdZ3yw"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
