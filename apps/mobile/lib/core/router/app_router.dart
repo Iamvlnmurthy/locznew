@@ -51,8 +51,7 @@ final routerProvider = Provider<GoRouter>((ref) {
       // The tabbed shell keeps the bottom bar mounted across tab switches, so scroll
       // position and in-flight requests survive navigation.
       StatefulShellRoute.indexedStack(
-        builder: (context, state, navigationShell) =>
-            _TabScaffold(shell: navigationShell),
+        builder: (context, state, navigationShell) => _TabScaffold(shell: navigationShell),
         branches: [
           StatefulShellBranch(
             routes: [
@@ -109,8 +108,7 @@ final routerProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: '/post',
-        pageBuilder: (context, state) =>
-            _motionPage(context, state, const PostAdScreen()),
+        pageBuilder: (context, state) => _motionPage(context, state, const PostAdScreen()),
       ),
       GoRoute(
         path: '/post/:id/edit',
@@ -122,13 +120,11 @@ final routerProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: '/location',
-        pageBuilder: (context, state) =>
-            _motionPage(context, state, const CityPickerScreen()),
+        pageBuilder: (context, state) => _motionPage(context, state, const CityPickerScreen()),
       ),
       GoRoute(
         path: '/notifications',
-        pageBuilder: (context, state) =>
-            _motionPage(context, state, const NotificationsScreen()),
+        pageBuilder: (context, state) => _motionPage(context, state, const NotificationsScreen()),
       ),
       GoRoute(
         path: '/chats/:id',
@@ -158,9 +154,7 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: '/report',
         builder: (context, state) {
           final listingId = state.uri.queryParameters['listing'];
-          return listingId == null
-              ? const HomeScreen()
-              : ReportListingScreen(listingId: listingId);
+          return listingId == null ? const HomeScreen() : ReportListingScreen(listingId: listingId);
         },
       ),
       GoRoute(
@@ -173,8 +167,7 @@ final routerProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: '/saved-searches',
-        pageBuilder: (context, state) =>
-            _motionPage(context, state, const SavedSearchesScreen()),
+        pageBuilder: (context, state) => _motionPage(context, state, const SavedSearchesScreen()),
       ),
       GoRoute(
         path: '/requirements/:id/responses',
@@ -235,19 +228,47 @@ class _TabScaffold extends StatelessWidget {
   Widget build(BuildContext context) {
     final strings = Strings.of(context);
 
-    return Scaffold(
-      body: shell,
-      bottomNavigationBar: _LoczBottomBar(
-        currentIndex: shell.currentIndex,
-        strings: strings,
-        onTab: (index) => shell.goBranch(
-          index,
-          initialLocation: index == shell.currentIndex,
+    // Android's back button, handled explicitly.
+    //
+    // `StatefulShellRoute.indexedStack` does nothing with it by default: back at the root
+    // of any tab pops the whole stack and the app disappears — from Search, from Chats,
+    // from Account, with no warning. That reads as a crash rather than navigation.
+    //
+    // The order below is what Android users expect: unwind the current tab's own stack
+    // first, then fall back to Home, and only leave the app from Home itself.
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, _) {
+        if (didPop) return;
+
+        final router = GoRouter.of(context);
+        if (router.canPop()) {
+          router.pop();
+          return;
+        }
+
+        if (shell.currentIndex != 0) {
+          shell.goBranch(0);
+          return;
+        }
+
+        // Home with nothing to unwind is the one place leaving is the right answer.
+        SystemNavigator.pop();
+      },
+      child: Scaffold(
+        body: shell,
+        bottomNavigationBar: _LoczBottomBar(
+          currentIndex: shell.currentIndex,
+          strings: strings,
+          onTab: (index) => shell.goBranch(
+            index,
+            initialLocation: index == shell.currentIndex,
+          ),
+          onPost: () {
+            HapticFeedback.mediumImpact();
+            context.push('/post');
+          },
         ),
-        onPost: () {
-          HapticFeedback.mediumImpact();
-          context.push('/post');
-        },
       ),
     );
   }
@@ -272,25 +293,35 @@ class _LoczBottomBar extends StatelessWidget {
 
     return SafeArea(
       top: false,
-      minimum: const EdgeInsets.fromLTRB(10, 4, 10, 8),
+      minimum: const EdgeInsets.fromLTRB(8, 3, 8, 6),
       child: Container(
-        height: 64,
+        height: 60,
         decoration: BoxDecoration(
-          color: theme.colorScheme.surface,
-          borderRadius: BorderRadius.circular(22),
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              theme.colorScheme.surface,
+              Color.alphaBlend(
+                theme.colorScheme.primary.withValues(alpha: 0.035),
+                theme.colorScheme.surface,
+              ),
+            ],
+          ),
+          borderRadius: BorderRadius.circular(24),
           border: Border.all(color: theme.colorScheme.outlineVariant),
           boxShadow: [
             BoxShadow(
               color: theme.colorScheme.shadow.withValues(
                 alpha: theme.brightness == Brightness.dark ? 0.30 : 0.10,
               ),
-              blurRadius: 24,
-              offset: const Offset(0, 7),
+              blurRadius: 28,
+              offset: const Offset(0, 9),
             ),
           ],
         ),
         child: ClipRRect(
-          borderRadius: BorderRadius.circular(22),
+          borderRadius: BorderRadius.circular(24),
           child: Row(
             children: [
               _BottomDestination(
@@ -318,27 +349,26 @@ class _LoczBottomBar extends StatelessWidget {
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         Container(
-                          width: 42,
-                          height: 42,
+                          width: 40,
+                          height: 40,
                           decoration: BoxDecoration(
                             color: theme.colorScheme.primary,
-                            borderRadius: BorderRadius.circular(15),
+                            borderRadius: BorderRadius.circular(14),
                             border: Border.all(
                               color: theme.colorScheme.surface,
                               width: 2,
                             ),
                             boxShadow: [
                               BoxShadow(
-                                color: theme.colorScheme.primary
-                                    .withValues(alpha: 0.22),
-                                blurRadius: 14,
-                                offset: const Offset(0, 5),
+                                color: theme.colorScheme.primary.withValues(alpha: 0.22),
+                                blurRadius: 17,
+                                offset: const Offset(0, 6),
                               ),
                             ],
                           ),
                           child: Icon(
                             Icons.add_rounded,
-                            size: 23,
+                            size: 22,
                             color: theme.colorScheme.onPrimary,
                           ),
                         ),
@@ -387,9 +417,7 @@ class _BottomDestination extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final color = selected
-        ? theme.colorScheme.primary
-        : theme.colorScheme.onSurfaceVariant;
+    final color = selected ? theme.colorScheme.primary : theme.colorScheme.onSurfaceVariant;
 
     return Expanded(
       child: InkResponse(
@@ -408,12 +436,10 @@ class _BottomDestination extends StatelessWidget {
               AnimatedContainer(
                 duration: LoczMotion.standard,
                 curve: LoczMotion.enterCurve,
-                width: selected ? 38 : 30,
-                height: 25,
+                width: selected ? 36 : 28,
+                height: 23,
                 decoration: BoxDecoration(
-                  color: selected
-                      ? theme.colorScheme.primaryContainer
-                      : Colors.transparent,
+                  color: selected ? theme.colorScheme.primaryContainer : Colors.transparent,
                   borderRadius: BorderRadius.circular(LoczRadius.full),
                 ),
                 child: AnimatedScale(
@@ -422,7 +448,7 @@ class _BottomDestination extends StatelessWidget {
                   curve: LoczMotion.enterCurve,
                   child: Icon(
                     selected ? selectedIcon : icon,
-                    size: 20,
+                    size: 19,
                     color: color,
                   ),
                 ),
@@ -434,7 +460,7 @@ class _BottomDestination extends StatelessWidget {
                 overflow: TextOverflow.fade,
                 style: TextStyle(
                   color: color,
-                  fontSize: 10,
+                  fontSize: 9.5,
                   fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
                 ),
               ),
