@@ -42,6 +42,17 @@ import { BANNED_KEYWORDS } from './banned-keywords';
 import { readFileSync } from 'node:fs';
 import { v7 as uuid } from 'uuid';
 
+/**
+ * Categories that exist only to classify imported directory businesses.
+ *
+ * Flat, unparented and never offered when somebody posts: "hospitals and clinics" is not a
+ * choice a person listing a used phone should be shown, and a category list that long is one
+ * nobody reads. They stay fully searchable, which is the whole reason they exist.
+ */
+const DIRECTORY_CATEGORIES = JSON.parse(
+  readFileSync(path.join(__dirname, 'data', 'directory-categories.json'), 'utf8'),
+) as Array<{ slug: string; name: string; nameTe: string; nameHi: string; searchTerms: string[] }>;
+
 /** What people type when they want a category. See the file's own comment for why. */
 const CATEGORY_SEARCH_TERMS = Object.fromEntries(
   Object.entries(
@@ -1936,12 +1947,47 @@ async function seedDemoListings() {
   console.log(`  demo listings: ${index}`);
 }
 
+/**
+ * The flat directory taxonomy, kept out of the posting flow by `isDirectoryOnly`.
+ *
+ * Upserted by slug like everything else, so re-running is safe and correcting a name or its
+ * vocabulary is just an edit to the data file. `listingTypes` is `BUSINESS_LISTING` alone:
+ * even if the directory-only flag were ever dropped, these still could not be chosen when
+ * posting a product or a job.
+ */
+async function seedDirectoryCategories(): Promise<number> {
+  let order = 1000;
+
+  for (const entry of DIRECTORY_CATEGORIES) {
+    const shared = {
+      name: entry.name,
+      nameTe: entry.nameTe,
+      nameHi: entry.nameHi,
+      searchTerms: entry.searchTerms,
+      isDirectoryOnly: true,
+      listingTypes: [ListingType.BUSINESS_LISTING],
+      isActive: true,
+      sortOrder: order,
+    };
+
+    await prisma.category.upsert({
+      where: { slug: entry.slug },
+      update: shared,
+      create: { id: uuid(), slug: entry.slug, parentId: null, ...shared },
+    });
+    order += 1;
+  }
+
+  return DIRECTORY_CATEGORIES.length;
+}
+
 async function main() {
   console.log('Seeding LocZ…');
   await seedRoles();
   await seedGeography();
   const categoryCount = await seedCategoryTree(CATEGORIES, null);
-  console.log(`  categories: ${categoryCount}`);
+  const directoryCount = await seedDirectoryCategories();
+  console.log(`  categories: ${categoryCount} posting, ${directoryCount} directory-only`);
   await seedModerationRules();
   await seedExpiryRules();
   await seedSystemSettings();

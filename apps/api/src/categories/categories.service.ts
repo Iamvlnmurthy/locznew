@@ -86,6 +86,10 @@ export class CategoriesService {
       where: {
         ...(query.includeInactive ? {} : { isActive: true }),
         ...(query.listingType ? { listingTypes: { has: query.listingType } } : {}),
+        // Directory categories classify imported businesses and are fully searchable, but
+        // they are not choices anybody makes when posting. Showing "hospitals and clinics"
+        // to somebody listing a used phone is noise, and a list that long is one nobody reads.
+        isDirectoryOnly: false,
       },
       orderBy: [{ sortOrder: 'asc' }, { name: 'asc' }],
     });

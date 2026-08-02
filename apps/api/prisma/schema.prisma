@@ -881,6 +881,19 @@ model Category {
   /// All three languages in one list. A Telugu speaker typing బిర్యానీ and an English speaker
   /// typing biryani are looking for the same shop.
   searchTerms String[]
+
+  /// Exists for the business directory, and is never offered when somebody posts.
+  ///
+  /// The imported directory needs categories like `hospitals-and-clinics` and
+  /// `tyre-and-battery-stores` so four million businesses can be classified and found. None
+  /// of those belong in the posting flow: a person listing a used phone has no business
+  /// being shown "hospitals and clinics", and a category list that long is a category list
+  /// nobody reads.
+  ///
+  /// So these are excluded from the public category tree and remain fully searchable. The
+  /// alternative — marking them inactive — would take them out of search too, which is the
+  /// one thing they exist for.
+  isDirectoryOnly Boolean @default(false)
   description    String?       @db.VarChar(500)
   iconKey        String?       @db.VarChar(80)
   // Which listing types may use this category — lets one tree serve products, jobs and offers.
