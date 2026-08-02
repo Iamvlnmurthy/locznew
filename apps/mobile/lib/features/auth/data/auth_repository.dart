@@ -10,6 +10,7 @@ class AuthUser {
     required this.phone,
     required this.roles,
     required this.permissions,
+    this.requiresPhone = false,
   });
 
   final String id;
@@ -24,12 +25,18 @@ class AuthUser {
   final List<String> roles;
   final List<String> permissions;
 
+  /// True when the account has no confirmed number — a Google sign-up that has not
+  /// finished. Branch on this rather than on `phone == null`: it says what to do next,
+  /// where an absent value only says what the server happens to hold.
+  final bool requiresPhone;
+
   factory AuthUser.fromJson(Map<String, dynamic> json) => AuthUser(
         id: json['id'] as String,
         displayName: json['displayName'] as String,
         phone: json['phone'] as String?,
         roles: (json['roles'] as List<dynamic>? ?? []).cast<String>(),
         permissions: (json['permissions'] as List<dynamic>? ?? []).cast<String>(),
+        requiresPhone: json['requiresPhone'] as bool? ?? false,
       );
 
   Map<String, dynamic> toJson() => {
@@ -38,6 +45,7 @@ class AuthUser {
         'phone': phone,
         'roles': roles,
         'permissions': permissions,
+        'requiresPhone': requiresPhone,
       };
 }
 

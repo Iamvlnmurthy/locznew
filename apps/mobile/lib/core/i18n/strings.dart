@@ -222,8 +222,6 @@ class Strings {
       'auth.badCredentials': 'Incorrect mobile number or password',
       'auth.googleDivider': 'Or continue with',
       'auth.googleButton': 'Continue with Google',
-      'auth.googleAccountRequired':
-          'Create your LocZ account with your mobile number first. Then you can sign in with Google.',
       'auth.googleUnavailable':
           'Google sign-in is unavailable right now. Use your mobile number and password.',
       'auth.googleFailed':
@@ -540,8 +538,6 @@ class Strings {
       'auth.badCredentials': 'మొబైల్ నంబర్ లేదా పాస్‌వర్డ్ తప్పుగా ఉంది',
       'auth.googleDivider': 'లేదా దీనితో కొనసాగండి',
       'auth.googleButton': 'Googleతో కొనసాగండి',
-      'auth.googleAccountRequired':
-          'ముందుగా మీ మొబైల్ నంబర్‌తో LocZ ఖాతాను సృష్టించండి. ఆ తర్వాత Googleతో సైన్ ఇన్ చేయవచ్చు.',
       'auth.googleUnavailable':
           'Google సైన్-ఇన్ ప్రస్తుతం అందుబాటులో లేదు. మీ మొబైల్ నంబర్, పాస్‌వర్డ్ వాడండి.',
       'auth.googleFailed':
@@ -842,8 +838,6 @@ class Strings {
       'auth.badCredentials': 'मोबाइल नंबर या पासवर्ड सही नहीं है',
       'auth.googleDivider': 'या इससे जारी रखें',
       'auth.googleButton': 'Google से जारी रखें',
-      'auth.googleAccountRequired':
-          'पहले अपने मोबाइल नंबर से LocZ खाता बनाएँ। उसके बाद आप Google से साइन इन कर सकते हैं।',
       'auth.googleUnavailable':
           'Google साइन-इन अभी उपलब्ध नहीं है। अपना मोबाइल नंबर और पासवर्ड इस्तेमाल करें।',
       'auth.googleFailed':

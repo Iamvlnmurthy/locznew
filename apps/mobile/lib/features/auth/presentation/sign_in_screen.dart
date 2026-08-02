@@ -9,6 +9,7 @@ import '../../../core/i18n/strings.dart';
 import '../../../core/network/api_exception.dart';
 import '../../../core/providers.dart';
 import '../../../core/theme/tokens.g.dart';
+import '../../account/presentation/verify_phone_screen.dart';
 
 class SignInScreen extends ConsumerStatefulWidget {
   const SignInScreen({super.key, this.redirectTo});
@@ -110,6 +111,16 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
       if (!mounted) return;
 
       ref.read(authProvider.notifier).setUser(user);
+
+      // A Google account arrives without a mobile number, and on a marketplace where
+      // buyers ring sellers that is worth asking for straight away. The screen is
+      // skippable, so this directs rather than traps.
+      if (user.requiresPhone) {
+        await Navigator.of(context).push<void>(
+          MaterialPageRoute(builder: (_) => const VerifyPhoneScreen()),
+        );
+        if (!mounted) return;
+      }
       final destination = widget.redirectTo;
       context.go(
         destination != null && destination.startsWith('/') && !destination.startsWith('//')
@@ -120,12 +131,10 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
       if (!mounted) return;
       final strings = Strings.of(context);
       setState(() {
+        // No `accountRequired` case any more: a verified Google address creates the
+        // account rather than refusing and sending the person back to the form.
         if (error.statusCode == 503) {
           _error = strings('auth.googleUnavailable');
-        } else if (error.statusCode == 401 &&
-            (error.message.toLowerCase().contains('mobile number first') ||
-                error.message.toLowerCase().contains('no locz account'))) {
-          _error = strings('auth.googleAccountRequired');
         } else {
           _error = strings('auth.googleFailed');
         }

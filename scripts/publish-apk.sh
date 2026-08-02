@@ -61,7 +61,19 @@ VERSIONED="locz-$VERSION_NAME-$VERSION_CODE.apk"
 
 echo "→ Uploading to $VPS:$REMOTE_DIR"
 ssh "$VPS" "mkdir -p $REMOTE_DIR"
-scp -q "$APK" "$VPS:$REMOTE_DIR/$VERSIONED"
+# -O forces the legacy SCP protocol. Modern scp defaults to SFTP, and this VPS closes
+# the sftp subsystem mid-transfer — a 61 MB APK dies with "scp: Connection closed" after
+# the build has already succeeded, which reads like a build failure and is not one.
+scp -O -q -o ServerAliveInterval=15 "$APK" "$VPS:$REMOTE_DIR/$VERSIONED"
+
+# The upload is the step most likely to truncate. Verify before anything points at it.
+REMOTE_SHA="$(ssh "$VPS" "sha256sum $REMOTE_DIR/$VERSIONED | awk '{print \$1}'")"
+if [ "$REMOTE_SHA" != "$SHA" ]; then
+  echo "Uploaded APK does not match local checksum — not publishing." >&2
+  echo "  local  $SHA" >&2
+  echo "  remote $REMOTE_SHA" >&2
+  exit 1
+fi
 
 # The manifest the app polls. `versionCode` is the only field it compares — names are for
 # humans and sort unreliably ("1.10.0" is not less than "1.9.0" as a string).
