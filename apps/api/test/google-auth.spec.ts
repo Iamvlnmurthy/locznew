@@ -11,11 +11,16 @@ import { GoogleAuthService } from '../src/auth/google-auth.service';
  * other person's listings, chats and roles.
  */
 describe('GoogleAuthService', () => {
-  const account = {
+  const account: {
+    id: string;
+    email: string;
+    status: UserStatus;
+    emailVerifiedAt: Date | null;
+  } = {
     id: 'user-1',
     email: 'ravi@example.com',
     status: UserStatus.ACTIVE,
-    emailVerifiedAt: null as Date | null,
+    emailVerifiedAt: null,
   };
 
   function build({

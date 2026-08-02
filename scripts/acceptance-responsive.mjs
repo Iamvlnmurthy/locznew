@@ -133,10 +133,12 @@ async function main() {
       ['City landing', `/in/${city.slug}`],
       ['Location picker', '/location'],
       ['Sign in', '/signin'],
+      ['Register', '/register'],
       ['Business directory', `/business?q=${encodeURIComponent(fixture.business.name)}`],
       ['Business profile', `/b/${fixture.business.slug}`],
       ['About', '/about'],
       ['Help', '/help'],
+      ['Get app', '/get-app'],
       ['Safety', '/safety'],
       ['Terms', '/terms'],
       ['Privacy', '/privacy'],
@@ -196,6 +198,7 @@ async function main() {
       await auditRoute(browser, `${locale} search`, '/search?type=PRODUCT');
       await auditRoute(browser, `${locale} location`, '/location');
       await auditRoute(browser, `${locale} sign in`, '/signin');
+      await auditRoute(browser, `${locale} register`, '/register');
     }
 
     await browser.setSession(login);
