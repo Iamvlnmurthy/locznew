@@ -23,6 +23,9 @@ import { BusinessClaimsService } from './business-claims.service';
 
 const INDIAN_PHONE = /^\+91[6-9]\d{9}$/;
 
+/** Matches the service default, so the page and the number it shows agree. */
+const ENQUIRY_WINDOW_DAYS = 30;
+
 export class CreateClaimDto {
   @ApiProperty({
     example: 'I have run this shop since 2015. The GST certificate is in my name.',
@@ -164,6 +167,20 @@ export class BusinessClaimsController {
   })
   possibleMatches(@Query() query: MatchQueryDto): Promise<unknown> {
     return this.claims.findPossibleMatches(query);
+  }
+
+  @Get(':id/enquiries/count')
+  @ApiOperation({
+    summary: 'How many people asked about this shop recently',
+    description:
+      'The claim pitch. "Claim your free listing" is a favour the platform is asking for; ' +
+      '"four people asked about your shop this week and nobody could answer" is a fact about ' +
+      'their business.',
+  })
+  enquiryCount(@Param('id') businessId: string): Promise<{ count: number; withinDays: number }> {
+    return this.claims
+      .enquiryCount(businessId)
+      .then((count) => ({ count, withinDays: ENQUIRY_WINDOW_DAYS }));
   }
 
   @Get('claims/mine')

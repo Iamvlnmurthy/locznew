@@ -47,6 +47,7 @@ describe('BusinessClaimsService', () => {
         update: jest.fn().mockResolvedValue({}),
         updateMany: jest.fn().mockResolvedValue({ count: 1 }),
       },
+      listing: { count: jest.fn().mockResolvedValue(4) },
       businessClaim: {
         findFirst: jest.fn().mockResolvedValue(existingClaim),
         findUnique: jest.fn().mockResolvedValue(claim),
@@ -483,6 +484,33 @@ describe('BusinessClaimsService', () => {
       const result = await service.create('user-1', 'biz-1', claimInput());
 
       expect(result.status).toBe(ClaimReviewStatus.PENDING);
+    });
+  });
+
+  describe('the claim pitch', () => {
+    it("counts only enquiries raised from this shop's own page", async () => {
+      const { service, prisma } = build();
+
+      await expect(service.enquiryCount('biz-1')).resolves.toBe(4);
+
+      // A number inflated with unrelated nearby demand would be a sales figure rather than a
+      // fact, and the first shopkeeper who checked would stop believing the rest of it.
+      expect(prisma.listing.count).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({ promptedByBusinessId: 'biz-1' }),
+        }),
+      );
+    });
+
+    it('looks back over a bounded window', async () => {
+      const { service, prisma } = build();
+
+      await service.enquiryCount('biz-1', 7);
+
+      // "Four people asked this week" is a reason to act. "Four people asked, ever" is not.
+      const where = prisma.listing.count.mock.calls[0][0].where as { createdAt: { gte: Date } };
+      const days = (Date.now() - where.createdAt.gte.getTime()) / (24 * 60 * 60 * 1000);
+      expect(days).toBeCloseTo(7, 1);
     });
   });
 });

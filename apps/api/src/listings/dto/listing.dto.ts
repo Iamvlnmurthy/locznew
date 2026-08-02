@@ -158,6 +158,16 @@ export class CreateListingDto {
   @IsUUID()
   businessId?: string;
 
+  @ApiPropertyOptional({
+    description:
+      'The business whose page this requirement was raised from. An unclaimed directory ' +
+      'record has nobody to message, so asking whether they stock something becomes a ' +
+      'requirement rather than a dead end.',
+  })
+  @IsOptional()
+  @IsUUID()
+  promptedByBusinessId?: string;
+
   @ApiProperty()
   @IsUUID()
   cityId!: string;

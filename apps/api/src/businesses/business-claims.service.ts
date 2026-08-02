@@ -73,6 +73,30 @@ export class BusinessClaimsService {
   ) {}
 
   /**
+   * How many people asked about this shop recently and got no answer.
+   *
+   * The only honest reason to claim a record. "Claim your free listing" is a favour the
+   * platform is asking for; "four people asked about your shop this week and nobody could
+   * answer them" is a fact about their business, and it is the fact that makes an unclaimed
+   * page worth taking control of.
+   *
+   * Counts requirements raised from the business's own page, not everything nearby — a
+   * number inflated with unrelated demand would be a sales figure rather than a fact, and the
+   * first shopkeeper who checked would stop believing the rest of it.
+   */
+  async enquiryCount(businessId: string, withinDays = 30): Promise<number> {
+    const since = new Date(Date.now() - withinDays * 24 * 60 * 60 * 1000);
+
+    return this.prisma.listing.count({
+      where: {
+        promptedByBusinessId: businessId,
+        createdAt: { gte: since },
+        deletedAt: null,
+      },
+    });
+  }
+
+  /**
    * Imported records that look like the business somebody is about to create.
    *
    * A shopkeeper whose shop is already in the directory has no way to know that. Left alone

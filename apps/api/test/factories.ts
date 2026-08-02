@@ -61,6 +61,7 @@ export function makeListing(overrides: Partial<Listing> = {}): Listing {
     type: ListingType.PRODUCT,
     ownerId: uuid(),
     businessId: null,
+    promptedByBusinessId: null,
     title: `Samsung 43 inch smart TV ${index}`,
     slug: `samsung-43-inch-smart-tv-${index}`,
     description:

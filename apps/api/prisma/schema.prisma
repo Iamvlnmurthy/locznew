@@ -1029,20 +1029,29 @@ model ListingAttributeValue {
 // =====================================================================
 
 model Listing {
-  id               String           @id @db.Uuid
-  type             ListingType
-  ownerId          String           @db.Uuid
-  businessId       String?          @db.Uuid
-  title            String           @db.VarChar(160)
+  id         String      @id @db.Uuid
+  type       ListingType
+  ownerId    String      @db.Uuid
+  businessId String?     @db.Uuid
+
+  /// The business whose page this requirement was raised from.
+  ///
+  /// Distinct from businessId, which means "posted by this business". An unclaimed directory
+  /// record has nobody to message, so asking whether they stock something becomes a
+  /// requirement instead of a dead end — and the count of them is the only honest claim
+  /// pitch there is: not "claim your listing" but "four people asked about your shop this
+  /// week, and nobody could answer them".
+  promptedByBusinessId String?          @db.Uuid
+  title                String           @db.VarChar(160)
   // Unique across all listings so a listing has one canonical shareable URL.
-  slug             String           @unique @db.VarChar(200)
-  description      String           @db.Text
-  categoryId       String           @db.Uuid
-  subcategoryId    String?          @db.Uuid
-  status           ListingStatus    @default(DRAFT)
-  moderationStatus ModerationStatus @default(PENDING)
-  moderationScore  Int?
-  rejectionReason  String?          @db.VarChar(500)
+  slug                 String           @unique @db.VarChar(200)
+  description          String           @db.Text
+  categoryId           String           @db.Uuid
+  subcategoryId        String?          @db.Uuid
+  status               ListingStatus    @default(DRAFT)
+  moderationStatus     ModerationStatus @default(PENDING)
+  moderationScore      Int?
+  rejectionReason      String?          @db.VarChar(500)
 
   // Location — administrative ids for cheap filtering, geo for radius search.
   cityId          String                                 @db.Uuid
@@ -1128,6 +1137,7 @@ model Listing {
   @@index([duplicateHash])
   // "Ads in my pincode" — the primary query once the platform is open everywhere.
   @@index([pincodeCode, status, publishedAt(sort: Desc)])
+  @@index([promptedByBusinessId])
   @@map("listings")
 }
 

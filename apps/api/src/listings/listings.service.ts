@@ -166,6 +166,7 @@ export class ListingsService {
         type: dto.type,
         ownerId: userId,
         businessId: dto.businessId ?? null,
+        promptedByBusinessId: dto.promptedByBusinessId ?? null,
         title: dto.title.trim(),
         slug: listingSlug(dto.title),
         description: dto.description.trim(),
