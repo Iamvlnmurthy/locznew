@@ -268,7 +268,7 @@ export default async function BusinessPage({ params }: { params: Promise<{ slug:
                 the details deserves to know that before they act on them. */}
             {business.claimStatus === 'UNCLAIMED' && !business.isOwner ? (
               <p className="business-profile-unclaimed">
-                {p.unclaimed} <a href={`/b/${business.slug}/claim`}>{p.claimAction}</a>
+                {p.unclaimed} <a href="/business/new">{p.claimAction}</a>
               </p>
             ) : null}
             <div className="business-profile-promises">
