@@ -217,6 +217,22 @@ export class BusinessDetailDto extends BusinessSummaryDto {
   /** On the detail response only — a result card has no room for the shelf list. */
   @ApiProperty({ type: [String] }) keywords!: string[];
 
+  @ApiProperty({
+    description:
+      'True when the description was assembled from the record rather than written by the ' +
+      'owner. The page must say so: a reader cannot judge a description without knowing who ' +
+      'wrote it.',
+  })
+  descriptionIsGenerated!: boolean;
+
+  @ApiPropertyOptional({
+    description:
+      'Required under the source licence for imported records — ODbL and CDLA both make ' +
+      'attribution travel with the data. Null for anything a person created.',
+    example: 'Details from OpenStreetMap, licensed under ODbL 1.0.',
+  })
+  attribution!: string | null;
+
   @ApiPropertyOptional() latitude!: number | null;
   @ApiPropertyOptional() longitude!: number | null;
   @ApiPropertyOptional() primaryPhone!: string | null;

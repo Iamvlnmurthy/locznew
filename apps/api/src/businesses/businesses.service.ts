@@ -16,6 +16,7 @@ import { v7 as uuid } from 'uuid';
 import { AuditService } from '../audit/audit.service';
 import { paginate, PaginatedDto } from '../common/dto/pagination.dto';
 import { slugify } from '../common/utils/slug.util';
+import { attributionFor, describeBusiness } from './business-description';
 import { matchesKeyword } from '../moderation/rule-based-moderation.provider';
 import { PrismaService } from '../prisma/prisma.service';
 import { RbacService } from '../rbac/rbac.service';
@@ -650,9 +651,24 @@ export class BusinessesService {
   }
 
   private toDetail(business: BusinessRow, viewerId?: string): BusinessDetailDto {
+    const described = describeBusiness({
+      categoryName: business.category.name,
+      // The locality is not on the row shape this mapper receives; the city is enough to
+      // place a business, and the full address is rendered separately anyway.
+      localityName: null,
+      cityName: business.city.name,
+      keywords: business.keywords,
+      description: business.description,
+    });
+
     return {
       ...this.toSummary(business),
-      description: business.description,
+      // An imported record has no description of its own, so one is composed from what the
+      // record actually holds. Never stored: it is a view of the business, not a fact about
+      // it, and the day somebody claims the shop their words simply replace it.
+      description: described.text,
+      descriptionIsGenerated: described.generated,
+      attribution: attributionFor(business),
       keywords: business.keywords,
       addressLine: business.address?.line1 ?? null,
       latitude: business.latitude ? Number(business.latitude) : null,
