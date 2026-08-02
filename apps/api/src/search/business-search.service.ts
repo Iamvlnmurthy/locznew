@@ -227,6 +227,12 @@ export class BusinessSearchService {
    * at that point destroys the only good copy.
    */
   async reindexAll(batchSize = 500): Promise<{ indexed: number }> {
+    // The live index has to exist before it can be swapped into, and on the very first
+    // rebuild it does not. Creating it here is idempotent and costs nothing on later runs —
+    // without it the first rebuild fails at the verification step, having already built a
+    // perfectly good replacement.
+    await this.configureIndex(this.indexName);
+
     const replacementName = `${this.indexName}_rebuild_${Date.now()}`;
     await this.configureIndex(replacementName);
     const replacement = this.client.index<BusinessDocument>(replacementName);

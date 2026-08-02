@@ -3,6 +3,7 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
+import 'package:locz/core/config/env.dart';
 import 'package:locz/core/i18n/strings.dart';
 import 'package:locz/core/network/api_client.dart';
 import 'package:locz/core/providers.dart';
@@ -80,6 +81,16 @@ void main() {
 
     expect(repository.signInCalls, 1);
     expect(find.text('Saved destination'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('Google sign-in is only offered in configured builds', (tester) async {
+    await _pumpSignIn(tester, _FakeAuthRepository());
+
+    expect(
+      find.byKey(const Key('signin-google')),
+      Env.isGoogleSignInConfigured ? findsOneWidget : findsNothing,
+    );
     expect(tester.takeException(), isNull);
   });
 }
