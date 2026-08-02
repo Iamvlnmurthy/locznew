@@ -4,6 +4,7 @@ import * as argon2 from 'argon2';
 import { createHash, randomBytes } from 'node:crypto';
 import { v7 as uuid } from 'uuid';
 import { AppConfig } from '../config/config.module';
+import { renderEmail } from '../email/email-template';
 import { EmailService } from '../email/email.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { TokenService } from './token.service';
@@ -85,23 +86,37 @@ export class PasswordResetService {
 
     const link = `${this.config.get('PUBLIC_SITE_URL')}/reset-password?token=${token}`;
 
+    const heading = 'Reset your LocZ password';
+    const intro = 'Somebody asked to reset the password for your LocZ account.';
+    const ignore =
+      'If that was not you, ignore this email. Your password has not changed, and the link ' +
+      'stops working on its own.';
+    const warning = 'LocZ will never ask you for your password, an OTP or a banking PIN.';
+
     await this.email.send({
       to: address,
-      subject: 'Reset your LocZ password',
+      subject: heading,
       tag: 'password-reset',
-      // Plain text carries everything. A message that only renders as HTML is unreadable in
-      // the clients that strip it, and this one has to work for everybody.
+      // Plain text is not a fallback anybody should have to fall back to — it is the version
+      // that works everywhere HTML is stripped, and password reset is the last thing that
+      // should be unreadable. The HTML below is an addition to it.
       text: [
-        `Somebody asked to reset the password for your LocZ account.`,
-        ``,
-        `Open this link within the next hour to choose a new one:`,
+        intro,
+        '',
+        'Open this link within the next hour to choose a new one:',
         link,
-        ``,
-        `If that was not you, ignore this email. Your password has not changed, and the link`,
-        `stops working on its own.`,
-        ``,
-        `LocZ will never ask you for your password, an OTP or a banking PIN.`,
+        '',
+        ignore,
+        '',
+        warning,
       ].join('\n'),
+      html: renderEmail({
+        preheader: 'Choose a new password. This link works for one hour.',
+        heading,
+        body: [intro, 'Open the link below within the next hour to choose a new one.'],
+        action: { label: 'Choose a new password', url: link },
+        footnotes: [ignore, warning],
+      }),
     });
   }
 

@@ -22,7 +22,13 @@ describe('PasswordResetService', () => {
   function build({
     user = account as typeof account | null,
     recentRequests = 0,
-    token = null as { id: string; userId: string; usedAt: Date | null; expiresAt: Date; user: typeof account } | null,
+    token = null as {
+      id: string;
+      userId: string;
+      usedAt: Date | null;
+      expiresAt: Date;
+      user: typeof account;
+    } | null,
   } = {}) {
     const prisma = {
       user: {
@@ -107,6 +113,31 @@ describe('PasswordResetService', () => {
       // A rate-limit message would confirm the account exists.
       await expect(service.request('ravi@example.com')).resolves.toBeUndefined();
       expect(email.send).not.toHaveBeenCalled();
+    });
+
+    it('sends a plain-text body alongside the designed one', async () => {
+      const { service, email } = build();
+
+      await service.request('ravi@example.com');
+
+      const sent = email.send.mock.calls[0][0] as { text: string; html?: string };
+      // The HTML version is an addition, never a replacement. Some clients and every screen
+      // reader fallback strip HTML entirely, and password reset is the last thing that should
+      // arrive unreadable — so the link has to survive in both.
+      expect(sent.text).toContain('/reset-password?token=');
+      expect(sent.html).toContain('/reset-password?token=');
+    });
+
+    it('keeps the safety warning in both versions', async () => {
+      const { service, email } = build();
+
+      await service.request('ravi@example.com');
+
+      const sent = email.send.mock.calls[0][0] as { text: string; html?: string };
+      // Reset emails are the template phishing copies. The line telling people what LocZ will
+      // never ask for is the part that has to reach them however the message renders.
+      expect(sent.text).toContain('never ask you for your password');
+      expect(sent.html).toContain('never ask you for your password');
     });
 
     it('points the link at the site, not the API host', async () => {
