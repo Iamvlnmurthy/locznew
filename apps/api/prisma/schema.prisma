@@ -363,7 +363,16 @@ model User {
   id                  String     @id @db.Uuid
   // E.164, e.g. +919876543210. Unique because it is the primary login identifier and is
   // looked up on every OTP request — this index is on the hottest auth path.
-  phoneE164           String     @unique @db.VarChar(20)
+  //
+  // Nullable since Google sign-up: Google gives a verified email and no number, and the
+  // alternative was a Google button that told people to go and fill in the form instead.
+  // Postgres permits any number of NULLs under a unique index, so the constraint still
+  // does its real job — stopping two accounts from claiming the same number.
+  //
+  // An account without one is incomplete, not anonymous: sign-up routes straight to
+  // /account/phone, and every read of this column must handle null. `phoneVerifiedAt`
+  // remains the only proof the number is theirs.
+  phoneE164           String?    @unique @db.VarChar(20)
   phoneVerifiedAt     DateTime?
   email               String?    @unique @db.Citext
   emailVerifiedAt     DateTime?

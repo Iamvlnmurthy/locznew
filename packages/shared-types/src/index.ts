@@ -105,13 +105,21 @@ export interface Paginated<T> {
 
 export interface AuthUser {
   id: string;
-  phone: string;
+  /** Null on an account Google created, until the person confirms a number. */
+  phone: string | null;
   email?: string | null;
   displayName: string;
   preferredLanguage: Language;
   roles: RoleName[];
   permissions: string[];
   isNewUser: boolean;
+  /**
+   * True when the account has no confirmed mobile number.
+   *
+   * Branch on this rather than on `phone == null`: it says what the client should do,
+   * where an absent value only says what the server happens to hold.
+   */
+  requiresPhone: boolean;
 }
 
 export interface AuthTokens {

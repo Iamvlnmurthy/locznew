@@ -3374,6 +3374,164 @@ textarea {
   gap: 18px;
 }
 
+.search-businesses {
+  margin-bottom: 28px;
+  padding: 20px;
+  border: 1px solid var(--locz-border);
+  border-radius: 22px;
+  background:
+    radial-gradient(circle at 94% 0%, color-mix(in srgb, var(--locz-mint) 22%, transparent), transparent 42%),
+    var(--locz-surface);
+  box-shadow: var(--locz-shadow-sm);
+}
+
+.search-businesses__head {
+  display: flex;
+  margin-bottom: 15px;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.search-businesses__head h2 {
+  margin: 3px 0 0;
+  font-size: 1.18rem;
+  letter-spacing: -0.025em;
+}
+
+.search-businesses__head p {
+  margin: 4px 0 0;
+  color: var(--locz-text-secondary);
+  font-size: 0.74rem;
+}
+
+.search-businesses__head > a {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 5px;
+  color: var(--locz-primary);
+  font-size: 0.74rem;
+  font-weight: 750;
+}
+
+.search-businesses__head > a svg {
+  width: 14px;
+  height: 14px;
+}
+
+.search-businesses__grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.search-business-card {
+  position: relative;
+  display: grid;
+  min-width: 0;
+  min-height: 104px;
+  padding: 13px 38px 13px 13px;
+  grid-template-columns: 44px minmax(0, 1fr);
+  align-items: center;
+  gap: 11px;
+  border: 1px solid var(--locz-border);
+  border-radius: 16px;
+  background: var(--locz-surface-elevated, var(--locz-surface));
+  color: var(--locz-text);
+  transition: border-color 160ms ease, transform 160ms ease, box-shadow 160ms ease;
+}
+
+.search-business-card:hover {
+  border-color: color-mix(in srgb, var(--locz-primary) 36%, var(--locz-border));
+  box-shadow: var(--locz-shadow-sm);
+  transform: translateY(-2px);
+}
+
+.search-business-card__mark {
+  display: grid;
+  width: 44px;
+  height: 44px;
+  place-items: center;
+  border-radius: 13px;
+  background: color-mix(in srgb, var(--locz-primary) 12%, var(--locz-surface));
+  color: var(--locz-primary);
+  font-family: var(--font-display);
+  font-size: 1.08rem;
+  font-weight: 800;
+}
+
+.search-business-card__body,
+.search-business-card__body > span,
+.search-business-card__body > strong {
+  display: block;
+  min-width: 0;
+}
+
+.search-business-card__body > strong {
+  overflow: hidden;
+  font-size: 0.86rem;
+  line-height: 1.25;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.search-business-card__category {
+  margin-bottom: 3px;
+  overflow: hidden;
+  color: var(--locz-coral);
+  font-size: 0.59rem;
+  font-weight: 800;
+  letter-spacing: 0.07em;
+  text-overflow: ellipsis;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.search-business-card__place {
+  display: flex !important;
+  margin-top: 5px;
+  align-items: center;
+  gap: 3px;
+  overflow: hidden;
+  color: var(--locz-text-secondary);
+  font-size: 0.66rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.search-business-card__place svg {
+  flex: 0 0 auto;
+  width: 12px;
+  height: 12px;
+}
+
+.search-business-card__verified {
+  position: absolute;
+  top: 9px;
+  right: 9px;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  color: var(--locz-primary);
+  font-size: 0.57rem;
+  font-weight: 750;
+}
+
+.search-business-card__verified svg {
+  width: 11px;
+  height: 11px;
+}
+
+.search-business-card > svg:last-child {
+  position: absolute;
+  right: 12px;
+  bottom: 13px;
+  width: 13px;
+  height: 13px;
+  color: var(--locz-text-secondary);
+}
+
 .search-results__toolbar strong,
 .search-results__toolbar span {
   display: block;
@@ -9933,6 +10091,33 @@ body.has-gallery-lightbox {
     margin-inline: -4px;
   }
 
+  .search-businesses {
+    margin-inline: -4px;
+    padding: 16px;
+    border-radius: 19px;
+  }
+
+  .search-businesses__head {
+    align-items: flex-start;
+  }
+
+  .search-businesses__head > a {
+    font-size: 0;
+  }
+
+  .search-businesses__head > a svg {
+    width: 18px;
+    height: 18px;
+  }
+
+  .search-businesses__grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .search-business-card {
+    min-height: 92px;
+  }
+
   .search-results__toolbar {
     min-height: 43px;
     padding-left: 98px;
@@ -15928,4 +16113,400 @@ body {
   border: 1px solid var(--hairline, #e3e8e5);
   border-radius: 10px;
   font-size: 0.9rem;
+}
+
+/* ---------- Business ownership claim ---------- */
+.business-claim-page {
+  min-height: calc(100vh - 76px);
+  padding-bottom: 70px;
+  background: var(--locz-bg);
+}
+
+.business-claim-hero {
+  padding: 42px 0 58px;
+  border-bottom: 1px solid var(--locz-border);
+  background:
+    radial-gradient(circle at 83% 18%, color-mix(in srgb, var(--locz-mint) 34%, transparent), transparent 26%),
+    linear-gradient(145deg, color-mix(in srgb, var(--locz-primary) 7%, var(--locz-bg)), var(--locz-bg));
+}
+
+.business-claim-back {
+  display: inline-flex;
+  margin-bottom: 30px;
+  align-items: center;
+  gap: 7px;
+  color: var(--locz-text-secondary);
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.business-claim-back svg {
+  width: 14px;
+  transform: rotate(180deg);
+}
+
+.business-claim-hero h1 {
+  max-width: 760px;
+  margin: 7px 0 10px;
+  font-size: clamp(2rem, 5vw, 3.4rem);
+  letter-spacing: -0.055em;
+  line-height: 1.02;
+}
+
+.business-claim-hero > .container > p {
+  max-width: 620px;
+  margin: 0;
+  color: var(--locz-text-secondary);
+  font-size: 0.91rem;
+  line-height: 1.65;
+}
+
+.business-claim-identity {
+  display: flex;
+  max-width: 680px;
+  margin-top: 25px;
+  padding: 12px 14px;
+  align-items: center;
+  gap: 11px;
+  border: 1px solid var(--locz-border);
+  border-radius: 17px;
+  background: color-mix(in srgb, var(--locz-surface) 92%, transparent);
+  box-shadow: var(--locz-shadow-sm);
+}
+
+.business-claim-identity > span:first-child {
+  display: grid;
+  flex: 0 0 auto;
+  width: 42px;
+  height: 42px;
+  place-items: center;
+  border-radius: 12px;
+  background: var(--locz-primary);
+  color: var(--locz-text-inverse);
+  font-family: var(--font-display);
+  font-weight: 800;
+}
+
+.business-claim-identity > div {
+  min-width: 0;
+  flex: 1;
+}
+
+.business-claim-identity strong,
+.business-claim-identity small {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.business-claim-identity strong { font-size: 0.86rem; }
+.business-claim-identity small { margin-top: 2px; color: var(--locz-text-secondary); font-size: 0.67rem; }
+
+.business-claim-identity > span:last-child {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: var(--locz-primary);
+  font-size: 0.67rem;
+  font-weight: 750;
+}
+
+.business-claim-identity > span:last-child svg { width: 14px; height: 14px; }
+
+.business-claim-layout {
+  display: grid;
+  margin-top: -28px;
+  grid-template-columns: minmax(0, 1fr) 300px;
+  align-items: start;
+  gap: 24px;
+}
+
+.business-claim-form {
+  overflow: hidden;
+  border: 1px solid var(--locz-border);
+  border-radius: 24px;
+  background: var(--locz-surface);
+  box-shadow: var(--locz-shadow-md);
+}
+
+.business-claim-form > .alert { margin: 22px 24px 0; }
+
+.business-claim-form > section {
+  padding: 28px 30px 30px;
+  border-bottom: 1px solid var(--locz-border);
+}
+
+.business-claim-form > section > header {
+  display: grid;
+  margin-bottom: 24px;
+  grid-template-columns: 34px minmax(0, 1fr);
+  gap: 12px;
+}
+
+.business-claim-form > section > header > span {
+  display: grid;
+  width: 34px;
+  height: 34px;
+  place-items: center;
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--locz-primary) 10%, var(--locz-surface));
+  color: var(--locz-primary);
+  font-size: 0.63rem;
+  font-weight: 800;
+}
+
+.business-claim-form h2 {
+  margin: 0;
+  font-size: 1.13rem;
+  letter-spacing: -0.025em;
+}
+
+.business-claim-form header p {
+  margin: 3px 0 0;
+  color: var(--locz-text-secondary);
+  font-size: 0.74rem;
+  line-height: 1.5;
+}
+
+.business-claim-field-meta {
+  display: flex;
+  margin-top: 6px;
+  justify-content: space-between;
+  gap: 14px;
+  color: var(--locz-text-secondary);
+  font-size: 0.66rem;
+}
+
+.business-claim-form fieldset {
+  margin: 0 0 24px;
+  padding: 0;
+  border: 0;
+}
+
+.business-claim-form legend {
+  margin-bottom: 9px;
+  font-size: 0.75rem;
+  font-weight: 750;
+}
+
+.business-claim-options {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 9px;
+}
+
+.business-claim-options label {
+  position: relative;
+  display: grid;
+  min-height: 128px;
+  padding: 15px;
+  align-content: start;
+  border: 1px solid var(--locz-border);
+  border-radius: 15px;
+  cursor: pointer;
+}
+
+.business-claim-options input,
+.business-claim-offerings input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.business-claim-options label:has(input:checked),
+.business-claim-offerings label:has(input:checked) > span {
+  border-color: var(--locz-primary);
+  background: color-mix(in srgb, var(--locz-primary) 7%, var(--locz-surface));
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--locz-primary) 12%, transparent);
+}
+
+.business-claim-options label:has(input:focus-visible),
+.business-claim-offerings label:has(input:focus-visible) > span {
+  outline: 3px solid color-mix(in srgb, var(--locz-primary) 24%, transparent);
+  outline-offset: 2px;
+}
+
+.business-claim-options label > span {
+  display: grid;
+  width: 32px;
+  height: 32px;
+  margin-bottom: 13px;
+  place-items: center;
+  border-radius: 9px;
+  background: var(--locz-bg);
+  color: var(--locz-primary);
+}
+
+.business-claim-options label > span svg { width: 16px; height: 16px; }
+.business-claim-options strong { font-size: 0.76rem; }
+.business-claim-options small { margin-top: 4px; color: var(--locz-text-secondary); font-size: 0.64rem; line-height: 1.4; }
+
+.business-claim-offerings {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 9px;
+}
+
+.business-claim-offerings label { cursor: pointer; }
+
+.business-claim-offerings label > span {
+  display: flex;
+  min-height: 46px;
+  padding: 0 13px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  border: 1px solid var(--locz-border);
+  border-radius: 13px;
+  font-size: 0.71rem;
+  font-weight: 700;
+}
+
+.business-claim-offerings svg { width: 14px; height: 14px; opacity: 0; }
+.business-claim-offerings label:has(input:checked) svg { opacity: 1; }
+
+.business-claim-location {
+  display: grid;
+  margin-bottom: 22px;
+  padding: 16px;
+  grid-template-columns: 40px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 11px;
+  border: 1px solid color-mix(in srgb, var(--locz-primary) 22%, var(--locz-border));
+  border-radius: 16px;
+  background: color-mix(in srgb, var(--locz-primary) 5%, var(--locz-surface));
+}
+
+.business-claim-location > span {
+  display: grid;
+  width: 40px;
+  height: 40px;
+  place-items: center;
+  border-radius: 12px;
+  background: var(--locz-primary);
+  color: var(--locz-text-inverse);
+}
+
+.business-claim-location > span svg { width: 18px; height: 18px; }
+.business-claim-location strong { font-size: 0.78rem; }
+.business-claim-location p { margin: 3px 0 0; color: var(--locz-text-secondary); font-size: 0.66rem; line-height: 1.45; }
+.business-claim-location .btn { min-height: 39px; padding: 0 13px; font-size: 0.67rem; }
+
+.business-claim-phone {
+  display: flex;
+  overflow: hidden;
+  border: 1px solid var(--locz-border-strong);
+  border-radius: 12px;
+  background: var(--locz-surface);
+}
+
+.business-claim-phone > span {
+  display: grid;
+  padding: 0 13px;
+  place-items: center;
+  border-right: 1px solid var(--locz-border);
+  color: var(--locz-text-secondary);
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+
+.business-claim-phone input { border: 0; border-radius: 0; }
+
+.business-claim-submit {
+  display: flex;
+  padding: 20px 30px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  background: color-mix(in srgb, var(--locz-bg) 70%, var(--locz-surface));
+}
+
+.business-claim-submit > div {
+  display: flex;
+  max-width: 440px;
+  align-items: flex-start;
+  gap: 9px;
+}
+
+.business-claim-submit > div > svg { flex: 0 0 auto; width: 16px; color: var(--locz-primary); }
+.business-claim-submit p { margin: 0; color: var(--locz-text-secondary); font-size: 0.65rem; line-height: 1.45; }
+.business-claim-submit strong { display: block; color: var(--locz-text); font-size: 0.72rem; }
+
+.business-claim-aside {
+  position: sticky;
+  top: 92px;
+  padding: 24px;
+  border: 1px solid var(--locz-border);
+  border-radius: 22px;
+  background: var(--locz-surface);
+  box-shadow: var(--locz-shadow-sm);
+}
+
+.business-claim-aside > span {
+  display: grid;
+  width: 42px;
+  height: 42px;
+  margin-bottom: 16px;
+  place-items: center;
+  border-radius: 13px;
+  background: color-mix(in srgb, var(--locz-coral) 12%, var(--locz-surface));
+  color: var(--locz-coral);
+}
+
+.business-claim-aside h2 { margin: 0; font-size: 1rem; }
+.business-claim-aside > p { margin: 7px 0 20px; color: var(--locz-text-secondary); font-size: 0.71rem; line-height: 1.55; }
+.business-claim-aside ol { display: grid; margin: 0; padding: 0; gap: 14px; list-style: none; }
+.business-claim-aside li { display: grid; grid-template-columns: 25px 1fr; align-items: center; gap: 9px; font-size: 0.7rem; font-weight: 650; }
+.business-claim-aside li > span { display: grid; width: 25px; height: 25px; place-items: center; border-radius: 50%; background: var(--locz-bg); color: var(--locz-primary); font-size: 0.61rem; font-weight: 800; }
+.business-claim-aside > div { display: flex; margin-top: 22px; padding-top: 18px; gap: 8px; border-top: 1px solid var(--locz-border); }
+.business-claim-aside > div svg { flex: 0 0 auto; width: 15px; color: var(--locz-primary); }
+.business-claim-aside > div p { margin: 0; color: var(--locz-text-secondary); font-size: 0.62rem; line-height: 1.45; }
+.business-claim-aside > div strong { display: block; color: var(--locz-text); font-size: 0.68rem; }
+
+.business-claim-success {
+  max-width: 650px;
+  padding-block: 100px;
+  text-align: center;
+}
+
+.business-claim-success__mark {
+  display: grid;
+  width: 64px;
+  height: 64px;
+  margin: 0 auto 22px;
+  place-items: center;
+  border-radius: 20px;
+  background: var(--locz-primary);
+  color: var(--locz-text-inverse);
+  box-shadow: var(--locz-shadow-md);
+}
+
+.business-claim-success h1 { margin: 8px 0; font-size: clamp(2rem, 6vw, 3rem); letter-spacing: -0.05em; }
+.business-claim-success p { margin: 0 auto 24px; color: var(--locz-text-secondary); line-height: 1.65; }
+
+@media (max-width: 900px) {
+  .business-claim-layout { grid-template-columns: minmax(0, 1fr); }
+  .business-claim-aside { position: static; order: -1; }
+  .business-claim-aside ol { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+
+@media (max-width: 640px) {
+  .business-claim-hero { padding: 25px 0 48px; }
+  .business-claim-back { margin-bottom: 23px; }
+  .business-claim-identity { align-items: flex-start; }
+  .business-claim-identity > span:last-child { display: none; }
+  .business-claim-layout { margin-top: -22px; gap: 14px; }
+  .business-claim-aside { padding: 19px; border-radius: 19px; }
+  .business-claim-aside ol { grid-template-columns: 1fr; }
+  .business-claim-form { border-radius: 19px; }
+  .business-claim-form > section { padding: 23px 18px 25px; }
+  .business-claim-options { grid-template-columns: 1fr; }
+  .business-claim-options label { min-height: 84px; padding: 13px 13px 13px 58px; }
+  .business-claim-options label > span { position: absolute; left: 13px; top: 13px; margin: 0; }
+  .business-claim-offerings { grid-template-columns: 1fr; }
+  .business-claim-location { grid-template-columns: 38px minmax(0, 1fr); }
+  .business-claim-location > button { grid-column: 1 / -1; width: 100%; }
+  .business-claim-submit { padding: 18px; align-items: stretch; flex-direction: column; }
+  .business-claim-submit > .btn { width: 100%; }
 }

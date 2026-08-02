@@ -180,6 +180,108 @@ export const zIndex = {
   toast: 500,
 } as const;
 
+/**
+ * Deterministic artwork primitives for businesses without photography.
+ *
+ * These are intentionally a small palette plus broad category-group glyphs, not one asset
+ * per directory category. A consumer can hash the stable business id into `palette` and
+ * combine it with initials and one glyph without making millions of shops look templated.
+ * Every colour is paired for the theme it appears on; consumers must not swap individual
+ * background and foreground values between pairs.
+ */
+export const businessCardGraphics = {
+  palette: [
+    {
+      name: 'mango',
+      light: { background: '#FFF1D6', foreground: '#653B05', accent: '#D77A0B' },
+      dark: { background: '#39280F', foreground: '#FFE2A6', accent: '#F3A53A' },
+    },
+    {
+      name: 'leaf',
+      light: { background: '#E1F1E6', foreground: '#174A31', accent: '#3C8A5B' },
+      dark: { background: '#173126', foreground: '#BDE8CB', accent: '#5FC181' },
+    },
+    {
+      name: 'lagoon',
+      light: { background: '#DDF2F0', foreground: '#124D49', accent: '#248C83' },
+      dark: { background: '#143331', foreground: '#B9ECE7', accent: '#54C3B8' },
+    },
+    {
+      name: 'clay',
+      light: { background: '#F8E3DB', foreground: '#683326', accent: '#C4664E' },
+      dark: { background: '#3B241F', foreground: '#F7C9BC', accent: '#E7856D' },
+    },
+    {
+      name: 'indigo',
+      light: { background: '#E6E8F8', foreground: '#343B72', accent: '#6873C4' },
+      dark: { background: '#252943', foreground: '#D5D9FF', accent: '#909AF0' },
+    },
+    {
+      name: 'plum',
+      light: { background: '#F0E3EF', foreground: '#60355B', accent: '#A25C98' },
+      dark: { background: '#382438', foreground: '#F0C9EC', accent: '#CF82C4' },
+    },
+    {
+      name: 'sky',
+      light: { background: '#DFEEF8', foreground: '#24516B', accent: '#4A8DB4' },
+      dark: { background: '#1B303D', foreground: '#C5E7F8', accent: '#68B4DD' },
+    },
+    {
+      name: 'rose',
+      light: { background: '#F9E2E5', foreground: '#6B3039', accent: '#C45D6D' },
+      dark: { background: '#3B2228', foreground: '#F9C7CE', accent: '#EA7D8D' },
+    },
+    {
+      name: 'olive',
+      light: { background: '#ECEDD8', foreground: '#4B4F20', accent: '#83893D' },
+      dark: { background: '#2D2F1B', foreground: '#E3E6AD', accent: '#B2B95B' },
+    },
+    {
+      name: 'slate',
+      light: { background: '#E6ECEA', foreground: '#334A43', accent: '#647E75' },
+      dark: { background: '#242F2C', foreground: '#D1E0DA', accent: '#88A89E' },
+    },
+  ],
+  glyphs: {
+    food: {
+      viewBox: '0 0 24 24',
+      paths: ['M6 3v7a3 3 0 0 0 3 3V3M6 7h3M7.5 13v8M16 3v18M16 3c3 2 3 7 0 10'],
+    },
+    retail: {
+      viewBox: '0 0 24 24',
+      paths: [
+        'M4 10v10h16V10M3 10l2-6h14l2 6M3 10a3 3 0 0 0 5 2 3 3 0 0 0 4 0 3 3 0 0 0 4 0 3 3 0 0 0 5-2M9 20v-5h6v5',
+      ],
+    },
+    services: {
+      viewBox: '0 0 24 24',
+      paths: ['m14 6 4-3 3 3-3 4-2-2-7 7 2 2-4 4-4-4 4-4 2 2 7-7-2-2Z'],
+    },
+    health: {
+      viewBox: '0 0 24 24',
+      paths: [
+        'M12 21S4 16.5 4 10a4.5 4.5 0 0 1 8-2.8A4.5 4.5 0 0 1 20 10c0 6.5-8 11-8 11ZM12 8v7M8.5 11.5h7',
+      ],
+    },
+    education: {
+      viewBox: '0 0 24 24',
+      paths: ['m3 9 9-5 9 5-9 5-9-5ZM7 12v4c3 2 7 2 10 0v-4M21 9v7'],
+    },
+    vehicles: {
+      viewBox: '0 0 24 24',
+      paths: ['M4 15V9l2-4h12l2 4v6M3 12h18M7 16v2M17 16v2M7 12h.01M17 12h.01M6 15h12'],
+    },
+    home: {
+      viewBox: '0 0 24 24',
+      paths: ['m3 11 9-8 9 8M5 10v11h14V10M9 21v-7h6v7'],
+    },
+    other: {
+      viewBox: '0 0 24 24',
+      paths: ['M4 4h6v6H4V4ZM14 4h6v6h-6V4ZM4 14h6v6H4v-6ZM17 14v6M14 17h6'],
+    },
+  },
+} as const;
+
 export const tokens = {
   color,
   semantic,
@@ -189,6 +291,7 @@ export const tokens = {
   shadow,
   breakpoint,
   zIndex,
+  businessCardGraphics,
 } as const;
 
 export type Tokens = typeof tokens;

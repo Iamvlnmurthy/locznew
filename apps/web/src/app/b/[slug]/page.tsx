@@ -268,7 +268,7 @@ export default async function BusinessPage({ params }: { params: Promise<{ slug:
                 the details deserves to know that before they act on them. */}
             {business.claimStatus === 'UNCLAIMED' && !business.isOwner ? (
               <p className="business-profile-unclaimed">
-                {p.unclaimed} <a href="/business/new">{p.claimAction}</a>
+                {p.unclaimed} <Link href={`/b/${business.slug}/claim`}>{p.claimAction}</Link>
               </p>
             ) : null}
             <div className="business-profile-promises">
@@ -377,13 +377,13 @@ export default async function BusinessPage({ params }: { params: Promise<{ slug:
               {p.safetyTips} <Icon name="arrow" />
             </Link>
           </section>
-        {/* Not presentation polish. ODbL and CDLA both require attribution to travel with
+          {/* Not presentation polish. ODbL and CDLA both require attribution to travel with
             the data, so a page rendering an imported record without this is using that
             record outside its licence. */}
-        {business.attribution ? (
-          <p className="business-profile-attribution">{business.attribution}</p>
-        ) : null}
-      </main>
+          {business.attribution ? (
+            <p className="business-profile-attribution">{business.attribution}</p>
+          ) : null}
+        </main>
 
         <aside className="business-profile-contact">
           <section>

@@ -50,7 +50,8 @@ export class StorageStatsDto {
 
 export class AdminUserDto {
   @ApiProperty() id!: string;
-  @ApiProperty() phone!: string;
+  /** Null until a Google sign-up confirms one. Moderators search by name or email instead. */
+  @ApiProperty({ nullable: true }) phone!: string | null;
   @ApiProperty({ nullable: true }) email!: string | null;
   @ApiProperty() displayName!: string;
   @ApiProperty() status!: string;

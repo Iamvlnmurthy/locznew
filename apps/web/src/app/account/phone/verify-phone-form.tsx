@@ -21,6 +21,9 @@ interface Labels {
   tooManyAttempts: string;
   alreadyTaken: string;
   failed: string;
+  continue: string;
+  skip: string;
+  skipHint: string;
 }
 
 type Step = 'phone' | 'code' | 'done';
@@ -36,7 +39,7 @@ type Step = 'phone' | 'code' | 'done';
  * is why the mobile app's version of this flow will feel noticeably smoother — Android has
  * Play Integrity instead and never shows anything.
  */
-export function VerifyPhoneForm({ labels }: { labels: Labels }) {
+export function VerifyPhoneForm({ labels, next = '/' }: { labels: Labels; next?: string }) {
   const [step, setStep] = useState<Step>('phone');
   const [phone, setPhone] = useState('');
   const [code, setCode] = useState('');
@@ -115,7 +118,14 @@ export function VerifyPhoneForm({ labels }: { labels: Labels }) {
   }
 
   if (step === 'done') {
-    return <p className="signin-form__success">{labels.confirmed}</p>;
+    return (
+      <>
+        <p className="signin-form__success">{labels.confirmed}</p>
+        <a className="btn btn--primary" href={next}>
+          {labels.continue}
+        </a>
+      </>
+    );
   }
 
   return (
@@ -150,6 +160,12 @@ export function VerifyPhoneForm({ labels }: { labels: Labels }) {
           <button type="button" onClick={() => void sendCode()} disabled={pending}>
             {labels.send}
           </button>
+          {/* A Google sign-up is sent straight here, so this page has to be leavable. An
+              account with no number can still browse, save and message; making it a wall
+              would turn the sign-up path we just opened into a different dead end. */}
+          <p className="field__hint">
+            {labels.skipHint} <a href={next}>{labels.skip}</a>
+          </p>
         </div>
       ) : (
         <div className="field">

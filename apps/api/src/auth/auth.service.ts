@@ -303,7 +303,10 @@ export class AuthService {
    * sign-in methods.
    */
   async loginWithGoogle(dto: GoogleLoginDto, context: RequestContext): Promise<AuthSessionDto> {
-    const { id } = await this.google.resolveUser(dto.idToken);
+    // Creates the account when the verified Google address has none, which is why this
+    // reports whether it did: the session has to say `isNewUser` truthfully, and the web
+    // client needs it to send a first-time Google user to /account/phone.
+    const { id, isNewUser } = await this.google.resolveUser(dto.idToken);
 
     const user = await this.prisma.user.findUniqueOrThrow({ where: { id } });
     if (user.status === UserStatus.SUSPENDED) {
@@ -311,7 +314,7 @@ export class AuthService {
     }
 
     const device = await this.registerDevice(user.id, dto.device, context);
-    return this.buildSession(user, device, context, false);
+    return this.buildSession(user, device, context, isNewUser);
   }
 
   /**
@@ -371,6 +374,7 @@ export class AuthService {
         roles: access.roles,
         permissions: access.permissions,
         isNewUser: false,
+        requiresPhone: !user.phoneE164,
       },
       tokens: pair,
     };
@@ -493,6 +497,10 @@ export class AuthService {
         roles: access.roles,
         permissions: access.permissions,
         isNewUser,
+        // The only thing standing between a Google sign-up and a usable account. Sent on
+        // every session, not just the first, so a person who closed the tab at /account/phone
+        // is asked again next time rather than left half-registered and unreachable.
+        requiresPhone: !user.phoneE164,
       },
       tokens,
     };

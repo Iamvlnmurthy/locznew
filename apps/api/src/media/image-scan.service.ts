@@ -7,6 +7,17 @@ import {
   ImageScanVerdict,
 } from './image-scan-provider.interface';
 
+/**
+ * A scan result, or the honest admission that there wasn't one.
+ *
+ * `UNAVAILABLE` is deliberately outside `ImageScanVerdict`: a provider may never claim it,
+ * because a provider that could return "I am unavailable" instead of throwing would be
+ * able to talk its way past the retry loop. Only this service produces it, and only after
+ * every attempt has failed.
+ */
+export type ImageScanOutcome =
+  ImageScanVerdict | { decision: 'UNAVAILABLE'; reasons: string[]; provider: string };
+
 @Injectable()
 export class ImageScanService {
   private readonly logger = new Logger(ImageScanService.name);
@@ -20,10 +31,16 @@ export class ImageScanService {
    * Scanner outages are a moderation decision, not a processing failure.
    *
    * A failed image processor may delete a corrupt upload. A failed safety provider must
-   * leave a valid upload private for retry or human review, so every exhausted failure is
-   * converted to REVIEW rather than thrown into MediaService's generic failure path.
+   * leave a valid upload intact, so every exhausted failure is converted to UNAVAILABLE
+   * rather than thrown into MediaService's generic failure path.
+   *
+   * What UNAVAILABLE must *not* mean is REVIEW. That equivalence is what trapped every
+   * image on production: the scanner could not be reached, each upload was quietly held
+   * for a moderator, the listing published anyway, and the only visible symptom was a grey
+   * placeholder. Nobody was told. `ImageModerationService` decides what to do with this,
+   * and for a low-risk upload the answer is publish.
    */
-  async scan(subject: ImageScanSubject): Promise<ImageScanVerdict> {
+  async scan(subject: ImageScanSubject): Promise<ImageScanOutcome> {
     const attempts = this.config.get('IMAGE_SCANNER_MAX_ATTEMPTS');
     const timeoutMs = this.config.get('IMAGE_SCANNER_TIMEOUT_MS');
 
@@ -39,10 +56,18 @@ export class ImageScanService {
       }
     }
 
+    // Loud, at error level, every time. A safety control that has stopped working must be
+    // noisy: the last outage was invisible for weeks precisely because nothing said so.
+    this.logger.error(
+      `IMAGE_SCANNER_UNAVAILABLE: ${this.config.get('IMAGE_SCANNER_PROVIDER')} failed all ` +
+        `${attempts} attempts for media ${subject.mediaId}. Uploads are now failing open — ` +
+        `low-risk images publish unscanned and the rest queue for review.`,
+    );
+
     return {
-      decision: 'REVIEW',
+      decision: 'UNAVAILABLE',
       reasons: ['IMAGE_SCANNER_UNAVAILABLE'],
-      provider: 'fail-closed',
+      provider: 'fail-open',
     };
   }
 

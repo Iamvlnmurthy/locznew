@@ -10,7 +10,7 @@ interface Profile {
   email: string | null;
   bio: string | null;
   preferredLanguage: string;
-  phone: string;
+  phone: string | null;
 }
 
 function SaveProfileButton({ labels: d }: { labels: Record<string, string> }) {
@@ -97,8 +97,18 @@ export function ProfileForm({
         </div>
         <div className="field">
           <label htmlFor="dashboard-phone">{d.phone}</label>
-          <input id="dashboard-phone" value={profile.phone} disabled readOnly />
-          <p className="field__hint">{d.verifiedSignIn}</p>
+          {/* An account created by Google sign-up has no number yet. Passing null straight
+              to `value` would make React drop the input to uncontrolled and warn; worse,
+              an empty disabled box reads as "nothing to do here" when in fact a number is
+              the one thing missing. So it offers the way to add one. */}
+          <input id="dashboard-phone" value={profile.phone ?? ''} disabled readOnly />
+          {profile.phone ? (
+            <p className="field__hint">{d.verifiedSignIn}</p>
+          ) : (
+            <p className="field__hint">
+              {d.phoneMissing} <a href="/account/phone">{d.phoneAdd}</a>
+            </p>
+          )}
         </div>
       </div>
 

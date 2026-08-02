@@ -11,7 +11,11 @@ describe('ImageScanService', () => {
 
   function config(timeoutMs = 50, attempts = 2) {
     return {
-      get: jest.fn((key: string) => (key === 'IMAGE_SCANNER_TIMEOUT_MS' ? timeoutMs : attempts)),
+      get: jest.fn((key: string) => {
+        if (key === 'IMAGE_SCANNER_TIMEOUT_MS') return timeoutMs;
+        if (key === 'IMAGE_SCANNER_PROVIDER') return 'nsfwjs';
+        return attempts;
+      }),
     };
   }
 
@@ -36,16 +40,19 @@ describe('ImageScanService', () => {
     expect(provider.scan).toHaveBeenCalledTimes(2);
   });
 
-  it('fails closed when every provider attempt errors', async () => {
+  it('reports UNAVAILABLE, not REVIEW, when every provider attempt errors', async () => {
     const provider = {
       scan: jest.fn().mockRejectedValue(new Error('upstream unavailable')),
     };
     const service = new ImageScanService(provider, config(50, 2) as never);
 
+    // "We could not ask" is a different answer from "a moderator should look at this".
+    // Reporting the second for the first is what held every production image behind a grey
+    // placeholder for weeks, silently.
     await expect(service.scan(subject)).resolves.toEqual({
-      decision: 'REVIEW',
+      decision: 'UNAVAILABLE',
       reasons: ['IMAGE_SCANNER_UNAVAILABLE'],
-      provider: 'fail-closed',
+      provider: 'fail-open',
     });
     expect(provider.scan).toHaveBeenCalledTimes(2);
   });
@@ -57,7 +64,7 @@ describe('ImageScanService', () => {
     const service = new ImageScanService(provider, config(5, 1) as never);
 
     await expect(service.scan(subject)).resolves.toMatchObject({
-      decision: 'REVIEW',
+      decision: 'UNAVAILABLE',
       reasons: ['IMAGE_SCANNER_UNAVAILABLE'],
     });
   });

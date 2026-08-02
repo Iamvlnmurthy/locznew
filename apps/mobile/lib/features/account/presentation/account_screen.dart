@@ -61,8 +61,7 @@ class AccountScreen extends ConsumerWidget {
                           ),
                           const SizedBox(height: LoczSpacing.x3),
                           FilledButton.icon(
-                            onPressed: () =>
-                                context.push('/signin?next=/account'),
+                            onPressed: () => context.push('/signin?next=/account'),
                             icon: const Icon(Icons.login_rounded, size: 17),
                             label: Text(strings('nav.signIn')),
                           ),
@@ -198,10 +197,7 @@ class AccountScreen extends ConsumerWidget {
                     borderRadius: BorderRadius.circular(10),
                     boxShadow: [
                       BoxShadow(
-                        color: Theme.of(context)
-                            .colorScheme
-                            .shadow
-                            .withValues(alpha: 0.06),
+                        color: Theme.of(context).colorScheme.shadow.withValues(alpha: 0.06),
                         blurRadius: 8,
                         offset: const Offset(0, 2),
                       ),
@@ -247,22 +243,25 @@ class _AccountHeader extends StatelessWidget {
   });
 
   final String displayName;
-  final String phone;
+
+  /// Null until a Google sign-up confirms a number.
+  final String? phone;
   final String hint;
   final String postLabel;
   final VoidCallback onPost;
 
-  String get _maskedPhone {
-    final digits = phone.replaceAll(RegExp(r'\D'), '');
-    if (digits.length < 4) return phone;
+  String? get _maskedPhone {
+    final value = phone;
+    if (value == null) return null;
+    final digits = value.replaceAll(RegExp(r'\D'), '');
+    if (digits.length < 4) return value;
     return '••••••${digits.substring(digits.length - 4)}';
   }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final initial =
-        displayName.trim().isEmpty ? 'L' : displayName.trim()[0].toUpperCase();
+    final initial = displayName.trim().isEmpty ? 'L' : displayName.trim()[0].toUpperCase();
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 4, 16, 18),
       child: Container(
@@ -304,7 +303,12 @@ class _AccountHeader extends StatelessWidget {
                   children: [
                     Text(displayName, style: theme.textTheme.titleMedium),
                     const SizedBox(height: 2),
-                    Text(_maskedPhone, style: theme.textTheme.labelSmall),
+                    // Nothing at all rather than an empty line: an account created by
+                    // Google sign-up has no number, and the prompt to add one belongs on
+                    // the verify screen this account list already links to.
+                    if (_maskedPhone != null) ...[
+                      Text(_maskedPhone!, style: theme.textTheme.labelSmall),
+                    ],
                     const SizedBox(height: 4),
                     Text(
                       hint,
@@ -473,8 +477,7 @@ class _ListingsTab extends ConsumerWidget {
             padding: const EdgeInsets.all(LoczSpacing.x4),
             itemCount: items.length,
             separatorBuilder: (_, __) => const SizedBox(height: LoczSpacing.x3),
-            itemBuilder: (context, index) =>
-                _OwnListingRow(listing: items[index]),
+            itemBuilder: (context, index) => _OwnListingRow(listing: items[index]),
           );
         },
       ),
@@ -494,8 +497,7 @@ class _OwnListingRow extends ConsumerWidget {
 
     // Only the transitions the API will accept for the current status are offered.
     final commands = <String, String>{
-      if (listing.status == 'PUBLISHED')
-        'pause': strings('account.actionPause'),
+      if (listing.status == 'PUBLISHED') 'pause': strings('account.actionPause'),
       if (listing.status == 'PAUSED') 'resume': strings('account.actionResume'),
       if (listing.status == 'PUBLISHED' || listing.status == 'PAUSED')
         'sold': strings('account.actionSold'),
@@ -558,9 +560,7 @@ class _OwnListingRow extends ConsumerWidget {
                       style: OutlinedButton.styleFrom(
                         minimumSize: const Size(0, 36),
                         padding: const EdgeInsets.symmetric(horizontal: 12),
-                        foregroundColor: entry.key == 'delete'
-                            ? theme.colorScheme.error
-                            : null,
+                        foregroundColor: entry.key == 'delete' ? theme.colorScheme.error : null,
                         side: entry.key == 'delete'
                             ? BorderSide(color: theme.colorScheme.error)
                             : null,
@@ -574,8 +574,7 @@ class _OwnListingRow extends ConsumerWidget {
                               content: Text(strings('account.deleteConfirm')),
                               actions: [
                                 TextButton(
-                                  onPressed: () =>
-                                      Navigator.pop(context, false),
+                                  onPressed: () => Navigator.pop(context, false),
                                   child: Text(strings('common.cancel')),
                                 ),
                                 FilledButton(

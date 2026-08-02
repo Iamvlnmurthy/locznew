@@ -15,7 +15,8 @@ export function NavLink({
 }) {
   const pathname = usePathname();
   // Exact match for the root so every page does not light up "Overview".
-  const isActive = href === '/' ? pathname === '/' : pathname.startsWith(href);
+  const isActive =
+    href === '/' || href === '/businesses' ? pathname === href : pathname.startsWith(href);
 
   return (
     <Link

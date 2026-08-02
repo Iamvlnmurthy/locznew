@@ -11,6 +11,7 @@ import {
   Listing,
   ListingStatus,
   ListingType,
+  MediaStatus,
   ModerationDecision,
   ModerationStatus,
   ReportTargetType,
@@ -30,7 +31,7 @@ import {
   QUEUE_REQUIREMENTS,
   QUEUE_SAVED_SEARCHES,
 } from '../queue/queue.constants';
-import { ModerationQueueItemDto } from './dto/moderation.dto';
+import { ModerationMediaQueueItemDto, ModerationQueueItemDto } from './dto/moderation.dto';
 import {
   MODERATION_PROVIDER,
   ModerationProvider,
@@ -220,6 +221,60 @@ export class ModerationService {
       imageCount: listing._count.media,
       reportCount: listing._count.reports,
       createdAt: listing.createdAt,
+    }));
+
+    return { items, total };
+  }
+
+  /**
+   * Quarantined images waiting for a person.
+   *
+   * There was no way to find one. `moderation/queue` counts a listing's images and does not
+   * name them; `listings/:id/media` deliberately returns only READY media, because it is the
+   * public read. Preview, approve and block all take a media id, so the console had three
+   * working controls and nothing to point them at — which is why every quarantined image
+   * stayed quarantined even after the release route shipped.
+   *
+   * `LEGAL_HOLD` is excluded, not merely absent. Held evidence belongs to the restricted
+   * child-safety case flow, where access is logged and justified; surfacing it in the
+   * ordinary queue would route it to moderators who have `listing:moderate` and nothing
+   * more, and hand them a preview URL for it.
+   */
+  async getMediaQueue(
+    page: number,
+    limit: number,
+  ): Promise<{ items: ModerationMediaQueueItemDto[]; total: number }> {
+    const where = {
+      status: MediaStatus.REVIEW_REQUIRED,
+      listing: { deletedAt: null },
+    };
+
+    const [media, total] = await Promise.all([
+      this.prisma.listingMedia.findMany({
+        where,
+        select: {
+          id: true,
+          listingId: true,
+          failureReason: true,
+          createdAt: true,
+          listing: { select: { title: true, owner: { select: { displayName: true } } } },
+        },
+        // Oldest first. A queue worked newest-first leaves its oldest items untouched
+        // forever, and those are the uploads somebody has already been waiting on.
+        orderBy: { createdAt: 'asc' },
+        skip: (page - 1) * limit,
+        take: limit,
+      }),
+      this.prisma.listingMedia.count({ where }),
+    ]);
+
+    const items: ModerationMediaQueueItemDto[] = media.map((entry) => ({
+      id: entry.id,
+      listingId: entry.listingId,
+      listingTitle: entry.listing.title,
+      uploaderName: entry.listing.owner.displayName,
+      failureReason: entry.failureReason,
+      createdAt: entry.createdAt,
     }));
 
     return { items, total };

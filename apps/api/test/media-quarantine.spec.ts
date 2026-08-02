@@ -38,7 +38,7 @@ describe('MediaService quarantine boundary', () => {
       row?: ListingMedia;
       block?: { reason: string; category: string | null } | null;
       decision?: 'APPROVE' | 'REVIEW';
-      scannerDecision?: 'APPROVE' | 'REVIEW' | 'REJECT';
+      scannerDecision?: 'APPROVE' | 'REVIEW' | 'REJECT' | 'UNAVAILABLE';
       protectedHashStatus?: 'NO_MATCH' | 'MATCH' | 'UNAVAILABLE';
     } = {},
   ) {
@@ -90,7 +90,12 @@ describe('MediaService quarantine boundary', () => {
     const scanner = {
       scan: jest.fn().mockResolvedValue({
         decision: options.scannerDecision ?? 'APPROVE',
-        reasons: options.scannerDecision === 'REVIEW' ? ['IMAGE_SCANNER_UNAVAILABLE'] : [],
+        reasons:
+          options.scannerDecision === 'REVIEW'
+            ? ['NSFWJS_EXPLICIT']
+            : options.scannerDecision === 'UNAVAILABLE'
+              ? ['IMAGE_SCANNER_UNAVAILABLE']
+              : [],
         provider: 'test',
       }),
     };
@@ -232,9 +237,11 @@ describe('MediaService quarantine boundary', () => {
     const result = await service.confirmUpload(mediaId, userId);
 
     expect(result.status).toBe(MediaStatus.REVIEW_REQUIRED);
-    expect(moderation.reviewOnUpload).toHaveBeenCalledWith(expect.any(Object), expect.any(Object), [
-      'IMAGE_SCANNER_UNAVAILABLE',
-    ]);
+    expect(moderation.reviewOnUpload).toHaveBeenCalledWith(
+      expect.any(Object),
+      expect.any(Object),
+      expect.objectContaining({ flagged: ['NSFWJS_EXPLICIT'] }),
+    );
     expect(storage.putObject).toHaveBeenCalledTimes(3);
     for (const [key] of storage.putObject.mock.calls) {
       expect(key).toMatch(/^quarantine\/listings\//);

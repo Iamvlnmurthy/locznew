@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation';
 import { getCurrentUser, hasPermission, type DisplayUser } from '@/lib/session';
 import { logoutAction } from '../login/actions';
+import { getAdminQueueCopy } from '@/lib/queue-copy';
 import { NavLink } from './nav-link';
 import type { ConsoleIconName } from './console-icon';
 
@@ -28,6 +29,12 @@ const NAV: Array<{
     permissions: ['business:verify'],
   },
   {
+    href: '/businesses/claims',
+    label: '',
+    icon: 'shield',
+    permissions: ['business:verify'],
+  },
+  {
     href: '/categories',
     label: 'Categories',
     icon: 'categories',
@@ -46,7 +53,7 @@ function canSeeNavigationItem(user: DisplayUser, permissions: string[]): boolean
  * enforces permissions on every request, so a forged cookie buys nothing but an empty page.
  */
 export default async function ConsoleLayout({ children }: { children: React.ReactNode }) {
-  const user = await getCurrentUser();
+  const [user, { copy: queueCopy }] = await Promise.all([getCurrentUser(), getAdminQueueCopy()]);
   if (!user) redirect('/login');
 
   return (
@@ -66,7 +73,12 @@ export default async function ConsoleLayout({ children }: { children: React.Reac
 
         <nav className="sidebar__nav" aria-label="Sections">
           {NAV.filter((item) => canSeeNavigationItem(user, item.permissions)).map((item) => (
-            <NavLink key={item.href} href={item.href} label={item.label} icon={item.icon} />
+            <NavLink
+              key={item.href}
+              href={item.href}
+              label={item.href === '/businesses/claims' ? queueCopy.claimsNav : item.label}
+              icon={item.icon}
+            />
           ))}
         </nav>
 

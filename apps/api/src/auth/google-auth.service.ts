@@ -1,6 +1,12 @@
-import { Injectable, Logger, ServiceUnavailableException, UnauthorizedException } from '@nestjs/common';
+import {
+  Injectable,
+  Logger,
+  ServiceUnavailableException,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { UserStatus } from '@prisma/client';
 import { OAuth2Client } from 'google-auth-library';
+import { v7 as uuid } from 'uuid';
 import { AppConfig } from '../config/config.module';
 import { PrismaService } from '../prisma/prisma.service';
 
@@ -13,7 +19,7 @@ import { PrismaService } from '../prisma/prisma.service';
  * checks all three.
  *
  * The security decision that matters here is when to attach a Google login to an existing
- * account. Matching on an email address Google has not verified is how account takeover
+ * account, and when to create one. Matching on an email address Google has not verified is how account takeover
  * happens: anyone can put somebody else's address on a Google account, and if that silently
  * linked, they would inherit the other person's listings, chats and roles. So an unverified
  * address is refused outright rather than used to create or find anything.
@@ -41,7 +47,7 @@ export class GoogleAuthService {
    * does not mint tokens itself, so every sign-in path produces a session the same way and
    * device registration, lockouts and refresh rotation cannot drift between them.
    */
-  async resolveUser(idToken: string): Promise<{ id: string }> {
+  async resolveUser(idToken: string): Promise<{ id: string; isNewUser: boolean }> {
     if (!this.isConfigured) {
       throw new ServiceUnavailableException('Google sign-in is not available');
     }
@@ -80,23 +86,52 @@ export class GoogleAuthService {
         });
       }
 
-      return { id: existing.id };
+      return { id: existing.id, isNewUser: false };
     }
 
-    // Google links to an existing account; it does not create one.
+    // Google creates the account.
     //
-    // `User.phoneE164` is NOT NULL and unique, and the number is how this platform reaches
-    // people and how sellers are contacted — a mobile marketplace account without one is
-    // half an account. Making the column nullable to accommodate Google would change the
-    // shape of every account for the sake of one sign-in path, so somebody signing in with
-    // Google for the first time is asked to register once, and Google works from then on.
+    // It used to refuse and tell the person to go and fill in the sign-up form with a
+    // mobile number instead, which made the Google button on the sign-up page a dead end —
+    // it appeared to offer a way in and then sent you back to the thing it was meant to
+    // replace. `User.phoneE164` is now nullable for exactly this.
     //
-    // Deliberately worded so it cannot be used to discover which addresses have accounts:
-    // the same message is returned whether or not one exists under a different email.
-    throw new UnauthorizedException(
-      'No LocZ account uses this Google address yet. Create an account with your mobile ' +
-        'number first, then sign in with Google.',
-    );
+    // The account is real but incomplete: it can sign in, browse, save and message, and it
+    // has no number until `POST /auth/phone/confirm` records one. Every session it opens
+    // carries `requiresPhone`, and the web client sends it to /account/phone.
+    const created = await this.prisma.user.create({
+      data: {
+        id: uuid(),
+        // No number, and no placeholder standing in for one. A fabricated value would be
+        // indistinguishable from a real number in the seller-contact column, and the
+        // unique index would start rejecting the second account that got the same one.
+        phoneE164: null,
+        email,
+        // Google has verified the address; that is the whole basis on which this account
+        // exists, so it is recorded as verified at creation rather than left for later.
+        emailVerifiedAt: new Date(),
+        displayName: this.displayNameFrom(payload.name, email),
+        status: UserStatus.ACTIVE,
+      },
+      select: { id: true },
+    });
+
+    this.logger.log(`Created user ${created.id} from a verified Google address`);
+    return { id: created.id, isNewUser: true };
+  }
+
+  /**
+   * A name to greet somebody by before they have chosen one.
+   *
+   * Google's profile name when there is one, because a person who signed up with Google
+   * expects to see their own name. Otherwise the local part of the address — never the
+   * full address, which would put an email in every listing card and message thread they
+   * appear in.
+   */
+  private displayNameFrom(googleName: string | undefined, email: string): string {
+    const name = googleName?.trim();
+    if (name) return name.slice(0, 120);
+    return (email.split('@')[0] || 'LocZ user').slice(0, 120);
   }
 
   private async verify(idToken: string) {

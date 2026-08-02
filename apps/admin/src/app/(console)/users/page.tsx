@@ -5,7 +5,8 @@ export const dynamic = 'force-dynamic';
 
 interface AdminUser {
   id: string;
-  phone: string;
+  /** Null on an account created by Google sign-up that has not confirmed a number. */
+  phone: string | null;
   email: string | null;
   displayName: string;
   status: string;
@@ -110,7 +111,9 @@ export default async function UsersPage({
                       </div>
                     ) : null}
                   </td>
-                  <td style={{ fontVariantNumeric: 'tabular-nums' }}>{user.phone}</td>
+                  {/* Null on an account created by Google sign-up. An empty cell reads as
+                      a rendering fault; an em dash says the platform does not have one. */}
+                  <td style={{ fontVariantNumeric: 'tabular-nums' }}>{user.phone ?? '—'}</td>
                   <td>
                     <span className={statusBadge(user.status)}>{user.status.toLowerCase()}</span>
                   </td>

@@ -197,7 +197,13 @@ export class LogoutDto {
 
 export class AuthUserDto {
   @ApiProperty() id!: string;
-  @ApiProperty() phone!: string;
+  /**
+   * Null on an account Google created, until the person confirms a number.
+   *
+   * Clients must not treat this as "no phone needed" — see `requiresPhone`, which is the
+   * field to branch on, so a client never has to infer intent from an absent value.
+   */
+  @ApiProperty({ nullable: true }) phone!: string | null;
   @ApiPropertyOptional() email?: string | null;
   @ApiProperty() displayName!: string;
   @ApiProperty() preferredLanguage!: string;
@@ -205,6 +211,11 @@ export class AuthUserDto {
   @ApiProperty({ type: [String] }) permissions!: string[];
   @ApiProperty({ description: 'True when the account was created by this request' })
   isNewUser!: boolean;
+  @ApiProperty({
+    description:
+      'True when the account has no confirmed mobile number and should be sent to /account/phone',
+  })
+  requiresPhone!: boolean;
 }
 
 export class AuthTokensDto {

@@ -118,7 +118,20 @@ export const envSchema = z.object({
   MEDIA_MAX_IMAGES_PER_LISTING: z.coerce.number().int().positive().default(12),
   IMAGE_SCANNER_TIMEOUT_MS: z.coerce.number().int().positive().max(60_000).default(5_000),
   IMAGE_SCANNER_MAX_ATTEMPTS: z.coerce.number().int().min(1).max(5).default(2),
-  IMAGE_SCANNER_PROVIDER: z.enum(['quarantine', 'rekognition']).default('quarantine'),
+  // nsfwjs is the default because it is the only option that cannot be unreachable: the
+  // model ships inside node_modules and runs in this process. Every uploaded image on
+  // production sat in quarantine for weeks because the configured scanner needed a network
+  // hop that was never made, and nothing surfaced it.
+  IMAGE_SCANNER_PROVIDER: z.enum(['nsfwjs', 'quarantine', 'rekognition']).default('nsfwjs'),
+  NSFWJS_MODEL: z.enum(['MobileNetV2', 'MobileNetV2Mid', 'InceptionV3']).default('MobileNetV2'),
+  /** Combined Porn + Hentai probability that sends an image to a moderator. */
+  NSFWJS_EXPLICIT_REVIEW_SCORE: z.coerce.number().min(0).max(1).default(0.5),
+  /**
+   * The `Sexy` class alone, held to a much higher bar. It fires on swimwear, on a saree,
+   * and on any close portrait — all ordinary things to be selling — so treating it like
+   * explicit content would put a large share of honest listings into a queue.
+   */
+  NSFWJS_SUGGESTIVE_REVIEW_SCORE: z.coerce.number().min(0).max(1).default(0.9),
   AWS_REKOGNITION_REGION: z.string().default('ap-south-1'),
   AWS_REKOGNITION_ACCESS_KEY_ID: z.string().optional(),
   AWS_REKOGNITION_SECRET_ACCESS_KEY: z.string().optional(),

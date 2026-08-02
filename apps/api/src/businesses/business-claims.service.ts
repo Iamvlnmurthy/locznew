@@ -413,7 +413,7 @@ export class BusinessClaimsService {
           business: {
             select: { id: true, name: true, slug: true, primaryPhone: true, sourceName: true },
           },
-          claimant: { select: { id: true, name: true, phoneE164: true, email: true } },
+          claimant: { select: { id: true, displayName: true, phoneE164: true, email: true } },
         },
       }),
       this.prisma.businessClaim.count({ where }),

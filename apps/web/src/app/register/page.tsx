@@ -72,7 +72,6 @@ export default async function RegisterPage() {
           hidePassword: s.hidePassword,
           googleDivider: a.googleDivider,
           googleButton: a.googleButton,
-          googleNeedsAccount: s.googleNeedsAccount,
           googleUnavailable: a.googleUnavailable,
           googleFailed: a.googleFailed,
         }}

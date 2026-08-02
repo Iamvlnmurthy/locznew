@@ -1252,7 +1252,8 @@ export class ListingsService {
   private async toDetailDto(
     listing: ListingWithSummary & {
       category: { id: string; name: string };
-      owner: { id: string; displayName: string; createdAt: Date; phoneE164: string };
+      // Nullable: an account created by Google sign-up has no number until it confirms one.
+      owner: { id: string; displayName: string; createdAt: Date; phoneE164: string | null };
       attributeValues: Array<{
         attribute: { key: string; label: string };
         valueText: string | null;
@@ -1308,6 +1309,9 @@ export class ListingsService {
         id: listing.owner.id,
         displayName: listing.owner.displayName,
         memberSince: listing.owner.createdAt,
+        // Both sides can legitimately be absent now, and `null` already means "no number
+        // to show" here, so a seller without one simply offers no call button rather than
+        // an empty one. `contactPhone` still wins: it is the number chosen for this listing.
         phone: showPhone ? (listing.contactPhone ?? listing.owner.phoneE164) : null,
       },
       media,

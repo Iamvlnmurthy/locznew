@@ -6,6 +6,7 @@ import { PaginatedDto, paginate } from '../common/dto/pagination.dto';
 import { RequirePermissions } from '../rbac/rbac.decorators';
 import {
   ApproveListingDto,
+  ModerationMediaQueueItemDto,
   ModerationQueueItemDto,
   ModerationQueueQueryDto,
   RejectListingDto,
@@ -60,6 +61,23 @@ export class ModerationController {
     await this.media.approveForListing(id);
     const listing = await this.moderation.approveListing(id, user.id, dto.note);
     return { id: listing.id, status: listing.status };
+  }
+
+  @Get('media/queue')
+  @RequirePermissions('listing:moderate')
+  @ApiOperation({
+    summary: 'Images held in quarantine, awaiting a moderator',
+    description:
+      'The list the approve and block controls needed. No image content and no signed ' +
+      'URLs: ask for moderation/media/:id/preview when a moderator opens one. Media on ' +
+      'legal hold is excluded — that belongs to the restricted safety-case queue.',
+  })
+  @ApiResponse({ status: 200, type: [ModerationMediaQueueItemDto] })
+  async getMediaQueue(
+    @Query() query: ModerationQueueQueryDto,
+  ): Promise<PaginatedDto<ModerationMediaQueueItemDto>> {
+    const { items, total } = await this.moderation.getMediaQueue(query.page, query.limit);
+    return paginate(items, total, query.page, query.limit);
   }
 
   @Get('media/:id/preview')

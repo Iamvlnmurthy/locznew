@@ -4,6 +4,7 @@ import { QueueModule } from '../queue/queue.module';
 import { ImageModerationService } from './image-moderation.service';
 import { IMAGE_SCAN_PROVIDER } from './image-scan-provider.interface';
 import { ImageScanService } from './image-scan.service';
+import { NsfwjsImageScanProvider } from './nsfwjs-image-scan.provider';
 import { QuarantineImageScanProvider } from './quarantine-image-scan.provider';
 import { RekognitionImageScanProvider } from './rekognition-image-scan.provider';
 import { PROTECTED_HASH_PROVIDER } from './protected-hash-provider.interface';
@@ -28,6 +29,7 @@ import { StorageService } from './storage.service';
   providers: [
     ImageModerationService,
     ImageScanService,
+    NsfwjsImageScanProvider,
     QuarantineImageScanProvider,
     RekognitionImageScanProvider,
     ProtectedHashService,
@@ -40,12 +42,27 @@ import { StorageService } from './storage.service';
     },
     {
       provide: IMAGE_SCAN_PROVIDER,
-      inject: [AppConfig, QuarantineImageScanProvider, RekognitionImageScanProvider],
+      inject: [
+        AppConfig,
+        NsfwjsImageScanProvider,
+        QuarantineImageScanProvider,
+        RekognitionImageScanProvider,
+      ],
       useFactory: (
         config: AppConfig,
+        nsfwjs: NsfwjsImageScanProvider,
         quarantine: QuarantineImageScanProvider,
         rekognition: RekognitionImageScanProvider,
-      ) => (config.get('IMAGE_SCANNER_PROVIDER') === 'rekognition' ? rekognition : quarantine),
+      ) => {
+        switch (config.get('IMAGE_SCANNER_PROVIDER')) {
+          case 'rekognition':
+            return rekognition;
+          case 'quarantine':
+            return quarantine;
+          default:
+            return nsfwjs;
+        }
+      },
     },
   ],
   exports: [ImageModerationService, ImageScanService, ProtectedHashService, MediaSafetyService],

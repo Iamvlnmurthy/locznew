@@ -13,16 +13,30 @@ export interface ImageUploadDecision {
 }
 
 /**
+ * What the safety providers had to say about this image, kept apart on purpose.
+ *
+ * `flagged` is a provider objecting to the picture. `unavailable` is a provider that could
+ * not be asked. Collapsing the two into one list of strings is how "we don't know" became
+ * "hold it", and then held everything forever.
+ */
+export interface ImageScanFindings {
+  flagged?: string[];
+  unavailable?: string[];
+}
+
+/**
  * What LocZ can and cannot tell about a photograph.
  *
- * **It cannot see what the picture shows.** There is no classifier here, and adding a
- * plausible-looking one would be worse than having none: a moderation control that is
- * believed and does not work is how illegal material stays up while everyone assumes it is
- * being handled. Content classification needs a licensed provider — Google Cloud Vision
- * SafeSearch, AWS Rekognition, Hive — and detection of child sexual abuse material needs
- * PhotoDNA or Thorn, which are access-controlled for good reason and are not something a
- * platform can approximate. `docs/MODERATION.md` records what must be procured before
- * launch and the reporting duties that come with it.
+ * **It cannot see what the picture shows.** There is no classifier here. That lives behind
+ * `ImageScanProvider` — `NsfwjsImageScanProvider` by default — and it answers exactly one
+ * question, nudity, with a probability. It is silent on stolen goods, a forged
+ * certificate, someone else's shopfront, and a child in the frame. Detection of child
+ * sexual abuse material is a different problem again, needing PhotoDNA or Thorn, which are
+ * access-controlled for good reason and are not something a platform can approximate.
+ * `docs/MODERATION.md` records what remains and the reporting duties that come with it.
+ *
+ * So a clean score is never on its own a reason to publish. What decides that here is
+ * account age, which is why `reviewOnUpload` treats it as holding.
  *
  * What it can do is make a moderator's decision stick, and surface the patterns that
  * usually accompany a bad listing:
@@ -95,7 +109,7 @@ export class ImageModerationService {
   async reviewOnUpload(
     media: ListingMedia,
     fingerprint: ImageFingerprint,
-    requiredReasons: string[] = [],
+    findings: ImageScanFindings = {},
   ): Promise<ImageUploadDecision> {
     const listing = await this.prisma.listing.findUnique({
       where: { id: media.listingId },
@@ -103,7 +117,8 @@ export class ImageModerationService {
     });
     if (!listing) return { decision: 'REVIEW', reasons: ['LISTING_NOT_FOUND'] };
 
-    const reasons: string[] = [...requiredReasons];
+    const unavailable = findings.unavailable ?? [];
+    const reasons: string[] = [...(findings.flagged ?? []), ...unavailable];
 
     // The same photograph under a different owner. Not proof of anything — a shop and its
     // employee legitimately share pictures — but the strongest single signal that a
@@ -125,16 +140,35 @@ export class ImageModerationService {
       reasons.push('IMAGE_FROM_NEW_ACCOUNT');
     }
 
-    // Being new is recorded but does not by itself hold the listing, matching the text rules
-    // in `RuleBasedModerationProvider`. Changing only one of the two would have achieved
-    // nothing: almost every real listing carries a photograph, so this rule alone would keep
-    // sending first-time posters back to a queue nobody is working.
+    // The rule, and the two halves of it that only work together:
     //
-    // Every other reason here — a hash of previously removed content, the same photograph
-    // under another owner, a scanner that could not be reached — still holds it, and still
-    // pulls back a listing that was already published.
-    const holding = reasons.filter((reason) => reason !== 'IMAGE_FROM_NEW_ACCOUNT');
-    if (holding.length === 0) return { decision: 'APPROVE', reasons };
+    //   clean + established account -> publish
+    //   clean + new account         -> queue
+    //   anything flagged            -> queue, never rejected on an image alone
+    //
+    // A clean NSFW score says nothing about stolen goods, a forged certificate, someone
+    // else's shopfront, or a child in the frame. The classifier cannot see any of that, so
+    // publishing on its word alone would be trusting it with questions it was never asked.
+    // Account age is the cheap signal that covers the gap, and it is already how the text
+    // rules work — NEW_ACCOUNT scores in `RuleBasedModerationProvider`. Images now match.
+    //
+    // The other half: a provider that could not be reached does *not* hold the image by
+    // itself. It is a reason to distrust nothing in particular, and treating it as an
+    // objection is what put 100% of production media behind a grey placeholder — silently,
+    // because a held image still lets its listing publish. So an outage costs an
+    // established account's clean-looking upload nothing, and still queues everything that
+    // carries any other signal, new accounts included. Low risk publishes; the rest waits.
+    const holding = reasons.filter((reason) => !unavailable.includes(reason));
+    if (holding.length === 0) {
+      if (unavailable.length > 0) {
+        this.logger.error(
+          `Image ${media.id} on listing ${listing.id} published without a completed scan: ` +
+            `${unavailable.join(', ')}. Failing open for an established account with no other ` +
+            `signal — fix the scanner.`,
+        );
+      }
+      return { decision: 'APPROVE', reasons };
+    }
 
     // Only a live listing is worth pulling back; one already waiting for review is where
     // it needs to be, and one already refused should not be quietly resurrected.

@@ -10,7 +10,11 @@ import { VerifyPhoneForm } from './verify-phone-form';
  * and what tells a buyer the seller can be reached, but requiring it to register would put an
  * SMS between somebody and their first listing.
  */
-export default async function VerifyPhonePage() {
+export default async function VerifyPhonePage({
+  searchParams,
+}: {
+  searchParams: Promise<{ next?: string }>;
+}) {
   // Confirming a number belongs to an account, so there has to be one. Signed out, the API
   // would refuse anyway — sending somebody through an SMS first would be a waste of a message.
   const user = await getCurrentUser();
@@ -18,9 +22,15 @@ export default async function VerifyPhonePage() {
 
   const t = getTranslator(await getLocale());
 
+  // Google sign-up sends people here with where they were going attached. Only same-origin
+  // paths are honoured, so `?next=` cannot be turned into an open redirect.
+  const requested = (await searchParams).next ?? '/';
+  const next = requested.startsWith('/') && !requested.startsWith('//') ? requested : '/';
+
   return (
     <main className="auth-page">
       <VerifyPhoneForm
+        next={next}
         labels={{
           title: t('verifyPhone.title'),
           intro: t('verifyPhone.intro'),
@@ -38,6 +48,9 @@ export default async function VerifyPhonePage() {
           tooManyAttempts: t('verifyPhone.tooManyAttempts'),
           alreadyTaken: t('verifyPhone.alreadyTaken'),
           failed: t('verifyPhone.failed'),
+          continue: t('verifyPhone.continue'),
+          skip: t('verifyPhone.skip'),
+          skipHint: t('verifyPhone.skipHint'),
         }}
       />
     </main>

@@ -36,6 +36,7 @@ describe('GoogleAuthService', () => {
       user: {
         findFirst: jest.fn().mockResolvedValue(user),
         update: jest.fn().mockResolvedValue({}),
+        create: jest.fn().mockResolvedValue({ id: 'created-1' }),
       },
     };
     const config = { get: jest.fn().mockReturnValue(clientId) };
@@ -58,7 +59,10 @@ describe('GoogleAuthService', () => {
   it('signs in an existing account whose Google address is verified', async () => {
     const { service } = build();
 
-    await expect(service.resolveUser(token)).resolves.toEqual({ id: 'user-1' });
+    await expect(service.resolveUser(token)).resolves.toEqual({
+      id: 'user-1',
+      isNewUser: false,
+    });
   });
 
   it('refuses an unverified Google email', async () => {
@@ -117,12 +121,75 @@ describe('GoogleAuthService', () => {
     await expect(service.resolveUser(token)).rejects.toThrow(UnauthorizedException);
   });
 
-  it('does not create an account for an unknown address', async () => {
-    const { service } = build({ user: null });
+  // ---------------------------------------------------------------- creating an account
+  describe('an address with no LocZ account', () => {
+    it('creates one, rather than sending the person back to the sign-up form', async () => {
+      const { service, prisma } = build({ user: null });
 
-    // phoneE164 is NOT NULL and unique, and the number is how sellers are contacted. A
-    // mobile marketplace account without one is half an account.
-    await expect(service.resolveUser(token)).rejects.toThrow(UnauthorizedException);
+      // This used to throw, which made the Google button on the sign-up page a dead end:
+      // it offered a way in and then told the reader to go and fill in the form it was
+      // meant to replace.
+      await expect(service.resolveUser(token)).resolves.toEqual({
+        id: 'created-1',
+        isNewUser: true,
+      });
+      expect(prisma.user.create).toHaveBeenCalled();
+    });
+
+    it('stores no phone number and invents no placeholder for one', async () => {
+      const { service, prisma } = build({ user: null });
+
+      await service.resolveUser(token);
+
+      // A fabricated value would be indistinguishable from a real number in the
+      // seller-contact column, and the unique index would reject the second account to
+      // get the same one.
+      const { data } = prisma.user.create.mock.calls[0][0];
+      expect(data.phoneE164).toBeNull();
+    });
+
+    it('records the address as verified, since that is why the account exists', async () => {
+      const { service, prisma } = build({ user: null });
+
+      await service.resolveUser(token);
+
+      const { data } = prisma.user.create.mock.calls[0][0];
+      expect(data.email).toBe('ravi@example.com');
+      expect(data.emailVerifiedAt).toBeInstanceOf(Date);
+    });
+
+    it('greets the person by their Google name', async () => {
+      const { service, prisma } = build({ user: null });
+
+      await service.resolveUser(token);
+
+      expect(prisma.user.create.mock.calls[0][0].data.displayName).toBe('Ravi');
+    });
+
+    it('falls back to the local part, never the whole address', async () => {
+      const { service, prisma } = build({
+        user: null,
+        payload: { email: 'ravi@example.com', email_verified: true },
+      });
+
+      await service.resolveUser(token);
+
+      // The display name appears on every listing card and message thread this account
+      // touches. Putting an email address there would publish it.
+      const { displayName } = prisma.user.create.mock.calls[0][0].data;
+      expect(displayName).toBe('ravi');
+      expect(displayName).not.toContain('@');
+    });
+
+    it('still refuses to create anything from an unverified address', async () => {
+      const { service, prisma } = build({
+        user: null,
+        payload: { email: 'ravi@example.com', email_verified: false },
+      });
+
+      await expect(service.resolveUser(token)).rejects.toThrow(UnauthorizedException);
+      expect(prisma.user.create).not.toHaveBeenCalled();
+    });
   });
 
   it('reports unavailable rather than failing oddly when unconfigured', async () => {

@@ -152,7 +152,7 @@ describe('ImageModerationService', () => {
       expect(queue.add).toHaveBeenCalled();
     });
 
-    it('leaves a new seller published when the picture itself is unobjectionable', async () => {
+    it('queues a new seller even when the picture itself is unobjectionable', async () => {
       const { service, prisma, queue } = build({ listing: published, publishedByOwner: 0 });
 
       const result = await service.reviewOnUpload(
@@ -160,11 +160,13 @@ describe('ImageModerationService', () => {
         fingerprint,
       );
 
-      expect(result.decision).toBe('APPROVE');
-      // Recorded for a moderator's benefit, but not grounds on its own to pull the listing.
+      // A clean classifier score is silent on stolen goods, a forged certificate, someone
+      // else's shopfront, or a child in the frame. Account age is the signal that covers
+      // what the scanner cannot see, which is why a clean picture is not enough on its own.
+      expect(result.decision).toBe('REVIEW');
       expect(result.reasons).toContain('IMAGE_FROM_NEW_ACCOUNT');
-      expect(prisma.listing.update).not.toHaveBeenCalled();
-      expect(queue.add).not.toHaveBeenCalled();
+      expect(prisma.listing.update).toHaveBeenCalled();
+      expect(queue.add).toHaveBeenCalled();
     });
 
     it('still pulls back a new seller when the picture belongs to someone else', async () => {
@@ -193,20 +195,54 @@ describe('ImageModerationService', () => {
       expect(queue.add).not.toHaveBeenCalled();
     });
 
-    it('pulls back even an established seller when the safety scanner cannot approve', async () => {
+    it('publishes an established seller when the scanner could not be reached', async () => {
       const { service, prisma, queue } = build({ listing: published, publishedByOwner: 40 });
 
       await expect(
-        service.reviewOnUpload({ id: 'media-1', listingId: 'listing-1' } as never, fingerprint, [
-          'IMAGE_SCANNER_UNAVAILABLE',
-        ]),
+        service.reviewOnUpload({ id: 'media-1', listingId: 'listing-1' } as never, fingerprint, {
+          unavailable: ['IMAGE_SCANNER_UNAVAILABLE'],
+        }),
       ).resolves.toEqual({
-        decision: 'REVIEW',
+        decision: 'APPROVE',
         reasons: ['IMAGE_SCANNER_UNAVAILABLE'],
       });
 
+      // The reason is still recorded and still logged at error level; what it no longer
+      // does is take an established seller's listing off the shelf because a dependency
+      // was down.
+      expect(prisma.listing.update).not.toHaveBeenCalled();
+      expect(queue.add).not.toHaveBeenCalled();
+    });
+
+    it('still queues a new seller when the scanner could not be reached', async () => {
+      const { service, prisma } = build({ listing: published, publishedByOwner: 0 });
+
+      const result = await service.reviewOnUpload(
+        { id: 'media-1', listingId: 'listing-1' } as never,
+        fingerprint,
+        { unavailable: ['IMAGE_SCANNER_UNAVAILABLE'] },
+      );
+
+      // Failing open is for low-risk uploads. Everything else queues — which is the whole
+      // difference between failing open and simply switching the control off.
+      expect(result.decision).toBe('REVIEW');
       expect(prisma.listing.update).toHaveBeenCalled();
-      expect(queue.add).toHaveBeenCalled();
+    });
+
+    it('queues a flagged picture rather than rejecting it', async () => {
+      const { service, prisma } = build({ listing: published, publishedByOwner: 40 });
+
+      const result = await service.reviewOnUpload(
+        { id: 'media-1', listingId: 'listing-1' } as never,
+        fingerprint,
+        { flagged: ['NSFWJS_EXPLICIT'] },
+      );
+
+      // There is no reject path from an image alone. A probability about pixels is not
+      // enough to delete an honest seller's photograph with an accusation attached.
+      expect(result.decision).toBe('REVIEW');
+      expect(result.reasons).toContain('NSFWJS_EXPLICIT');
+      expect(prisma.listing.update).toHaveBeenCalled();
     });
 
     it('does not resurrect a listing that was already refused', async () => {
@@ -231,7 +267,6 @@ describe('ImageModerationService', () => {
     });
 
     it('survives the queue being unavailable', async () => {
-      // Needs a reason that genuinely holds the listing; being a new account no longer does.
       const { service, prisma } = build({
         listing: published,
         publishedByOwner: 0,

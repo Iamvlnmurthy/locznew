@@ -72,7 +72,6 @@ function loadGoogleIdentity(): Promise<GoogleIdentity> {
 interface Labels {
   divider: string;
   button: string;
-  accountRequired: string;
   unavailable: string;
   failed: string;
 }
@@ -153,11 +152,7 @@ export function GoogleSignIn({
   const message = scriptFailed
     ? labels.unavailable
     : state.error
-      ? {
-          accountRequired: labels.accountRequired,
-          unavailable: labels.unavailable,
-          failed: labels.failed,
-        }[state.error]
+      ? { unavailable: labels.unavailable, failed: labels.failed }[state.error]
       : null;
 
   return (

@@ -29,7 +29,8 @@ export class UpdateProfileDto {
 
 export class UserProfileDto {
   @ApiProperty() id!: string;
-  @ApiProperty() phone!: string;
+  /** Null on an account created by Google sign-up that has not confirmed a number yet. */
+  @ApiProperty({ nullable: true }) phone!: string | null;
   @ApiPropertyOptional() email!: string | null;
   @ApiProperty() displayName!: string;
   @ApiPropertyOptional() bio!: string | null;

@@ -63,7 +63,6 @@ export default async function SignInPage({
           hidePassword: t('auth.hidePassword'),
           googleDivider: t('auth.googleDivider'),
           googleButton: t('auth.googleButton'),
-          googleAccountRequired: t('auth.googleAccountRequired'),
           googleUnavailable: t('auth.googleUnavailable'),
           googleFailed: t('auth.googleFailed'),
         }}

@@ -16,7 +16,7 @@ export interface SignInState {
 }
 
 export interface GoogleSignInState {
-  error?: 'accountRequired' | 'unavailable' | 'failed';
+  error?: 'unavailable' | 'failed';
 }
 
 /** 10 digits, first digit 6–9 — the Indian mobile range. */
@@ -95,6 +95,10 @@ export async function passwordSignInAction(
  * Exchanges Google's short-lived credential for the same LocZ session used by every
  * other sign-in path. This stays server-side so neither LocZ token is exposed to browser
  * JavaScript; `storeSession` writes the existing httpOnly cookies.
+ *
+ * Google now creates the account when the verified address has none, so there is no longer
+ * an `accountRequired` outcome — the button used to fail here and tell the reader to go
+ * and fill in the form instead, which on the sign-up page was a circular dead end.
  */
 export async function googleSignInAction(
   _prev: GoogleSignInState,
@@ -118,17 +122,23 @@ export async function googleSignInAction(
       },
     });
   } catch (error) {
-    if (error instanceof ApiError) {
-      if (error.status === 503) return { error: 'unavailable' };
-      if (error.status === 401 && /mobile number first|no locz account/i.test(error.message)) {
-        return { error: 'accountRequired' };
-      }
-    }
+    if (error instanceof ApiError && error.status === 503) return { error: 'unavailable' };
     return { error: 'failed' };
   }
 
   await storeSession(session);
-  redirect(next.startsWith('/') && !next.startsWith('//') ? next : '/');
+
+  const destination = next.startsWith('/') && !next.startsWith('//') ? next : '/';
+
+  // A brand-new Google account has no mobile number, and on a marketplace where buyers ring
+  // sellers that is the one thing worth asking for immediately. Sent there with `next` intact
+  // so the person still lands where they were going once the number is confirmed — and the
+  // page itself is skippable, so this directs rather than traps.
+  if (session.user.requiresPhone) {
+    redirect(`/account/phone?next=${encodeURIComponent(destination)}`);
+  }
+
+  redirect(destination);
 }
 
 export async function verifyCodeAction(

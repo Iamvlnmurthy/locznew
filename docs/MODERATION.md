@@ -71,40 +71,81 @@ Known blocked images are marked `REJECTED`, their private original is deleted, a
 uploader receives a neutral policy message. Internal categories and moderator notes are
 not disclosed because they would reveal how a match was made.
 
-The scanner itself is behind `ImageScanProvider`. The production classifier adapter uses
-AWS Rekognition `DetectModerationLabels`; select it with
-`IMAGE_SCANNER_PROVIDER=rekognition`. It sends private bytes directly rather than exposing
-the R2 quarantine bucket, and normalizes WebP/HEIC to JPEG because Rekognition accepts JPEG
-and PNG.
+The scanner itself is behind `ImageScanProvider`. The default is `nsfwjs`: the model ships
+inside the `nsfwjs` package and runs in the API process on the pure-JavaScript CPU backend,
+costing roughly a second per upload. It is self-hosted on purpose. Four million records and
+a continuous upload stream make per-image pricing a standing bill, and — the reason that
+decided it — every network hop is another dependency that can be unreachable. An
+unreachable scanner is exactly what put 100% of production media behind a grey placeholder
+for weeks with no error and no alert.
 
-The policy mapping is intentionally narrow: high-confidence `Explicit` is rejected;
-violence, weapons, drugs, self-harm, hate symbols, ambiguous explicit results, and unknown
-future categories remain private for contextual review. Thresholds are environment
-settings and must satisfy `min <= review <= reject`.
+The mapping is narrow. `Porn` and `Hentai` are summed, because the model routinely splits
+one explicit picture across both, and `NSFWJS_EXPLICIT_REVIEW_SCORE` sends the result to a
+moderator. `Sexy` is tested alone against a much higher bar, because it fires on swimwear,
+on a saree and on any close portrait — all ordinary things to be selling.
 
-Without Rekognition configuration, the built-in quarantine provider gives every
-otherwise-valid upload `IMAGE_SCANNER_NOT_CONFIGURED` and holds it for a person. Provider
-calls have a bounded timeout and retry count; exhausted errors become
-`IMAGE_SCANNER_UNAVAILABLE`, not approval and not a deleted upload. Account age or seller
-reputation cannot override either result.
+**The provider never rejects.** A probability about pixels is not enough to destroy an
+honest seller's photograph with an accusation attached and no way to argue, so everything
+the model objects to goes to a person. That is only a real option because
+`POST /moderation/media/:id/approve` exists to release it again.
+
+`IMAGE_SCANNER_PROVIDER=rekognition` selects the AWS `DetectModerationLabels` adapter
+instead. It sends private bytes directly rather than exposing the R2 quarantine bucket,
+normalizes WebP/HEIC to JPEG, rejects high-confidence `Explicit`, and holds violence,
+weapons, drugs, self-harm, hate symbols and unknown future categories for review. Its
+thresholds must satisfy `min <= review <= reject`. `IMAGE_SCANNER_PROVIDER=quarantine`
+gives every otherwise-valid upload `IMAGE_SCANNER_NOT_CONFIGURED` and holds it for a
+person; it is a local fallback and production preflight refuses it.
+
+### Failing open when the scanner is unavailable
+
+Provider calls have a bounded timeout and retry count. When every attempt fails,
+`ImageScanService` returns `UNAVAILABLE` — a third answer, distinct from `REVIEW`, that a
+provider is not permitted to return — logged at error level every single time.
+
+`UNAVAILABLE` does not hold the image by itself:
+
+|                         | clean   | flagged | scanner unavailable    |
+| ----------------------- | ------- | ------- | ---------------------- |
+| **established account** | publish | queue   | publish, logged loudly |
+| **new account**         | queue   | queue   | queue                  |
+
+Collapsing "we could not ask" into "a moderator should look at this" is the defect this
+table exists to prevent. Because a held image still lets its listing publish, the failure
+was invisible: the upload succeeded, the listing went live, and the only symptom was a grey
+placeholder. A safety control that becomes a total outage the moment it cannot reach its
+dependency is worse than no control, because nobody notices.
+
+The same treatment covers a protected-hash provider that cannot be reached. That is the
+heavier of the two calls, and it is made deliberately: with `PROTECTED_HASH_PROVIDER=unconfigured`
+every upload carries a provider-unavailable reason, so treating it as an objection is by
+itself enough to trap all media forever, which is what it did.
+
+### Account age is what the classifier cannot see
+
+A clean NSFW score is silent on stolen goods, a forged certificate, someone else's
+shopfront, or a child in a photograph. Publishing on the classifier's word alone would be
+trusting it with questions it was never asked. So a clean image publishes only for an
+established account; a new account's images go to a person regardless of score. This is how
+the listing _text_ rules have always worked — `NEW_ACCOUNT` is a scoring factor in
+`RuleBasedModerationProvider` — and images now match.
 
 ### What does not happen, and must before launch
 
-**Nothing here can see what a photograph shows.** There is no classifier. A picture of
-ivory, a weapon, drugs or a person is, to this system, sixty-four bits describing the shape
-of the light in it.
+**The classifier only sees nudity.** nsfwjs answers one question, and the answer is a
+probability. Ivory, a weapon, drugs, a forged certificate, a stolen shopfront photograph or
+a child in the frame are all, to it, a clean image. Account age is what covers that gap, and
+it covers it crudely: a person still has to look.
 
-Adding a plausible-looking classifier would be worse than having none. A moderation control
-that is believed and does not work is how illegal material stays up while everyone assumes
-it is being handled.
+A moderation control that is believed and does not do what people think it does is how
+illegal material stays up while everyone assumes it is being handled. Two things remain:
 
-Two things must be procured before launch:
-
-**1. Content-classification production enablement.** The AWS Rekognition adapter and its
-tests are present, but the production AWS account, restricted `rekognition:DetectModerationLabels`
-permission, region, billing, and representative threshold calibration must be completed.
-Rekognition is a classifier, not proof that an image is legal, and its model version must
-be monitored for taxonomy changes.
+**1. Threshold calibration on real listing photographs.** The defaults were chosen from the
+model's behaviour on ordinary product images, not measured against LocZ's own corpus. The
+`Sexy` class in particular needs a false-positive rate measured on real Indian retail
+photographs — sarees, swimwear, close portraits — before anyone trusts its number. Enabling
+`IMAGE_SCANNER_PROVIDER=rekognition` instead remains an option and needs the production AWS
+account, restricted `rekognition:DetectModerationLabels` permission, region and billing.
 
 **2. Child sexual abuse material detection.** This is not the same problem and cannot be
 solved by the same tools. It requires hash matching against a maintained corpus —

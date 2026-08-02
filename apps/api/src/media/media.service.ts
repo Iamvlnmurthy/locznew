@@ -253,17 +253,17 @@ export class MediaService {
       throw new RejectedImageError('Image safety provider rejected the upload');
     }
 
-    const requiredReasons = [
-      ...(protectedMatch.status === 'UNAVAILABLE'
-        ? [protectedMatch.reasonCode ?? 'PROTECTED_HASH_PROVIDER_UNAVAILABLE']
-        : []),
-      ...(scannerVerdict.decision === 'REVIEW' ? scannerVerdict.reasons : []),
-    ];
-    const moderation = await this.imageModeration.reviewOnUpload(
-      scanning,
-      fingerprint,
-      requiredReasons,
-    );
+    // A provider that objected and a provider that could not be reached are handed over
+    // separately; see `ImageScanFindings` for why the difference decides the upload.
+    const moderation = await this.imageModeration.reviewOnUpload(scanning, fingerprint, {
+      flagged: scannerVerdict.decision === 'REVIEW' ? scannerVerdict.reasons : [],
+      unavailable: [
+        ...(protectedMatch.status === 'UNAVAILABLE'
+          ? [protectedMatch.reasonCode ?? 'PROTECTED_HASH_PROVIDER_UNAVAILABLE']
+          : []),
+        ...(scannerVerdict.decision === 'UNAVAILABLE' ? scannerVerdict.reasons : []),
+      ],
+    });
 
     const keys: Record<string, string> = {};
     for (const rendition of RENDITIONS) {
@@ -372,7 +372,6 @@ export class MediaService {
     return pending.length;
   }
 
-
   /**
    * Publishes an image a moderator has looked at and accepted.
    *
@@ -398,8 +397,9 @@ export class MediaService {
     const published = (key: string | null): string | null =>
       key ? key.replace(/^quarantine\//, '') : null;
 
-    const moves = [media.storageKey, media.thumbKey, media.cardKey, media.fullKey]
-      .filter((key): key is string => Boolean(key) && key!.startsWith('quarantine/'));
+    const moves = [media.storageKey, media.thumbKey, media.cardKey, media.fullKey].filter(
+      (key): key is string => Boolean(key) && key!.startsWith('quarantine/'),
+    );
 
     for (const key of moves) {
       await this.storage.copy(key, published(key)!);

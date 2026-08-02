@@ -25,6 +25,26 @@ export class ModerationQueueItemDto {
   @ApiProperty() createdAt!: Date;
 }
 
+/**
+ * One quarantined image waiting for a person.
+ *
+ * Carries no image content and no signed URL. A moderator opening an item asks
+ * `GET moderation/media/:id/preview` for a short-lived one, so listing the queue does not
+ * mint a URL for every quarantined image on the page — most of which nobody will look at,
+ * and each of which would be a live link to unreviewed content.
+ */
+export class ModerationMediaQueueItemDto {
+  @ApiProperty() id!: string;
+  @ApiProperty() listingId!: string;
+  @ApiProperty() listingTitle!: string;
+  @ApiProperty() uploaderName!: string;
+  @ApiPropertyOptional({
+    description: 'What the automated pass said, in the words shown to the uploader',
+  })
+  failureReason!: string | null;
+  @ApiProperty() createdAt!: Date;
+}
+
 export class ApproveListingDto {
   @ApiPropertyOptional({ example: 'Checked images, genuine listing' })
   @IsOptional()

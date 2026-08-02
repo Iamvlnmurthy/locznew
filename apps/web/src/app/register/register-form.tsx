@@ -32,7 +32,6 @@ interface Labels {
   hidePassword: string;
   googleDivider: string;
   googleButton: string;
-  googleNeedsAccount: string;
   googleUnavailable: string;
   googleFailed: string;
 }
@@ -176,10 +175,6 @@ export function RegisterForm({
           labels={{
             divider: labels.googleDivider,
             button: labels.googleButton,
-            // Page-specific. The sign-in page can honestly say "create an account first";
-            // on the create-account page that is what the reader is already doing, and the
-            // circular instruction reads as a dead end.
-            accountRequired: labels.googleNeedsAccount,
             unavailable: labels.googleUnavailable,
             failed: labels.googleFailed,
           }}

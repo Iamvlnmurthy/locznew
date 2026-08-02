@@ -24,7 +24,6 @@ interface Labels {
   hidePassword: string;
   googleDivider: string;
   googleButton: string;
-  googleAccountRequired: string;
   googleUnavailable: string;
   googleFailed: string;
 }
@@ -126,7 +125,6 @@ export function PasswordSignInForm({
           labels={{
             divider: labels.googleDivider,
             button: labels.googleButton,
-            accountRequired: labels.googleAccountRequired,
             unavailable: labels.googleUnavailable,
             failed: labels.googleFailed,
           }}

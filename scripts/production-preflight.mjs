@@ -208,6 +208,22 @@ if (!existsSync(envPath)) {
   const imageScanner = required(env, 'IMAGE_SCANNER_PROVIDER');
   if (imageScanner === 'quarantine') {
     fail('IMAGE_SCANNER_PROVIDER=quarantine is a safe local fallback, not a production classifier');
+  } else if (imageScanner === 'nsfwjs') {
+    // Nothing to configure and nothing to reach: the model ships in node_modules and runs
+    // in-process. Only the thresholds can be got wrong.
+    const explicit = Number(env.get('NSFWJS_EXPLICIT_REVIEW_SCORE') ?? 0.5);
+    const suggestive = Number(env.get('NSFWJS_SUGGESTIVE_REVIEW_SCORE') ?? 0.9);
+    if (
+      ![explicit, suggestive].every(Number.isFinite) ||
+      explicit <= 0 ||
+      explicit > 1 ||
+      suggestive <= 0 ||
+      suggestive > 1
+    ) {
+      fail('nsfwjs review scores must be numbers in (0, 1]');
+    } else {
+      pass('nsfwjs runs in-process with review scores in range');
+    }
   } else if (imageScanner === 'rekognition') {
     required(env, 'AWS_REKOGNITION_REGION');
     const hasAccessKey = !isPlaceholder(env.get('AWS_REKOGNITION_ACCESS_KEY_ID'));
@@ -239,7 +255,7 @@ if (!existsSync(envPath)) {
       pass('AWS Rekognition confidence thresholds are ordered safely');
     }
   } else if (imageScanner) {
-    fail('IMAGE_SCANNER_PROVIDER must be rekognition for this production candidate');
+    fail('IMAGE_SCANNER_PROVIDER must be nsfwjs or rekognition for this production candidate');
   }
 
   const protectedHashProvider = required(env, 'PROTECTED_HASH_PROVIDER');

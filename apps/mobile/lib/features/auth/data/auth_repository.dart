@@ -14,14 +14,20 @@ class AuthUser {
 
   final String id;
   final String displayName;
-  final String phone;
+
+  /// Null on an account created by Google sign-up that has not confirmed a number yet.
+  ///
+  /// This was a non-null `String` read with a hard cast, which would have thrown on the
+  /// first such account to open the app — on `/users/me`, so on every launch, not just at
+  /// sign-in.
+  final String? phone;
   final List<String> roles;
   final List<String> permissions;
 
   factory AuthUser.fromJson(Map<String, dynamic> json) => AuthUser(
         id: json['id'] as String,
         displayName: json['displayName'] as String,
-        phone: json['phone'] as String,
+        phone: json['phone'] as String?,
         roles: (json['roles'] as List<dynamic>? ?? []).cast<String>(),
         permissions: (json['permissions'] as List<dynamic>? ?? []).cast<String>(),
       );
@@ -202,7 +208,7 @@ class AuthRepository {
       final user = AuthUser(
         id: json['id'] as String,
         displayName: json['displayName'] as String,
-        phone: json['phone'] as String,
+        phone: json['phone'] as String?,
         roles: (json['roles'] as List<dynamic>? ?? []).cast<String>(),
         permissions: const [],
       );
