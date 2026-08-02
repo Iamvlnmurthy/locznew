@@ -8,24 +8,25 @@ import '../../../../core/theme/tokens.g.dart';
 import '../../domain/models.dart';
 
 /// Indian digit grouping: ₹1,20,000 rather than ₹120,000.
-final _rupees =
-    NumberFormat.currency(locale: 'en_IN', symbol: '₹', decimalDigits: 0);
+final _rupees = NumberFormat.currency(locale: 'en_IN', symbol: '₹', decimalDigits: 0);
 
 String formatPrice(num value) => _rupees.format(value);
 
 /// Fixed-height rails need extra room as text grows; the app caps scaling at 1.4.
-double listingCardRailHeight(double textScale) =>
-    248 + ((textScale - 1).clamp(0, 0.4) * 160);
+double listingCardRailHeight(double textScale) => 248 + ((textScale - 1).clamp(0, 0.4) * 160);
 
 /// Large text gets fewer, taller cards instead of forcing scaled copy into a dense grid.
 SliverGridDelegateWithMaxCrossAxisExtent listingCardGridDelegate(
   double textScale,
 ) =>
     SliverGridDelegateWithMaxCrossAxisExtent(
-      maxCrossAxisExtent: textScale > 1.15 ? 320 : 200,
-      mainAxisSpacing: 10,
-      crossAxisSpacing: 10,
-      childAspectRatio: textScale > 1.15 ? 0.66 : 0.70,
+      // Phone results are deliberately one-column: a marketplace card needs
+      // enough room for the image, price and locality to scan as one unit.
+      // Wider screens naturally graduate to two or more columns.
+      maxCrossAxisExtent: textScale > 1.15 ? 480 : 400,
+      mainAxisSpacing: 12,
+      crossAxisSpacing: 12,
+      childAspectRatio: textScale > 1.15 ? 0.66 : 1.02,
     );
 
 class ListingCard extends StatelessWidget {
@@ -53,9 +54,8 @@ class ListingCard extends StatelessWidget {
             ? strings('listing.free')
             : formatPrice(listing.price!);
     final place = listing.localityName ?? listing.cityName;
-    final distance = listing.distanceMeters == null
-        ? null
-        : _distance(listing.distanceMeters!, strings);
+    final distance =
+        listing.distanceMeters == null ? null : _distance(listing.distanceMeters!, strings);
     final semanticLabel = [
       if (listing.isFeatured) strings('listing.featured'),
       listing.title,
@@ -170,9 +170,7 @@ class ListingCard extends StatelessWidget {
                                 style: theme.textTheme.titleMedium?.copyWith(
                                   fontWeight: FontWeight.w800,
                                   letterSpacing: -0.25,
-                                  color: listing.isFree
-                                      ? LoczColors.success
-                                      : null,
+                                  color: listing.isFree ? LoczColors.success : null,
                                 ),
                               ),
                             ),

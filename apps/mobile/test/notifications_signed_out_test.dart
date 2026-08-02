@@ -14,11 +14,16 @@ import 'package:locz/features/notifications/presentation/notifications_screen.da
 void main() {
   testWidgets('signed-out notifications do not request private data and preserve return route',
       (tester) async {
+    await tester.binding.setSurfaceSize(const Size(320, 700));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
     var notificationRequests = 0;
     final router = GoRouter(
       initialLocation: '/notifications',
       routes: [
-        GoRoute(path: '/notifications', builder: (_, __) => const NotificationsScreen()),
+        GoRoute(
+          path: '/notifications',
+          builder: (_, __) => const NotificationsScreen(),
+        ),
         GoRoute(
           path: '/signin',
           builder: (_, state) => Scaffold(
@@ -41,6 +46,8 @@ void main() {
         child: MaterialApp.router(
           routerConfig: router,
           theme: AppTheme.light,
+          darkTheme: AppTheme.dark,
+          themeMode: ThemeMode.dark,
           locale: const Locale('en'),
           supportedLocales: const [Locale('en'), Locale('te'), Locale('hi')],
           localizationsDelegates: const [

@@ -147,6 +147,41 @@ void main() {
     expect(preferences.getStringList('locz.recent-searches.v1'), isNull);
   });
 
+  testWidgets('restored saved search keeps every attribute filter', (tester) async {
+    SharedPreferences.setMockInitialValues({});
+    final listings = _FakeListingRepository();
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [listingRepositoryProvider.overrideWithValue(listings)],
+        child: MaterialApp(
+          theme: AppTheme.light,
+          locale: const Locale('en'),
+          supportedLocales: const [Locale('en'), Locale('te'), Locale('hi')],
+          localizationsDelegates: const [
+            StringsDelegate(AppLocaleOption.en),
+            GlobalMaterialLocalizations.delegate,
+            GlobalWidgetsLocalizations.delegate,
+            GlobalCupertinoLocalizations.delegate,
+          ],
+          home: const SearchScreen(
+            initialCategoryId: 'cars',
+            initialAttributes: [
+              'brand:MARUTI_SUZUKI',
+              'km_driven:..50000',
+            ],
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(
+      listings.calls.last.attributes,
+      ['brand:MARUTI_SUZUKI', 'km_driven:..50000'],
+    );
+  });
+
   testWidgets('category filters send picklists and numeric ranges as repeated attributes',
       (tester) async {
     SharedPreferences.setMockInitialValues({});

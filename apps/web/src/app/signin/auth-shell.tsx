@@ -23,7 +23,7 @@ export function AuthShell({
 }: {
   children: React.ReactNode;
   labels: AuthShellLabels;
-  mode: 'signin' | 'register';
+  mode: 'signin' | 'register' | 'verify';
 }) {
   return (
     <main className={`auth-experience auth-experience--${mode}`}>

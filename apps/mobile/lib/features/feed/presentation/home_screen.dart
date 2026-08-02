@@ -65,9 +65,16 @@ class HomeScreen extends ConsumerWidget {
                           eyebrow: strings('feed.heroEyebrow'),
                           title: strings('feed.heroTitle'),
                           hint: strings('feed.heroHint'),
+                          liveLabel: strings('feed.localPulse', {'city': location}),
+                          countLabel: strings(
+                            'feed.localPulseHint',
+                            {'count': uniqueItems},
+                          ),
+                          actionLabel: strings('feed.browseAll'),
+                          onAction: () => context.go('/search'),
                         ),
                       ),
-                      const SizedBox(height: 24),
+                      const SizedBox(height: 18),
                       LoczEntrance(
                         delay: const Duration(milliseconds: 70),
                         child: _IntentDeck(
@@ -76,17 +83,6 @@ class HomeScreen extends ConsumerWidget {
                           onSell: () => context.push('/post'),
                           onJobs: () => context.go('/search?type=JOB'),
                           onServices: () => context.go('/search?type=SERVICE'),
-                        ),
-                      ),
-                      const SizedBox(height: 20),
-                      LoczEntrance(
-                        delay: const Duration(milliseconds: 120),
-                        child: _LocalPulse(
-                          city: location,
-                          count: uniqueItems,
-                          strings: strings,
-                          onBrowse: () => context.go('/search'),
-                          onPost: () => context.push('/post'),
                         ),
                       ),
                     ],
@@ -145,24 +141,24 @@ class _HomeAppBar extends StatelessWidget implements PreferredSizeWidget {
   final VoidCallback onTheme;
 
   @override
-  Size get preferredSize => const Size.fromHeight(116);
+  Size get preferredSize => const Size.fromHeight(106);
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return AppBar(
       titleSpacing: 16,
-      toolbarHeight: 58,
+      toolbarHeight: 52,
       title: Row(
         children: [
           Image.asset(
             'assets/brand/locz-mark.png',
             key: const Key('home-brand-mark'),
-            width: 32,
-            height: 36,
+            width: 28,
+            height: 32,
             fit: BoxFit.contain,
           ),
-          const SizedBox(width: 10),
+          const SizedBox(width: 8),
           Flexible(
             child: Semantics(
               button: true,
@@ -170,12 +166,12 @@ class _HomeAppBar extends StatelessWidget implements PreferredSizeWidget {
               child: Material(
                 key: const Key('home-location-control'),
                 color: theme.colorScheme.primaryContainer,
-                borderRadius: BorderRadius.circular(18),
+                borderRadius: BorderRadius.circular(16),
                 child: InkWell(
                   onTap: onLocation,
-                  borderRadius: BorderRadius.circular(18),
+                  borderRadius: BorderRadius.circular(16),
                   child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+                    padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 6),
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
@@ -215,7 +211,7 @@ class _HomeAppBar extends StatelessWidget implements PreferredSizeWidget {
         IconButton(
           key: const Key('home-theme-toggle'),
           visualDensity: VisualDensity.compact,
-          constraints: const BoxConstraints.tightFor(width: 40, height: 40),
+          constraints: const BoxConstraints.tightFor(width: 36, height: 36),
           icon: AnimatedSwitcher(
             duration: LoczMotion.standard,
             child: Icon(
@@ -223,7 +219,7 @@ class _HomeAppBar extends StatelessWidget implements PreferredSizeWidget {
                   ? Icons.light_mode_outlined
                   : Icons.dark_mode_outlined,
               key: ValueKey(theme.brightness),
-              size: 20,
+              size: 18,
             ),
           ),
           onPressed: onTheme,
@@ -231,39 +227,43 @@ class _HomeAppBar extends StatelessWidget implements PreferredSizeWidget {
         ),
         IconButton(
           visualDensity: VisualDensity.compact,
-          constraints: const BoxConstraints.tightFor(width: 40, height: 40),
-          icon: const Icon(Icons.notifications_none_rounded, size: 21),
+          constraints: const BoxConstraints.tightFor(width: 36, height: 36),
+          icon: const Icon(Icons.notifications_none_rounded, size: 19),
           onPressed: onNotifications,
           tooltip: strings('account.notifications'),
         ),
         const SizedBox(width: 8),
       ],
       bottom: PreferredSize(
-        preferredSize: const Size.fromHeight(58),
+        preferredSize: const Size.fromHeight(54),
         child: Padding(
-          padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+          padding: const EdgeInsets.fromLTRB(16, 2, 16, 10),
           child: LoczPressable(
             onTap: onSearch,
             semanticLabel: strings('search.placeholder'),
             child: Container(
               key: const Key('home-header-search'),
-              height: 46,
+              height: 42,
               padding: const EdgeInsets.symmetric(horizontal: 14),
               decoration: BoxDecoration(
                 color: theme.colorScheme.surface,
-                borderRadius: BorderRadius.circular(14),
+                borderRadius: BorderRadius.circular(16),
                 border: Border.all(color: theme.colorScheme.outlineVariant),
                 boxShadow: [
                   BoxShadow(
-                    color: theme.colorScheme.shadow.withValues(alpha: 0.06),
-                    blurRadius: 12,
-                    offset: const Offset(0, 4),
+                    color: theme.colorScheme.primary.withValues(alpha: 0.055),
+                    blurRadius: 16,
+                    offset: const Offset(0, 6),
                   ),
                 ],
               ),
               child: Row(
                 children: [
-                  Icon(Icons.search_rounded, size: 20, color: theme.colorScheme.primary),
+                  Icon(
+                    Icons.search_rounded,
+                    size: 18,
+                    color: theme.colorScheme.primary,
+                  ),
                   const SizedBox(width: 9),
                   Expanded(
                     child: Text(
@@ -274,15 +274,15 @@ class _HomeAppBar extends StatelessWidget implements PreferredSizeWidget {
                     ),
                   ),
                   Container(
-                    width: 28,
-                    height: 28,
+                    width: 26,
+                    height: 26,
                     decoration: BoxDecoration(
                       color: theme.colorScheme.primaryContainer,
                       shape: BoxShape.circle,
                     ),
                     child: Icon(
                       Icons.arrow_forward_rounded,
-                      size: 16,
+                      size: 14,
                       color: theme.colorScheme.onPrimaryContainer,
                     ),
                   ),
@@ -296,55 +296,281 @@ class _HomeAppBar extends StatelessWidget implements PreferredSizeWidget {
   }
 }
 
-class _DiscoveryIntro extends StatelessWidget {
+class _DiscoveryIntro extends StatefulWidget {
   const _DiscoveryIntro({
     required this.eyebrow,
     required this.title,
     required this.hint,
+    required this.liveLabel,
+    required this.countLabel,
+    required this.actionLabel,
+    required this.onAction,
   });
 
   final String eyebrow;
   final String title;
   final String hint;
+  final String liveLabel;
+  final String countLabel;
+  final String actionLabel;
+  final VoidCallback onAction;
+
+  @override
+  State<_DiscoveryIntro> createState() => _DiscoveryIntroState();
+}
+
+class _DiscoveryIntroState extends State<_DiscoveryIntro> with SingleTickerProviderStateMixin {
+  late final AnimationController _ambient = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 1400),
+  );
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (LoczMotion.enabled(context)) {
+      if (!_ambient.isAnimating && !_ambient.isCompleted) {
+        _ambient.forward();
+      }
+    } else {
+      _ambient.stop();
+      _ambient.value = 0.5;
+    }
+  }
+
+  @override
+  void dispose() {
+    _ambient.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          children: [
-            Container(
-              width: 20,
-              height: 3,
-              decoration: BoxDecoration(
-                color: theme.colorScheme.secondary,
-                borderRadius: BorderRadius.circular(8),
+    const foreground = Color(0xFFF7F8F3);
+    const muted = Color(0xFFB8C6BF);
+    return AnimatedBuilder(
+      animation: _ambient,
+      builder: (context, child) => Container(
+        height: 238,
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(26),
+          gradient: const LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [Color(0xFF153F35), Color(0xFF0B1713), Color(0xFF111512)],
+            stops: [0, 0.58, 1],
+          ),
+          border: Border.all(color: const Color(0xFF335047), width: 0.8),
+          boxShadow: [
+            BoxShadow(
+              color: const Color(0xFF07110D).withValues(
+                alpha: theme.brightness == Brightness.dark ? 0.42 : 0.22,
               ),
-            ),
-            const SizedBox(width: 8),
-            Expanded(
-              child: Text(
-                eyebrow,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: theme.textTheme.labelSmall?.copyWith(
-                  color: theme.colorScheme.primary,
-                  fontWeight: FontWeight.w800,
-                  letterSpacing: 0.75,
-                ),
-              ),
+              blurRadius: 30,
+              offset: const Offset(0, 14),
             ),
           ],
         ),
-        const SizedBox(height: 8),
-        Text(title, style: theme.textTheme.headlineSmall),
-        const SizedBox(height: 5),
-        Text(hint, style: theme.textTheme.bodyMedium),
-      ],
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(25),
+          child: Stack(
+            children: [
+              Positioned(
+                right: -54 + (_ambient.value * 9),
+                top: -64 + (_ambient.value * 5),
+                child: const _AmbientRings(),
+              ),
+              Positioned(
+                right: 26,
+                top: 28 + (_ambient.value * 4),
+                child: Container(
+                  width: 42,
+                  height: 42,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF74C6AF).withValues(alpha: 0.13),
+                    shape: BoxShape.circle,
+                    border: Border.all(
+                      color: const Color(0xFF83D7BF).withValues(alpha: 0.22),
+                    ),
+                  ),
+                  child: const Icon(
+                    Icons.near_me_rounded,
+                    size: 19,
+                    color: Color(0xFF8DD8C3),
+                  ),
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(20, 19, 20, 18),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Container(
+                          width: 18,
+                          height: 2,
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFF6BE60),
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            widget.eyebrow,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: theme.textTheme.labelSmall?.copyWith(
+                              color: const Color(0xFF8DD8C3),
+                              fontSize: 10,
+                              fontWeight: FontWeight.w800,
+                              letterSpacing: 1.05,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 14),
+                    ConstrainedBox(
+                      constraints: const BoxConstraints(maxWidth: 270),
+                      child: Text(
+                        widget.title,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: theme.textTheme.headlineSmall?.copyWith(
+                          color: foreground,
+                          fontSize: 23,
+                          height: 1.12,
+                          letterSpacing: -0.55,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 7),
+                    ConstrainedBox(
+                      constraints: const BoxConstraints(maxWidth: 292),
+                      child: Text(
+                        widget.hint,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: theme.textTheme.bodyMedium?.copyWith(
+                          color: muted,
+                          fontSize: 12,
+                          height: 1.4,
+                        ),
+                      ),
+                    ),
+                    const Spacer(),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Container(
+                            height: 42,
+                            padding: const EdgeInsets.symmetric(horizontal: 12),
+                            decoration: BoxDecoration(
+                              color: Colors.white.withValues(alpha: 0.075),
+                              borderRadius: BorderRadius.circular(14),
+                              border: Border.all(
+                                color: Colors.white.withValues(alpha: 0.1),
+                              ),
+                            ),
+                            child: Row(
+                              children: [
+                                Container(
+                                  width: 7,
+                                  height: 7,
+                                  decoration: const BoxDecoration(
+                                    color: Color(0xFF6EE7B7),
+                                    shape: BoxShape.circle,
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                                Expanded(
+                                  child: Column(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        widget.liveLabel,
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                        style: const TextStyle(
+                                          color: foreground,
+                                          fontSize: 10.5,
+                                          fontWeight: FontWeight.w700,
+                                        ),
+                                      ),
+                                      Text(
+                                        widget.countLabel,
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                        style: const TextStyle(
+                                          color: muted,
+                                          fontSize: 9.5,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 9),
+                        LoczPressable(
+                          onTap: widget.onAction,
+                          semanticLabel: widget.actionLabel,
+                          borderRadius: BorderRadius.circular(14),
+                          child: Container(
+                            width: 42,
+                            height: 42,
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFF3F4EF),
+                              borderRadius: BorderRadius.circular(14),
+                            ),
+                            child: const Icon(
+                              Icons.arrow_forward_rounded,
+                              size: 18,
+                              color: Color(0xFF123E34),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
+}
+
+class _AmbientRings extends StatelessWidget {
+  const _AmbientRings();
+
+  @override
+  Widget build(BuildContext context) => Container(
+        width: 184,
+        height: 184,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          border: Border.all(color: Colors.white.withValues(alpha: 0.055)),
+          boxShadow: [
+            BoxShadow(
+              spreadRadius: 24,
+              color: Colors.white.withValues(alpha: 0.027),
+            ),
+            BoxShadow(
+              spreadRadius: 50,
+              color: Colors.white.withValues(alpha: 0.018),
+            ),
+          ],
+        ),
+      );
 }
 
 class _IntentDeck extends StatelessWidget {
@@ -402,22 +628,19 @@ class _IntentDeck extends StatelessWidget {
         Text(strings('feed.actionTitle'), style: theme.textTheme.titleLarge),
         const SizedBox(height: 3),
         Text(strings('feed.actionHint'), style: theme.textTheme.bodyMedium),
-        const SizedBox(height: 12),
-        LayoutBuilder(
-          builder: (context, constraints) {
-            final cardWidth = (constraints.maxWidth - 10) / 2;
-            return Wrap(
-              spacing: 10,
-              runSpacing: 10,
-              children: [
-                for (final action in actions)
-                  SizedBox(
-                    width: cardWidth,
-                    child: _IntentCard(action: action),
-                  ),
-              ],
-            );
-          },
+        const SizedBox(height: 11),
+        SizedBox(
+          height: 102,
+          child: ListView.separated(
+            scrollDirection: Axis.horizontal,
+            clipBehavior: Clip.none,
+            itemCount: actions.length,
+            separatorBuilder: (_, __) => const SizedBox(width: 9),
+            itemBuilder: (context, index) => SizedBox(
+              width: 132,
+              child: _IntentCard(action: actions[index]),
+            ),
+          ),
         ),
       ],
     );
@@ -446,12 +669,31 @@ class _IntentCard extends StatelessWidget {
       onTap: action.onTap,
       semanticLabel: '${action.title}. ${action.hint}',
       child: Container(
-        constraints: const BoxConstraints(minHeight: 126),
-        padding: const EdgeInsets.all(13),
+        padding: const EdgeInsets.fromLTRB(12, 11, 10, 10),
         decoration: BoxDecoration(
-          color: theme.colorScheme.surface,
-          borderRadius: BorderRadius.circular(18),
-          border: Border.all(color: theme.colorScheme.outlineVariant),
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              action.color.withValues(
+                alpha: theme.brightness == Brightness.dark ? 0.15 : 0.1,
+              ),
+              theme.colorScheme.surface,
+            ],
+          ),
+          borderRadius: BorderRadius.circular(17),
+          border: Border.all(
+            color: action.color.withValues(
+              alpha: theme.brightness == Brightness.dark ? 0.28 : 0.2,
+            ),
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: theme.colorScheme.shadow.withValues(alpha: 0.055),
+              blurRadius: 14,
+              offset: const Offset(0, 5),
+            ),
+          ],
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -459,121 +701,38 @@ class _IntentCard extends StatelessWidget {
             Row(
               children: [
                 Container(
-                  width: 36,
-                  height: 36,
+                  width: 31,
+                  height: 31,
                   decoration: BoxDecoration(
-                    color: action.color.withValues(alpha: 0.13),
-                    borderRadius: BorderRadius.circular(12),
+                    color: action.color.withValues(alpha: 0.16),
+                    borderRadius: BorderRadius.circular(10),
                   ),
-                  child: Icon(action.icon, size: 19, color: action.color),
+                  child: Icon(action.icon, size: 16, color: action.color),
                 ),
                 const Spacer(),
-                Icon(Icons.north_east_rounded, size: 17, color: action.color),
+                Icon(
+                  Icons.arrow_outward_rounded,
+                  size: 14,
+                  color: action.color,
+                ),
               ],
             ),
-            const SizedBox(height: 10),
-            Text(action.title, style: theme.textTheme.titleSmall),
-            const SizedBox(height: 3),
+            const Spacer(),
+            Text(
+              action.title,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: theme.textTheme.titleSmall?.copyWith(fontSize: 12.5),
+            ),
+            const SizedBox(height: 2),
             Text(
               action.hint,
-              maxLines: 2,
+              maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: theme.textTheme.labelSmall,
+              style: theme.textTheme.labelSmall?.copyWith(fontSize: 9.5),
             ),
           ],
         ),
-      ),
-    );
-  }
-}
-
-class _LocalPulse extends StatelessWidget {
-  const _LocalPulse({
-    required this.city,
-    required this.count,
-    required this.strings,
-    required this.onBrowse,
-    required this.onPost,
-  });
-
-  final String city;
-  final int count;
-  final Strings strings;
-  final VoidCallback onBrowse;
-  final VoidCallback onPost;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final dark = theme.brightness == Brightness.dark;
-    final foreground = dark ? theme.colorScheme.onSurface : Colors.white;
-    final muted = foreground.withValues(alpha: 0.76);
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: dark
-              ? [const Color(0xFF153D32), const Color(0xFF18221E)]
-              : [const Color(0xFF0C5B4B), const Color(0xFF123B33)],
-        ),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Container(
-                width: 34,
-                height: 34,
-                decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.1),
-                  shape: BoxShape.circle,
-                ),
-                child: Icon(Icons.radar_rounded, size: 19, color: foreground),
-              ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: Text(
-                  strings('feed.localPulse', {'city': city}),
-                  style: theme.textTheme.titleMedium?.copyWith(color: foreground),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          Text(
-            strings('feed.localPulseHint', {'count': count}),
-            style: theme.textTheme.bodyMedium?.copyWith(color: muted),
-          ),
-          const SizedBox(height: 14),
-          Row(
-            children: [
-              Expanded(
-                child: FilledButton(
-                  onPressed: onBrowse,
-                  style: FilledButton.styleFrom(
-                    backgroundColor: foreground,
-                    foregroundColor: const Color(0xFF0C5B4B),
-                  ),
-                  child: Text(strings('feed.browseAll')),
-                ),
-              ),
-              const SizedBox(width: 8),
-              OutlinedButton(
-                onPressed: onPost,
-                style: OutlinedButton.styleFrom(
-                  foregroundColor: foreground,
-                  side: BorderSide(color: foreground.withValues(alpha: 0.42)),
-                ),
-                child: Text(strings('feed.postFree')),
-              ),
-            ],
-          ),
-        ],
       ),
     );
   }
@@ -623,27 +782,40 @@ class _FeedSectionRail extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 8),
-          SizedBox(
-            height: listingCardRailHeight(textScale),
-            child: ListView.separated(
-              scrollDirection: Axis.horizontal,
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              itemCount: section.items.length,
-              separatorBuilder: (_, __) => const SizedBox(width: 12),
-              itemBuilder: (context, index) {
-                final listing = section.items[index];
-                final tag = 'home-${section.key}-${listing.id}';
-                return ListingCard(
-                  listing: listing,
-                  width: 176,
-                  heroTag: tag,
-                  onTap: () => context.push(
-                    '/ad/${listing.slug}',
-                    extra: ListingNavigationPreview(listing: listing, heroTag: tag),
-                  ),
-                );
-              },
-            ),
+          LayoutBuilder(
+            builder: (context, constraints) {
+              // A home rail is editorial, not a compressed search grid. Keep
+              // enough of the next card visible to teach the horizontal
+              // gesture while giving the current listing room to breathe.
+              final cardWidth = (constraints.maxWidth * .72).clamp(232.0, 284.0);
+              final railHeight = cardWidth / 1.34 + 104 + ((textScale - 1).clamp(0, .4) * 160);
+
+              return SizedBox(
+                height: railHeight,
+                child: ListView.separated(
+                  scrollDirection: Axis.horizontal,
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  itemCount: section.items.length,
+                  separatorBuilder: (_, __) => const SizedBox(width: 12),
+                  itemBuilder: (context, index) {
+                    final listing = section.items[index];
+                    final tag = 'home-${section.key}-${listing.id}';
+                    return ListingCard(
+                      listing: listing,
+                      width: cardWidth,
+                      heroTag: tag,
+                      onTap: () => context.push(
+                        '/ad/${listing.slug}',
+                        extra: ListingNavigationPreview(
+                          listing: listing,
+                          heroTag: tag,
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              );
+            },
           ),
         ],
       ),
@@ -667,9 +839,13 @@ class _FeedLoading extends StatelessWidget {
         const SizedBox(height: 12),
         Row(
           children: [
-            Expanded(child: Container(height: 126, decoration: _skeleton(color, 18))),
+            Expanded(
+              child: Container(height: 126, decoration: _skeleton(color, 18)),
+            ),
             const SizedBox(width: 10),
-            Expanded(child: Container(height: 126, decoration: _skeleton(color, 18))),
+            Expanded(
+              child: Container(height: 126, decoration: _skeleton(color, 18)),
+            ),
           ],
         ),
         const SizedBox(height: 20),
@@ -702,11 +878,17 @@ class _FeedError extends StatelessWidget {
       padding: const EdgeInsets.all(32),
       children: [
         const SizedBox(height: 96),
-        Icon(Icons.cloud_off_outlined, size: 40, color: Theme.of(context).colorScheme.primary),
+        Icon(
+          Icons.cloud_off_outlined,
+          size: 40,
+          color: Theme.of(context).colorScheme.primary,
+        ),
         const SizedBox(height: 14),
         Text(message, textAlign: TextAlign.center),
         const SizedBox(height: 18),
-        Center(child: OutlinedButton(onPressed: onRetry, child: Text(retryLabel))),
+        Center(
+          child: OutlinedButton(onPressed: onRetry, child: Text(retryLabel)),
+        ),
       ],
     );
   }

@@ -15,9 +15,7 @@ import 'package:locz/features/post/presentation/post_ad_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
-  testWidgets(
-      'post intent changes the form from selling to a buyer requirement',
-      (tester) async {
+  testWidgets('post intent changes the form from selling to a buyer requirement', (tester) async {
     SharedPreferences.setMockInitialValues({});
     tester.view.physicalSize = const Size(360, 900);
     tester.view.devicePixelRatio = 1;
@@ -50,15 +48,24 @@ void main() {
     expect(find.text('I want to buy'), findsOneWidget);
     await tester.tap(find.text('I want to buy'));
     await tester.pumpAndSettle();
+    await tester.dragUntilVisible(
+      find.text('Budget from'),
+      find.byType(Scrollable).first,
+      const Offset(0, -420),
+    );
     expect(find.text('Budget from'), findsWidgets);
     expect(find.text('Budget up to'), findsWidgets);
+    await tester.dragUntilVisible(
+      find.text('Quantity needed'),
+      find.byType(Scrollable).first,
+      const Offset(0, -280),
+    );
     expect(find.text('Quantity needed'), findsWidgets);
     expect(find.text('Price (₹)'), findsNothing);
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('edit pre-fills listing and warns before re-moderating a live ad',
-      (tester) async {
+  testWidgets('edit pre-fills listing and warns before re-moderating a live ad', (tester) async {
     tester.view.physicalSize = const Size(320, 900);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.resetPhysicalSize);
@@ -118,8 +125,7 @@ void main() {
     );
   });
 
-  testWidgets('unfinished post details can be restored from this device',
-      (tester) async {
+  testWidgets('unfinished post details can be restored from this device', (tester) async {
     SharedPreferences.setMockInitialValues({
       'locz.post-progress.v1':
           '{"title":"Saved bicycle","description":"Saved locally before leaving.",'
@@ -163,11 +169,22 @@ void main() {
     await tester.tap(find.widgetWithText(FilledButton, 'Continue'));
     await tester.pumpAndSettle();
 
-    final fields = tester.widgetList<TextFormField>(find.byType(TextFormField));
-    expect(fields.first.controller?.text, 'Saved bicycle');
+    var fields = tester.widgetList<TextFormField>(find.byType(TextFormField));
     expect(
-      fields.elementAt(1).controller?.text,
-      'Saved locally before leaving.',
+      fields.any((field) => field.controller?.text == 'Saved bicycle'),
+      isTrue,
+    );
+    await tester.dragUntilVisible(
+      find.text('Description'),
+      find.byType(Scrollable).first,
+      const Offset(0, -420),
+    );
+    fields = tester.widgetList<TextFormField>(find.byType(TextFormField));
+    expect(
+      fields.any(
+        (field) => field.controller?.text == 'Saved locally before leaving.',
+      ),
+      isTrue,
     );
   });
 }
@@ -253,6 +270,5 @@ class _EditListingRepository extends ListingRepository {
   Future<Category> categoryDetail(String slug) async => category;
 
   @override
-  Future<List<City>> cities({bool launchedOnly = false, String? query}) async =>
-      const [city];
+  Future<List<City>> cities({bool launchedOnly = false, String? query}) async => const [city];
 }

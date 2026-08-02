@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation';
 import { getTranslator } from '@/i18n';
 import { getCurrentUser, getLocale } from '@/lib/session';
+import { AuthShell } from '../../signin/auth-shell';
 import { VerifyPhoneForm } from './verify-phone-form';
 
 /**
@@ -28,7 +29,23 @@ export default async function VerifyPhonePage({
   const next = requested.startsWith('/') && !requested.startsWith('//') ? requested : '/';
 
   return (
-    <main className="auth-page">
+    <AuthShell
+      mode="verify"
+      labels={{
+        eyebrow: t('auth.pageEyebrow'),
+        title: t('verifyPhone.title'),
+        subtitle: t('verifyPhone.intro'),
+        messageTitle: t('auth.benefitMessageTitle'),
+        messageText: t('auth.benefitMessageText'),
+        saveTitle: t('auth.benefitSaveTitle'),
+        saveText: t('auth.benefitSaveText'),
+        postTitle: t('auth.benefitPostTitle'),
+        postText: t('auth.benefitPostText'),
+        brand: t('brand.name'),
+        secureAccess: t('auth.secureAccess'),
+        privacy: t('auth.privacyNote'),
+      }}
+    >
       <VerifyPhoneForm
         next={next}
         labels={{
@@ -53,6 +70,6 @@ export default async function VerifyPhonePage({
           skipHint: t('verifyPhone.skipHint'),
         }}
       />
-    </main>
+    </AuthShell>
   );
 }

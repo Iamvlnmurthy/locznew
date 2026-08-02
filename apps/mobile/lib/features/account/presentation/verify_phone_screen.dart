@@ -2,7 +2,9 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/i18n/strings.dart';
 import '../../../core/providers.dart';
+import '../../../core/theme/tokens.g.dart';
 
 /// Confirming a mobile number on Android.
 ///
@@ -39,7 +41,7 @@ class _VerifyPhoneScreenState extends ConsumerState<VerifyPhoneScreen> {
   Future<void> _send() async {
     final national = _phone.text.replaceAll(RegExp(r'\D'), '');
     if (!RegExp(r'^[6-9]\d{9}$').hasMatch(national)) {
-      setState(() => _error = 'Enter a valid 10-digit mobile number.');
+      setState(() => _error = Strings.of(context)('verifyPhone.invalidPhone'));
       return;
     }
 
@@ -48,36 +50,52 @@ class _VerifyPhoneScreenState extends ConsumerState<VerifyPhoneScreen> {
       _error = null;
     });
 
-    await FirebaseAuth.instance.verifyPhoneNumber(
-      phoneNumber: '+91$national',
-      // Android often reads the SMS itself and finishes without the user typing anything.
-      // Handling it means those people never see the code screen at all.
-      verificationCompleted: (credential) async {
-        await _submit(credential);
-      },
-      verificationFailed: (error) {
-        setState(() {
-          _busy = false;
-          _error = _messageFor(error.code);
-        });
-      },
-      codeSent: (verificationId, _) {
-        setState(() {
-          _busy = false;
-          _verificationId = verificationId;
-        });
-      },
-      // Auto-retrieval gave up; the code screen is already showing, so nothing to do.
-      codeAutoRetrievalTimeout: (verificationId) {
-        _verificationId = verificationId;
-      },
-    );
+    try {
+      await FirebaseAuth.instance.verifyPhoneNumber(
+        phoneNumber: '+91$national',
+        // Android often reads the SMS itself and finishes without the user typing anything.
+        // Handling it means those people never see the code screen at all.
+        verificationCompleted: (credential) async {
+          await _submit(credential);
+        },
+        verificationFailed: (error) {
+          if (!mounted) return;
+          setState(() {
+            _busy = false;
+            _error = _messageFor(error.code);
+          });
+        },
+        codeSent: (verificationId, _) {
+          if (!mounted) return;
+          setState(() {
+            _busy = false;
+            _verificationId = verificationId;
+          });
+        },
+        // Auto-retrieval gave up; the code screen is already showing, so nothing to do.
+        codeAutoRetrievalTimeout: (verificationId) {
+          if (mounted) _verificationId = verificationId;
+        },
+      );
+    } on FirebaseAuthException catch (error) {
+      if (!mounted) return;
+      setState(() {
+        _busy = false;
+        _error = _messageFor(error.code);
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _busy = false;
+        _error = Strings.of(context)('verifyPhone.failed');
+      });
+    }
   }
 
   Future<void> _confirm() async {
     final id = _verificationId;
     if (id == null || !RegExp(r'^\d{6}$').hasMatch(_code.text)) {
-      setState(() => _error = 'Enter the six-digit code.');
+      setState(() => _error = Strings.of(context)('verifyPhone.invalidCode'));
       return;
     }
 
@@ -105,47 +123,98 @@ class _VerifyPhoneScreenState extends ConsumerState<VerifyPhoneScreen> {
 
       if (mounted) setState(() => _confirmed = phone);
     } on FirebaseAuthException catch (error) {
-      setState(() => _error = _messageFor(error.code));
+      if (mounted) setState(() => _error = _messageFor(error.code));
     } catch (error) {
       // The API's own message is worth showing: it says whether the number is already on
       // another account, which is the one failure the person has to act on.
-      setState(
-        () => _error = error.toString().contains('another')
-            ? 'That number is already on another LocZ account.'
-            : 'We could not confirm that number. Try again.',
-      );
+      if (mounted) {
+        final strings = Strings.of(context);
+        setState(
+          () => _error = error.toString().contains('another')
+              ? strings('verifyPhone.inUse')
+              : strings('verifyPhone.failed'),
+        );
+      }
     } finally {
       if (mounted) setState(() => _busy = false);
     }
   }
 
-  String _messageFor(String code) => switch (code) {
-        'invalid-phone-number' => 'Enter a valid 10-digit mobile number.',
-        'invalid-verification-code' => 'That code is not right. Check it and try again.',
-        'too-many-requests' => 'Too many attempts. Wait a few minutes and try again.',
-        // Anything else is a Firebase code that means nothing to a shopkeeper.
-        _ => 'We could not confirm that number. Try again.',
-      };
+  String _messageFor(String code) {
+    final strings = Strings.of(context);
+    return switch (code) {
+      'invalid-phone-number' => strings('verifyPhone.invalidPhone'),
+      'invalid-verification-code' => strings('verifyPhone.wrongCode'),
+      'too-many-requests' => strings('verifyPhone.tooMany'),
+      // Anything else is a Firebase code that means nothing to a shopkeeper.
+      _ => strings('verifyPhone.failed'),
+    };
+  }
 
   @override
   Widget build(BuildContext context) {
+    final strings = Strings.of(context);
+    final theme = Theme.of(context);
+
     if (_confirmed != null) {
       return Scaffold(
-        appBar: AppBar(title: const Text('Mobile number')),
-        body: Padding(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const Icon(Icons.check_circle_outline, size: 48),
-              const SizedBox(height: 16),
-              Text('$_confirmed is confirmed.', textAlign: TextAlign.center),
-              const SizedBox(height: 24),
-              FilledButton(
-                onPressed: () => Navigator.of(context).pop(true),
-                child: const Text('Done'),
+        backgroundColor: theme.colorScheme.surfaceContainerLowest,
+        appBar: AppBar(title: Text(strings('account.confirmPhone'))),
+        body: Center(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(LoczSpacing.x5),
+            child: Container(
+              constraints: const BoxConstraints(maxWidth: 420),
+              padding: const EdgeInsets.all(LoczSpacing.x6),
+              decoration: BoxDecoration(
+                color: theme.colorScheme.surfaceContainer,
+                borderRadius: BorderRadius.circular(LoczRadius.xl),
+                border: Border.all(color: theme.colorScheme.outlineVariant),
               ),
-            ],
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    width: 68,
+                    height: 68,
+                    decoration: BoxDecoration(
+                      color: theme.colorScheme.primaryContainer,
+                      borderRadius: BorderRadius.circular(LoczRadius.xl),
+                    ),
+                    child: Icon(
+                      Icons.verified_rounded,
+                      size: 34,
+                      color: theme.colorScheme.primary,
+                    ),
+                  ),
+                  const SizedBox(height: LoczSpacing.x4),
+                  Text(
+                    strings(
+                      'verifyPhone.confirmed',
+                      {'phone': _confirmed!},
+                    ),
+                    textAlign: TextAlign.center,
+                    style: theme.textTheme.titleLarge,
+                  ),
+                  const SizedBox(height: LoczSpacing.x2),
+                  Text(
+                    strings('verifyPhone.trust'),
+                    textAlign: TextAlign.center,
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                  const SizedBox(height: LoczSpacing.x5),
+                  SizedBox(
+                    width: double.infinity,
+                    child: FilledButton(
+                      onPressed: () => Navigator.of(context).pop(true),
+                      child: Text(strings('report.done')),
+                    ),
+                  ),
+                ],
+              ),
+            ),
           ),
         ),
       );
@@ -154,59 +223,178 @@ class _VerifyPhoneScreenState extends ConsumerState<VerifyPhoneScreen> {
     final awaitingCode = _verificationId != null;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Confirm your mobile number')),
-      body: Padding(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            const Text(
-              'Confirming your number lets you claim a business and tells buyers they can '
-              'reach you.',
-            ),
-            const SizedBox(height: 24),
-            if (_error != null) ...[
-              Text(_error!, style: TextStyle(color: Theme.of(context).colorScheme.error)),
-              const SizedBox(height: 16),
-            ],
-            if (!awaitingCode)
-              TextField(
-                controller: _phone,
-                keyboardType: TextInputType.phone,
-                maxLength: 10,
-                decoration: const InputDecoration(
-                  labelText: 'Mobile number',
-                  prefixText: '+91 ',
-                  helperText: '10-digit Indian mobile number',
-                ),
-              )
-            else
-              TextField(
-                controller: _code,
-                keyboardType: TextInputType.number,
-                maxLength: 6,
-                autofocus: true,
-                decoration: const InputDecoration(
-                  labelText: 'Six-digit code',
-                  helperText: 'Sent by SMS. It expires in a few minutes.',
-                ),
+      backgroundColor: theme.colorScheme.surfaceContainerLowest,
+      appBar: AppBar(title: Text(strings('verifyPhone.title'))),
+      body: SafeArea(
+        child: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 440),
+            child: ListView(
+              padding: const EdgeInsets.fromLTRB(
+                LoczSpacing.x5,
+                LoczSpacing.x3,
+                LoczSpacing.x5,
+                LoczSpacing.x6,
               ),
-            const SizedBox(height: 16),
-            FilledButton(
-              onPressed: _busy ? null : (awaitingCode ? _confirm : _send),
-              child: _busy
-                  ? const SizedBox.square(
-                      dimension: 18,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    )
-                  : Text(awaitingCode ? 'Confirm' : 'Send code'),
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(LoczSpacing.x5),
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: [
+                        theme.colorScheme.primaryContainer,
+                        theme.colorScheme.surfaceContainer,
+                      ],
+                    ),
+                    borderRadius: BorderRadius.circular(LoczRadius.xl),
+                    border: Border.all(
+                      color: theme.colorScheme.outlineVariant,
+                    ),
+                  ),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Container(
+                        width: 48,
+                        height: 48,
+                        decoration: BoxDecoration(
+                          color: theme.colorScheme.primary.withValues(alpha: 0.12),
+                          borderRadius: BorderRadius.circular(LoczRadius.lg),
+                        ),
+                        child: Icon(
+                          Icons.phone_android_rounded,
+                          color: theme.colorScheme.primary,
+                        ),
+                      ),
+                      const SizedBox(width: LoczSpacing.x3),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              strings('verifyPhone.title'),
+                              style: theme.textTheme.titleLarge,
+                            ),
+                            const SizedBox(height: LoczSpacing.x2),
+                            Text(
+                              strings('verifyPhone.intro'),
+                              style: theme.textTheme.bodyMedium?.copyWith(
+                                color: theme.colorScheme.onSurfaceVariant,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: LoczSpacing.x5),
+                if (_error != null) ...[
+                  Container(
+                    padding: const EdgeInsets.all(LoczSpacing.x3),
+                    decoration: BoxDecoration(
+                      color: theme.colorScheme.errorContainer,
+                      borderRadius: BorderRadius.circular(LoczRadius.md),
+                    ),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Icon(
+                          Icons.error_outline_rounded,
+                          size: 19,
+                          color: theme.colorScheme.onErrorContainer,
+                        ),
+                        const SizedBox(width: LoczSpacing.x2),
+                        Expanded(
+                          child: Text(
+                            _error!,
+                            style: TextStyle(
+                              color: theme.colorScheme.onErrorContainer,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: LoczSpacing.x4),
+                ],
+                if (!awaitingCode)
+                  TextField(
+                    controller: _phone,
+                    keyboardType: TextInputType.phone,
+                    maxLength: 10,
+                    autofillHints: const [
+                      AutofillHints.telephoneNumberNational,
+                    ],
+                    decoration: InputDecoration(
+                      labelText: strings('auth.phone'),
+                      prefixText: '+91 ',
+                      helperText: strings('register.phoneHint'),
+                    ),
+                  )
+                else
+                  TextField(
+                    controller: _code,
+                    keyboardType: TextInputType.number,
+                    maxLength: 6,
+                    autofocus: true,
+                    autofillHints: const [AutofillHints.oneTimeCode],
+                    decoration: InputDecoration(
+                      labelText: strings('verifyPhone.codeLabel'),
+                      helperText: strings('verifyPhone.codeHint'),
+                    ),
+                  ),
+                const SizedBox(height: LoczSpacing.x3),
+                FilledButton.icon(
+                  onPressed: _busy ? null : (awaitingCode ? _confirm : _send),
+                  icon: _busy
+                      ? const SizedBox.square(
+                          dimension: 18,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : Icon(
+                          awaitingCode ? Icons.verified_user_outlined : Icons.sms_outlined,
+                        ),
+                  label: Text(
+                    awaitingCode ? strings('auth.verify') : strings('auth.sendCode'),
+                  ),
+                ),
+                if (awaitingCode)
+                  TextButton(
+                    onPressed: _busy
+                        ? null
+                        : () => setState(() {
+                              _verificationId = null;
+                              _code.clear();
+                              _error = null;
+                            }),
+                    child: Text(strings('verifyPhone.differentNumber')),
+                  ),
+                const SizedBox(height: LoczSpacing.x4),
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Icon(
+                      Icons.shield_outlined,
+                      size: 17,
+                      color: theme.colorScheme.primary,
+                    ),
+                    const SizedBox(width: LoczSpacing.x2),
+                    Expanded(
+                      child: Text(
+                        strings('verifyPhone.trust'),
+                        style: theme.textTheme.labelSmall?.copyWith(
+                          color: theme.colorScheme.onSurfaceVariant,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
             ),
-            if (awaitingCode)
-              TextButton(
-                onPressed: _busy ? null : () => setState(() => _verificationId = null),
-                child: const Text('Use a different number'),
-              ),
-          ],
+          ),
         ),
       ),
     );

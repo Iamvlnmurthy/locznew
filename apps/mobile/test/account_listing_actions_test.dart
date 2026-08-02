@@ -67,7 +67,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Edit'), findsOneWidget);
-    expect(find.text('Delete'), findsOneWidget);
+    expect(find.byTooltip('More actions'), findsOneWidget);
 
     await tester.tap(find.text('Edit'));
     await tester.pumpAndSettle();
@@ -75,6 +75,9 @@ void main() {
 
     router.go('/account');
     await tester.pumpAndSettle();
+    await tester.tap(find.byTooltip('More actions'));
+    await tester.pumpAndSettle();
+    expect(find.text('Delete'), findsOneWidget);
     await tester.tap(find.text('Delete'));
     await tester.pumpAndSettle();
     expect(find.text('Delete this ad?'), findsOneWidget);

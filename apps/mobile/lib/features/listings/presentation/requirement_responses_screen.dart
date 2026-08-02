@@ -21,12 +21,10 @@ class RequirementResponsesScreen extends ConsumerStatefulWidget {
   final bool isOwner;
 
   @override
-  ConsumerState<RequirementResponsesScreen> createState() =>
-      _RequirementResponsesScreenState();
+  ConsumerState<RequirementResponsesScreen> createState() => _RequirementResponsesScreenState();
 }
 
-class _RequirementResponsesScreenState
-    extends ConsumerState<RequirementResponsesScreen> {
+class _RequirementResponsesScreenState extends ConsumerState<RequirementResponsesScreen> {
   late Future<List<RequirementResponse>> _responses;
   bool _closing = false;
 
@@ -37,9 +35,7 @@ class _RequirementResponsesScreenState
   }
 
   void _reload() {
-    _responses = ref
-        .read(listingRepositoryProvider)
-        .requirementResponses(widget.listingId);
+    _responses = ref.read(listingRepositoryProvider).requirementResponses(widget.listingId);
   }
 
   Future<void> _respond() async {
@@ -61,13 +57,13 @@ class _RequirementResponsesScreenState
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-              content: Text(Strings.of(context)('requirements.responseSaved')),),
+            content: Text(Strings.of(context)('requirements.responseSaved')),
+          ),
         );
       }
     } on ApiException catch (error) {
       if (mounted) {
-        ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text(error.message)));
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(error.message)));
       }
     }
   }
@@ -87,13 +83,13 @@ class _RequirementResponsesScreenState
           controller: controller,
           autofocus: true,
           maxLines: 3,
-          decoration:
-              InputDecoration(hintText: strings('requirements.chatHint')),
+          decoration: InputDecoration(hintText: strings('requirements.chatHint')),
         ),
         actions: [
           TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: Text(strings('common.cancel')),),
+            onPressed: () => Navigator.pop(context),
+            child: Text(strings('common.cancel')),
+          ),
           FilledButton(
             onPressed: () => Navigator.pop(context, controller.text.trim()),
             child: Text(strings('requirements.openChat')),
@@ -101,21 +97,39 @@ class _RequirementResponsesScreenState
         ],
       ),
     );
+    controller.dispose();
     if (message == null || message.isEmpty || !mounted) return;
     try {
-      final id = await ref
-          .read(listingRepositoryProvider)
-          .openRequirementChat(response.id, message);
+      final id =
+          await ref.read(listingRepositoryProvider).openRequirementChat(response.id, message);
       if (mounted) await context.push('/chats/$id');
     } on ApiException catch (error) {
       if (mounted) {
-        ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text(error.message)));
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(error.message)));
       }
     }
   }
 
   Future<void> _markFulfilled() async {
+    final strings = Strings.of(context);
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(strings('requirements.fulfilledConfirmTitle')),
+        content: Text(strings('requirements.fulfilledConfirmHint')),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: Text(strings('common.cancel')),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: Text(strings('requirements.markFulfilled')),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) return;
     setState(() => _closing = true);
     try {
       await ref
@@ -125,8 +139,7 @@ class _RequirementResponsesScreenState
     } on ApiException catch (error) {
       if (mounted) {
         setState(() => _closing = false);
-        ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text(error.message)));
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(error.message)));
       }
     }
   }
@@ -136,10 +149,12 @@ class _RequirementResponsesScreenState
     final strings = Strings.of(context);
     final theme = Theme.of(context);
     return Scaffold(
+      backgroundColor: theme.colorScheme.surfaceContainerLowest,
       appBar: AppBar(
-          title: Text(widget.isOwner
-              ? strings('requirements.answers')
-              : strings('requirements.yourAnswer'),),),
+        title: Text(
+          widget.isOwner ? strings('requirements.answers') : strings('requirements.yourAnswer'),
+        ),
+      ),
       floatingActionButton: widget.isOwner
           ? null
           : FloatingActionButton.extended(
@@ -156,18 +171,38 @@ class _RequirementResponsesScreenState
           future: _responses,
           builder: (context, snapshot) {
             final responses = snapshot.data;
-            if (responses == null &&
-                snapshot.connectionState != ConnectionState.done) {
+            if (responses == null && snapshot.connectionState != ConnectionState.done) {
               return const Center(child: CircularProgressIndicator());
             }
             if (snapshot.hasError) {
-              return ListView(children: [
-                Padding(
-                  padding: const EdgeInsets.all(LoczSpacing.x6),
-                  child: Text(snapshot.error.toString(),
-                      textAlign: TextAlign.center,),
-                ),
-              ],);
+              return ListView(
+                children: [
+                  SizedBox(
+                    height: MediaQuery.sizeOf(context).height * 0.68,
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          Icons.cloud_off_outlined,
+                          size: 42,
+                          color: theme.colorScheme.primary,
+                        ),
+                        const SizedBox(height: LoczSpacing.x3),
+                        Text(
+                          strings('common.error'),
+                          style: theme.textTheme.titleLarge,
+                        ),
+                        const SizedBox(height: LoczSpacing.x4),
+                        OutlinedButton.icon(
+                          onPressed: () => setState(_reload),
+                          icon: const Icon(Icons.refresh_rounded),
+                          label: Text(strings('common.retry')),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              );
             }
             return ListView(
               padding: const EdgeInsets.all(LoczSpacing.x4),
@@ -179,33 +214,42 @@ class _RequirementResponsesScreenState
                     borderRadius: BorderRadius.circular(LoczRadius.lg),
                   ),
                   child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(widget.title, style: theme.textTheme.titleMedium),
-                        const SizedBox(height: 4),
-                        Text(
-                          widget.isOwner
-                              ? strings('requirements.answersHint')
-                              : strings('requirements.respondHint'),
-                          style: theme.textTheme.bodySmall,
-                        ),
-                      ],),
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(widget.title, style: theme.textTheme.titleMedium),
+                      const SizedBox(height: 4),
+                      Text(
+                        widget.isOwner
+                            ? strings('requirements.answersHint')
+                            : strings('requirements.respondHint'),
+                        style: theme.textTheme.bodySmall,
+                      ),
+                    ],
+                  ),
                 ),
                 const SizedBox(height: LoczSpacing.x4),
                 if ((responses ?? const []).isEmpty)
                   Padding(
-                    padding:
-                        const EdgeInsets.symmetric(vertical: LoczSpacing.x8),
-                    child: Column(children: [
-                      Icon(Icons.mark_chat_unread_outlined,
-                          size: 42, color: theme.colorScheme.primary,),
-                      const SizedBox(height: LoczSpacing.x3),
-                      Text(strings('requirements.empty'),
-                          style: theme.textTheme.titleMedium,),
-                      const SizedBox(height: 5),
-                      Text(strings('requirements.emptyHint'),
-                          textAlign: TextAlign.center,),
-                    ],),
+                    padding: const EdgeInsets.symmetric(vertical: LoczSpacing.x8),
+                    child: Column(
+                      children: [
+                        Icon(
+                          Icons.mark_chat_unread_outlined,
+                          size: 42,
+                          color: theme.colorScheme.primary,
+                        ),
+                        const SizedBox(height: LoczSpacing.x3),
+                        Text(
+                          strings('requirements.empty'),
+                          style: theme.textTheme.titleMedium,
+                        ),
+                        const SizedBox(height: 5),
+                        Text(
+                          strings('requirements.emptyHint'),
+                          textAlign: TextAlign.center,
+                        ),
+                      ],
+                    ),
                   )
                 else
                   for (final response in responses!)
@@ -219,9 +263,11 @@ class _RequirementResponsesScreenState
                   OutlinedButton.icon(
                     onPressed: _closing ? null : _markFulfilled,
                     icon: const Icon(Icons.task_alt_rounded),
-                    label: Text(_closing
-                        ? strings('requirements.closing')
-                        : strings('requirements.markFulfilled'),),
+                    label: Text(
+                      _closing
+                          ? strings('requirements.closing')
+                          : strings('requirements.markFulfilled'),
+                    ),
                   ),
                 ],
                 const SizedBox(height: 90),
@@ -235,8 +281,11 @@ class _RequirementResponsesScreenState
 }
 
 class _ResponseCard extends ConsumerWidget {
-  const _ResponseCard(
-      {required this.response, required this.isOwner, required this.onChat,});
+  const _ResponseCard({
+    required this.response,
+    required this.isOwner,
+    required this.onChat,
+  });
   final RequirementResponse response;
   final bool isOwner;
   final VoidCallback onChat;
@@ -248,46 +297,55 @@ class _ResponseCard extends ConsumerWidget {
       margin: const EdgeInsets.only(bottom: LoczSpacing.x3),
       child: Padding(
         padding: const EdgeInsets.all(LoczSpacing.x4),
-        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          FutureBuilder<SellerProfile>(
-            future: ref
-                .read(listingRepositoryProvider)
-                .sellerProfile(response.responderId),
-            builder: (context, snapshot) => Row(children: [
-              const CircleAvatar(child: Icon(Icons.storefront_outlined)),
-              const SizedBox(width: LoczSpacing.x3),
-              Expanded(
-                child: Text(
-                  snapshot.data?.displayName ?? strings('listing.seller'),
-                  style: Theme.of(context).textTheme.titleSmall,
-                ),
-              ),
-              Chip(label: Text(strings('requirements.kind.${response.kind}'))),
-            ],),
-          ),
-          if (response.offeredPrice != null) ...[
-            const SizedBox(height: LoczSpacing.x3),
-            Text('₹${response.offeredPrice}',
-                style: Theme.of(context).textTheme.titleLarge,),
-          ],
-          if (response.message != null && response.message!.isNotEmpty) ...[
-            const SizedBox(height: LoczSpacing.x2),
-            Text(response.message!),
-          ],
-          if (isOwner) ...[
-            const SizedBox(height: LoczSpacing.x3),
-            SizedBox(
-              width: double.infinity,
-              child: FilledButton.tonalIcon(
-                onPressed: onChat,
-                icon: const Icon(Icons.chat_bubble_outline_rounded),
-                label: Text(response.conversationId == null
-                    ? strings('requirements.openChat')
-                    : strings('requirements.continueChat'),),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            FutureBuilder<SellerProfile>(
+              future: ref.read(listingRepositoryProvider).sellerProfile(response.responderId),
+              builder: (context, snapshot) => Row(
+                children: [
+                  const CircleAvatar(child: Icon(Icons.storefront_outlined)),
+                  const SizedBox(width: LoczSpacing.x3),
+                  Expanded(
+                    child: Text(
+                      snapshot.data?.displayName ?? strings('listing.seller'),
+                      style: Theme.of(context).textTheme.titleSmall,
+                    ),
+                  ),
+                  Chip(
+                    label: Text(strings('requirements.kind.${response.kind}')),
+                  ),
+                ],
               ),
             ),
+            if (response.offeredPrice != null) ...[
+              const SizedBox(height: LoczSpacing.x3),
+              Text(
+                '₹${response.offeredPrice}',
+                style: Theme.of(context).textTheme.titleLarge,
+              ),
+            ],
+            if (response.message != null && response.message!.isNotEmpty) ...[
+              const SizedBox(height: LoczSpacing.x2),
+              Text(response.message!),
+            ],
+            if (isOwner) ...[
+              const SizedBox(height: LoczSpacing.x3),
+              SizedBox(
+                width: double.infinity,
+                child: FilledButton.tonalIcon(
+                  onPressed: onChat,
+                  icon: const Icon(Icons.chat_bubble_outline_rounded),
+                  label: Text(
+                    response.conversationId == null
+                        ? strings('requirements.openChat')
+                        : strings('requirements.continueChat'),
+                  ),
+                ),
+              ),
+            ],
           ],
-        ],),
+        ),
       ),
     );
   }
@@ -322,7 +380,7 @@ class _ResponseComposerState extends State<_ResponseComposer> {
   Widget build(BuildContext context) {
     final strings = Strings.of(context);
     return SafeArea(
-      child: Padding(
+      child: SingleChildScrollView(
         padding: EdgeInsets.fromLTRB(
           LoczSpacing.x4,
           0,
@@ -330,59 +388,69 @@ class _ResponseComposerState extends State<_ResponseComposer> {
           MediaQuery.viewInsetsOf(context).bottom + LoczSpacing.x4,
         ),
         child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(strings('requirements.respond'),
-                  style: Theme.of(context).textTheme.titleLarge,),
-              const SizedBox(height: LoczSpacing.x3),
-              DropdownButtonFormField<String>(
-                initialValue: _kind,
-                decoration: InputDecoration(
-                    labelText: strings('requirements.availability'),),
-                items: const [
-                  'AVAILABLE',
-                  'AVAILABLE_AT_DIFFERENT_PRICE',
-                  'SIMILAR_AVAILABLE',
-                  'CAN_ARRANGE',
-                  'MADE_TO_ORDER',
-                  'AVAILABLE_LATER',
-                  'NOT_AVAILABLE',
-                ]
-                    .map((kind) => DropdownMenuItem(
-                        value: kind,
-                        child: Text(strings('requirements.kind.$kind')),),)
-                    .toList(),
-                onChanged: (value) => setState(() => _kind = value ?? _kind),
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              strings('requirements.respond'),
+              style: Theme.of(context).textTheme.titleLarge,
+            ),
+            const SizedBox(height: LoczSpacing.x3),
+            DropdownButtonFormField<String>(
+              initialValue: _kind,
+              decoration: InputDecoration(
+                labelText: strings('requirements.availability'),
               ),
-              const SizedBox(height: LoczSpacing.x3),
-              TextField(
-                controller: _price,
-                keyboardType: TextInputType.number,
-                decoration: InputDecoration(
-                    labelText: strings('requirements.offeredPrice'),
-                    prefixText: '₹ ',),
+              items: const [
+                'AVAILABLE',
+                'AVAILABLE_AT_DIFFERENT_PRICE',
+                'SIMILAR_AVAILABLE',
+                'CAN_ARRANGE',
+                'MADE_TO_ORDER',
+                'AVAILABLE_LATER',
+                'NOT_AVAILABLE',
+              ]
+                  .map(
+                    (kind) => DropdownMenuItem(
+                      value: kind,
+                      child: Text(strings('requirements.kind.$kind')),
+                    ),
+                  )
+                  .toList(),
+              onChanged: (value) => setState(() => _kind = value ?? _kind),
+            ),
+            const SizedBox(height: LoczSpacing.x3),
+            TextField(
+              controller: _price,
+              keyboardType: TextInputType.number,
+              decoration: InputDecoration(
+                labelText: strings('requirements.offeredPrice'),
+                prefixText: '₹ ',
               ),
-              const SizedBox(height: LoczSpacing.x3),
-              TextField(
-                controller: _message,
-                maxLength: 500,
-                maxLines: 3,
-                decoration:
-                    InputDecoration(labelText: strings('requirements.note')),
-              ),
-              SizedBox(
-                width: double.infinity,
-                child: FilledButton(
-                  onPressed: () => Navigator.pop(
-                    context,
-                    _ResponseDraft(_kind, num.tryParse(_price.text.trim()),
-                        _message.text.trim(),),
+            ),
+            const SizedBox(height: LoczSpacing.x3),
+            TextField(
+              controller: _message,
+              maxLength: 500,
+              maxLines: 3,
+              decoration: InputDecoration(labelText: strings('requirements.note')),
+            ),
+            SizedBox(
+              width: double.infinity,
+              child: FilledButton(
+                onPressed: () => Navigator.pop(
+                  context,
+                  _ResponseDraft(
+                    _kind,
+                    num.tryParse(_price.text.trim()),
+                    _message.text.trim(),
                   ),
-                  child: Text(strings('requirements.sendResponse')),
                 ),
+                child: Text(strings('requirements.sendResponse')),
               ),
-            ],),
+            ),
+          ],
+        ),
       ),
     );
   }

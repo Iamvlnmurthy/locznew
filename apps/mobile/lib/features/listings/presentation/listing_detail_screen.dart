@@ -30,8 +30,7 @@ class ListingDetailScreen extends ConsumerStatefulWidget {
   final String? heroTag;
 
   @override
-  ConsumerState<ListingDetailScreen> createState() =>
-      _ListingDetailScreenState();
+  ConsumerState<ListingDetailScreen> createState() => _ListingDetailScreenState();
 }
 
 class _ListingDetailScreenState extends ConsumerState<ListingDetailScreen> {
@@ -78,15 +77,12 @@ class _ListingDetailScreenState extends ConsumerState<ListingDetailScreen> {
     setState(() => _savedOverride = next);
 
     try {
-      await ref
-          .read(listingRepositoryProvider)
-          .toggleSave(listing.summary.id, save: next);
+      await ref.read(listingRepositoryProvider).toggleSave(listing.summary.id, save: next);
       ref.invalidate(savedListingsProvider);
     } on ApiException catch (error) {
       if (!mounted) return;
       setState(() => _savedOverride = !next);
-      ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text(error.message)));
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(error.message)));
     }
   }
 
@@ -98,52 +94,121 @@ class _ListingDetailScreenState extends ConsumerState<ListingDetailScreen> {
       return;
     }
 
-    final controller = TextEditingController(text: 'Is this still available?');
+    final controller = TextEditingController(
+      text: strings('listing.enquiryPrompt'),
+    );
     final message = await showModalBottomSheet<String>(
       context: context,
       isScrollControlled: true,
-      builder: (context) => Padding(
-        // Keeps the field above the keyboard.
-        padding: EdgeInsets.only(
-          bottom: MediaQuery.of(context).viewInsets.bottom,
-          left: LoczSpacing.x4,
-          right: LoczSpacing.x4,
-          top: LoczSpacing.x4,
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(
-              controller: controller,
-              autofocus: true,
-              maxLines: 3,
-              decoration:
-                  InputDecoration(hintText: strings('chats.messageHint')),
-            ),
-            const SizedBox(height: LoczSpacing.x3),
-            FilledButton(
-              onPressed: () => Navigator.pop(context, controller.text.trim()),
-              child: Text(strings('chats.send')),
-            ),
-            const SizedBox(height: LoczSpacing.x4),
-          ],
-        ),
-      ),
+      useSafeArea: true,
+      showDragHandle: true,
+      builder: (context) {
+        final theme = Theme.of(context);
+        return AnimatedPadding(
+          duration: LoczMotion.quick,
+          curve: LoczMotion.enterCurve,
+          // Keeps the composer and its primary action above the keyboard.
+          padding: EdgeInsets.fromLTRB(
+            LoczSpacing.x4,
+            0,
+            LoczSpacing.x4,
+            MediaQuery.viewInsetsOf(context).bottom + LoczSpacing.x4,
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    width: 42,
+                    height: 42,
+                    decoration: BoxDecoration(
+                      color: theme.colorScheme.primaryContainer,
+                      borderRadius: BorderRadius.circular(LoczRadius.md),
+                    ),
+                    child: Icon(
+                      Icons.forum_outlined,
+                      color: theme.colorScheme.primary,
+                    ),
+                  ),
+                  const SizedBox(width: LoczSpacing.x3),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          strings('listing.enquiryTitle'),
+                          style: theme.textTheme.titleMedium,
+                        ),
+                        Text(
+                          listing.summary.title,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: theme.colorScheme.onSurfaceVariant,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: LoczSpacing.x4),
+              TextField(
+                controller: controller,
+                autofocus: true,
+                minLines: 3,
+                maxLines: 5,
+                textCapitalization: TextCapitalization.sentences,
+                decoration: InputDecoration(
+                  hintText: strings('chats.messageHint'),
+                ),
+              ),
+              const SizedBox(height: LoczSpacing.x3),
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Icon(
+                    Icons.shield_outlined,
+                    size: 16,
+                    color: theme.colorScheme.primary,
+                  ),
+                  const SizedBox(width: LoczSpacing.x2),
+                  Expanded(
+                    child: Text(
+                      strings('listing.enquiryPrivacy'),
+                      style: theme.textTheme.labelSmall?.copyWith(
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: LoczSpacing.x4),
+              FilledButton.icon(
+                onPressed: () => Navigator.pop(context, controller.text.trim()),
+                icon: const Icon(Icons.send_rounded),
+                label: Text(strings('chats.send')),
+              ),
+            ],
+          ),
+        );
+      },
     );
+    controller.dispose();
 
     if (message == null || message.isEmpty || !mounted) return;
 
     try {
-      final conversationId = await ref
-          .read(chatRepositoryProvider)
-          .startEnquiry(listing.summary.id, message);
+      final conversationId =
+          await ref.read(chatRepositoryProvider).startEnquiry(listing.summary.id, message);
       if (!mounted) return;
       ref.invalidate(conversationsProvider);
       await context.push('/chats/$conversationId');
     } on ApiException catch (error) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text(error.message)));
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(error.message)));
     }
   }
 
@@ -167,8 +232,7 @@ class _ListingDetailScreenState extends ConsumerState<ListingDetailScreen> {
                 Text(error.toString(), textAlign: TextAlign.center),
                 const SizedBox(height: LoczSpacing.x4),
                 OutlinedButton(
-                  onPressed: () =>
-                      ref.invalidate(listingDetailProvider(widget.slug)),
+                  onPressed: () => ref.invalidate(listingDetailProvider(widget.slug)),
                   child: Text(strings('common.retry')),
                 ),
               ],
@@ -190,34 +254,46 @@ class _ListingDetailScreenState extends ConsumerState<ListingDetailScreen> {
     final isSaved = _savedOverride ?? summary.isSaved ?? false;
     final auth = ref.watch(authProvider);
     final isOwner = auth.user?.id == listing.owner.id;
-    final images =
-        listing.media.where((media) => media.fullUrl != null).toList();
+    final images = listing.media.where((media) => media.fullUrl != null).toList();
+    final galleryActionStyle = IconButton.styleFrom(
+      backgroundColor: LoczColors.neutral900.withValues(alpha: 0.68),
+      foregroundColor: Colors.white,
+      disabledBackgroundColor: LoczColors.neutral900.withValues(alpha: 0.36),
+    );
 
     return CustomScrollView(
       slivers: [
         SliverAppBar(
-          expandedHeight:
-              (MediaQuery.sizeOf(context).width * 0.82).clamp(280, 390),
+          expandedHeight: (MediaQuery.sizeOf(context).width * 0.82).clamp(280, 390),
           pinned: true,
+          leading: Padding(
+            padding: const EdgeInsets.all(6),
+            child: IconButton.filled(
+              style: galleryActionStyle,
+              icon: const Icon(Icons.arrow_back_rounded),
+              tooltip: MaterialLocalizations.of(context).backButtonTooltip,
+              onPressed: () => context.pop(),
+            ),
+          ),
           actions: [
-            IconButton(
+            IconButton.filled(
+              style: galleryActionStyle,
               icon: Icon(
-                isSaved
-                    ? Icons.favorite_rounded
-                    : Icons.favorite_border_rounded,
+                isSaved ? Icons.favorite_rounded : Icons.favorite_border_rounded,
               ),
               color: isSaved ? LoczColors.danger : null,
-              tooltip:
-                  isSaved ? strings('listing.saved') : strings('listing.save'),
+              tooltip: isSaved ? strings('listing.saved') : strings('listing.save'),
               onPressed: () => _toggleSave(listing),
             ),
-            IconButton(
+            IconButton.filled(
+              style: galleryActionStyle,
               icon: const Icon(Icons.ios_share_rounded),
               tooltip: strings('listing.share'),
               // Shares the canonical web URL so the recipient can open it without the app.
               onPressed: () => _shareListing(summary, strings),
             ),
-            IconButton(
+            IconButton.filled(
+              style: galleryActionStyle,
               icon: const Icon(Icons.chat_outlined),
               tooltip: strings('listing.whatsApp'),
               onPressed: () => _shareOnWhatsApp(summary, strings),
@@ -234,8 +310,7 @@ class _ListingDetailScreenState extends ConsumerState<ListingDetailScreen> {
                     children: [
                       PageView.builder(
                         itemCount: images.length,
-                        onPageChanged: (index) =>
-                            setState(() => _galleryIndex = index),
+                        onPageChanged: (index) => setState(() => _galleryIndex = index),
                         itemBuilder: (context, index) {
                           final image = CachedNetworkImage(
                             imageUrl: images[index].fullUrl!,
@@ -255,8 +330,7 @@ class _ListingDetailScreenState extends ConsumerState<ListingDetailScreen> {
                           );
                           if (index != 0) return image;
                           return Hero(
-                            tag: widget.heroTag ??
-                                'listing-image-detail-${summary.id}',
+                            tag: widget.heroTag ?? 'listing-image-detail-${summary.id}',
                             flightShuttleBuilder: loczImageFlight,
                             child: image,
                           );
@@ -272,10 +346,8 @@ class _ListingDetailScreenState extends ConsumerState<ListingDetailScreen> {
                               vertical: 5,
                             ),
                             decoration: BoxDecoration(
-                              color:
-                                  LoczColors.neutral900.withValues(alpha: 0.76),
-                              borderRadius:
-                                  BorderRadius.circular(LoczRadius.full),
+                              color: LoczColors.neutral900.withValues(alpha: 0.76),
+                              borderRadius: BorderRadius.circular(LoczRadius.full),
                             ),
                             child: Text(
                               '${_galleryIndex + 1} / ${images.length}',
@@ -297,9 +369,7 @@ class _ListingDetailScreenState extends ConsumerState<ListingDetailScreen> {
             delegate: SliverChildListDelegate([
               if (summary.price != null)
                 Text(
-                  summary.isFree
-                      ? strings('listing.free')
-                      : formatPrice(summary.price!),
+                  summary.isFree ? strings('listing.free') : formatPrice(summary.price!),
                   style: theme.textTheme.displaySmall?.copyWith(
                     color: summary.isFree ? LoczColors.success : null,
                   ),
@@ -335,8 +405,7 @@ class _ListingDetailScreenState extends ConsumerState<ListingDetailScreen> {
                   ),
                 ],
               ),
-              if (summary.type == 'BUYER_REQUIREMENT' &&
-                  listing.buyerRequirement.isNotEmpty) ...[
+              if (summary.type == 'BUYER_REQUIREMENT' && listing.buyerRequirement.isNotEmpty) ...[
                 const SizedBox(height: LoczSpacing.x4),
                 Container(
                   padding: const EdgeInsets.all(LoczSpacing.x4),
@@ -364,8 +433,7 @@ class _ListingDetailScreenState extends ConsumerState<ListingDetailScreen> {
                       _RequirementFact(
                         icon: Icons.forum_outlined,
                         label: strings('requirements.answers'),
-                        value:
-                            '${listing.buyerRequirement['responseCount'] ?? 0}',
+                        value: '${listing.buyerRequirement['responseCount'] ?? 0}',
                       ),
                     ],
                   ),
@@ -409,8 +477,7 @@ class _ListingDetailScreenState extends ConsumerState<ListingDetailScreen> {
                       width: 34,
                       height: 34,
                       decoration: BoxDecoration(
-                        color:
-                            theme.colorScheme.primary.withValues(alpha: 0.12),
+                        color: theme.colorScheme.primary.withValues(alpha: 0.12),
                         shape: BoxShape.circle,
                       ),
                       child: Icon(
@@ -472,8 +539,7 @@ class _ListingDetailScreenState extends ConsumerState<ListingDetailScreen> {
               Card(
                 child: ListTile(
                   onTap: () => context.push('/seller/${listing.owner.id}'),
-                  contentPadding:
-                      const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
                   leading: CircleAvatar(
                     backgroundColor: theme.colorScheme.primaryContainer,
                     child: Icon(
@@ -549,8 +615,7 @@ class _ListingDetailScreenState extends ConsumerState<ListingDetailScreen> {
                   onSave: () => _toggleSave(listing),
                   onMessage: () => _sendEnquiry(listing),
                   onRevealPhone: () => setState(() => _phoneRevealed = true),
-                  onCall: () =>
-                      launchUrl(Uri.parse('tel:${listing.owner.phone}')),
+                  onCall: () => launchUrl(Uri.parse('tel:${listing.owner.phone}')),
                   strings: strings,
                 ),
     );
@@ -589,8 +654,7 @@ class _RequirementBar extends StatelessWidget {
           ),
           child: FilledButton.icon(
             onPressed: fulfilled && !isOwner ? null : onPressed,
-            icon:
-                Icon(isOwner ? Icons.forum_outlined : Icons.handshake_outlined),
+            icon: Icon(isOwner ? Icons.forum_outlined : Icons.handshake_outlined),
             label: Text(
               fulfilled
                   ? strings('requirements.fulfilled')
@@ -651,8 +715,7 @@ class _DetailLoading extends StatefulWidget {
   State<_DetailLoading> createState() => _DetailLoadingState();
 }
 
-class _DetailLoadingState extends State<_DetailLoading>
-    with SingleTickerProviderStateMixin {
+class _DetailLoadingState extends State<_DetailLoading> with SingleTickerProviderStateMixin {
   late final AnimationController _pulse = AnimationController(
     vsync: this,
     duration: const Duration(milliseconds: 950),
@@ -704,8 +767,7 @@ class _DetailLoadingState extends State<_DetailLoading>
                     ),
                   )
                 : Hero(
-                    tag:
-                        widget.heroTag ?? 'listing-image-detail-${preview!.id}',
+                    tag: widget.heroTag ?? 'listing-image-detail-${preview!.id}',
                     flightShuttleBuilder: loczImageFlight,
                     child: CachedNetworkImage(
                       imageUrl: image,
@@ -726,8 +788,8 @@ class _DetailLoadingState extends State<_DetailLoading>
             child: AnimatedBuilder(
               animation: _pulse,
               builder: (context, _) {
-                final color = theme.colorScheme.surfaceContainerHighest
-                    .withValues(alpha: _pulse.value);
+                final color =
+                    theme.colorScheme.surfaceContainerHighest.withValues(alpha: _pulse.value);
                 return Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -830,9 +892,7 @@ class _ContactBar extends StatelessWidget {
               IconButton.outlined(
                 onPressed: onSave,
                 icon: Icon(isSaved ? Icons.favorite : Icons.favorite_border),
-                tooltip: isSaved
-                    ? strings('listing.saved')
-                    : strings('listing.save'),
+                tooltip: isSaved ? strings('listing.saved') : strings('listing.save'),
                 color: isSaved ? LoczColors.danger : null,
               ),
               const SizedBox(width: LoczSpacing.x2),

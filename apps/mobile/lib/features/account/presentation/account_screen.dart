@@ -1,10 +1,10 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/i18n/strings.dart';
 import 'device_lock_tile.dart';
-import 'verify_phone_screen.dart';
 import '../../../core/network/api_exception.dart';
 import '../../../core/providers.dart';
 import '../../../core/theme/tokens.g.dart';
@@ -23,72 +23,24 @@ class AccountScreen extends ConsumerWidget {
 
     if (!auth.isSignedIn) {
       return Scaffold(
-        appBar: AppBar(title: Text(strings('nav.account'))),
+        appBar: AppBar(
+          toolbarHeight: 56,
+          scrolledUnderElevation: 0,
+          title: Text(strings('nav.account')),
+        ),
         body: ListView(
           padding: const EdgeInsets.all(LoczSpacing.x4),
           children: [
-            Card(
-              child: Padding(
-                padding: const EdgeInsets.all(LoczSpacing.x4),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Container(
-                      width: 48,
-                      height: 48,
-                      decoration: BoxDecoration(
-                        color: Theme.of(context).colorScheme.primaryContainer,
-                        borderRadius: BorderRadius.circular(15),
-                      ),
-                      child: Icon(
-                        Icons.person_outline_rounded,
-                        color: Theme.of(context).colorScheme.primary,
-                      ),
-                    ),
-                    const SizedBox(width: LoczSpacing.x3),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            strings('nav.signIn'),
-                            style: Theme.of(context).textTheme.titleLarge,
-                          ),
-                          const SizedBox(height: 3),
-                          Text(
-                            strings('account.signInHint'),
-                            style: Theme.of(context).textTheme.bodyMedium,
-                          ),
-                          const SizedBox(height: LoczSpacing.x3),
-                          FilledButton.icon(
-                            onPressed: () => context.push('/signin?next=/account'),
-                            icon: const Icon(Icons.login_rounded, size: 17),
-                            label: Text(strings('nav.signIn')),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              ),
+            _SignedOutAccountHero(
+              title: strings('nav.signIn'),
+              hint: strings('account.signInHint'),
+              onPressed: () => context.push('/signin?next=/account'),
             ),
             const SizedBox(height: LoczSpacing.x3),
             Card(
               child: Column(
                 children: [
                   const DeviceLockTile(),
-                  const Divider(),
-                  ListTile(
-                    dense: true,
-                    leading: const Icon(Icons.verified_user_outlined),
-                    title: Text(strings('account.confirmPhone')),
-                    trailing: const Icon(Icons.chevron_right_rounded),
-                    onTap: () => Navigator.of(context).push<bool>(
-                      MaterialPageRoute<bool>(
-                        builder: (_) => const VerifyPhoneScreen(),
-                      ),
-                    ),
-                  ),
                   const Divider(),
                   ListTile(
                     dense: true,
@@ -126,6 +78,7 @@ class AccountScreen extends ConsumerWidget {
           actions: [
             IconButton(
               icon: const Icon(Icons.notifications_none),
+              tooltip: strings('account.notifications'),
               onPressed: () => context.push('/notifications'),
             ),
             PopupMenuButton<String>(
@@ -222,6 +175,126 @@ class AccountScreen extends ConsumerWidget {
                     provider: savedListingsProvider,
                     emptyMessage: strings('feed.empty'),
                     showActions: false,
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _SignedOutAccountHero extends StatelessWidget {
+  const _SignedOutAccountHero({
+    required this.title,
+    required this.hint,
+    required this.onPressed,
+  });
+
+  final String title;
+  final String hint;
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(24),
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: isDark
+                ? const [Color(0xFF08251F), Color(0xFF104D40)]
+                : const [Color(0xFF073C32), Color(0xFF0B6854)],
+          ),
+        ),
+        child: Stack(
+          children: [
+            Positioned(
+              right: -44,
+              top: -54,
+              child: Container(
+                width: 180,
+                height: 180,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  border: Border.all(
+                    color: Colors.white.withValues(alpha: .09),
+                  ),
+                ),
+              ),
+            ),
+            Positioned(
+              right: 16,
+              top: 8,
+              child: Container(
+                width: 82,
+                height: 82,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: Colors.white.withValues(alpha: .04),
+                ),
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.all(20),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Container(
+                    width: 42,
+                    height: 42,
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: .12),
+                      borderRadius: BorderRadius.circular(14),
+                      border: Border.all(
+                        color: Colors.white.withValues(alpha: .14),
+                      ),
+                    ),
+                    child: const Icon(
+                      Icons.person_outline_rounded,
+                      color: Color(0xFF9BE8D5),
+                      size: 23,
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                  Text(
+                    title,
+                    style: theme.textTheme.headlineSmall?.copyWith(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: -.45,
+                    ),
+                  ),
+                  const SizedBox(height: 5),
+                  Text(
+                    hint,
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      color: Colors.white.withValues(alpha: .74),
+                      height: 1.45,
+                    ),
+                  ),
+                  const SizedBox(height: 18),
+                  SizedBox(
+                    width: double.infinity,
+                    child: FilledButton.icon(
+                      onPressed: onPressed,
+                      icon: const Icon(Icons.arrow_forward_rounded, size: 18),
+                      iconAlignment: IconAlignment.end,
+                      label: Text(title),
+                      style: FilledButton.styleFrom(
+                        minimumSize: const Size.fromHeight(46),
+                        backgroundColor: const Color(0xFFF2FAF7),
+                        foregroundColor: const Color(0xFF073C32),
+                        elevation: 0,
+                      ),
+                    ),
                   ),
                 ],
               ),
@@ -506,47 +579,145 @@ class _OwnListingRow extends ConsumerWidget {
       'delete': strings('account.actionDelete'),
     };
 
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(LoczSpacing.x3),
+    final (statusBackground, statusForeground) = switch (listing.status) {
+      'PUBLISHED' => (
+          theme.colorScheme.primaryContainer,
+          theme.colorScheme.onPrimaryContainer,
+        ),
+      'PENDING_REVIEW' => (
+          theme.colorScheme.tertiaryContainer,
+          theme.colorScheme.onTertiaryContainer,
+        ),
+      'REJECTED' || 'REMOVED' => (
+          theme.colorScheme.errorContainer,
+          theme.colorScheme.onErrorContainer,
+        ),
+      _ => (
+          theme.colorScheme.surfaceContainerHighest,
+          theme.colorScheme.onSurfaceVariant,
+        ),
+    };
+
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surface,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: theme.colorScheme.outlineVariant),
+        boxShadow: [
+          BoxShadow(
+            color: theme.colorScheme.shadow.withValues(alpha: .05),
+            blurRadius: 14,
+            offset: const Offset(0, 5),
+          ),
+        ],
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(20),
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             InkWell(
               onTap: () => context.push('/ad/${listing.slug}'),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          listing.title,
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          '${listing.status.toLowerCase().replaceAll('_', ' ')} · '
-                          '${listing.viewCount} views',
-                          style: theme.textTheme.labelSmall,
-                        ),
-                      ],
+              child: Padding(
+                padding: const EdgeInsets.all(12),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(14),
+                      child: SizedBox(
+                        width: 82,
+                        height: 82,
+                        child: listing.thumbUrl == null
+                            ? ColoredBox(
+                                color: theme.colorScheme.surfaceContainerHigh,
+                                child: Icon(
+                                  Icons.photo_outlined,
+                                  color: theme.colorScheme.onSurfaceVariant,
+                                ),
+                              )
+                            : CachedNetworkImage(
+                                imageUrl: listing.thumbUrl!,
+                                fit: BoxFit.cover,
+                                errorWidget: (context, _, __) => ColoredBox(
+                                  color: theme.colorScheme.surfaceContainerHigh,
+                                  child: const Icon(Icons.broken_image_outlined),
+                                ),
+                              ),
+                      ),
                     ),
-                  ),
-                ],
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 3,
+                            ),
+                            decoration: BoxDecoration(
+                              color: statusBackground,
+                              borderRadius: BorderRadius.circular(999),
+                            ),
+                            child: Text(
+                              strings('account.status.${listing.status}'),
+                              style: theme.textTheme.labelSmall?.copyWith(
+                                color: statusForeground,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 7),
+                          Text(
+                            listing.title,
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            style: theme.textTheme.titleSmall?.copyWith(
+                              fontWeight: FontWeight.w700,
+                              height: 1.3,
+                            ),
+                          ),
+                          const SizedBox(height: 5),
+                          Row(
+                            children: [
+                              Icon(
+                                Icons.visibility_outlined,
+                                size: 14,
+                                color: theme.colorScheme.onSurfaceVariant,
+                              ),
+                              const SizedBox(width: 4),
+                              Text(
+                                strings(
+                                  'listing.views',
+                                  {'count': listing.viewCount},
+                                ),
+                                style: theme.textTheme.labelSmall,
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                    Icon(
+                      Icons.chevron_right_rounded,
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
+                  ],
+                ),
               ),
             ),
-            if (commands.isNotEmpty) ...[
-              const SizedBox(height: LoczSpacing.x2),
-              Wrap(
-                spacing: LoczSpacing.x2,
-                runSpacing: LoczSpacing.x2,
+            Divider(height: 1, color: theme.colorScheme.outlineVariant),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(10, 6, 8, 6),
+              child: Row(
                 children: [
                   if (listing.status != 'REMOVED')
-                    OutlinedButton.icon(
+                    FilledButton.tonalIcon(
                       onPressed: () => context.push('/post/${listing.id}/edit'),
-                      icon: const Icon(Icons.edit_outlined, size: 16),
+                      icon: Icon(
+                        listing.status == 'DRAFT' ? Icons.play_arrow_rounded : Icons.edit_outlined,
+                        size: 16,
+                      ),
                       label: Text(
                         strings(
                           listing.status == 'DRAFT'
@@ -554,67 +725,98 @@ class _OwnListingRow extends ConsumerWidget {
                               : 'account.actionEdit',
                         ),
                       ),
-                    ),
-                  for (final entry in commands.entries)
-                    OutlinedButton(
-                      style: OutlinedButton.styleFrom(
-                        minimumSize: const Size(0, 36),
-                        padding: const EdgeInsets.symmetric(horizontal: 12),
-                        foregroundColor: entry.key == 'delete' ? theme.colorScheme.error : null,
-                        side: entry.key == 'delete'
-                            ? BorderSide(color: theme.colorScheme.error)
-                            : null,
+                      style: FilledButton.styleFrom(
+                        minimumSize: const Size(0, 38),
+                        padding: const EdgeInsets.symmetric(horizontal: 13),
                       ),
-                      onPressed: () async {
-                        if (entry.key == 'delete') {
-                          final confirmed = await showDialog<bool>(
-                            context: context,
-                            builder: (context) => AlertDialog(
-                              title: Text(strings('account.deleteTitle')),
-                              content: Text(strings('account.deleteConfirm')),
-                              actions: [
-                                TextButton(
-                                  onPressed: () => Navigator.pop(context, false),
-                                  child: Text(strings('common.cancel')),
-                                ),
-                                FilledButton(
-                                  style: FilledButton.styleFrom(
-                                    backgroundColor: theme.colorScheme.error,
-                                    foregroundColor: theme.colorScheme.onError,
-                                  ),
-                                  onPressed: () => Navigator.pop(context, true),
-                                  child: Text(strings('account.actionDelete')),
-                                ),
-                              ],
-                            ),
-                          );
-                          if (confirmed != true || !context.mounted) return;
-                        }
-
-                        try {
-                          await ref
-                              .read(listingRepositoryProvider)
-                              .listingCommand(listing.id, entry.key);
-                          ref.invalidate(myListingsProvider);
-                        } on ApiException catch (error) {
-                          if (context.mounted) {
-                            ScaffoldMessenger.of(
-                              context,
-                            ).showSnackBar(
-                              SnackBar(content: Text(error.message)),
-                            );
-                          }
-                        }
-                      },
-                      child: Text(entry.value),
                     ),
+                  const Spacer(),
+                  PopupMenuButton<String>(
+                    tooltip: strings('account.moreActions'),
+                    onSelected: (command) => _runCommand(context, ref, command, strings, theme),
+                    itemBuilder: (context) => [
+                      for (final entry in commands.entries)
+                        PopupMenuItem(
+                          value: entry.key,
+                          child: Row(
+                            children: [
+                              Icon(
+                                _commandIcon(entry.key),
+                                size: 18,
+                                color: entry.key == 'delete' ? theme.colorScheme.error : null,
+                              ),
+                              const SizedBox(width: 10),
+                              Text(
+                                entry.value,
+                                style: entry.key == 'delete'
+                                    ? TextStyle(color: theme.colorScheme.error)
+                                    : null,
+                              ),
+                            ],
+                          ),
+                        ),
+                    ],
+                    icon: const Icon(Icons.more_horiz_rounded),
+                  ),
                 ],
               ),
-            ],
+            ),
           ],
         ),
       ),
     );
+  }
+
+  IconData _commandIcon(String command) => switch (command) {
+        'pause' => Icons.pause_circle_outline_rounded,
+        'resume' || 'republish' => Icons.play_circle_outline_rounded,
+        'sold' => Icons.check_circle_outline_rounded,
+        'delete' => Icons.delete_outline_rounded,
+        _ => Icons.more_horiz_rounded,
+      };
+
+  Future<void> _runCommand(
+    BuildContext context,
+    WidgetRef ref,
+    String command,
+    Strings strings,
+    ThemeData theme,
+  ) async {
+    if (command == 'delete') {
+      final confirmed = await showDialog<bool>(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: Text(strings('account.deleteTitle')),
+          content: Text(strings('account.deleteConfirm')),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: Text(strings('common.cancel')),
+            ),
+            FilledButton(
+              style: FilledButton.styleFrom(
+                backgroundColor: theme.colorScheme.error,
+                foregroundColor: theme.colorScheme.onError,
+              ),
+              onPressed: () => Navigator.pop(context, true),
+              child: Text(strings('account.actionDelete')),
+            ),
+          ],
+        ),
+      );
+      if (confirmed != true || !context.mounted) return;
+    }
+
+    try {
+      await ref.read(listingRepositoryProvider).listingCommand(listing.id, command);
+      ref.invalidate(myListingsProvider);
+    } on ApiException catch (error) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(error.message)));
+      }
+    }
   }
 }
 

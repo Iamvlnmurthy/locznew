@@ -54,38 +54,80 @@ class _UpdateBannerState extends State<UpdateBanner> {
 
     return Material(
       color: theme.colorScheme.primaryContainer,
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(16, 10, 8, 10),
-        child: Row(
-          children: [
-            Icon(Icons.system_update, color: theme.colorScheme.onPrimaryContainer),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Text(
-                strings(
-                  'update.available',
-                  {'version': update.versionName, 'size': update.sizeLabel},
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final message = Text(
+            strings(
+              'update.available',
+              {'version': update.versionName, 'size': update.sizeLabel},
+            ),
+            style: theme.textTheme.bodyMedium?.copyWith(
+              color: theme.colorScheme.onPrimaryContainer,
+            ),
+          );
+          final action = TextButton(
+            onPressed: () => unawaited(
+              // Handed to the browser rather than downloaded in-process: the system
+              // download manager survives the app being closed, shows progress in the
+              // notification shade, and triggers the install prompt on completion.
+              launchUrl(
+                Uri.parse(update.url),
+                mode: LaunchMode.externalApplication,
+              ),
+            ),
+            child: Text(strings('update.action')),
+          );
+          final dismiss = IconButton(
+            tooltip: strings('update.dismiss'),
+            icon: const Icon(Icons.close),
+            onPressed: () => setState(() => _dismissedCode = update.versionCode),
+          );
+
+          if (constraints.maxWidth < 430) {
+            return Padding(
+              padding: const EdgeInsets.fromLTRB(16, 10, 4, 10),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.only(top: 10),
+                    child: Icon(
+                      Icons.system_update,
+                      color: theme.colorScheme.onPrimaryContainer,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        message,
+                        Align(alignment: Alignment.centerLeft, child: action),
+                      ],
+                    ),
+                  ),
+                  dismiss,
+                ],
+              ),
+            );
+          }
+
+          return Padding(
+            padding: const EdgeInsets.fromLTRB(16, 10, 8, 10),
+            child: Row(
+              children: [
+                Icon(
+                  Icons.system_update,
+                  color: theme.colorScheme.onPrimaryContainer,
                 ),
-                style: theme.textTheme.bodyMedium
-                    ?.copyWith(color: theme.colorScheme.onPrimaryContainer),
-              ),
+                const SizedBox(width: 12),
+                Expanded(child: message),
+                action,
+                dismiss,
+              ],
             ),
-            TextButton(
-              onPressed: () => unawaited(
-                // Handed to the browser rather than downloaded in-process: the system
-                // download manager survives the app being closed, shows progress in the
-                // notification shade, and triggers the install prompt on completion.
-                launchUrl(Uri.parse(update.url), mode: LaunchMode.externalApplication),
-              ),
-              child: Text(strings('update.action')),
-            ),
-            IconButton(
-              tooltip: strings('update.dismiss'),
-              icon: const Icon(Icons.close),
-              onPressed: () => setState(() => _dismissedCode = update.versionCode),
-            ),
-          ],
-        ),
+          );
+        },
       ),
     );
   }

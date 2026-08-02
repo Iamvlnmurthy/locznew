@@ -54,7 +54,11 @@ export function VerifyPhoneForm({ labels, next = '/' }: { labels: Labels; next?:
   const recaptcha = useRef<{ clear(): void } | null>(null);
 
   if (!isPhoneVerificationConfigured()) {
-    return <p className="signin-form__error">{labels.unavailable}</p>;
+    return (
+      <section className="signin-form verify-phone-form">
+        <p className="signin-form__error">{labels.unavailable}</p>
+      </section>
+    );
   }
 
   async function sendCode(): Promise<void> {
@@ -119,19 +123,21 @@ export function VerifyPhoneForm({ labels, next = '/' }: { labels: Labels; next?:
 
   if (step === 'done') {
     return (
-      <>
+      <section className="signin-form verify-phone-form verify-phone-form--done">
         <p className="signin-form__success">{labels.confirmed}</p>
-        <a className="btn btn--primary" href={next}>
+        <a className="btn btn--primary btn--block" href={next}>
           {labels.continue}
         </a>
-      </>
+      </section>
     );
   }
 
   return (
-    <section className="field">
-      <h2>{labels.title}</h2>
-      <p>{labels.intro}</p>
+    <section className="signin-form verify-phone-form">
+      <header className="signin-form__heading">
+        <h2>{labels.title}</h2>
+        <p>{labels.intro}</p>
+      </header>
 
       {error ? (
         <p className="signin-form__error" role="alert">
@@ -157,13 +163,18 @@ export function VerifyPhoneForm({ labels, next = '/' }: { labels: Labels; next?:
             />
           </div>
           <small className="field__hint">{labels.phoneHint}</small>
-          <button type="button" onClick={() => void sendCode()} disabled={pending}>
+          <button
+            className="btn btn--primary signin-form__submit"
+            type="button"
+            onClick={() => void sendCode()}
+            disabled={pending}
+          >
             {labels.send}
           </button>
           {/* A Google sign-up is sent straight here, so this page has to be leavable. An
               account with no number can still browse, save and message; making it a wall
               would turn the sign-up path we just opened into a different dead end. */}
-          <p className="field__hint">
+          <p className="signin-form__account-note">
             {labels.skipHint} <a href={next}>{labels.skip}</a>
           </p>
         </div>
@@ -181,10 +192,20 @@ export function VerifyPhoneForm({ labels, next = '/' }: { labels: Labels; next?:
             onChange={(event) => setCode(event.target.value)}
           />
           <small className="field__hint">{labels.codeHint}</small>
-          <button type="button" onClick={() => void confirmCode()} disabled={pending}>
+          <button
+            className="btn btn--primary signin-form__submit"
+            type="button"
+            onClick={() => void confirmCode()}
+            disabled={pending}
+          >
             {labels.confirm}
           </button>
-          <button type="button" onClick={() => setStep('phone')} disabled={pending}>
+          <button
+            className="btn btn--outline btn--block verify-phone-form__secondary"
+            type="button"
+            onClick={() => setStep('phone')}
+            disabled={pending}
+          >
             {labels.resend}
           </button>
         </div>

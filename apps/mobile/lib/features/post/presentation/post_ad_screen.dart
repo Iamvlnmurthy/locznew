@@ -105,9 +105,8 @@ class _PostAdScreenState extends ConsumerState<PostAdScreen> {
       final cities = results[1] as List<City>;
       final categories = results[2] as List<Category>;
       final category = _findCategory(categories, listing.categoryId);
-      final categoryDetail = category == null
-          ? null
-          : await repository.categoryDetail(category.slug);
+      final categoryDetail =
+          category == null ? null : await repository.categoryDetail(category.slug);
       if (!mounted) return;
       final marketplace = listing.marketplace;
       setState(() {
@@ -115,23 +114,16 @@ class _PostAdScreenState extends ConsumerState<PostAdScreen> {
         _listingType = listing.summary.type;
         _descriptionController.text = listing.description;
         _priceController.text = marketplace['price']?.toString() ?? '';
-        _budgetMinController.text =
-            listing.buyerRequirement['budgetMin']?.toString() ?? '';
-        _budgetMaxController.text =
-            listing.buyerRequirement['budgetMax']?.toString() ?? '';
-        _quantityController.text =
-            listing.buyerRequirement['quantity']?.toString() ?? '1';
+        _budgetMinController.text = listing.buyerRequirement['budgetMin']?.toString() ?? '';
+        _budgetMaxController.text = listing.buyerRequirement['budgetMax']?.toString() ?? '';
+        _quantityController.text = listing.buyerRequirement['quantity']?.toString() ?? '1';
         _categoryId = listing.categoryId;
         _categorySlug = category?.slug;
         _cityId = listing.cityId ??
-            cities
-                .where((city) => city.name == listing.summary.cityName)
-                .firstOrNull
-                ?.id;
+            cities.where((city) => city.name == listing.summary.cityName).firstOrNull?.id;
         _condition = marketplace['condition'] as String? ?? 'GOOD';
         _isFree = marketplace['isFree'] as bool? ?? listing.summary.isFree;
-        _isNegotiable = marketplace['isNegotiable'] as bool? ??
-            listing.summary.isNegotiable;
+        _isNegotiable = marketplace['isNegotiable'] as bool? ?? listing.summary.isNegotiable;
         _contactPreference = listing.contactPreference;
         _originalStatus = listing.summary.status;
         _createdSlug = listing.summary.slug;
@@ -180,15 +172,25 @@ class _PostAdScreenState extends ConsumerState<PostAdScreen> {
       _titleController.text.trim().length >= 5,
       _categoryId != null,
       _descriptionController.text.trim().length >= 10,
-      _listingType == 'BUYER_REQUIREMENT' ||
-          _isFree ||
-          _priceController.text.trim().isNotEmpty,
+      _listingType == 'BUYER_REQUIREMENT' || _isFree || _priceController.text.trim().isNotEmpty,
       _cityId != null,
-      _listingType == 'BUYER_REQUIREMENT' ||
-          _images.isNotEmpty ||
-          widget.listingId != null,
+      _listingType == 'BUYER_REQUIREMENT' || _images.isNotEmpty || widget.listingId != null,
     ];
     return checks.where((value) => value).length / checks.length;
+  }
+
+  void _selectListingType(String type) {
+    if (_listingType == type) return;
+    setState(() {
+      _listingType = type;
+      _categoryId = null;
+      _categorySlug = null;
+      _categoryAttributes = const [];
+      _attributeValues = {};
+      _attributesResolved = false;
+      _attributesAttempted = false;
+    });
+    _scheduleProgressSave();
   }
 
   Future<void> _saveProgress() async {
@@ -281,8 +283,7 @@ class _PostAdScreenState extends ConsumerState<PostAdScreen> {
       _condition = saved['condition'] as String? ?? 'GOOD';
       _isFree = saved['isFree'] as bool? ?? false;
       _isNegotiable = saved['isNegotiable'] as bool? ?? false;
-      _contactPreference =
-          saved['contactPreference'] as String? ?? 'IN_APP_ONLY';
+      _contactPreference = saved['contactPreference'] as String? ?? 'IN_APP_ONLY';
       _attributeValues = Map<String, dynamic>.from(
         saved['attributes'] as Map<String, dynamic>? ?? const {},
       );
@@ -304,8 +305,7 @@ class _PostAdScreenState extends ConsumerState<PostAdScreen> {
     if (picked.isEmpty) return;
 
     setState(() {
-      for (final file
-          in picked.take(Env.maxImagesPerListing - _images.length)) {
+      for (final file in picked.take(Env.maxImagesPerListing - _images.length)) {
         _images.add(_PendingImage(File(file.path)));
       }
     });
@@ -321,9 +321,7 @@ class _PostAdScreenState extends ConsumerState<PostAdScreen> {
       _categorySlug = category.slug;
     });
     try {
-      final detail = await ref
-          .read(listingRepositoryProvider)
-          .categoryDetail(category.slug);
+      final detail = await ref.read(listingRepositoryProvider).categoryDetail(category.slug);
       if (!mounted || _categoryId != category.id) return;
       setState(() {
         _categoryAttributes = detail.attributes;
@@ -405,9 +403,7 @@ class _PostAdScreenState extends ConsumerState<PostAdScreen> {
               preferredCondition: _condition,
             );
 
-      if (widget.listingId != null &&
-          _originalStatus == 'DRAFT' &&
-          !saveAsDraft) {
+      if (widget.listingId != null && _originalStatus == 'DRAFT' && !saveAsDraft) {
         await repository.listingCommand(widget.listingId!, 'submit');
       }
 
@@ -454,8 +450,7 @@ class _PostAdScreenState extends ConsumerState<PostAdScreen> {
   Future<void> _showPreview() {
     final strings = Strings.of(context);
     final theme = Theme.of(context);
-    final price =
-        _isFree ? strings('listing.free') : _priceController.text.trim();
+    final price = _isFree ? strings('listing.free') : _priceController.text.trim();
 
     return showModalBottomSheet<void>(
       context: context,
@@ -542,8 +537,7 @@ class _PostAdScreenState extends ConsumerState<PostAdScreen> {
     return attribute.unit == null ? base : '$base (${attribute.unit})';
   }
 
-  String _optionLabel(CategoryAttributeOption option, Strings strings) =>
-      switch (strings.locale) {
+  String _optionLabel(CategoryAttributeOption option, Strings strings) => switch (strings.locale) {
         AppLocaleOption.te => option.labelTe ?? option.label,
         AppLocaleOption.hi => option.labelHi ?? option.label,
         AppLocaleOption.en => option.label,
@@ -553,11 +547,8 @@ class _PostAdScreenState extends ConsumerState<PostAdScreen> {
     final label = _attributeLabel(attribute, strings);
     final current = _attributeValues[attribute.key];
     String? requiredValidator(dynamic value) {
-      final missing =
-          value == null || value == '' || (value is List && value.isEmpty);
-      return attribute.isRequired && missing
-          ? strings('post.attributeRequired')
-          : null;
+      final missing = value == null || value == '' || (value is List && value.isEmpty);
+      return attribute.isRequired && missing ? strings('post.attributeRequired') : null;
     }
 
     if (attribute.dataType == 'SELECT') {
@@ -609,9 +600,7 @@ class _PostAdScreenState extends ConsumerState<PostAdScreen> {
     }
 
     if (attribute.dataType == 'MULTI_SELECT') {
-      final selected = (current as List<dynamic>? ?? const [])
-          .map((value) => '$value')
-          .toSet();
+      final selected = (current as List<dynamic>? ?? const []).map((value) => '$value').toSet();
       return FormField<List<String>>(
         initialValue: selected.toList(),
         validator: requiredValidator,
@@ -658,8 +647,7 @@ class _PostAdScreenState extends ConsumerState<PostAdScreen> {
               context: context,
               firstDate: DateTime(1900),
               lastDate: DateTime(2100),
-              initialDate:
-                  DateTime.tryParse(field.value ?? '') ?? DateTime.now(),
+              initialDate: DateTime.tryParse(field.value ?? '') ?? DateTime.now(),
             );
             if (picked == null) return;
             final value = picked.toIso8601String().substring(0, 10);
@@ -692,9 +680,8 @@ class _PostAdScreenState extends ConsumerState<PostAdScreen> {
           _attributeValues[attribute.key] = value;
           _scheduleProgressSave();
         },
-        validator: (value) => attribute.isRequired && value.trim().isEmpty
-            ? strings('post.attributeRequired')
-            : null,
+        validator: (value) =>
+            attribute.isRequired && value.trim().isEmpty ? strings('post.attributeRequired') : null,
       );
     }
 
@@ -706,9 +693,7 @@ class _PostAdScreenState extends ConsumerState<PostAdScreen> {
           : TextInputType.text,
       decoration: InputDecoration(
         labelText: label,
-        helperText: attribute.key == 'capacity'
-            ? strings('post.attributeCapacityHint')
-            : null,
+        helperText: attribute.key == 'capacity' ? strings('post.attributeCapacityHint') : null,
       ),
       onChanged: (value) {
         _attributeValues[attribute.key] = value;
@@ -850,13 +835,90 @@ class _PostAdScreenState extends ConsumerState<PostAdScreen> {
 
     final categories = ref.watch(categoriesProvider);
     final cities = ref.watch(citiesProvider);
+    final theme = Theme.of(context);
+    final canSaveDraft = widget.listingId == null || _originalStatus == 'DRAFT';
+    final actionsEnabled = !_submitting && _originalStatus != 'REMOVED';
 
     return Scaffold(
+      backgroundColor: theme.colorScheme.surfaceContainerLowest,
       appBar: AppBar(
+        toolbarHeight: 58,
+        scrolledUnderElevation: 0,
         title: Text(
-          widget.listingId == null
-              ? strings('post.title')
-              : strings('post.editTitle'),
+          widget.listingId == null ? strings('post.title') : strings('post.editTitle'),
+        ),
+        bottom: widget.listingId == null
+            ? PreferredSize(
+                preferredSize: const Size.fromHeight(4),
+                child: LinearProgressIndicator(
+                  value: _completion,
+                  minHeight: 4,
+                  backgroundColor: theme.colorScheme.surfaceContainerHigh,
+                ),
+              )
+            : null,
+      ),
+      bottomNavigationBar: SafeArea(
+        top: false,
+        child: DecoratedBox(
+          decoration: BoxDecoration(
+            color: theme.colorScheme.surface,
+            border: Border(
+              top: BorderSide(color: theme.colorScheme.outlineVariant),
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: theme.colorScheme.shadow.withValues(alpha: .08),
+                blurRadius: 20,
+                offset: const Offset(0, -5),
+              ),
+            ],
+          ),
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(12, 9, 12, 10),
+            child: Row(
+              children: [
+                IconButton.outlined(
+                  onPressed: _submitting ? null : _showPreview,
+                  tooltip: strings('post.preview'),
+                  icon: const Icon(Icons.visibility_outlined, size: 20),
+                ),
+                if (canSaveDraft) ...[
+                  const SizedBox(width: 7),
+                  IconButton.outlined(
+                    onPressed: actionsEnabled ? () => _submit(saveAsDraft: true) : null,
+                    tooltip: strings('post.saveDraft'),
+                    icon: const Icon(Icons.bookmark_add_outlined, size: 20),
+                  ),
+                ],
+                const SizedBox(width: 9),
+                Expanded(
+                  child: FilledButton.icon(
+                    onPressed: actionsEnabled ? () => _submit() : null,
+                    icon: _submitting
+                        ? const SizedBox.square(
+                            dimension: 17,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        : const Icon(Icons.arrow_forward_rounded, size: 18),
+                    iconAlignment: IconAlignment.end,
+                    label: Text(
+                      _submitting
+                          ? strings(
+                              widget.listingId == null ? 'post.publishing' : 'post.savingChanges',
+                            )
+                          : strings(
+                              widget.listingId == null ? 'post.publish' : 'post.saveChanges',
+                            ),
+                    ),
+                    style: FilledButton.styleFrom(
+                      minimumSize: const Size.fromHeight(46),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
         ),
       ),
       body: Form(
@@ -868,122 +930,38 @@ class _PostAdScreenState extends ConsumerState<PostAdScreen> {
             child: ListView(
               padding: const EdgeInsets.all(LoczSpacing.x4),
               children: [
-                Text(
-                  strings(
-                    widget.listingId == null
-                        ? 'post.subtitle'
-                        : 'post.editSubtitle',
-                  ),
-                  style: Theme.of(context).textTheme.bodyMedium,
-                ),
                 if (widget.listingId == null) ...[
-                  const SizedBox(height: LoczSpacing.x4),
-                  Text(
-                    strings('post.intentQuestion'),
-                    style: Theme.of(context).textTheme.titleMedium,
-                  ),
-                  const SizedBox(height: LoczSpacing.x2),
-                  SegmentedButton<String>(
-                    segments: [
-                      ButtonSegment(
-                        value: 'PRODUCT',
-                        icon: const Icon(Icons.sell_outlined),
-                        label: Text(strings('post.intentSell')),
+                  _PostJourneyHeader(
+                    subtitle: strings('post.subtitle'),
+                    question: strings('post.intentQuestion'),
+                    progress: strings(
+                      'post.progressTitle',
+                      {'percent': (_completion * 100).round()},
+                    ),
+                    progressHint: strings('post.progressHint'),
+                    completion: _completion,
+                    children: [
+                      _PostIntentChoice(
+                        selected: _listingType == 'PRODUCT',
+                        icon: Icons.sell_outlined,
+                        title: strings('post.intentSell'),
+                        hint: strings('post.intentSellHint'),
+                        onTap: () => _selectListingType('PRODUCT'),
                       ),
-                      ButtonSegment(
-                        value: 'BUYER_REQUIREMENT',
-                        icon: const Icon(Icons.search_rounded),
-                        label: Text(strings('post.intentBuy')),
+                      _PostIntentChoice(
+                        selected: _listingType == 'BUYER_REQUIREMENT',
+                        icon: Icons.search_rounded,
+                        title: strings('post.intentBuy'),
+                        hint: strings('post.intentBuyHint'),
+                        onTap: () => _selectListingType('BUYER_REQUIREMENT'),
                       ),
                     ],
-                    selected: {_listingType},
-                    onSelectionChanged: (selection) {
-                      setState(() {
-                        _listingType = selection.first;
-                        _categoryId = null;
-                        _categorySlug = null;
-                        _categoryAttributes = const [];
-                        _attributeValues = {};
-                        _attributesResolved = false;
-                        _attributesAttempted = false;
-                      });
-                      _scheduleProgressSave();
-                    },
                   ),
-                  const SizedBox(height: 5),
+                ] else
                   Text(
-                    strings(
-                      _listingType == 'PRODUCT'
-                          ? 'post.intentSellHint'
-                          : 'post.intentBuyHint',
-                    ),
-                    style: Theme.of(context).textTheme.bodySmall,
+                    strings('post.editSubtitle'),
+                    style: theme.textTheme.bodyMedium,
                   ),
-                ],
-                if (widget.listingId == null) ...[
-                  const SizedBox(height: LoczSpacing.x4),
-                  Container(
-                    padding: const EdgeInsets.all(LoczSpacing.x3),
-                    decoration: BoxDecoration(
-                      color: Theme.of(context).colorScheme.primaryContainer,
-                      borderRadius: BorderRadius.circular(LoczRadius.lg),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          children: [
-                            Expanded(
-                              child: Text(
-                                strings(
-                                  'post.progressTitle',
-                                  {'percent': (_completion * 100).round()},
-                                ),
-                                style: Theme.of(context)
-                                    .textTheme
-                                    .titleSmall
-                                    ?.copyWith(
-                                      color: Theme.of(context)
-                                          .colorScheme
-                                          .onPrimaryContainer,
-                                    ),
-                              ),
-                            ),
-                            Icon(
-                              _completion == 1
-                                  ? Icons.check_circle_rounded
-                                  : Icons.auto_awesome_outlined,
-                              size: 20,
-                              color: Theme.of(context).colorScheme.primary,
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 8),
-                        ClipRRect(
-                          borderRadius: BorderRadius.circular(LoczRadius.full),
-                          child: LinearProgressIndicator(
-                            value: _completion,
-                            minHeight: 6,
-                            backgroundColor: Theme.of(context)
-                                .colorScheme
-                                .surface
-                                .withValues(alpha: 0.54),
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          strings('post.progressHint'),
-                          style:
-                              Theme.of(context).textTheme.labelSmall?.copyWith(
-                                    color: Theme.of(context)
-                                        .colorScheme
-                                        .onPrimaryContainer,
-                                  ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
                 if (_originalStatus == 'PUBLISHED') ...[
                   const SizedBox(height: LoczSpacing.x3),
                   Container(
@@ -995,8 +973,7 @@ class _PostAdScreenState extends ConsumerState<PostAdScreen> {
                     child: Text(
                       strings('post.moderationWarning'),
                       style: TextStyle(
-                        color:
-                            Theme.of(context).colorScheme.onTertiaryContainer,
+                        color: Theme.of(context).colorScheme.onTertiaryContainer,
                       ),
                     ),
                   ),
@@ -1041,12 +1018,9 @@ class _PostAdScreenState extends ConsumerState<PostAdScreen> {
                 TextFormField(
                   controller: _titleController,
                   maxLength: 160,
-                  decoration:
-                      InputDecoration(labelText: strings('post.fieldTitle')),
+                  decoration: InputDecoration(labelText: strings('post.fieldTitle')),
                   validator: (value) =>
-                      (value == null || value.trim().length < 5)
-                          ? strings('common.error')
-                          : null,
+                      (value == null || value.trim().length < 5) ? strings('common.error') : null,
                 ),
                 categories.when(
                   loading: () => const LinearProgressIndicator(),
@@ -1069,9 +1043,8 @@ class _PostAdScreenState extends ConsumerState<PostAdScreen> {
                         }
                       }
                     }
-                    final selectedCategory = _categoryId == null
-                        ? null
-                        : _findCategory(list, _categoryId!);
+                    final selectedCategory =
+                        _categoryId == null ? null : _findCategory(list, _categoryId!);
                     if (selectedCategory != null &&
                         !_attributesResolved &&
                         !_attributesAttempted &&
@@ -1104,15 +1077,13 @@ class _PostAdScreenState extends ConsumerState<PostAdScreen> {
                           _categoryId = value;
                           _categorySlug = null;
                         });
-                        final category =
-                            value == null ? null : _findCategory(list, value);
+                        final category = value == null ? null : _findCategory(list, value);
                         if (category != null) {
                           unawaited(_loadCategoryAttributes(category));
                         }
                         _scheduleProgressSave();
                       },
-                      validator: (value) =>
-                          value == null ? strings('common.error') : null,
+                      validator: (value) => value == null ? strings('common.error') : null,
                     );
                   },
                 ),
@@ -1146,9 +1117,7 @@ class _PostAdScreenState extends ConsumerState<PostAdScreen> {
                     labelText: strings('post.fieldDescription'),
                   ),
                   validator: (value) =>
-                      (value == null || value.trim().length < 10)
-                          ? strings('common.error')
-                          : null,
+                      (value == null || value.trim().length < 10) ? strings('common.error') : null,
                 ),
                 const SizedBox(height: LoczSpacing.x5),
                 _SectionHeading(
@@ -1204,11 +1173,9 @@ class _PostAdScreenState extends ConsumerState<PostAdScreen> {
                     controller: _quantityController,
                     keyboardType: TextInputType.number,
                     inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                    decoration:
-                        InputDecoration(labelText: strings('post.quantity')),
-                    validator: (value) => (int.tryParse(value ?? '') ?? 0) < 1
-                        ? strings('common.error')
-                        : null,
+                    decoration: InputDecoration(labelText: strings('post.quantity')),
+                    validator: (value) =>
+                        (int.tryParse(value ?? '') ?? 0) < 1 ? strings('common.error') : null,
                   ),
                 ] else ...[
                   TextFormField(
@@ -1286,8 +1253,7 @@ class _PostAdScreenState extends ConsumerState<PostAdScreen> {
                     key: ValueKey('city-$_cityId'),
                     initialValue: _cityId,
                     isExpanded: true,
-                    decoration:
-                        InputDecoration(labelText: strings('post.fieldCity')),
+                    decoration: InputDecoration(labelText: strings('post.fieldCity')),
                     items: list
                         .map(
                           (city) => DropdownMenuItem(
@@ -1300,8 +1266,7 @@ class _PostAdScreenState extends ConsumerState<PostAdScreen> {
                       setState(() => _cityId = value);
                       _scheduleProgressSave();
                     },
-                    validator: (value) =>
-                        value == null ? strings('common.error') : null,
+                    validator: (value) => value == null ? strings('common.error') : null,
                   ),
                 ),
                 const SizedBox(height: LoczSpacing.x4),
@@ -1369,13 +1334,11 @@ class _PostAdScreenState extends ConsumerState<PostAdScreen> {
                       children: [
                         for (final image in _images)
                           Padding(
-                            padding:
-                                const EdgeInsets.only(right: LoczSpacing.x2),
+                            padding: const EdgeInsets.only(right: LoczSpacing.x2),
                             child: Stack(
                               children: [
                                 ClipRRect(
-                                  borderRadius:
-                                      BorderRadius.circular(LoczRadius.md),
+                                  borderRadius: BorderRadius.circular(LoczRadius.md),
                                   child: Image.file(
                                     image.file,
                                     width: 96,
@@ -1383,9 +1346,7 @@ class _PostAdScreenState extends ConsumerState<PostAdScreen> {
                                     fit: BoxFit.cover,
                                   ),
                                 ),
-                                if (_submitting &&
-                                    image.progress < 1 &&
-                                    !image.failed)
+                                if (_submitting && image.progress < 1 && !image.failed)
                                   Positioned.fill(
                                     child: ColoredBox(
                                       color: Colors.black45,
@@ -1413,8 +1374,7 @@ class _PostAdScreenState extends ConsumerState<PostAdScreen> {
                                     top: 0,
                                     right: 0,
                                     child: GestureDetector(
-                                      onTap: () =>
-                                          setState(() => _images.remove(image)),
+                                      onTap: () => setState(() => _images.remove(image)),
                                       child: const CircleAvatar(
                                         radius: 12,
                                         backgroundColor: Colors.black54,
@@ -1436,8 +1396,7 @@ class _PostAdScreenState extends ConsumerState<PostAdScreen> {
                               width: 96,
                               height: 96,
                               decoration: BoxDecoration(
-                                borderRadius:
-                                    BorderRadius.circular(LoczRadius.md),
+                                borderRadius: BorderRadius.circular(LoczRadius.md),
                                 border: Border.all(
                                   color: Theme.of(context).colorScheme.outline,
                                 ),
@@ -1449,41 +1408,7 @@ class _PostAdScreenState extends ConsumerState<PostAdScreen> {
                     ),
                   ),
                 ],
-                const SizedBox(height: LoczSpacing.x8),
-                OutlinedButton.icon(
-                  onPressed: _submitting ? null : _showPreview,
-                  icon: const Icon(Icons.visibility_outlined),
-                  label: Text(strings('post.preview')),
-                ),
-                const SizedBox(height: LoczSpacing.x2),
-                if (widget.listingId == null || _originalStatus == 'DRAFT') ...[
-                  OutlinedButton(
-                    onPressed: _submitting || _originalStatus == 'REMOVED'
-                        ? null
-                        : () => _submit(saveAsDraft: true),
-                    child: Text(strings('post.saveDraft')),
-                  ),
-                  const SizedBox(height: LoczSpacing.x2),
-                ],
-                FilledButton(
-                  onPressed: _submitting || _originalStatus == 'REMOVED'
-                      ? null
-                      : () => _submit(),
-                  child: Text(
-                    _submitting
-                        ? strings(
-                            widget.listingId == null
-                                ? 'post.publishing'
-                                : 'post.savingChanges',
-                          )
-                        : strings(
-                            widget.listingId == null
-                                ? 'post.publish'
-                                : 'post.saveChanges',
-                          ),
-                  ),
-                ),
-                const SizedBox(height: LoczSpacing.x8),
+                const SizedBox(height: LoczSpacing.x5),
               ],
             ),
           ),
@@ -1522,8 +1447,7 @@ class _ModelSuggestionField extends StatefulWidget {
 }
 
 class _ModelSuggestionFieldState extends State<_ModelSuggestionField> {
-  late final TextEditingController _controller =
-      TextEditingController(text: widget.initialValue);
+  late final TextEditingController _controller = TextEditingController(text: widget.initialValue);
   Timer? _debounce;
   List<String> _suggestions = const [];
   bool _loading = false;
@@ -1583,8 +1507,7 @@ class _ModelSuggestionFieldState extends State<_ModelSuggestionField> {
                         onPressed: () {
                           _controller
                             ..text = model
-                            ..selection =
-                                TextSelection.collapsed(offset: model.length);
+                            ..selection = TextSelection.collapsed(offset: model.length);
                           widget.onChanged(model);
                           setState(() => _suggestions = const []);
                         },
@@ -1597,6 +1520,219 @@ class _ModelSuggestionFieldState extends State<_ModelSuggestionField> {
       );
 }
 
+class _PostJourneyHeader extends StatelessWidget {
+  const _PostJourneyHeader({
+    required this.subtitle,
+    required this.question,
+    required this.progress,
+    required this.progressHint,
+    required this.completion,
+    required this.children,
+  });
+
+  final String subtitle;
+  final String question;
+  final String progress;
+  final String progressHint;
+  final double completion;
+  final List<Widget> children;
+
+  @override
+  Widget build(BuildContext context) {
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(24),
+      child: DecoratedBox(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [Color(0xFF073C32), Color(0xFF0C6753)],
+          ),
+        ),
+        child: Stack(
+          children: [
+            Positioned(
+              right: -70,
+              top: -82,
+              child: Container(
+                width: 210,
+                height: 210,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  border: Border.all(
+                    color: Colors.white.withValues(alpha: .08),
+                  ),
+                ),
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.all(17),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(
+                        child: Text(
+                          subtitle,
+                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                color: Colors.white.withValues(alpha: .76),
+                                height: 1.45,
+                              ),
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 9,
+                          vertical: 6,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withValues(alpha: .1),
+                          borderRadius: BorderRadius.circular(999),
+                          border: Border.all(
+                            color: Colors.white.withValues(alpha: .1),
+                          ),
+                        ),
+                        child: Text(
+                          progress,
+                          style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                                color: const Color(0xFFFFD183),
+                                fontWeight: FontWeight.w800,
+                              ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 13),
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(999),
+                    child: LinearProgressIndicator(
+                      value: completion,
+                      minHeight: 5,
+                      backgroundColor: Colors.white.withValues(alpha: .12),
+                      color: const Color(0xFFFFC867),
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    progressHint,
+                    style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                          color: Colors.white.withValues(alpha: .6),
+                        ),
+                  ),
+                  const SizedBox(height: 20),
+                  Text(
+                    question,
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: -.25,
+                        ),
+                  ),
+                  const SizedBox(height: 10),
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      for (var index = 0; index < children.length; index++) ...[
+                        if (index > 0) const SizedBox(width: 9),
+                        Expanded(child: children[index]),
+                      ],
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _PostIntentChoice extends StatelessWidget {
+  const _PostIntentChoice({
+    required this.selected,
+    required this.icon,
+    required this.title,
+    required this.hint,
+    required this.onTap,
+  });
+
+  final bool selected;
+  final IconData icon;
+  final String title;
+  final String hint;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final titleColor = selected ? const Color(0xFF073C32) : Colors.white;
+    final hintColor = selected ? const Color(0xFF52645E) : Colors.white.withValues(alpha: .62);
+
+    return Semantics(
+      button: true,
+      selected: selected,
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(17),
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 180),
+            curve: Curves.easeOutCubic,
+            constraints: const BoxConstraints(minHeight: 142),
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: selected ? const Color(0xFFF2FAF7) : Colors.white.withValues(alpha: .075),
+              borderRadius: BorderRadius.circular(17),
+              border: Border.all(
+                color: selected ? const Color(0xFF9ADBCB) : Colors.white.withValues(alpha: .12),
+              ),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Container(
+                  width: 36,
+                  height: 36,
+                  decoration: BoxDecoration(
+                    color: selected ? const Color(0xFFDDF2EC) : Colors.white.withValues(alpha: .09),
+                    borderRadius: BorderRadius.circular(11),
+                  ),
+                  child: Icon(icon, size: 19, color: titleColor),
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  title,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                        color: titleColor,
+                        fontWeight: FontWeight.w800,
+                        height: 1.2,
+                      ),
+                ),
+                const SizedBox(height: 5),
+                Text(
+                  hint,
+                  maxLines: 3,
+                  overflow: TextOverflow.ellipsis,
+                  style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                        color: hintColor,
+                        height: 1.3,
+                      ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 class _SectionHeading extends StatelessWidget {
   const _SectionHeading({required this.index, required this.label});
 
@@ -1606,33 +1742,74 @@ class _SectionHeading extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final icon = switch (index) {
+      '01' => Icons.description_outlined,
+      '02' => Icons.payments_outlined,
+      '03' => Icons.location_on_outlined,
+      '04' => Icons.add_photo_alternate_outlined,
+      _ => Icons.check_circle_outline_rounded,
+    };
 
-    return Row(
-      children: [
-        Container(
-          width: 28,
-          height: 28,
-          alignment: Alignment.center,
-          decoration: BoxDecoration(
-            color: theme.colorScheme.primaryContainer,
-            borderRadius: BorderRadius.circular(9),
-          ),
-          child: Text(
-            index,
-            style: theme.textTheme.labelSmall?.copyWith(
-              color: theme.colorScheme.primary,
-              fontWeight: FontWeight.w700,
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [
+            theme.colorScheme.primaryContainer,
+            theme.colorScheme.surface,
+          ],
+        ),
+        borderRadius: BorderRadius.circular(17),
+        border: Border.all(color: theme.colorScheme.outlineVariant),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(11),
+        child: Row(
+          children: [
+            Container(
+              width: 38,
+              height: 38,
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
+                color: theme.colorScheme.primary,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Icon(
+                icon,
+                size: 19,
+                color: theme.colorScheme.onPrimary,
+              ),
             ),
-          ),
+            const SizedBox(width: 11),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    index,
+                    style: theme.textTheme.labelSmall?.copyWith(
+                      color: theme.colorScheme.primary,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: .8,
+                    ),
+                  ),
+                  const SizedBox(height: 1),
+                  Text(
+                    label,
+                    style: theme.textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: -.2,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Icon(
+              Icons.keyboard_arrow_down_rounded,
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
+          ],
         ),
-        const SizedBox(width: 10),
-        Expanded(
-          child: Text(
-            label,
-            style: theme.textTheme.titleMedium,
-          ),
-        ),
-      ],
+      ),
     );
   }
 }
@@ -1663,9 +1840,7 @@ class _SuccessScreen extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             children: [
               Icon(
-                published
-                    ? Icons.check_circle_outline
-                    : Icons.hourglass_top_outlined,
+                published ? Icons.check_circle_outline : Icons.hourglass_top_outlined,
                 size: 56,
                 color: published ? LoczColors.success : LoczColors.warning,
               ),

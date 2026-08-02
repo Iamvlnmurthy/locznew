@@ -68,6 +68,7 @@ final routerProvider = Provider<GoRouter>((ref) {
                   initialType: state.uri.queryParameters['type'],
                   initialCategoryId: state.uri.queryParameters['category'],
                   initialCategoryLabel: state.uri.queryParameters['label'],
+                  initialAttributes: state.uri.queryParametersAll['attr'] ?? const [],
                 ),
               ),
             ],
