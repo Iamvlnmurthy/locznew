@@ -41,6 +41,30 @@ export async function loginAction(_prev: LoginState, formData: FormData): Promis
 
   // Authorisation is still enforced on every API call; this check exists so someone
   // without console access gets a clear message instead of a wall of empty pages.
+  return finishConsoleSignIn(session);
+}
+
+export async function googleLoginAction(idToken: string): Promise<LoginState> {
+  let session: AuthSession;
+  try {
+    session = await apiPublic<AuthSession>('/auth/login/google', {
+      idToken,
+      device: {
+        deviceKey: 'admin-console-google',
+        platform: 'WEB',
+        name: 'LocZ Admin Console',
+      },
+    });
+  } catch (error) {
+    if (error instanceof ApiRequestError) return { error: error.message };
+    return { error: 'Could not reach the API. Is it running?' };
+  }
+
+  return finishConsoleSignIn(session);
+}
+
+/** The console gate, shared by both sign-in paths so neither can drift from the other. */
+async function finishConsoleSignIn(session: AuthSession): Promise<LoginState> {
   const canUseConsole =
     session.user.permissions.includes('*') ||
     session.user.permissions.includes('listing:moderate') ||
@@ -52,11 +76,13 @@ export async function loginAction(_prev: LoginState, formData: FormData): Promis
   }
 
   await storeSession(session);
+
   const safetyOnly =
     session.user.permissions.includes('safety:case:read') &&
     !session.user.permissions.includes('*') &&
     !session.user.permissions.includes('metrics:read') &&
     !session.user.permissions.includes('listing:moderate');
+
   redirect(safetyOnly ? '/safety' : '/');
 }
 

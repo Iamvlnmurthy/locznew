@@ -3,6 +3,7 @@
 import { useActionState } from 'react';
 import { useFormStatus } from 'react-dom';
 import { loginAction, type LoginState } from './actions';
+import { GoogleConsoleSignIn } from './google-console-sign-in';
 
 function SubmitButton() {
   const { pending } = useFormStatus();
@@ -86,6 +87,9 @@ export default function LoginPage() {
 
             <SubmitButton />
           </form>
+          <GoogleConsoleSignIn
+            clientId={process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID ?? ''}
+          />
 
           <p className="login__help">Having trouble signing in? Contact your LocZ administrator.</p>
         </div>
