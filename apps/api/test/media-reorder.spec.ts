@@ -32,6 +32,8 @@ describe('MediaService.reorder', () => {
       {} as never,
       {} as never,
       {} as never,
+      // Audit is written on release; these cases do not exercise it.
+      { record: jest.fn() } as never,
     );
     // The return value re-reads the listing; that path is not what these cases are about.
     jest.spyOn(service, 'listForListing').mockResolvedValue([]);

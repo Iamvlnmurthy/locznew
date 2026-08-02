@@ -15,6 +15,7 @@ import { MediaSafetyService } from './media-safety.service';
 import { ProtectedHashService } from './protected-hash.service';
 import { v7 as uuid } from 'uuid';
 import { AppConfig } from '../config/config.module';
+import { AuditService } from '../audit/audit.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateUploadUrlDto, MediaDto, UploadUrlDto } from './dto/media.dto';
 import { StorageService } from './storage.service';
@@ -74,6 +75,7 @@ export class MediaService {
     private readonly imageScanner: ImageScanService,
     private readonly protectedHash: ProtectedHashService,
     private readonly mediaSafety: MediaSafetyService,
+    private readonly audit: AuditService,
   ) {}
 
   /**
@@ -368,6 +370,64 @@ export class MediaService {
     }
 
     return pending.length;
+  }
+
+
+  /**
+   * Publishes an image a moderator has looked at and accepted.
+   *
+   * This was missing entirely. The queue could preview an image and block it, and nothing
+   * could release one — so the only route out of REVIEW_REQUIRED was the automated scanner
+   * returning APPROVE. With the scanner unreachable every upload was trapped, and a moderator
+   * sitting at the queue full time could not have published a single one.
+   *
+   * Copies through the storage API rather than moving files on disk. MinIO keeps its own
+   * metadata for every object; anything written directly into its volume is invisible to it,
+   * which produced a 400 on a key the filesystem clearly showed existed.
+   *
+   * The quarantine copies are left in place. Deleting them is the orphan sweep's job, and
+   * keeping them until then means a release that turns out to be wrong can be reversed.
+   */
+  async releaseFromQuarantine(mediaId: string, moderatorId: string): Promise<void> {
+    const media = await this.prisma.listingMedia.findUnique({ where: { id: mediaId } });
+    if (!media) throw new NotFoundException('Image not found');
+    if (media.status !== MediaStatus.REVIEW_REQUIRED) {
+      throw new BadRequestException('This image is not awaiting review');
+    }
+
+    const published = (key: string | null): string | null =>
+      key ? key.replace(/^quarantine\//, '') : null;
+
+    const moves = [media.storageKey, media.thumbKey, media.cardKey, media.fullKey]
+      .filter((key): key is string => Boolean(key) && key!.startsWith('quarantine/'));
+
+    for (const key of moves) {
+      await this.storage.copy(key, published(key)!);
+    }
+
+    await this.prisma.listingMedia.update({
+      where: { id: media.id },
+      data: {
+        status: MediaStatus.READY,
+        storageKey: published(media.storageKey) ?? media.storageKey,
+        thumbKey: published(media.thumbKey),
+        cardKey: published(media.cardKey),
+        fullKey: published(media.fullKey),
+        failureReason: null,
+      },
+    });
+
+    // Publishing somebody else's photo is a decision that has to be attributable. A release
+    // nobody can trace is one nobody can review when it turns out to be wrong.
+    await this.audit.record({
+      action: 'media.release',
+      entityType: 'ListingMedia',
+      entityId: media.id,
+      actorId: moderatorId,
+      changes: { listingId: media.listingId, objects: moves.length },
+    });
+
+    this.logger.log(`Media ${media.id} released from quarantine by ${moderatorId}`);
   }
 
   async moderationPreview(mediaId: string): Promise<{ url: string; expiresInSeconds: number }> {

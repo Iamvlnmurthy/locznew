@@ -219,6 +219,22 @@ export class ModerationController {
     return this.moderation.reinstateUser(id, user.id, dto.reason);
   }
 
+  @Post('media/:id/approve')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @RequirePermissions('listing:moderate')
+  @ApiOperation({
+    summary: 'Publish a quarantined image a moderator has accepted',
+    description:
+      'The counterpart to block, which existed on its own — leaving the only route out of ' +
+      'quarantine the automated scanner, so an unreachable scanner trapped every upload.',
+  })
+  approveMedia(
+    @CurrentUser() user: AuthenticatedUser,
+    @Param('id') mediaId: string,
+  ): Promise<void> {
+    return this.media.releaseFromQuarantine(mediaId, user.id);
+  }
+
   @Post('media/:id/block')
   @HttpCode(HttpStatus.OK)
   @RequirePermissions('listing:moderate')

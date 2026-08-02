@@ -1,3 +1,4 @@
+import { AuditModule } from '../audit/audit.module';
 import { Module } from '@nestjs/common';
 import { ImageModerationModule } from './image-moderation.module';
 import { MediaController } from './media.controller';
@@ -5,7 +6,7 @@ import { MediaService } from './media.service';
 import { StorageService } from './storage.service';
 
 @Module({
-  imports: [ImageModerationModule],
+  imports: [ImageModerationModule, AuditModule],
   controllers: [MediaController],
   providers: [MediaService, StorageService],
   exports: [MediaService, StorageService],

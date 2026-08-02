@@ -125,6 +125,8 @@ describe('MediaService quarantine boundary', () => {
       scanner as never,
       protectedHash as never,
       mediaSafety as never,
+      // Audit is written on release; these cases do not exercise it.
+      { record: jest.fn() } as never,
     );
     return {
       service,
