@@ -20,6 +20,14 @@ import { NsfwjsImageScanProvider } from '../src/media/nsfwjs-image-scan.provider
  * threshold beneath the fixture's genuine explicit score — real bytes, real inference, a
  * real number, and the branch under test is the one that runs in production.
  */
+/**
+ * Real model loading and real inference, so the 20-second default is not enough — the
+ * first load is several seconds on its own and this suite runs after `tsc` in the
+ * pre-push hook, where it competes for memory. A timeout here would report a scanner
+ * fault that does not exist.
+ */
+jest.setTimeout(180_000);
+
 describe('nsfwjs image scanning, end to end', () => {
   const listingId = '00000000-0000-4000-8000-000000000001';
   const mediaId = '00000000-0000-4000-8000-000000000002';
