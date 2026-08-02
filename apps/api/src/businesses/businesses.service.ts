@@ -16,6 +16,7 @@ import { v7 as uuid } from 'uuid';
 import { AuditService } from '../audit/audit.service';
 import { paginate, PaginatedDto } from '../common/dto/pagination.dto';
 import { slugify } from '../common/utils/slug.util';
+import { matchesKeyword } from '../moderation/rule-based-moderation.provider';
 import { PrismaService } from '../prisma/prisma.service';
 import { RbacService } from '../rbac/rbac.service';
 import { StorageService } from '../media/storage.service';
@@ -27,6 +28,7 @@ import {
   BusinessStaffDto,
   BusinessSummaryDto,
   CreateBusinessDto,
+  MAX_BUSINESS_KEYWORDS,
   UpdateBusinessDto,
 } from './dto/business.dto';
 
@@ -113,7 +115,47 @@ export class BusinessesService {
     );
   }
 
+  /**
+   * Cleans the terms a business claims to sell, and refuses the ones it may not.
+   *
+   * These go straight into the search index, so an unchecked field is a way to make a shop
+   * appear for words the platform has decided nobody may advertise — the same abuse the
+   * listing moderation rules exist to stop, arriving through a different door.
+   *
+   * Rejects rather than silently dropping. An owner who typed something disallowed should be
+   * told, not left believing a term is live when it was quietly discarded.
+   */
+  private async normaliseKeywords(keywords: string[]): Promise<string[]> {
+    const cleaned = Array.from(
+      new Set(
+        keywords
+          .map((keyword) => keyword.trim().toLowerCase().replace(/\s+/g, ' '))
+          // A single letter matches almost everything and describes nothing.
+          .filter((keyword) => keyword.length >= 2),
+      ),
+    ).slice(0, MAX_BUSINESS_KEYWORDS);
+
+    if (cleaned.length === 0) return [];
+
+    const banned = await this.prisma.bannedKeyword.findMany({
+      where: { isActive: true },
+      select: { keyword: true },
+    });
+
+    const rejected = cleaned.filter((keyword) =>
+      banned.some((entry) => matchesKeyword(keyword, entry.keyword)),
+    );
+    if (rejected.length > 0) {
+      throw new BadRequestException(
+        `These cannot be listed on LocZ: ${rejected.join(', ')}. Remove them and save again.`,
+      );
+    }
+
+    return cleaned;
+  }
+
   async create(userId: string, dto: CreateBusinessDto): Promise<BusinessDetailDto> {
+    const keywords = dto.keywords ? await this.normaliseKeywords(dto.keywords) : [];
     const [category, city] = await Promise.all([
       this.prisma.category.findUnique({ where: { id: dto.categoryId } }),
       this.prisma.city.findUnique({ where: { id: dto.cityId } }),
@@ -156,6 +198,7 @@ export class BusinessesService {
           cityId: dto.cityId,
           addressId,
           description: dto.description,
+          keywords,
           // The `geo` column is derived from these by trigger (ADR-0009).
           latitude: dto.latitude ?? city.latitude,
           longitude: dto.longitude ?? city.longitude,
@@ -263,12 +306,17 @@ export class BusinessesService {
       }
     }
 
+    // Replaced wholesale rather than merged: the field is the shop's current answer to
+    // "what do you sell", and there would otherwise be no way to remove a term.
+    const keywords = dto.keywords ? await this.normaliseKeywords(dto.keywords) : undefined;
+
     const updated = await this.prisma.business.update({
       where: { id: businessId },
       data: {
         businessType: dto.businessType,
         name: dto.name?.trim(),
         description: dto.description,
+        ...(keywords ? { keywords } : {}),
         latitude: dto.latitude,
         longitude: dto.longitude,
         primaryPhone: dto.primaryPhone,
@@ -605,6 +653,7 @@ export class BusinessesService {
     return {
       ...this.toSummary(business),
       description: business.description,
+      keywords: business.keywords,
       addressLine: business.address?.line1 ?? null,
       latitude: business.latitude ? Number(business.latitude) : null,
       longitude: business.longitude ? Number(business.longitude) : null,

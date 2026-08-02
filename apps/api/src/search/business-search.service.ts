@@ -13,6 +13,8 @@ export interface BusinessDocument {
   categoryName: string;
   /** The category's vocabulary — what makes a scraped shop findable by what it sells. */
   categoryTerms: string[];
+  /** What the shop itself says it stocks. Reaches the shelf, where the category cannot. */
+  keywords: string[];
   businessType: string;
   claimStatus: string;
   cityId: string | null;
@@ -78,6 +80,10 @@ export class BusinessSearchService {
       searchableAttributes: [
         'name',
         'categoryName',
+        // Highest of the vocabulary fields: a term the owner typed is a first-hand claim
+        // about this specific shop, where category vocabulary is an inference about every
+        // shop of its kind.
+        'keywords',
         // Above description on purpose: an imported shop has no description at all, and its
         // category vocabulary is the only thing that can answer "biryani".
         'categoryTerms',
@@ -142,6 +148,7 @@ export class BusinessSearchService {
       categoryId: business.categoryId,
       categoryName: business.category.name,
       categoryTerms: business.category.searchTerms ?? [],
+      keywords: business.keywords,
       businessType: business.businessType,
       claimStatus: business.claimStatus,
       cityId: business.cityId,

@@ -750,6 +750,18 @@ model Business {
   /// answer "what is in 500081", which is the unit people actually search by.
   pincodeCode String? @db.VarChar(6)
 
+  /// What this business actually sells or does, in the words a customer would type.
+  ///
+  /// Category vocabulary can only ever reach category level: it makes a kirana shop findable
+  /// by "kirana" and "grocery store", never by "toor dal" or "bed bug spray". Those are the
+  /// searches people really run, and no taxonomy that stops at the category can answer them.
+  /// So the shop gets to say what is on its shelves.
+  ///
+  /// An array rather than free text because these are matched and shown as discrete terms,
+  /// and because a paragraph would be stuffed with everything the owner ever hoped to rank
+  /// for. A bounded list of short terms is harder to abuse and easier to moderate.
+  keywords String[]
+
   /// Where an imported record came from, and under what licence.
   ///
   /// Not optional bookkeeping: ODbL and CDLA both require attribution to travel with the

@@ -26,6 +26,14 @@ import { PaginationQueryDto } from '../../common/dto/pagination.dto';
 
 const INDIAN_PHONE = /^\+91[6-9]\d{9}$/;
 
+/**
+ * How many terms a business may claim.
+ *
+ * Generous enough for a real kirana shop's actual range, small enough that the field stays a
+ * description of the shop rather than a bid for every query on the platform.
+ */
+export const MAX_BUSINESS_KEYWORDS = 30;
+
 export class BusinessHourDto {
   @ApiProperty({ minimum: 0, maximum: 6, description: '0 = Sunday' })
   @Type(() => Number)
@@ -72,6 +80,22 @@ export class CreateBusinessDto {
   @IsString()
   @MaxLength(2000)
   description?: string;
+
+  @ApiPropertyOptional({
+    description:
+      'What this business sells or does, in the words a customer would type — "toor dal", ' +
+      '"bed bug spray". Category vocabulary only reaches category level; these reach the shelf.',
+    example: ['toor dal', 'weighing machine', 'atta'],
+    maxItems: MAX_BUSINESS_KEYWORDS,
+  })
+  @IsOptional()
+  @IsArray()
+  @ArrayMaxSize(MAX_BUSINESS_KEYWORDS, {
+    message: `List at most ${MAX_BUSINESS_KEYWORDS} things you sell. A longer list is keyword stuffing, not a shop.`,
+  })
+  @IsString({ each: true })
+  @MaxLength(40, { each: true })
+  keywords?: string[];
 
   @ApiPropertyOptional({ example: 'Shop 12, Road No 36, Jubilee Hills' })
   @IsOptional()
@@ -190,6 +214,9 @@ export class BusinessStaffDto {
 }
 
 export class BusinessDetailDto extends BusinessSummaryDto {
+  /** On the detail response only — a result card has no room for the shelf list. */
+  @ApiProperty({ type: [String] }) keywords!: string[];
+
   @ApiPropertyOptional() latitude!: number | null;
   @ApiPropertyOptional() longitude!: number | null;
   @ApiPropertyOptional() primaryPhone!: string | null;
