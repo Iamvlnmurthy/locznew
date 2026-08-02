@@ -31,8 +31,19 @@ describe('BusinessClaimsService', () => {
     pendingCount = 0,
   } = {}) {
     const prisma = {
+      // Unverified by default, so no signal counts and the claim goes to the queue — the
+      // behaviour every case below except the auto-approval ones expects.
+      user: {
+        findUniqueOrThrow: jest.fn().mockResolvedValue({
+          phoneE164: '+919000000001',
+          phoneVerifiedAt: null,
+          email: 'someone@example.com',
+          emailVerifiedAt: null,
+        }),
+      },
       business: {
         findFirst: jest.fn().mockResolvedValue(found),
+        findMany: jest.fn().mockResolvedValue([]),
         update: jest.fn().mockResolvedValue({}),
         updateMany: jest.fn().mockResolvedValue({ count: 1 }),
       },
@@ -295,6 +306,183 @@ describe('BusinessClaimsService', () => {
       expect(prisma.business.updateMany).toHaveBeenCalledWith(
         expect.objectContaining({ data: { claimStatus: BusinessClaimStatus.UNCLAIMED } }),
       );
+    });
+  });
+
+  /**
+   * Suggesting a record somebody is about to duplicate.
+   *
+   * A shopkeeper whose shop is already in the directory has no way to know. Left alone they
+   * create a second record, and the platform holds two entries for one shop: the owner on a
+   * new empty page, and their actual shop unclaimed with the search traffic.
+   */
+  describe('suggesting an existing record', () => {
+    const record = {
+      id: 'biz-1',
+      slug: 'sri-lakshmi-kirana',
+      name: 'Sri Lakshmi Kirana Store',
+      primaryPhone: '+919876543210',
+      whatsappNumber: null,
+      latitude: 17.4485,
+      longitude: 78.3908,
+    };
+
+    function matcher(candidates: unknown[]) {
+      const { service, prisma } = build();
+      prisma.business.findMany.mockResolvedValue(candidates);
+      return service;
+    }
+
+    it('suggests a record matching on name and phone', async () => {
+      const service = matcher([record]);
+
+      const matches = await service.findPossibleMatches({
+        name: 'Sri Lakshmi Kirana',
+        phone: '+919876543210',
+      });
+
+      expect(matches).toHaveLength(1);
+      expect(matches[0]!.matchedOn).toEqual(expect.arrayContaining(['NAME', 'PHONE']));
+    });
+
+    it('ignores a record that matches on one thing only', async () => {
+      const service = matcher([{ ...record, primaryPhone: null }]);
+
+      // One coincidence is not a suggestion. A shop in the same city whose name starts with
+      // the same word would otherwise fill the list with noise.
+      await expect(service.findPossibleMatches({ name: 'Sri Lakshmi Kirana' })).resolves.toEqual(
+        [],
+      );
+    });
+
+    it('matches a name written with different punctuation', async () => {
+      const service = matcher([{ ...record, name: 'Sri Lakshmi Kirana & Store' }]);
+
+      const matches = await service.findPossibleMatches({
+        name: 'sri lakshmi kirana',
+        phone: '+919876543210',
+      });
+
+      expect(matches).toHaveLength(1);
+    });
+
+    it('reports how far away it is', async () => {
+      const service = matcher([record]);
+
+      const matches = await service.findPossibleMatches({
+        name: 'Sri Lakshmi Kirana',
+        phone: '+919876543210',
+        latitude: 17.4485,
+        longitude: 78.39108,
+      });
+
+      expect(matches[0]!.distanceM).toBeLessThan(50);
+      expect(matches[0]!.matchedOn).toContain('LOCATION');
+    });
+
+    it('only ever looks at records nobody owns', async () => {
+      const { service, prisma } = build();
+      prisma.business.findMany.mockResolvedValue([]);
+
+      await service.findPossibleMatches({ name: 'Sri Lakshmi Kirana' });
+
+      // A business with an owner is not something to suggest taking over.
+      expect(prisma.business.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({ where: expect.objectContaining({ ownerId: null }) }),
+      );
+    });
+  });
+
+  /**
+   * Granting without a person reading it.
+   *
+   * Two independent verified signals beat a convincing paragraph, and a queue that makes every
+   * real shopkeeper wait days is its own failure. What must not happen is the shortcut also
+   * shortening the guards around handover.
+   */
+  describe('automatic approval', () => {
+    const verifiedClaimant = {
+      phoneE164: '+919876543210',
+      phoneVerifiedAt: new Date(),
+      email: 'ravi@example.com',
+      emailVerifiedAt: new Date(),
+    };
+    const shop = {
+      ...business,
+      primaryPhone: '+919876543210',
+      whatsappNumber: null,
+      email: 'ravi@example.com',
+      latitude: 17.4485,
+      longitude: 78.3908,
+    };
+
+    function build2() {
+      const made = build({ found: shop as never });
+      made.prisma.user.findUniqueOrThrow.mockResolvedValue(verifiedClaimant);
+      return made;
+    }
+
+    it('hands the business over when phone and email both match', async () => {
+      const { service, prisma } = build2();
+
+      const result = await service.create('user-1', 'biz-1', claimInput());
+
+      expect(result.status).toBe(ClaimReviewStatus.APPROVED);
+      expect(prisma.business.updateMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: { id: 'biz-1', ownerId: null },
+          data: expect.objectContaining({ ownerId: 'user-1' }),
+        }),
+      );
+    });
+
+    it('guards the handover on the business still being unowned', async () => {
+      const { service, prisma } = build2();
+      prisma.business.updateMany.mockResolvedValue({ count: 0 });
+
+      // Two claimants can both satisfy two signals for the same shop. The loser must not
+      // silently overwrite the winner, so the write is conditional and its count is checked.
+      await expect(service.create('user-1', 'biz-1', claimInput())).rejects.toThrow(
+        ConflictException,
+      );
+    });
+
+    it('records which checks matched', async () => {
+      const { service, prisma } = build2();
+
+      await service.create('user-1', 'biz-1', claimInput());
+
+      // When a handover later turns out to be wrong, this is the only record of why the
+      // platform believed it.
+      const data = prisma.businessClaim.create.mock.calls[0][0].data as Record<string, unknown>;
+      expect(data.matchedSignals).toEqual(expect.arrayContaining(['PHONE', 'EMAIL']));
+      expect(data.autoApproved).toBe(true);
+    });
+
+    it('queues instead when only one check matches', async () => {
+      const { service, prisma } = build2();
+      prisma.business.findFirst.mockResolvedValue({ ...shop, email: null });
+
+      const result = await service.create('user-1', 'biz-1', claimInput());
+
+      expect(result.status).toBe(ClaimReviewStatus.PENDING);
+      expect(prisma.business.updateMany).toHaveBeenCalledWith(
+        expect.objectContaining({ data: { claimStatus: BusinessClaimStatus.CLAIM_PENDING } }),
+      );
+    });
+
+    it('queues when the identifiers match but were never verified', async () => {
+      const { service, prisma } = build2();
+      prisma.user.findUniqueOrThrow.mockResolvedValue({
+        ...verifiedClaimant,
+        phoneVerifiedAt: null,
+        emailVerifiedAt: null,
+      });
+
+      // Two unverified matches are one fact — the directory is public — counted twice.
+      const result = await service.create('user-1', 'biz-1', claimInput());
+
+      expect(result.status).toBe(ClaimReviewStatus.PENDING);
     });
   });
 });

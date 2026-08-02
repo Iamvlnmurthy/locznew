@@ -1971,6 +1971,27 @@ model BusinessClaim {
   offeringProposed   OfferingType?
   proposedCategoryId String?        @db.Uuid
 
+  /// Where the claimant was standing when they filed.
+  ///
+  /// Standing inside the shop is evidence a form cannot fake by typing. Accuracy is stored
+  /// with it and checked: a fix accurate to two kilometres that happens to centre nearby
+  /// proves nothing, and treating it as proof would be worse than having no signal at all.
+  latitude          Decimal? @db.Decimal(10, 7)
+  longitude         Decimal? @db.Decimal(10, 7)
+  locationAccuracyM Int?
+
+  /// Which independent checks matched, in the order they were evaluated.
+  ///
+  /// Kept whether or not the claim was granted automatically. When a handover later turns out
+  /// to be wrong, this is the only record of why the platform believed it, and without it an
+  /// automatic approval cannot be reviewed or improved.
+  matchedSignals String[]
+
+  /// True when no person looked at this. Auto-approval is a decision the platform made, and
+  /// it must be visible as such — to a reviewer auditing handovers, and to anybody disputing
+  /// one later.
+  autoApproved Boolean @default(false)
+
   reviewedById    String?   @db.Uuid
   reviewedAt      DateTime?
   /// Why a claim was refused. A rejection nobody can explain is one nobody can appeal.

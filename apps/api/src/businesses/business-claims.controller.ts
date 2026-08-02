@@ -1,8 +1,13 @@
 import { Body, Controller, Get, HttpCode, HttpStatus, Param, Post, Query } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { BusinessScale, ClaimReviewStatus, OfferingType } from '@prisma/client';
+import { Type } from 'class-transformer';
 import {
   IsEnum,
+  IsInt,
+  IsLatitude,
+  IsLongitude,
+  Min,
   IsOptional,
   IsString,
   IsUUID,
@@ -53,6 +58,29 @@ export class CreateClaimDto {
   categoryId?: string;
 
   @ApiPropertyOptional({
+    description:
+      'Where the claimant is standing. Sent with the device accuracy, which is checked: a ' +
+      'fix accurate to two kilometres that centres nearby proves nothing.',
+  })
+  @IsOptional()
+  @Type(() => Number)
+  @IsLatitude()
+  latitude?: number;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @Type(() => Number)
+  @IsLongitude()
+  longitude?: number;
+
+  @ApiPropertyOptional({ description: 'Device-reported accuracy radius, in metres.' })
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(0)
+  locationAccuracyM?: number;
+
+  @ApiPropertyOptional({
     example: '+919876543210',
     description: 'A number a reviewer can ring. Never shown publicly.',
   })
@@ -84,6 +112,25 @@ export class ClaimQueueQueryDto extends PaginationQueryDto {
  * on these routes is public — an open list of unclaimed businesses and who wants them is a
  * map for anybody planning to impersonate a shop.
  */
+export class MatchQueryDto {
+  @ApiProperty({ example: 'Sri Lakshmi Kirana' })
+  @IsString()
+  @MinLength(2)
+  @MaxLength(180)
+  name!: string;
+
+  @ApiPropertyOptional() @IsOptional() @Type(() => Number) @IsLatitude() latitude?: number;
+  @ApiPropertyOptional() @IsOptional() @Type(() => Number) @IsLongitude() longitude?: number;
+
+  @ApiPropertyOptional({ example: '+919876543210' })
+  @IsOptional()
+  @IsString()
+  @MaxLength(20)
+  phone?: string;
+
+  @ApiPropertyOptional() @IsOptional() @IsUUID() cityId?: string;
+}
+
 @ApiTags('business-claims')
 @Controller('businesses')
 export class BusinessClaimsController {
@@ -104,6 +151,19 @@ export class BusinessClaimsController {
     @Body() dto: CreateClaimDto,
   ): Promise<{ id: string; status: ClaimReviewStatus }> {
     return this.claims.create(user.id, businessId, dto);
+  }
+
+  @Get('claims/possible-matches')
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary: 'Imported records that look like the business you are about to create',
+    description:
+      'A shopkeeper whose shop is already in the directory has no way to know that. Left ' +
+      'alone they create a second record and their real shop stays unclaimed with the search ' +
+      'traffic. Suggestion only — nothing is created or merged, and it can be ignored.',
+  })
+  possibleMatches(@Query() query: MatchQueryDto): Promise<unknown> {
+    return this.claims.findPossibleMatches(query);
   }
 
   @Get('claims/mine')
