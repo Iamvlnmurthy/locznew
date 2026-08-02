@@ -48,8 +48,8 @@ export default async function SignInPage({
         labels={{
           title: t('auth.signInTitleP'),
           subtitle: t('auth.signInSubtitleP'),
-          phone: t('auth.phone'),
-          phoneHint: t('auth.phoneHint'),
+          email: t('auth.email'),
+          emailHint: t('auth.emailHint'),
           password: t('auth.passwordLabel'),
           submit: t('auth.submitP'),
           submitting: t('auth.submittingP'),

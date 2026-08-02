@@ -8,7 +8,7 @@ import { storeSession } from '@/lib/session';
 export interface RegisterState {
   error?: string;
   /** Kept so a failed submission does not clear what the person already typed. */
-  values?: { name?: string; phone?: string };
+  values?: { name?: string; email?: string; phone?: string };
 }
 
 /** 10 digits, first digit 6–9 — the Indian mobile range. Mirrors the sign-in form. */
@@ -29,14 +29,20 @@ export async function registerAction(
   const name = String(formData.get('name') ?? '').trim();
   const raw = String(formData.get('phone') ?? '').replace(/\D/g, '');
   const national = raw.startsWith('91') && raw.length === 12 ? raw.slice(2) : raw;
+  const email = String(formData.get('email') ?? '')
+    .trim()
+    .toLowerCase();
   const password = String(formData.get('password') ?? '');
   const confirm = String(formData.get('confirmPassword') ?? '');
 
   // Everything the user typed is echoed back on every failure path, so a mistyped password
   // does not also cost them their name and number.
-  const values = { name, phone: national };
+  const values = { name, email, phone: national };
 
   if (name.length < 2) return { error: 'invalidName', values };
+  // Loose on purpose: anything stricter rejects addresses that genuinely work, and this is
+  // the address the account will be signed into and reset through.
+  if (!email.includes('@') || email.length < 5) return { error: 'invalidEmail', values };
   if (!INDIAN_MOBILE.test(national)) return { error: 'invalidPhone', values };
   if (password.length < PASSWORD_MIN) return { error: 'shortPassword', values };
   if (password !== confirm) return { error: 'passwordMismatch', values };
@@ -46,6 +52,7 @@ export async function registerAction(
     session = await api<AuthSession>('/auth/register', {
       method: 'POST',
       body: {
+        email,
         phone: `+91${national}`,
         displayName: name,
         password,
@@ -56,6 +63,7 @@ export async function registerAction(
     // The API answers 409 when the number already has an account, and that is worth saying
     // plainly rather than generically: the person can act on it by signing in instead.
     const message = error instanceof Error ? error.message : '';
+    if (/email already has an account/i.test(message)) return { error: 'emailTaken', values };
     if (/already has an account/i.test(message)) return { error: 'phoneTaken', values };
     return { error: message || 'error', values };
   }

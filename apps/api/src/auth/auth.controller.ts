@@ -1,6 +1,4 @@
-import { Body, Controller, Get, HttpCode, HttpStatus, Post, Req,
-  Query,
-} from '@nestjs/common';
+import { Body, Controller, Get, HttpCode, HttpStatus, Post, Req, Query } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
 import {
@@ -22,7 +20,7 @@ import {
   VerifyOtpDto,
   GoogleLoginDto,
   RequestPasswordResetDto,
-  CompletePasswordResetDto
+  CompletePasswordResetDto,
 } from './dto/auth.dto';
 
 @ApiTags('auth')
@@ -93,6 +91,25 @@ export class AuthController {
   @ApiResponse({ status: 409, description: 'That mobile number already has an account' })
   register(@Body() dto: RegisterDto, @Req() request: RequestWithUser): Promise<AuthSessionDto> {
     return this.auth.register(dto, this.contextOf(request));
+  }
+
+  @Public()
+  @Post('login/email')
+  @HttpCode(HttpStatus.OK)
+  @Throttle({ default: { limit: 10, ttl: 60_000 } })
+  @ApiOperation({
+    summary: 'Sign in with an email address and password',
+    description:
+      'The ordinary way in. Email rather than the mobile number, because signing in must not ' +
+      'depend on an SMS arriving. The number is still identity and contact.',
+  })
+  @ApiResponse({ status: 200, type: AuthSessionDto })
+  @ApiResponse({ status: 401, description: 'Incorrect email or password' })
+  loginWithEmail(
+    @Body() dto: EmailLoginDto,
+    @Req() request: RequestWithUser,
+  ): Promise<AuthSessionDto> {
+    return this.auth.loginWithEmail(dto, this.contextOf(request));
   }
 
   @Public()
@@ -174,19 +191,6 @@ export class AuthController {
     @Req() request: RequestWithUser,
   ): Promise<AuthSessionDto> {
     return this.auth.loginWithGoogle(dto, this.contextOf(request));
-  }
-
-  @Public()
-  @Post('login/email')
-  @HttpCode(HttpStatus.OK)
-  @Throttle({ default: { limit: 10, ttl: 60_000 } })
-  @ApiOperation({ summary: 'Optional email and password sign-in' })
-  @ApiResponse({ status: 200, type: AuthSessionDto })
-  loginWithEmail(
-    @Body() dto: EmailLoginDto,
-    @Req() request: RequestWithUser,
-  ): Promise<AuthSessionDto> {
-    return this.auth.loginWithEmail(dto, this.contextOf(request));
   }
 
   @Public()

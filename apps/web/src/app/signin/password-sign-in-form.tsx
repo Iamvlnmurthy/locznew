@@ -9,8 +9,8 @@ import { GoogleSignIn } from './google-sign-in';
 interface Labels {
   title: string;
   subtitle: string;
-  phone: string;
-  phoneHint: string;
+  email: string;
+  emailHint: string;
   password: string;
   submit: string;
   submitting: string;
@@ -85,26 +85,20 @@ export function PasswordSignInForm({
       ) : null}
 
       <div className="field">
-        <label htmlFor="signin-phone">{labels.phone}</label>
-        <div className="signin-phone">
-          <span>
-            <span aria-hidden="true">🇮🇳</span>
-            +91
-          </span>
-          <input
-            id="signin-phone"
-            name="phone"
-            type="tel"
-            inputMode="numeric"
-            autoComplete="tel-national"
-            minLength={10}
-            maxLength={10}
-            required
-            placeholder="98765 43210"
-            defaultValue={state.phone?.replace(/^\+91/, '') ?? ''}
-          />
-        </div>
-        <small className="field__hint">{labels.phoneHint}</small>
+        <label htmlFor="signin-email">{labels.email}</label>
+        <input
+          id="signin-email"
+          name="email"
+          type="email"
+          inputMode="email"
+          autoComplete="email"
+          autoCapitalize="none"
+          spellCheck={false}
+          required
+          placeholder="you@example.com"
+          defaultValue={state.email ?? ''}
+        />
+        <small className="field__hint">{labels.emailHint}</small>
       </div>
 
       <div className="field">

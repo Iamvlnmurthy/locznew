@@ -17,7 +17,7 @@ describe('phone and password authentication', () => {
 
   let service: AuthService;
   let prisma: {
-    user: { findUnique: jest.Mock; create: jest.Mock };
+    user: { findUnique: jest.Mock; findFirst: jest.Mock; create: jest.Mock };
     authLockout: { deleteMany: jest.Mock; findUnique: jest.Mock; upsert: jest.Mock };
     device: { upsert: jest.Mock };
   };
@@ -26,6 +26,7 @@ describe('phone and password authentication', () => {
 
   function registerDto(overrides: Partial<RegisterDto> = {}): RegisterDto {
     return {
+      email: 'anjali@example.com',
       phone: '+919876500123',
       displayName: 'Anjali Rao',
       password: 'a strong passphrase',
@@ -36,7 +37,11 @@ describe('phone and password authentication', () => {
 
   beforeEach(() => {
     prisma = {
-      user: { findUnique: jest.fn(), create: jest.fn() },
+      user: {
+        findUnique: jest.fn(),
+        findFirst: jest.fn().mockResolvedValue(null),
+        create: jest.fn(),
+      },
       authLockout: {
         deleteMany: jest.fn().mockResolvedValue({}),
         findUnique: jest.fn().mockResolvedValue(null),
@@ -179,6 +184,72 @@ describe('phone and password authentication', () => {
       await expect(
         service.loginWithPhone(loginDto('a strong passphrase'), context),
       ).rejects.toBeInstanceOf(ForbiddenException);
+    });
+  });
+
+  /**
+   * Signing in with an email address.
+   *
+   * The ordinary way in now. Email rather than the mobile number because signing in must not
+   * depend on an SMS arriving — the number stays as identity and as how a buyer reaches a
+   * seller, but it is no longer the key to the account.
+   */
+  describe('email sign-in', () => {
+    async function account(password: string) {
+      return {
+        id: 'u1',
+        email: 'anjali@example.com',
+        passwordHash: await argon2.hash(password),
+        status: UserStatus.ACTIVE,
+        deletedAt: null,
+      };
+    }
+
+    const dto = (password: string, email = 'anjali@example.com') =>
+      ({ email, password, device }) as never;
+
+    it('accepts the right password', async () => {
+      prisma.user.findFirst.mockResolvedValue(await account('a strong passphrase'));
+
+      await expect(
+        service.loginWithEmail(dto('a strong passphrase'), context),
+      ).resolves.toBeDefined();
+    });
+
+    it('matches an address whatever case it was typed in', async () => {
+      prisma.user.findFirst.mockResolvedValue(await account('a strong passphrase'));
+
+      // People capitalise the first letter on a phone keyboard without meaning to, and an
+      // account they cannot reach because of it looks to them like a lost account.
+      await service.loginWithEmail(dto('a strong passphrase', '  Anjali@Example.com '), context);
+
+      expect(prisma.user.findFirst).toHaveBeenCalledWith(
+        expect.objectContaining({ where: { email: 'anjali@example.com', deletedAt: null } }),
+      );
+    });
+
+    it('says the same thing for a wrong password and an unknown address', async () => {
+      prisma.user.findFirst.mockResolvedValue(await account('a strong passphrase'));
+      const wrongPassword = await service
+        .loginWithEmail(dto('not the password'), context)
+        .catch((error: Error) => error.message);
+
+      prisma.user.findFirst.mockResolvedValue(null);
+      const noAccount = await service
+        .loginWithEmail(dto('a strong passphrase'), context)
+        .catch((error: Error) => error.message);
+
+      // Telling somebody which half was wrong turns the form into a way to discover who has
+      // an account on the platform.
+      expect(wrongPassword).toBe(noAccount);
+    });
+
+    it('refuses an account that only ever used Google', async () => {
+      const google = await account('a strong passphrase');
+      prisma.user.findFirst.mockResolvedValue({ ...google, passwordHash: null });
+
+      // There is no password to check, and saying so would confirm the address is registered.
+      await expect(service.loginWithEmail(dto('a strong passphrase'), context)).rejects.toThrow();
     });
   });
 });

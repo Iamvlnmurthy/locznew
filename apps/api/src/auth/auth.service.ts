@@ -23,7 +23,7 @@ import {
   OtpRequestedDto,
   RequestOtpDto,
   VerifyOtpDto,
-  GoogleLoginDto
+  GoogleLoginDto,
 } from './dto/auth.dto';
 import { OtpService } from './otp/otp.service';
 import { TokenService } from './token.service';
@@ -155,6 +155,20 @@ export class AuthService {
    * would be entitled to trust it. `phoneVerifiedAt` stays null until an SMS proves it.
    */
   async register(dto: RegisterDto, context: RequestContext): Promise<AuthSessionDto> {
+    const email = dto.email.trim().toLowerCase();
+
+    const emailTaken = await this.prisma.user.findFirst({
+      where: { email, deletedAt: null },
+      select: { id: true },
+    });
+    if (emailTaken) {
+      // Said plainly for the same reason as the number below: anybody can learn it by trying
+      // to register anyway, and a vague message leaves a real person stuck.
+      throw new ConflictException(
+        'That email already has an account. Sign in instead, or use another address.',
+      );
+    }
+
     const existing = await this.prisma.user.findUnique({ where: { phoneE164: dto.phone } });
 
     if (existing && !existing.deletedAt) {
@@ -177,6 +191,7 @@ export class AuthService {
       data: {
         id: uuid(),
         phoneE164: dto.phone,
+        email,
         displayName: dto.displayName.trim(),
         passwordHash,
         status: UserStatus.ACTIVE,
@@ -196,6 +211,48 @@ export class AuthService {
 
     const device = await this.registerDevice(user.id, dto.device, context);
     return this.buildSession(user, device, context, true);
+  }
+
+  /**
+   * Signing in with an email address and password.
+   *
+   * Email rather than the mobile number, because signing in must not depend on an SMS
+   * arriving. The number is still collected at sign-up and still how a buyer reaches a
+   * seller — it is identity and contact, not the key to the account.
+   *
+   * The failure message names neither the address nor the password, and the lockout counter
+   * is keyed on the address. Telling somebody which half was wrong turns the form into a way
+   * to discover who has an account here.
+   */
+  async loginWithEmail(dto: EmailLoginDto, context: RequestContext): Promise<AuthSessionDto> {
+    const email = dto.email.trim().toLowerCase();
+    const user = await this.prisma.user.findFirst({ where: { email, deletedAt: null } });
+
+    const invalid = new UnauthorizedException('Incorrect email or password');
+
+    // Also covers an account that only ever signed in with Google: it has no password to
+    // check, and saying so would confirm the address is registered.
+    if (!user || !user.passwordHash) {
+      await this.recordFailedPasswordAttempt(email);
+      throw invalid;
+    }
+
+    if (user.status === UserStatus.SUSPENDED) {
+      throw new ForbiddenException('This account is suspended. Contact support.');
+    }
+
+    await this.assertNotLockedOut(email);
+
+    const matches = await argon2.verify(user.passwordHash, dto.password);
+    if (!matches) {
+      await this.recordFailedPasswordAttempt(email);
+      throw invalid;
+    }
+
+    await this.prisma.authLockout.deleteMany({ where: { scope: 'IP', identifier: email } });
+
+    const device = await this.registerDevice(user.id, dto.device, context);
+    return this.buildSession(user, device, context, false);
   }
 
   /**
@@ -250,40 +307,6 @@ export class AuthService {
     if (user.status === UserStatus.SUSPENDED) {
       throw new ForbiddenException('This account is suspended. Contact support.');
     }
-
-    const device = await this.registerDevice(user.id, dto.device, context);
-    return this.buildSession(user, device, context, false);
-  }
-
-  /**
-   * Optional email + password path. Primarily how staff reach the admin console
-   * without an SMS gateway; ordinary users are steered to OTP.
-   */
-  async loginWithEmail(dto: EmailLoginDto, context: RequestContext): Promise<AuthSessionDto> {
-    const user = await this.prisma.user.findUnique({ where: { email: dto.email } });
-
-    // One generic message for "no such user", "no password set" and "wrong password" —
-    // the endpoint must not reveal which accounts exist or which use password login.
-    const invalid = new UnauthorizedException('Incorrect email or password');
-
-    if (!user || !user.passwordHash || user.deletedAt) {
-      await this.recordFailedPasswordAttempt(dto.email);
-      throw invalid;
-    }
-
-    if (user.status === UserStatus.SUSPENDED) {
-      throw new ForbiddenException('This account is suspended. Contact support.');
-    }
-
-    await this.assertNotLockedOut(dto.email);
-
-    const matches = await argon2.verify(user.passwordHash, dto.password);
-    if (!matches) {
-      await this.recordFailedPasswordAttempt(dto.email);
-      throw invalid;
-    }
-
-    await this.prisma.authLockout.deleteMany({ where: { scope: 'IP', identifier: dto.email } });
 
     const device = await this.registerDevice(user.id, dto.device, context);
     return this.buildSession(user, device, context, false);

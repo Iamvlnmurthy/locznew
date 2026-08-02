@@ -8,6 +8,8 @@ import { storeSession } from '@/lib/session';
 export interface SignInState {
   step: 'phone' | 'code';
   phone?: string;
+  /** Kept across a failed attempt so the address is not retyped. */
+  email?: string;
   error?: string;
   /** Present only when the API runs the mock OTP provider (development). */
   devCode?: string;
@@ -57,29 +59,32 @@ export async function passwordSignInAction(
   _prev: SignInState,
   formData: FormData,
 ): Promise<SignInState> {
-  const raw = String(formData.get('phone') ?? '').replace(/\D/g, '');
-  const national = raw.startsWith('91') && raw.length === 12 ? raw.slice(2) : raw;
+  const email = String(formData.get('email') ?? '')
+    .trim()
+    .toLowerCase();
   const password = String(formData.get('password') ?? '');
   const next = String(formData.get('next') ?? '/');
 
-  if (!INDIAN_MOBILE.test(national)) return { step: 'phone', error: 'invalidPhone' };
-  if (!password) return { step: 'phone', phone: national, error: 'missingPassword' };
+  // Deliberately loose. Anything stricter rejects addresses that genuinely work, and the
+  // server is the only place that can actually say whether this one has an account.
+  if (!email.includes('@') || email.length < 5) return { step: 'phone', error: 'invalidEmail' };
+  if (!password) return { step: 'phone', email, error: 'missingPassword' };
 
   let session: AuthSession;
   try {
-    session = await api<AuthSession>('/auth/login/phone', {
+    session = await api<AuthSession>('/auth/login/email', {
       method: 'POST',
       body: {
-        phone: `+91${national}`,
+        email,
         password,
         device: { deviceKey: `web-${Date.now()}`, platform: 'WEB', name: 'Web browser' },
       },
     });
   } catch {
-    // The API answers the same way for an unknown number and a wrong password, so the
+    // The API answers the same way for an unknown address and a wrong password, so the
     // interface must not invent a distinction the server deliberately refuses to make.
     // The thrown message is deliberately discarded for the same reason.
-    return { step: 'phone', phone: national, error: 'badCredentials' };
+    return { step: 'phone', email, error: 'badCredentials' };
   }
 
   await storeSession(session);

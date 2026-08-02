@@ -12,7 +12,9 @@ interface Labels {
   name: string;
   nameHint: string;
   phone: string;
-  phoneHint: string;
+  phoneIdentityHint: string;
+  email: string;
+  emailHint: string;
   password: string;
   passwordHint: string;
   confirmPassword: string;
@@ -96,6 +98,23 @@ export function RegisterForm({
       </label>
 
       <div className="field">
+        <label htmlFor="register-email">{labels.email}</label>
+        <input
+          id="register-email"
+          name="email"
+          type="email"
+          inputMode="email"
+          autoComplete="email"
+          autoCapitalize="none"
+          spellCheck={false}
+          required
+          placeholder="you@example.com"
+          defaultValue={state.values?.email ?? ''}
+        />
+        <small className="field__hint">{labels.emailHint}</small>
+      </div>
+
+      <div className="field">
         <label htmlFor="register-phone">{labels.phone}</label>
         <div className="signin-phone">
           <span>
@@ -113,7 +132,7 @@ export function RegisterForm({
             defaultValue={state.values?.phone?.replace(/^\+91/, '') ?? ''}
           />
         </div>
-        <small className="field__hint">{labels.phoneHint}</small>
+        <small className="field__hint">{labels.phoneIdentityHint}</small>
       </div>
 
       <div className="field">

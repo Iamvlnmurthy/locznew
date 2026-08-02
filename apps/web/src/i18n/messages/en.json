@@ -1331,7 +1331,7 @@
   },
   "auth": {
     "signInTitle": "Sign in to LocZ",
-    "signInSubtitle": "Enter your mobile number and we'll send a code.",
+    "signInSubtitle": "Use your email address and password.",
     "phone": "Mobile number",
     "phoneHint": "10-digit Indian mobile number",
     "sendCode": "Send code",
@@ -1369,14 +1369,19 @@
     "submitP": "Sign in",
     "submittingP": "Signing in…",
     "missingPassword": "Enter your password.",
-    "badCredentials": "Incorrect mobile number or password.",
+    "badCredentials": "Incorrect email or password.",
     "showPassword": "Show password",
     "hidePassword": "Hide password",
     "googleDivider": "Or continue with",
     "googleButton": "Continue with Google",
     "googleAccountRequired": "Create your LocZ account with your mobile number first. Then you can sign in with Google.",
     "googleUnavailable": "Google sign-in is unavailable right now. Use your mobile number and password.",
-    "googleFailed": "We couldn’t sign you in with Google. Try again or use your mobile number."
+    "googleFailed": "We couldn’t sign you in with Google. Try again or use your mobile number.",
+    "email": "Email address",
+    "emailHint": "The address you signed up with",
+    "invalidEmail": "Enter a valid email address",
+    "phoneIdentityHint": "Buyers use this to reach you. You will not sign in with it.",
+    "emailTaken": "That email already has an account. Sign in instead."
   },
   "dashboard": {
     "title": "My LocZ",
@@ -1482,6 +1487,9 @@
     "newHere": "New to LocZ?",
     "createOne": "Create an account",
     "showPassword": "Show password",
-    "hidePassword": "Hide password"
+    "hidePassword": "Hide password",
+    "email": "Email address",
+    "emailHint": "You will sign in with this",
+    "phoneIdentityHint": "Buyers use this to reach you. You will not sign in with it."
   }
 }

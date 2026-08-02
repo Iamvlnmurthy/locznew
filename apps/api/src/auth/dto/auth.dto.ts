@@ -86,22 +86,6 @@ export class VerifyOtpDto {
   displayName?: string;
 }
 
-export class EmailLoginDto {
-  @ApiProperty({ example: 'admin@locz.test' })
-  @IsEmail()
-  email!: string;
-
-  @ApiProperty({ example: 'LocZ@dev1234' })
-  @IsString()
-  @Length(8, 128)
-  password!: string;
-
-  @ApiProperty({ type: DeviceInfoDto })
-  @ValidateNested()
-  @Type(() => DeviceInfoDto)
-  device!: DeviceInfoDto;
-}
-
 /**
  * Minimum password length.
  *
@@ -113,7 +97,21 @@ export class EmailLoginDto {
 const PASSWORD_MIN = 8;
 
 export class RegisterDto {
-  @ApiProperty({ example: '+919876543210', description: 'Mobile number in E.164 format' })
+  @ApiProperty({
+    example: 'anjali@example.com',
+    description:
+      'How you sign in. Email rather than the mobile number, because signing in must not ' +
+      'depend on an SMS that may not arrive.',
+  })
+  @IsEmail({}, { message: 'Enter a valid email address' })
+  email!: string;
+
+  @ApiProperty({
+    example: '+919876543210',
+    description:
+      'Mobile number in E.164 format. Kept for identity and for buyers to reach a seller, ' +
+      'not used to sign in.',
+  })
   @Matches(E164_INDIA, { message: 'Enter a valid Indian mobile number, for example +919876543210' })
   phone!: string;
 
@@ -133,6 +131,28 @@ export class RegisterDto {
   device!: DeviceInfoDto;
 }
 
+export class EmailLoginDto {
+  @ApiProperty({ example: 'anjali@example.com' })
+  @IsEmail({}, { message: 'Enter a valid email address' })
+  email!: string;
+
+  @ApiProperty({ example: 'a strong passphrase' })
+  @IsString()
+  @Length(PASSWORD_MIN, 128)
+  password!: string;
+
+  @ApiProperty({ type: DeviceInfoDto })
+  @ValidateNested()
+  @Type(() => DeviceInfoDto)
+  device!: DeviceInfoDto;
+}
+
+/**
+ * Signing in with the mobile number.
+ *
+ * Kept working alongside email. Every account created before email was collected has only a
+ * number, and removing this would lock those people out of accounts they can still reach.
+ */
 export class PhoneLoginDto {
   @ApiProperty({ example: '+919876543210' })
   @Matches(E164_INDIA, { message: 'Enter a valid Indian mobile number, for example +919876543210' })
