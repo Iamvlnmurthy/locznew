@@ -50,7 +50,14 @@ describe('SearchQueryService, when the search index is unavailable', () => {
     listings = { search: jest.fn().mockResolvedValue(browseResult), findSummariesByIds: jest.fn() };
     prisma = { pincode: { findUnique: jest.fn() } };
 
-    service = new SearchQueryService(meili as never, prisma as never, listings as never);
+    service = new SearchQueryService(
+      meili as never,
+      prisma as never,
+      listings as never,
+      // Search learning: records what was typed and whether it found anything. Not what
+      // these cases are about, so it is a stub.
+      { record: jest.fn() } as never,
+    );
   });
 
   afterEach(() => jest.restoreAllMocks());
@@ -134,7 +141,14 @@ describe('SearchQueryService precise filters', () => {
     const prisma = { pincode: { findUnique: jest.fn().mockResolvedValue(null) } };
 
     // Constructor order is (meili, prisma, listings) — matching the block above.
-    const service = new SearchQueryService(meili as never, prisma as never, listings as never);
+    const service = new SearchQueryService(
+      meili as never,
+      prisma as never,
+      listings as never,
+      // Search learning: records what was typed and whether it found anything. Not what
+      // these cases are about, so it is a stub.
+      { record: jest.fn() } as never,
+    );
     return { service, listings, meili };
   }
 

@@ -591,14 +591,15 @@ model City {
   createdAt  DateTime                               @default(now())
   updatedAt  DateTime                               @updatedAt
 
-  state          State           @relation(fields: [stateId], references: [id])
-  district       District?       @relation(fields: [districtId], references: [id])
-  localities     Locality[]
-  pincodes       Pincode[]
-  addresses      Address[]
-  savedLocations SavedLocation[]
-  businesses     Business[]
-  listings       Listing[]
+  state           State            @relation(fields: [stateId], references: [id])
+  district        District?        @relation(fields: [districtId], references: [id])
+  localities      Locality[]
+  pincodes        Pincode[]
+  addresses       Address[]
+  savedLocations  SavedLocation[]
+  businesses      Business[]
+  listings        Listing[]
+  searchQueryLogs SearchQueryLog[]
 
   @@index([stateId, isActive])
   @@index([name])
@@ -860,12 +861,12 @@ model ServiceArea {
 // =====================================================================
 
 model Category {
-  id             String        @id @db.Uuid
-  parentId       String?       @db.Uuid
-  name           String        @db.VarChar(140)
-  nameTe         String?       @db.VarChar(160)
-  nameHi         String?       @db.VarChar(160)
-  slug           String        @unique @db.VarChar(160)
+  id       String  @id @db.Uuid
+  parentId String? @db.Uuid
+  name     String  @db.VarChar(140)
+  nameTe   String? @db.VarChar(160)
+  nameHi   String? @db.VarChar(160)
+  slug     String  @unique @db.VarChar(160)
 
   /// What people actually type when they want this category.
   ///
@@ -893,24 +894,25 @@ model Category {
   /// So these are excluded from the public category tree and remain fully searchable. The
   /// alternative — marking them inactive — would take them out of search too, which is the
   /// one thing they exist for.
-  isDirectoryOnly Boolean @default(false)
-  description    String?       @db.VarChar(500)
-  iconKey        String?       @db.VarChar(80)
+  isDirectoryOnly Boolean       @default(false)
+  description     String?       @db.VarChar(500)
+  iconKey         String?       @db.VarChar(80)
   // Which listing types may use this category — lets one tree serve products, jobs and offers.
-  listingTypes   ListingType[]
-  sortOrder      Int           @default(0)
-  isActive       Boolean       @default(true)
-  seoTitle       String?       @db.VarChar(180)
-  seoDescription String?       @db.VarChar(300)
-  createdAt      DateTime      @default(now())
-  updatedAt      DateTime      @updatedAt
+  listingTypes    ListingType[]
+  sortOrder       Int           @default(0)
+  isActive        Boolean       @default(true)
+  seoTitle        String?       @db.VarChar(180)
+  seoDescription  String?       @db.VarChar(300)
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
 
-  parent      Category?           @relation("CategoryTree", fields: [parentId], references: [id])
-  children    Category[]          @relation("CategoryTree")
-  attributes  CategoryAttribute[]
-  listings    Listing[]
-  subListings Listing[]           @relation("ListingSubcategory")
-  businesses  Business[]
+  parent          Category?           @relation("CategoryTree", fields: [parentId], references: [id])
+  children        Category[]          @relation("CategoryTree")
+  attributes      CategoryAttribute[]
+  listings        Listing[]
+  subListings     Listing[]           @relation("ListingSubcategory")
+  businesses      Business[]
+  searchQueryLogs SearchQueryLog[]
 
   // Renders the category tree for a listing type in one indexed scan.
   @@index([parentId, sortOrder])
@@ -1676,6 +1678,48 @@ model NotificationPreference {
 
   @@unique([userId, type, channel])
   @@map("notification_preferences")
+}
+
+/// Every search anybody runs, and whether it found anything.
+///
+/// This is how the vocabulary stops being a guess. A category term list can say what a
+/// category *is*; it cannot say what is inside one, and no amount of hand-writing reaches
+/// "toor dal", "weighing machine" or "bed bug spray". A search that returns nothing is a
+/// person telling us a word we are missing, and after a week in one city that is a real
+/// list ranked by how often people actually type it — which beats anything anyone infers.
+///
+/// Deliberately not personal. There is no user id and no device id: knowing *that* somebody
+/// searched for a word is what improves the platform, and knowing *who* only creates a
+/// record of what individuals were looking for. The city is kept because demand is local and
+/// the whole point is to learn what a particular area wants.
+model SearchQueryLog {
+  id String @id @db.Uuid
+
+  /// Lower-cased and trimmed, so counting groups naturally.
+  normalisedQuery String @db.VarChar(120)
+
+  cityId     String? @db.Uuid
+  pincode    String? @db.VarChar(6)
+  categoryId String? @db.Uuid
+
+  resultCount  Int
+  /// Split out rather than derived, so "found nothing" can be indexed and counted directly.
+  isZeroResult Boolean
+
+  /// Whether the request also carried filters. A zero-result search with five filters set is
+  /// a different problem from one with none: the first is over-narrowing, the second is
+  /// missing vocabulary, and only the second should feed the term lists.
+  hadFilters Boolean @default(false)
+
+  createdAt DateTime @default(now())
+
+  city     City?     @relation(fields: [cityId], references: [id], onDelete: SetNull)
+  category Category? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+
+  /// The reporting query: what returned nothing, where, and how often.
+  @@index([isZeroResult, cityId, createdAt(sort: Desc)])
+  @@index([normalisedQuery])
+  @@map("search_query_logs")
 }
 
 model SearchSubscription {

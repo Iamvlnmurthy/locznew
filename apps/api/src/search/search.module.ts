@@ -2,6 +2,7 @@ import { Global, Module } from '@nestjs/common';
 import { MediaModule } from '../media/media.module';
 import { SearchIndexPublisher } from './search-index.publisher';
 import { SearchProcessor } from './search.processor';
+import { SearchLearningService } from './search-learning.service';
 import { SearchService } from './search.service';
 
 /**
@@ -12,7 +13,9 @@ import { SearchService } from './search.service';
 @Global()
 @Module({
   imports: [MediaModule],
-  providers: [SearchService, SearchIndexPublisher, SearchProcessor],
-  exports: [SearchService, SearchIndexPublisher],
+  providers: [
+    SearchLearningService,SearchService, SearchIndexPublisher, SearchProcessor],
+  exports: [
+    SearchLearningService,SearchService, SearchIndexPublisher],
 })
 export class SearchModule {}

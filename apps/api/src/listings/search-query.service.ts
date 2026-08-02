@@ -3,6 +3,7 @@ import { ListingStatus } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { SearchService } from '../search/search.service';
 import { SearchQueryDto, SearchResultDto } from '../search/dto/search.dto';
+import { SearchLearningService } from '../search/search-learning.service';
 import { ListingsService } from './listings.service';
 import { ListingSearchQueryDto } from './dto/listing.dto';
 
@@ -21,12 +22,26 @@ export class SearchQueryService {
     private readonly meili: SearchService,
     private readonly prisma: PrismaService,
     private readonly listings: ListingsService,
+    private readonly searchLearning: SearchLearningService,
   ) {}
 
   async search(query: SearchQueryDto, viewerId?: string): Promise<SearchResultDto> {
     // A pincode is resolved once, here, so both the keyword path and the browse path
     // see the same coordinates and return the same area.
     query = await this.resolvePincode(query);
+
+    // Recorded after the answer is known, so the log carries whether it found anything —
+    // which is the only part that teaches us a word is missing.
+    const learn = (resultCount: number) =>
+      this.searchLearning.record({
+        query: query.q ?? '',
+        resultCount,
+        cityId: query.cityId,
+        pincode: query.pincode,
+        categoryId: query.categoryId,
+        hadFilters: this.needsDatabaseFilters(query) || query.priceMin !== undefined ||
+          query.priceMax !== undefined || query.condition !== undefined,
+      });
 
     // With no keyword there is nothing for a search engine to do better than the
     // database — structured browse goes straight to Postgres, indexes and all.
@@ -47,6 +62,7 @@ export class SearchQueryService {
         this.toBrowseQuery(query, Boolean(query.q?.trim())),
         viewerId,
       );
+      learn(result.meta.total);
       return {
         items: result.items,
         total: result.meta.total,
@@ -68,6 +84,7 @@ export class SearchQueryService {
         limit: query.limit,
       });
 
+      learn(total);
       if (ids.length === 0) {
         return { items: [], total, page: query.page, limit: query.limit, usedSearchIndex: true };
       }

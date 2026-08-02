@@ -331,6 +331,28 @@
     ]
   },
   {
+    "slug": "ev-charging-stations",
+    "name": "EV charging stations",
+    "nameTe": "ఈవీ ఛార్జింగ్ స్టేషన్లు",
+    "nameHi": "ईवी चार्जिंग स्टेशन",
+    "searchTerms": [
+      "ev charging",
+      "ev charger",
+      "charging station",
+      "electric vehicle charging",
+      "car charging",
+      "fast charging",
+      "dc fast charger",
+      "type 2 charger",
+      "ccs2",
+      "electric scooter charging",
+      "battery charging",
+      "ఛార్జింగ్",
+      "चार्जिंग",
+      "इलेक्ट्रिक चार्जिंग"
+    ]
+  },
+  {
     "slug": "event-services",
     "name": "Event services",
     "nameTe": "కార్యక్రమ సేవలు",
