@@ -1490,6 +1490,7 @@
     "hidePassword": "Hide password",
     "email": "Email address",
     "emailHint": "You will sign in with this",
-    "phoneIdentityHint": "Buyers use this to reach you. You will not sign in with it."
+    "phoneIdentityHint": "Buyers use this to reach you. You will not sign in with it.",
+    "googleNeedsAccount": "Google can sign you in once your account exists. Fill in the form above first — we need a mobile number so buyers can reach you."
   }
 }
