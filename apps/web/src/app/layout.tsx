@@ -15,7 +15,7 @@ export const metadata: Metadata = {
     template: '%s | LocZ',
   },
   description:
-    'Find it here.. Deal it near.. Free classifieds, local jobs, nearby offers and services in your city. Posting on LocZ is always free.',
+    'Find it here.. Deal it near.. Classifieds, local jobs, nearby offers and services in your city.',
   applicationName: 'LocZ',
   manifest: '/manifest.webmanifest',
   icons: {
@@ -33,7 +33,7 @@ export const metadata: Metadata = {
     siteName: 'LocZ',
     title: 'LocZ — Find it here.. Deal it near..',
     description:
-      'Free classifieds, local jobs, nearby offers and services in your city. Posting is always free.',
+      'Classifieds, local jobs, nearby offers and services in your city.',
     locale: 'en_IN',
     images: [
       {

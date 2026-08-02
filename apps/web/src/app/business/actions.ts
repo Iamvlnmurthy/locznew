@@ -40,7 +40,7 @@ function toE164(input: string | undefined): string | undefined {
 }
 
 /**
- * Registers a business. Free and immediate — there is no approval step, because gating
+ * Registers a business. Immediate — there is no approval step, because gating
  * registration behind review would stop the directory ever filling up, which is the
  * thing that makes it useful. Verification is a separate signal granted later.
  */

@@ -8,7 +8,7 @@ import { getCurrentUser, getLocale, getSelectedCity } from '@/lib/session';
 import { PostForm } from './post-form';
 
 export const metadata: Metadata = {
-  title: 'Post a free ad',
+  title: 'Post an ad',
   robots: { index: false, follow: true },
 };
 

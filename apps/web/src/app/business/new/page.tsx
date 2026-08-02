@@ -9,7 +9,7 @@ import { BusinessForm } from './business-form';
 export const metadata: Metadata = {
   title: 'List your business',
   description:
-    'Add your business to LocZ for free. Be found by customers nearby, and post offers and job vacancies.',
+    'Add your business to LocZ. Be found by customers nearby, and post offers and job vacancies.',
   // Indexable, unlike the rest of the posting flow: "add my business to LocZ" is a real
   // query, and this is its landing page.
   alternates: { canonical: '/business/new' },
