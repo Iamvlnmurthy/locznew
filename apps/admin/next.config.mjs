@@ -33,8 +33,14 @@ const nextConfig = {
               "default-src 'self'",
               "img-src 'self' data: https: http://localhost:9000",
               "style-src 'self' 'unsafe-inline'",
-              "script-src 'self' 'unsafe-inline'",
-              "connect-src 'self' http://localhost:4000",
+              // accounts.google.com is here for console sign-in and nothing else. Named
+              // explicitly rather than widened: this header is strict because the console
+              // renders unmoderated user content, and a wildcard would give that content a
+              // way out.
+              "script-src 'self' 'unsafe-inline' https://accounts.google.com https://apis.google.com",
+              "connect-src 'self' http://localhost:4000 https://accounts.google.com",
+              // Google renders its button inside an iframe it serves itself.
+              "frame-src https://accounts.google.com",
               "frame-ancestors 'none'",
             ].join('; '),
           },
