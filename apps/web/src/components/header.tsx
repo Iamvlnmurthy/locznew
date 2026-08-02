@@ -93,6 +93,7 @@ export async function Header({ locale }: { locale: Locale }) {
                   messages: t('nav.messages'),
                   saved: t('nav.saved'),
                   businesses: t('nav.businesses'),
+                  directory: t('nav.directory'),
                   verifyPhone: t('nav.verifyPhone'),
                   location: t('nav.location'),
                   signOut: t('nav.signOut'),

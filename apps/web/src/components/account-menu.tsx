@@ -9,6 +9,7 @@ export interface AccountMenuLabels {
   messages: string;
   saved: string;
   businesses: string;
+  directory: string;
   verifyPhone: string;
   location: string;
   signOut: string;
@@ -52,7 +53,8 @@ export function AccountMenu({
           <Link href="/dashboard">{labels.myAds}</Link>
           <Link href="/chats">{labels.messages}</Link>
           <Link href="/dashboard?tab=saved">{labels.saved}</Link>
-          <Link href="/business">{labels.businesses}</Link>
+          <Link href="/dashboard?tab=businesses">{labels.businesses}</Link>
+          <Link href="/business">{labels.directory}</Link>
           <Link href="/account/phone">{labels.verifyPhone}</Link>
           <Link href="/location">{labels.location}</Link>
         </nav>

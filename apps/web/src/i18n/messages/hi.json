@@ -86,7 +86,8 @@
     "verifyPhone": "मोबाइल नंबर पुष्ट करें",
     "location": "क्षेत्र बदलें",
     "signedInAs": "साइन इन:",
-    "profile": "आपका विवरण"
+    "profile": "आपका विवरण",
+    "directory": "व्यवसाय देखें"
   },
   "location": {
     "label": "स्थान",

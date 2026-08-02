@@ -86,7 +86,8 @@
     "verifyPhone": "Confirm mobile number",
     "location": "Change area",
     "signedInAs": "Signed in as",
-    "profile": "Your details"
+    "profile": "Your details",
+    "directory": "Browse businesses"
   },
   "location": {
     "label": "Location",
