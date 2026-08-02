@@ -1,7 +1,15 @@
 import { Body, Controller, Get, HttpCode, HttpStatus, Param, Post, Query } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
-import { ClaimReviewStatus } from '@prisma/client';
-import { IsEnum, IsOptional, IsString, MaxLength, Matches, MinLength } from 'class-validator';
+import { BusinessScale, ClaimReviewStatus, OfferingType } from '@prisma/client';
+import {
+  IsEnum,
+  IsOptional,
+  IsString,
+  IsUUID,
+  Matches,
+  MaxLength,
+  MinLength,
+} from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { AuthenticatedUser, CurrentUser } from '../common/decorators/current-user.decorator';
 import { PaginatedDto, PaginationQueryDto } from '../common/dto/pagination.dto';
@@ -21,6 +29,28 @@ export class CreateClaimDto {
   })
   @MaxLength(1000)
   evidence!: string;
+
+  @ApiProperty({
+    enum: BusinessScale,
+    description:
+      "What the business actually is. An imported record's details were inferred from map " +
+      'data and are often wrong; the owner is the first person able to correct them.',
+  })
+  @IsEnum(BusinessScale)
+  scale!: BusinessScale;
+
+  @ApiProperty({ enum: OfferingType })
+  @IsEnum(OfferingType)
+  offering!: OfferingType;
+
+  @ApiPropertyOptional({
+    description:
+      'The right category, if the imported one is wrong. Applied only when the claim is ' +
+      'approved — an unreviewed claim must not be able to rewrite a live record.',
+  })
+  @IsOptional()
+  @IsUUID()
+  categoryId?: string;
 
   @ApiPropertyOptional({
     example: '+919876543210',

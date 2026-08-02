@@ -5,7 +5,14 @@ import {
   Logger,
   NotFoundException,
 } from '@nestjs/common';
-import { BusinessClaimStatus, ClaimReviewStatus, NotificationType, Prisma } from '@prisma/client';
+import {
+  BusinessClaimStatus,
+  BusinessScale,
+  ClaimReviewStatus,
+  NotificationType,
+  OfferingType,
+  Prisma,
+} from '@prisma/client';
 import { v7 as uuid } from 'uuid';
 import { AuditService } from '../audit/audit.service';
 import { paginate, PaginatedDto } from '../common/dto/pagination.dto';
@@ -46,7 +53,13 @@ export class BusinessClaimsService {
   async create(
     userId: string,
     businessId: string,
-    input: { evidence: string; contactPhone?: string },
+    input: {
+      evidence: string;
+      contactPhone?: string;
+      scale: BusinessScale;
+      offering: OfferingType;
+      categoryId?: string;
+    },
   ): Promise<{ id: string; status: ClaimReviewStatus }> {
     const business = await this.prisma.business.findFirst({
       where: { id: businessId, deletedAt: null },
@@ -77,6 +90,12 @@ export class BusinessClaimsService {
           claimantId: userId,
           evidence: input.evidence.trim(),
           contactPhone: input.contactPhone ?? null,
+          // Recorded, not applied. The owner is the first person able to correct an imported
+          // record, but an unreviewed claim rewriting a live business would turn this form
+          // into an edit form for businesses nobody owns yet.
+          proposedScale: input.scale,
+          offeringProposed: input.offering,
+          proposedCategoryId: input.categoryId ?? null,
         },
         select: { id: true, status: true },
       });
@@ -187,6 +206,13 @@ export class BusinessClaimsService {
         data: {
           ownerId: claim.claimantId,
           claimStatus: BusinessClaimStatus.CLAIMED,
+          // What the claimant told us the business is, applied now that a reviewer has agreed
+          // it is theirs. The category only moves if they proposed a different one — an
+          // imported category inferred from map tags is a guess, but so is overwriting it
+          // with nothing.
+          scale: claim.proposedScale,
+          offering: claim.offeringProposed,
+          ...(claim.proposedCategoryId ? { categoryId: claim.proposedCategoryId } : {}),
         },
       });
 

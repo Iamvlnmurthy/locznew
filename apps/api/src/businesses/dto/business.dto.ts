@@ -1,5 +1,5 @@
 import { ApiProperty, ApiPropertyOptional, PartialType } from '@nestjs/swagger';
-import { BusinessType, VerificationStatus } from '@prisma/client';
+import { BusinessScale, BusinessType, OfferingType, VerificationStatus } from '@prisma/client';
 import { Type } from 'class-transformer';
 import {
   ArrayMaxSize,
@@ -66,6 +66,24 @@ export class CreateBusinessDto {
   @IsOptional()
   @IsEnum(BusinessType)
   businessType?: BusinessType;
+
+  @ApiProperty({
+    enum: BusinessScale,
+    description:
+      'How big the operation is. Asked rather than inferred: a home baker and a shop with a ' +
+      'shutter are found by different searches.',
+  })
+  @IsEnum(BusinessScale)
+  scale!: BusinessScale;
+
+  @ApiProperty({
+    enum: OfferingType,
+    description:
+      'Whether they sell things, do things, or both. Decides what the storefront can offer — ' +
+      '"ask if they stock this" is meaningless for an electrician.',
+  })
+  @IsEnum(OfferingType)
+  offering!: OfferingType;
 
   @ApiProperty()
   @IsUUID()
@@ -216,6 +234,15 @@ export class BusinessStaffDto {
 export class BusinessDetailDto extends BusinessSummaryDto {
   /** On the detail response only — a result card has no room for the shelf list. */
   @ApiProperty({ type: [String] }) keywords!: string[];
+
+  @ApiPropertyOptional({
+    enum: BusinessScale,
+    description: 'Null on an imported record nobody has claimed — nobody may answer for them.',
+  })
+  scale!: BusinessScale | null;
+
+  @ApiPropertyOptional({ enum: OfferingType })
+  offering!: OfferingType | null;
 
   @ApiProperty({
     description:

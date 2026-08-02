@@ -239,6 +239,31 @@ enum NotificationType {
 ///
 /// Also what makes an imported directory record honest: a scraped shop is a RETAIL_STORE
 /// nobody has claimed, not a seller who signed up.
+/// How big the operation is.
+///
+/// Split out from BusinessType, which conflated two independent questions: HOME_BUSINESS
+/// describes scale while SERVICE_PROVIDER describes what is sold, so a home baker and a
+/// visiting electrician could not both be described accurately. Buyers filter on these
+/// differently — "shops near me" and "someone who comes to my house" are different searches.
+enum BusinessScale {
+  /// A shop with an address a customer can walk into.
+  INDIVIDUAL_SHOP
+  /// Run from home. Real, often unregistered, and the majority of what LocZ exists for.
+  HOME_BUSINESS
+  /// Multiple staff or branches, registered.
+  ENTERPRISE
+}
+
+/// Whether they sell things, do things, or both.
+///
+/// Decides what the storefront can even offer. "Ask if they stock this" is meaningless for an
+/// electrician, and "book a visit" is meaningless for a kirana shop.
+enum OfferingType {
+  PRODUCTS
+  SERVICES
+  BOTH
+}
+
 enum BusinessType {
   RETAIL_STORE
   HOME_BUSINESS
@@ -748,7 +773,16 @@ model Business {
   email          String?                                @db.VarChar(180)
   website        String?                                @db.VarChar(255)
   businessType   BusinessType                           @default(RETAIL_STORE)
-  claimStatus    BusinessClaimStatus                    @default(OWNER_CREATED)
+
+  /// Scale and offering, asked of every seller at sign-up and of every claimant.
+  ///
+  /// Nullable because four million imported records predate the question and nobody may
+  /// answer it on the shop's behalf — a guess here would be exactly the invented claim the
+  /// description composer refuses to make. Null reads as "not stated yet", which is honest,
+  /// and claiming the business is what fills it in.
+  scale       BusinessScale?
+  offering    OfferingType?
+  claimStatus BusinessClaimStatus @default(OWNER_CREATED)
 
   /// The pincode this business sits in. Cities are districts here, so a city alone cannot
   /// answer "what is in 500081", which is the unit people actually search by.
@@ -1926,6 +1960,16 @@ model BusinessClaim {
   /// A number a reviewer can ring. Not shown publicly, and not the account's number, because
   /// the shop's landline is often the only thing that proves the connection.
   contactPhone String? @db.VarChar(20)
+
+  /// What the claimant says the business actually is.
+  ///
+  /// Applied to the business only on approval, never before. An imported record's category
+  /// was inferred from map tags and is often wrong, and the owner is the first person able to
+  /// correct it — but letting an unreviewed claim rewrite a live record would make the claim
+  /// form an edit form for businesses nobody owns yet.
+  proposedScale      BusinessScale?
+  offeringProposed   OfferingType?
+  proposedCategoryId String?        @db.Uuid
 
   reviewedById    String?   @db.Uuid
   reviewedAt      DateTime?

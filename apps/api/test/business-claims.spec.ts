@@ -1,5 +1,10 @@
 import { BadRequestException, ConflictException, NotFoundException } from '@nestjs/common';
-import { BusinessClaimStatus, ClaimReviewStatus } from '@prisma/client';
+import {
+  BusinessClaimStatus,
+  BusinessScale,
+  ClaimReviewStatus,
+  OfferingType,
+} from '@prisma/client';
 import { BusinessClaimsService } from '../src/businesses/business-claims.service';
 
 /**
@@ -55,6 +60,14 @@ describe('BusinessClaimsService', () => {
     };
   }
 
+  /** Every claim now states what the business actually is; the reviewer approves that too. */
+  const claimInput = (extra: Record<string, unknown> = {}) => ({
+    evidence: 'I have run this shop since 2015.',
+    scale: BusinessScale.INDIVIDUAL_SHOP,
+    offering: OfferingType.PRODUCTS,
+    ...extra,
+  });
+
   const pending = {
     id: 'claim-1',
     businessId: 'biz-1',
@@ -67,9 +80,7 @@ describe('BusinessClaimsService', () => {
     it('records it as pending rather than granting it', async () => {
       const { service, prisma } = build();
 
-      const result = await service.create('user-1', 'biz-1', {
-        evidence: 'I have run this shop since 2015.',
-      });
+      const result = await service.create('user-1', 'biz-1', claimInput());
 
       // Approving hands over the listings, the enquiries and the shop's identity in search,
       // and the only evidence at this point is text typed into a form.
@@ -80,7 +91,7 @@ describe('BusinessClaimsService', () => {
     it('marks the business as contested so a buyer and a second claimant can both see it', async () => {
       const { service, prisma } = build();
 
-      await service.create('user-1', 'biz-1', { evidence: 'I have run this shop since 2015.' });
+      await service.create('user-1', 'biz-1', claimInput());
 
       expect(prisma.business.updateMany).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -95,25 +106,25 @@ describe('BusinessClaimsService', () => {
 
       // A business with an owner is a dispute with evidence on both sides, not something
       // this flow can settle. Reassigning here would be a takeover mechanism.
-      await expect(
-        service.create('user-1', 'biz-1', { evidence: 'I have run this shop since 2015.' }),
-      ).rejects.toThrow(ConflictException);
+      await expect(service.create('user-1', 'biz-1', claimInput())).rejects.toThrow(
+        ConflictException,
+      );
     });
 
     it('refuses a second claim from the same person', async () => {
       const { service } = build({ existingClaim: { id: 'claim-0' } });
 
-      await expect(
-        service.create('user-1', 'biz-1', { evidence: 'I have run this shop since 2015.' }),
-      ).rejects.toThrow(ConflictException);
+      await expect(service.create('user-1', 'biz-1', claimInput())).rejects.toThrow(
+        ConflictException,
+      );
     });
 
     it('refuses a business that does not exist', async () => {
       const { service } = build({ found: null });
 
-      await expect(
-        service.create('user-1', 'biz-1', { evidence: 'I have run this shop since 2015.' }),
-      ).rejects.toThrow(NotFoundException);
+      await expect(service.create('user-1', 'biz-1', claimInput())).rejects.toThrow(
+        NotFoundException,
+      );
     });
   });
 
@@ -125,9 +136,48 @@ describe('BusinessClaimsService', () => {
 
       expect(prisma.business.update).toHaveBeenCalledWith(
         expect.objectContaining({
-          data: { ownerId: 'user-1', claimStatus: BusinessClaimStatus.CLAIMED },
+          data: expect.objectContaining({
+            ownerId: 'user-1',
+            claimStatus: BusinessClaimStatus.CLAIMED,
+          }),
         }),
       );
+    });
+
+    it('applies what the claimant said the business is', async () => {
+      const { service, prisma } = build({
+        claim: {
+          ...pending,
+          proposedScale: BusinessScale.HOME_BUSINESS,
+          offeringProposed: OfferingType.SERVICES,
+          proposedCategoryId: 'cat-9',
+        },
+      });
+
+      await service.approve('admin-1', 'claim-1');
+
+      // An imported record's category was inferred from map tags and is often wrong. The
+      // owner is the first person able to correct it — but only once a reviewer agrees the
+      // business is theirs, or the claim form becomes an edit form for unowned records.
+      expect(prisma.business.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({
+            scale: BusinessScale.HOME_BUSINESS,
+            offering: OfferingType.SERVICES,
+            categoryId: 'cat-9',
+          }),
+        }),
+      );
+    });
+
+    it('leaves the category alone when the claimant proposed none', async () => {
+      const { service, prisma } = build({ claim: { ...pending, proposedCategoryId: null } });
+
+      await service.approve('admin-1', 'claim-1');
+
+      // Overwriting an inferred category with nothing is not an improvement on the guess.
+      const data = prisma.business.update.mock.calls[0][0].data as Record<string, unknown>;
+      expect(data).not.toHaveProperty('categoryId');
     });
 
     it('closes every competing claim in the same breath', async () => {
