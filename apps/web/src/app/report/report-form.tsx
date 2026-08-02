@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { useActionState } from 'react';
 import { useFormStatus } from 'react-dom';
+import { Icon } from '@/components/icons';
 import { submitReportAction, type ReportState } from './actions';
 
 interface Labels {
@@ -13,6 +14,7 @@ interface Labels {
   submitting: string;
   cancel: string;
   success: string;
+  successTitle: string;
   reasons: Record<string, string>;
 }
 
@@ -40,8 +42,10 @@ export function ReportForm({
 
   if (state.sent) {
     return (
-      <div className="form-card">
-        <div className="alert alert--success">{labels.success}</div>
+      <div className="report-card report-card--success" role="status">
+        <span className="report-card__success-icon"><Icon name="check" /></span>
+        <h2>{labels.successTitle}</h2>
+        <p>{labels.success}</p>
         <Link href="/" className="btn btn--outline btn--block">
           {labels.cancel}
         </Link>
@@ -50,11 +54,14 @@ export function ReportForm({
   }
 
   return (
-    <form className="form-card" action={action}>
-      <h1 style={{ marginTop: 0, fontSize: '1.375rem' }}>{labels.title}</h1>
+    <form className="report-card" action={action}>
+      <div className="report-card__heading">
+        <span><Icon name="shield" /></span>
+        <h2>{labels.title}</h2>
+      </div>
 
       {targetTitle ? (
-        <p className="field__hint" style={{ marginBottom: 24, overflowWrap: 'anywhere' }}>
+        <p className="report-card__target">
           “{targetTitle}”
         </p>
       ) : null}
@@ -68,21 +75,13 @@ export function ReportForm({
       <input type="hidden" name="targetType" value={targetType} />
       <input type="hidden" name="targetId" value={targetId} />
 
-      <fieldset style={{ border: 0, padding: 0, margin: '0 0 16px' }}>
-        <legend style={{ fontWeight: 600, marginBottom: 12 }}>{labels.reason}</legend>
+      <fieldset className="report-reasons">
+        <legend>{labels.reason}</legend>
         {Object.entries(labels.reasons).map(([value, label], index) => (
-          <label
-            key={value}
-            style={{
-              display: 'flex',
-              gap: 12,
-              alignItems: 'center',
-              padding: '10px 0',
-              cursor: 'pointer',
-            }}
-          >
+          <label key={value}>
             <input type="radio" name="reason" value={value} required defaultChecked={index === 0} />
-            {label}
+            <span>{label}</span>
+            <i aria-hidden="true" />
           </label>
         ))}
       </fieldset>
@@ -93,7 +92,7 @@ export function ReportForm({
       </div>
 
       <SubmitButton idle={labels.submit} busy={labels.submitting} />
-      <Link href="/" className="btn btn--ghost btn--block" style={{ marginTop: 8 }}>
+      <Link href="/" className="btn btn--ghost btn--block report-card__cancel">
         {labels.cancel}
       </Link>
     </form>

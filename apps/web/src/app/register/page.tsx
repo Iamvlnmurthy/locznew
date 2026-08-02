@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { redirect } from 'next/navigation';
 import { getMessageGroup } from '@/i18n';
 import { getCurrentUser, getLocale } from '@/lib/session';
+import { AuthShell } from '../signin/auth-shell';
 import { RegisterForm } from './register-form';
 
 export const metadata: Metadata = {
@@ -19,12 +20,28 @@ export default async function RegisterPage() {
   if (user) redirect('/');
 
   const s = getMessageGroup(locale, 'register');
+  const a = getMessageGroup(locale, 'auth');
+  const b = getMessageGroup(locale, 'brand');
 
   return (
-    <main className="signin-page">
-      <div className="container signin-page__inner signin-page__inner--single">
-        <section className="signin-panel">
-          <RegisterForm
+    <AuthShell
+      mode="register"
+      labels={{
+        eyebrow: a.pageEyebrow,
+        title: a.pageTitle,
+        subtitle: a.pageSubtitle,
+        messageTitle: a.benefitMessageTitle,
+        messageText: a.benefitMessageText,
+        saveTitle: a.benefitSaveTitle,
+        saveText: a.benefitSaveText,
+        postTitle: a.benefitPostTitle,
+        postText: a.benefitPostText,
+        brand: b.name,
+        secureAccess: a.secureAccess,
+        privacy: a.privacyNote,
+      }}
+    >
+      <RegisterForm
             labels={{
               title: s.title,
               subtitle: s.subtitle,
@@ -46,9 +63,7 @@ export default async function RegisterPage() {
               phoneTaken: s.phoneTaken,
               error: s.error,
             }}
-          />
-        </section>
-      </div>
-    </main>
+      />
+    </AuthShell>
   );
 }

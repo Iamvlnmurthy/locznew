@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import { redirect } from 'next/navigation';
-import { getTranslator } from '@/i18n';
+import { getMessageGroup } from '@/i18n';
 import { apiSafe } from '@/lib/api';
 import { getCurrentUser, getLocale } from '@/lib/session';
 import { ReportForm } from './report-form';
@@ -51,7 +51,7 @@ export default async function ReportPage({
     );
   }
 
-  const t = getTranslator(locale);
+  const labels = getMessageGroup(locale, 'reportUi');
 
   // Shown for context so the reporter can confirm they are flagging the right thing.
   const listing = params.listing
@@ -59,34 +59,45 @@ export default async function ReportPage({
     : null;
 
   return (
-    <div className="container">
-      <ReportForm
-        targetType={targetType}
-        targetId={targetId}
-        targetTitle={listing?.title ?? null}
-        labels={{
-          title: t('listing.report'),
-          reason: 'Why are you reporting this?',
-          details: 'Anything else we should know? (optional)',
-          submit: 'Send report',
-          submitting: 'Sending…',
-          cancel: t('common.cancel'),
-          success:
-            'Thanks — our team will review this. We will let you know the outcome in your notifications.',
-          reasons: {
-            SPAM: 'Spam or repeated posting',
-            FRAUD_OR_SCAM: 'Fraud or a scam',
-            PROHIBITED_ITEM: 'Prohibited item or service',
-            MISLEADING_PRICE: 'Misleading price',
-            WRONG_CATEGORY: 'Posted in the wrong category',
-            DUPLICATE: 'Duplicate of another ad',
-            ALREADY_SOLD: 'Already sold or no longer available',
-            OFFENSIVE_CONTENT: 'Offensive or inappropriate content',
-            HARASSMENT: 'Harassment or abuse',
-            OTHER: 'Something else',
-          },
-        }}
-      />
-    </div>
+    <main className="report-experience">
+      <div className="container report-experience__layout">
+        <aside className="report-experience__context">
+          <span className="section-kicker">{labels.kicker}</span>
+          <h1>{labels.pageTitle}</h1>
+          <p>{labels.pageBody}</p>
+          <div className="report-experience__promise">
+            <span aria-hidden="true">24/7</span>
+            <p><strong>{labels.privateTitle}</strong>{labels.privateBody}</p>
+          </div>
+        </aside>
+        <ReportForm
+          targetType={targetType}
+          targetId={targetId}
+          targetTitle={listing?.title ?? null}
+          labels={{
+            title: labels.formTitle,
+            reason: labels.reason,
+            details: labels.details,
+            submit: labels.submit,
+            submitting: labels.submitting,
+            cancel: labels.cancel,
+            success: labels.success,
+            successTitle: labels.successTitle,
+            reasons: {
+              SPAM: labels.reasonSpam,
+              FRAUD_OR_SCAM: labels.reasonFraud,
+              PROHIBITED_ITEM: labels.reasonProhibited,
+              MISLEADING_PRICE: labels.reasonPrice,
+              WRONG_CATEGORY: labels.reasonCategory,
+              DUPLICATE: labels.reasonDuplicate,
+              ALREADY_SOLD: labels.reasonSold,
+              OFFENSIVE_CONTENT: labels.reasonOffensive,
+              HARASSMENT: labels.reasonHarassment,
+              OTHER: labels.reasonOther,
+            },
+          }}
+        />
+      </div>
+    </main>
   );
 }

@@ -100,8 +100,10 @@ async function main(): Promise<void> {
         continue;
       }
 
+      // UserRole has a composite primary key of (userId, roleId) and no id column — the
+      // key doubles as the constraint that a role cannot be granted twice.
       await prisma.userRole.create({
-        data: { id: uuid(), userId: user.id, roleId: role.id },
+        data: { userId: user.id, roleId: role.id },
       });
       console.log(`  granted ${name}`);
     }
