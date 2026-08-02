@@ -12,6 +12,7 @@ import { v7 as uuid } from 'uuid';
 import { AuditService } from '../audit/audit.service';
 import { AppConfig } from '../config/config.module';
 import { PrismaService } from '../prisma/prisma.service';
+import { FirebaseAuthService } from './firebase-auth.service';
 import { GoogleAuthService } from './google-auth.service';
 import { RbacService } from '../rbac/rbac.service';
 import {
@@ -46,6 +47,7 @@ export class AuthService {
     private readonly audit: AuditService,
     private readonly config: AppConfig,
     private readonly google: GoogleAuthService,
+    private readonly firebase: FirebaseAuthService,
   ) {}
 
   /**
@@ -310,6 +312,36 @@ export class AuthService {
 
     const device = await this.registerDevice(user.id, dto.device, context);
     return this.buildSession(user, device, context, false);
+  }
+
+  /**
+   * Records that a mobile number was confirmed, through Firebase.
+   *
+   * The number is written as well as the timestamp, because the confirmed one is the truth: a
+   * person who typed a digit wrong at sign-up and then verified their real number should end
+   * up with the real one, not a verified flag on a number that is not theirs.
+   *
+   * Refuses a number already confirmed on another account. Numbers are unique and are how a
+   * buyer reaches a seller — quietly moving one would take it from whoever had it.
+   */
+  async confirmPhone(userId: string, idToken: string): Promise<{ phoneE164: string }> {
+    const { phoneE164 } = await this.firebase.verifyPhoneToken(idToken);
+
+    const heldByAnother = await this.prisma.user.findFirst({
+      where: { phoneE164, deletedAt: null, id: { not: userId } },
+      select: { id: true },
+    });
+    if (heldByAnother) {
+      throw new ConflictException('That mobile number is already on another LocZ account.');
+    }
+
+    await this.prisma.user.update({
+      where: { id: userId },
+      data: { phoneE164, phoneVerifiedAt: new Date() },
+    });
+
+    this.logger.log(`Phone confirmed for user ${userId}`);
+    return { phoneE164 };
   }
 
   async refresh(refreshToken: string, context: RequestContext): Promise<AuthSessionDto> {

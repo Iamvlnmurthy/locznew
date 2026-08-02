@@ -60,6 +60,8 @@ describe('phone and password authentication', () => {
       // Google sign-in: verifies the token and resolves the account. Not what these
       // cases cover, so it is a stub.
       { resolveUser: jest.fn(), isConfigured: false } as never,
+      // Firebase phone verification: same story, a stub.
+      { verifyPhoneToken: jest.fn() } as never,
     );
 
     // The session builder reaches into collaborators these tests do not model; the subject

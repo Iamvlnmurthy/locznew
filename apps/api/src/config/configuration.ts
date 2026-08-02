@@ -57,6 +57,9 @@ export const envSchema = z.object({
   // Google sign-in. Optional for the same reason email is: the API must boot without it,
   // and password sign-in keeps working when it is absent.
   GOOGLE_CLIENT_ID: z.string().optional(),
+  /// The Firebase project ID. Also the audience every Firebase ID token must carry, which is
+  /// what stops a token minted for another project being replayed here.
+  FIREBASE_PROJECT_ID: z.string().optional(),
   GOOGLE_CLIENT_SECRET: z.string().optional(),
   /**
    * Whether the one-time-code endpoints accept requests at all.

@@ -96,6 +96,18 @@ export class VerifyOtpDto {
  */
 const PASSWORD_MIN = 8;
 
+export class ConfirmPhoneDto {
+  @ApiProperty({
+    description:
+      'The ID token Firebase returned after the device verified the number. Its signature, ' +
+      'audience and issuer are all checked — an unverified assertion is what the field ' +
+      'already held.',
+  })
+  @IsString()
+  @Length(20, 4096)
+  idToken!: string;
+}
+
 export class RegisterDto {
   @ApiProperty({
     example: 'anjali@example.com',

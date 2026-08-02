@@ -11,6 +11,7 @@ import { AuthService, RequestContext } from './auth.service';
 import { PasswordResetService } from './password-reset.service';
 import {
   AuthSessionDto,
+  ConfirmPhoneDto,
   EmailLoginDto,
   PhoneLoginDto,
   RegisterDto,
@@ -91,6 +92,26 @@ export class AuthController {
   @ApiResponse({ status: 409, description: 'That mobile number already has an account' })
   register(@Body() dto: RegisterDto, @Req() request: RequestWithUser): Promise<AuthSessionDto> {
     return this.auth.register(dto, this.contextOf(request));
+  }
+
+  @Post('phone/confirm')
+  @HttpCode(HttpStatus.OK)
+  @ApiBearerAuth()
+  @Throttle({ default: { limit: 5, ttl: 60_000 } })
+  @ApiOperation({
+    summary: 'Confirm your mobile number with a Firebase verification',
+    description:
+      'The device verifies the number with Firebase and sends the resulting ID token here. ' +
+      'A confirmed number is what lets it count towards claiming a business — matching an ' +
+      'unconfirmed one against a public directory proves only that you can read.',
+  })
+  @ApiResponse({ status: 200, description: 'The number is now confirmed on your account' })
+  @ApiResponse({ status: 409, description: 'That number is already on another account' })
+  confirmPhone(
+    @CurrentUser() user: AuthenticatedUser,
+    @Body() dto: ConfirmPhoneDto,
+  ): Promise<{ phoneE164: string }> {
+    return this.auth.confirmPhone(user.id, dto.idToken);
   }
 
   @Public()
