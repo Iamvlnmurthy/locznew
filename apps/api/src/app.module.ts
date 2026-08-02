@@ -21,6 +21,7 @@ import { LifecycleModule } from './lifecycle/lifecycle.module';
 import { ListingsModule } from './listings/listings.module';
 import { NotificationsModule } from './notifications/notifications.module';
 import { QueueModule } from './queue/queue.module';
+import { EmailModule } from './email/email.module';
 import { RequirementsModule } from './requirements/requirements.module';
 import { SearchSubscriptionsModule } from './search-subscriptions/search-subscriptions.module';
 import { SearchModule } from './search/search.module';
@@ -49,6 +50,7 @@ import { UsersModule } from './users/users.module';
     MediaModule,
     QueueModule,
     SearchModule,
+    EmailModule,
     RequirementsModule,
     SearchSubscriptionsModule,
     NotificationsModule,

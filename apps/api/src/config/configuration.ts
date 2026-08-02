@@ -41,6 +41,18 @@ export const envSchema = z.object({
   ARGON2_TIME_COST: z.coerce.number().int().positive().default(2),
 
   OTP_PROVIDER: z.enum(['mock', 'msg91', 'twilio', 'pin']).default('mock'),
+
+  // Email is optional everywhere. Without a key the log provider runs and nothing is sent,
+  // which keeps development, tests and a key-less deployment working — an API whose main job
+  // has nothing to do with email must not fail to boot because a mail key is absent.
+  BREVO_API_KEY: z.string().optional(),
+  BREVO_SENDER_EMAIL: z.string().email().default('no-reply@locz.in'),
+  BREVO_SENDER_NAME: z.string().default('LocZ'),
+
+  // Google sign-in. Optional for the same reason email is: the API must boot without it,
+  // and password sign-in keeps working when it is absent.
+  GOOGLE_CLIENT_ID: z.string().optional(),
+  GOOGLE_CLIENT_SECRET: z.string().optional(),
   /**
    * Whether the one-time-code endpoints accept requests at all.
    *
