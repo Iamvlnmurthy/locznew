@@ -7,6 +7,7 @@ import { JOB_REINDEX_ALL, QUEUE_SEARCH } from '../queue/queue.constants';
 import { OptionalAuth, Public, RequirePermissions } from '../rbac/rbac.decorators';
 import { SearchIndexStatusDto, SearchQueryDto, SearchResultDto } from '../search/dto/search.dto';
 import { SearchQueryService } from './search-query.service';
+import { BusinessSearchService } from '../search/business-search.service';
 
 @ApiTags('search')
 @Controller('search')
@@ -14,6 +15,7 @@ export class SearchController {
   constructor(
     private readonly searchQuery: SearchQueryService,
     @InjectQueue(QUEUE_SEARCH) private readonly queue: Queue,
+    private readonly businessSearch: BusinessSearchService,
   ) {}
 
   @Public()
@@ -42,6 +44,32 @@ export class SearchController {
   @ApiResponse({ status: 200, type: SearchIndexStatusDto })
   indexStatus(): Promise<SearchIndexStatusDto> {
     return this.searchQuery.indexStatus();
+  }
+
+  @Post('index/businesses/rebuild')
+  @HttpCode(HttpStatus.ACCEPTED)
+  @ApiBearerAuth()
+  @RequirePermissions('search:reindex')
+  @ApiOperation({
+    summary: 'Rebuild the business search index from the database (admin)',
+    description:
+      'Separate from the listing index on purpose: four million businesses would dilute ' +
+      'relevance for every listing query, and results are grouped by kind. Always safe — ' +
+      'PostgreSQL is the source of truth.',
+  })
+  rebuildBusinesses(): Promise<{ indexed: number }> {
+    // Inline rather than queued: this is an operator pressing a button and waiting for an
+    // answer, and a silent queue is how a rebuild once appeared to succeed while leaving the
+    // index empty.
+    return this.businessSearch.reindexAll();
+  }
+
+  @Get('index/businesses/status')
+  @ApiBearerAuth()
+  @RequirePermissions('search:reindex')
+  @ApiOperation({ summary: 'Business index health and drift (admin)' })
+  businessIndexStatus() {
+    return this.businessSearch.status();
   }
 
   @Post('index/rebuild')

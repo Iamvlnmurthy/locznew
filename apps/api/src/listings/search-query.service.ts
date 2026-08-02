@@ -2,7 +2,8 @@ import { Injectable, Logger } from '@nestjs/common';
 import { ListingStatus } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { SearchService } from '../search/search.service';
-import { SearchQueryDto, SearchResultDto } from '../search/dto/search.dto';
+import { BusinessResultDto, SearchQueryDto, SearchResultDto } from '../search/dto/search.dto';
+import { BusinessSearchService } from '../search/business-search.service';
 import { SearchLearningService } from '../search/search-learning.service';
 import { ListingsService } from './listings.service';
 import { ListingSearchQueryDto } from './dto/listing.dto';
@@ -23,12 +24,17 @@ export class SearchQueryService {
     private readonly prisma: PrismaService,
     private readonly listings: ListingsService,
     private readonly searchLearning: SearchLearningService,
+    private readonly businessSearch: BusinessSearchService,
   ) {}
 
   async search(query: SearchQueryDto, viewerId?: string): Promise<SearchResultDto> {
     // A pincode is resolved once, here, so both the keyword path and the browse path
     // see the same coordinates and return the same area.
     query = await this.resolvePincode(query);
+
+    // Looked up once, before any return path, so shops appear whichever way the listings
+    // were answered — index or database fallback.
+    const businesses = await this.findBusinesses(query);
 
     // Recorded after the answer is known, so the log carries whether it found anything —
     // which is the only part that teaches us a word is missing.
@@ -69,6 +75,7 @@ export class SearchQueryService {
         page: result.meta.page,
         limit: result.meta.limit,
         usedSearchIndex: false,
+        ...businesses,
       };
     }
 
@@ -86,11 +93,25 @@ export class SearchQueryService {
 
       learn(total);
       if (ids.length === 0) {
-        return { items: [], total, page: query.page, limit: query.limit, usedSearchIndex: true };
+        return {
+          items: [],
+          total,
+          page: query.page,
+          limit: query.limit,
+          usedSearchIndex: true,
+          ...businesses,
+        };
       }
 
       const items = await this.hydrate(ids, viewerId);
-      return { items, total, page: query.page, limit: query.limit, usedSearchIndex: true };
+      return {
+        items,
+        total,
+        page: query.page,
+        limit: query.limit,
+        usedSearchIndex: true,
+        ...businesses,
+      };
     } catch (error) {
       // Search being down degrades quality, not availability: fall back to the database
       // rather than returning an error to someone trying to buy a fridge.
@@ -105,6 +126,7 @@ export class SearchQueryService {
         page: result.meta.page,
         limit: result.meta.limit,
         usedSearchIndex: false,
+        ...businesses,
       };
     }
   }
@@ -199,6 +221,69 @@ export class SearchQueryService {
       case 'relevance':
       default:
         return undefined; // Meilisearch's own ranking rules
+    }
+  }
+
+  /**
+   * Shops and services matching the same words.
+   *
+   * Never fails the search. A business index that is down or empty should cost the user
+   * their shop results, not their listing results — the two are separate indexes precisely
+   * so one cannot take the other with it.
+   */
+  private async findBusinesses(
+    query: SearchQueryDto,
+  ): Promise<{ businesses: BusinessResultDto[]; businessTotal: number }> {
+    const empty = { businesses: [], businessTotal: 0 };
+    if (!query.q?.trim()) return empty;
+
+    try {
+      const { ids, total } = await this.businessSearch.search({
+        query: query.q,
+        cityId: query.cityId,
+        pincode: query.pincode,
+        latitude: query.latitude,
+        longitude: query.longitude,
+        radiusKm: query.radiusKm,
+        page: query.page,
+        // A handful alongside the listings. Somebody searching "biryani" wants a few nearby
+        // hotels beside the ads, not a second full page of them.
+        limit: 6,
+      });
+      if (ids.length === 0) return { businesses: [], businessTotal: total };
+
+      const rows = await this.prisma.business.findMany({
+        where: { id: { in: ids }, deletedAt: null, isActive: true },
+        include: {
+          category: { select: { name: true } },
+          city: { select: { name: true } },
+          address: { select: { locality: { select: { name: true } } } },
+        },
+      });
+
+      // Restores the index's ranking: an `IN (...)` query returns rows in whatever order the
+      // planner likes, which would throw the relevance away.
+      const byId = new Map(rows.map((row) => [row.id, row]));
+      const businesses = ids
+        .map((id) => byId.get(id))
+        .filter((row): row is NonNullable<typeof row> => Boolean(row))
+        .map((row) => ({
+          id: row.id,
+          slug: row.slug,
+          name: row.name,
+          categoryName: row.category.name,
+          localityName: row.address?.locality?.name ?? null,
+          cityName: row.city?.name ?? null,
+          isVerified: row.verificationStatus === 'VERIFIED',
+          isClaimed: row.ownerId !== null,
+        }));
+
+      return { businesses, businessTotal: total };
+    } catch (error) {
+      this.logger.warn(
+        `Business search unavailable: ${error instanceof Error ? error.message : String(error)}`,
+      );
+      return empty;
     }
   }
 

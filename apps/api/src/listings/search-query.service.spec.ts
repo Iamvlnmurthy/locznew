@@ -57,6 +57,9 @@ describe('SearchQueryService, when the search index is unavailable', () => {
       // Search learning: records what was typed and whether it found anything. Not what
       // these cases are about, so it is a stub.
       { record: jest.fn() } as never,
+      // Business search: shops alongside the listings. Never fails the search, so an empty
+      // stub is the right default for cases about listing behaviour.
+      { search: jest.fn().mockResolvedValue({ ids: [], total: 0 }) } as never,
     );
   });
 
@@ -148,6 +151,9 @@ describe('SearchQueryService precise filters', () => {
       // Search learning: records what was typed and whether it found anything. Not what
       // these cases are about, so it is a stub.
       { record: jest.fn() } as never,
+      // Business search: shops alongside the listings. Never fails the search, so an empty
+      // stub is the right default for cases about listing behaviour.
+      { search: jest.fn().mockResolvedValue({ ids: [], total: 0 }) } as never,
     );
     return { service, listings, meili };
   }

@@ -149,6 +149,22 @@ export class SearchQueryDto extends PaginationQueryDto {
   areaMax?: number;
 }
 
+/** A business in search results — enough to show a card, not the whole storefront. */
+export class BusinessResultDto {
+  @ApiProperty() id!: string;
+  @ApiProperty() slug!: string;
+  @ApiProperty() name!: string;
+  @ApiProperty() categoryName!: string;
+  @ApiPropertyOptional() localityName!: string | null;
+  @ApiPropertyOptional() cityName!: string | null;
+  @ApiProperty({ description: 'Verified by LocZ, not merely present in a directory' })
+  isVerified!: boolean;
+  @ApiProperty({ description: 'False for an imported record nobody has claimed yet' })
+  isClaimed!: boolean;
+  @ApiPropertyOptional({ description: 'Present when the request supplied coordinates' })
+  distanceMeters?: number;
+}
+
 export class SearchResultDto {
   @ApiProperty({ type: [ListingSummaryDto] }) items!: ListingSummaryDto[];
   @ApiProperty() total!: number;
@@ -158,6 +174,18 @@ export class SearchResultDto {
     description: 'False when the search index was unavailable and results came from the database',
   })
   usedSearchIndex!: boolean;
+
+  @ApiProperty({
+    type: [BusinessResultDto],
+    description:
+      'Shops and services matching the same query. Separate from items because a business ' +
+      'answers a different question from a for-sale listing, and mixing them in one ranked ' +
+      'list would bury whichever kind the person was not looking for.',
+  })
+  businesses!: BusinessResultDto[];
+
+  @ApiProperty({ description: 'Total matching businesses, for a "see all" affordance' })
+  businessTotal!: number;
 }
 
 export class SearchIndexStatusDto {

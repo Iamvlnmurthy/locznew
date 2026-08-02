@@ -19,6 +19,13 @@ class Env {
 
   static const String siteUrl = String.fromEnvironment('SITE_URL', defaultValue: 'https://locz.in');
 
+  /// OAuth web client id used as the audience of the Google ID token. An empty value
+  /// deliberately removes Google from the sign-in screen rather than offering a control
+  /// that can only fail with the API's 503 response.
+  static const String googleClientId = String.fromEnvironment('GOOGLE_CLIENT_ID');
+
+  static bool get isGoogleSignInConfigured => googleClientId.trim().isNotEmpty;
+
   static const String appName = 'LocZ';
 
   /// Radius options offered in the nearby filter, mirroring the API's presets.

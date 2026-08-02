@@ -15248,8 +15248,8 @@ body {
 
 .google-signin__divider p {
   margin: 0;
-  color: var(--locz-text-muted);
-  font-size: 0.7rem;
+  color: var(--locz-text);
+  font-size: 0.72rem;
   font-weight: 650;
 }
 

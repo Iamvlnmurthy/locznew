@@ -96,7 +96,7 @@ export function RegisterForm({
       </label>
 
       <div className="field">
-        <span>{labels.phone}</span>
+        <label htmlFor="register-phone">{labels.phone}</label>
         <div className="signin-phone">
           <span>
             <span aria-hidden="true">🇮🇳</span>+91

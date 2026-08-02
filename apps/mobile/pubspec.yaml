@@ -18,6 +18,7 @@ dependencies:
 
   # Routing with deep-link support (locz://ad/<slug> and https://locz.in/ad/<slug>).
   go_router: ^14.6.2
+  google_sign_in: ^6.2.2
 
   # Networking. Dio is chosen over http for interceptors: token refresh and correlation
   # ids belong in one place rather than at every call site.

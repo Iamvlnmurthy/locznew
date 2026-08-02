@@ -123,6 +123,22 @@ class AuthRepository {
     return _persist(json);
   }
 
+  Future<AuthUser> signInWithGoogle({
+    required String idToken,
+    String? pushToken,
+  }) async {
+    final json = await _api.post<Map<String, dynamic>>(
+      '/auth/login/google',
+      body: {
+        'idToken': idToken,
+        'device': await _deviceInfo(pushToken),
+      },
+      auth: false,
+    );
+
+    return _persist(json);
+  }
+
   Future<AuthUser> _persist(Map<String, dynamic> session) async {
     final tokens = session['tokens'] as Map<String, dynamic>;
     await _tokens.saveTokens(

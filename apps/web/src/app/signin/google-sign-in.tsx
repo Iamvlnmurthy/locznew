@@ -1,6 +1,5 @@
 'use client';
 
-import Script from 'next/script';
 import { startTransition, useActionState, useCallback, useEffect, useRef, useState } from 'react';
 import { googleSignInAction, type GoogleSignInState } from './actions';
 
@@ -37,6 +36,39 @@ declare global {
   }
 }
 
+let googleIdentityPromise: Promise<GoogleIdentity> | null = null;
+
+function loadGoogleIdentity(): Promise<GoogleIdentity> {
+  if (window.google) return Promise.resolve(window.google);
+  if (googleIdentityPromise) return googleIdentityPromise;
+
+  googleIdentityPromise = new Promise<GoogleIdentity>((resolve, reject) => {
+    const existing = document.querySelector<HTMLScriptElement>('script[data-locz-google-identity]');
+    const script = existing ?? document.createElement('script');
+
+    const loaded = () => {
+      if (window.google) resolve(window.google);
+      else reject(new Error('Google Identity Services did not initialize'));
+    };
+    const failed = () => reject(new Error('Google Identity Services could not be loaded'));
+
+    script.addEventListener('load', loaded, { once: true });
+    script.addEventListener('error', failed, { once: true });
+
+    if (!existing) {
+      script.src = 'https://accounts.google.com/gsi/client';
+      script.async = true;
+      script.dataset.loczGoogleIdentity = 'true';
+      document.head.appendChild(script);
+    }
+  }).catch((error) => {
+    googleIdentityPromise = null;
+    throw error;
+  });
+
+  return googleIdentityPromise;
+}
+
 interface Labels {
   divider: string;
   button: string;
@@ -56,6 +88,7 @@ export function GoogleSignIn({
 }) {
   const buttonRef = useRef<HTMLDivElement>(null);
   const [scriptReady, setScriptReady] = useState(false);
+  const [scriptFailed, setScriptFailed] = useState(false);
   const [state, action, pending] = useActionState<GoogleSignInState, FormData>(
     googleSignInAction,
     {},
@@ -71,6 +104,21 @@ export function GoogleSignIn({
     },
     [action, next],
   );
+
+  useEffect(() => {
+    let active = true;
+    loadGoogleIdentity().then(
+      () => {
+        if (active) setScriptReady(true);
+      },
+      () => {
+        if (active) setScriptFailed(true);
+      },
+    );
+    return () => {
+      active = false;
+    };
+  }, []);
 
   useEffect(() => {
     const google = window.google;
@@ -102,22 +150,18 @@ export function GoogleSignIn({
     };
   }, [clientId, handleCredential, scriptReady]);
 
-  const message = state.error
-    ? {
-        accountRequired: labels.accountRequired,
-        unavailable: labels.unavailable,
-        failed: labels.failed,
-      }[state.error]
-    : null;
+  const message = scriptFailed
+    ? labels.unavailable
+    : state.error
+      ? {
+          accountRequired: labels.accountRequired,
+          unavailable: labels.unavailable,
+          failed: labels.failed,
+        }[state.error]
+      : null;
 
   return (
     <section className="google-signin" aria-label={labels.button} aria-busy={pending}>
-      <Script
-        src="https://accounts.google.com/gsi/client"
-        strategy="afterInteractive"
-        onReady={() => setScriptReady(true)}
-        onError={() => setScriptReady(false)}
-      />
       <div className="google-signin__divider">
         <span />
         <p>{labels.divider}</p>
@@ -128,11 +172,9 @@ export function GoogleSignIn({
           {message}
         </p>
       ) : null}
-      <div
-        ref={buttonRef}
-        className={`google-signin__button${pending ? ' is-pending' : ''}`}
-        aria-label={labels.button}
-      />
+      {!scriptFailed ? (
+        <div ref={buttonRef} className={`google-signin__button${pending ? ' is-pending' : ''}`} />
+      ) : null}
     </section>
   );
 }
