@@ -139,6 +139,23 @@ class AuthRepository {
     return _persist(json);
   }
 
+  /// Records a mobile number the device confirmed through Firebase.
+  ///
+  /// Unlike every other method here this returns no session: the account already exists and
+  /// is already signed in. Confirming a number changes what that account may do — claim a
+  /// business, be trusted as reachable — rather than who is holding it.
+  ///
+  /// The token is passed straight through. Nothing on the device may decide that a number is
+  /// verified; only the API, checking Google's signature, may say so.
+  Future<String> confirmPhone(String firebaseIdToken) async {
+    final json = await _api.post<Map<String, dynamic>>(
+      '/auth/phone/confirm',
+      body: {'idToken': firebaseIdToken},
+    );
+
+    return json['phoneE164'] as String;
+  }
+
   Future<AuthUser> _persist(Map<String, dynamic> session) async {
     final tokens = session['tokens'] as Map<String, dynamic>;
     await _tokens.saveTokens(

@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../core/i18n/strings.dart';
 import 'device_lock_tile.dart';
+import 'verify_phone_screen.dart';
 import '../../../core/network/api_exception.dart';
 import '../../../core/providers.dart';
 import '../../../core/theme/tokens.g.dart';
@@ -77,6 +78,18 @@ class AccountScreen extends ConsumerWidget {
               child: Column(
                 children: [
                   const DeviceLockTile(),
+                  const Divider(),
+                  ListTile(
+                    dense: true,
+                    leading: const Icon(Icons.verified_user_outlined),
+                    title: Text(strings('account.confirmPhone')),
+                    trailing: const Icon(Icons.chevron_right_rounded),
+                    onTap: () => Navigator.of(context).push<bool>(
+                      MaterialPageRoute<bool>(
+                        builder: (_) => const VerifyPhoneScreen(),
+                      ),
+                    ),
+                  ),
                   const Divider(),
                   ListTile(
                     dense: true,
