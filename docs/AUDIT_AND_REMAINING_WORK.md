@@ -117,3 +117,61 @@ sign in by email · sign in with Google · reset a password · change your detai
 switch language to Hindi and Telugu · every admin queue
 
 Anything that cannot be exercised is not "done".
+
+## Diagnosed 2 August, evening — exact causes, both unfixed
+
+### 1. Google sign-in does not appear on the admin console
+
+Not the OAuth origins, not the build, not browser caching. All three were guessed at and all
+three were wrong. A real browser gave the answer in one run:
+
+```
+Loading the script 'https://accounts.google.com/gsi/client' violates the following
+Content Security Policy directive: "script-src 'self' 'unsafe-inline'". Note that
+'script-src-elem' was not explicitly set, so 'script-src' is used as a fallback.
+The action has been blocked.
+```
+
+The component mounts and appends the script tag; the browser refuses to load it, so
+`window.google` is never defined and `renderButton` never runs. The container is in the DOM
+and empty — which is why grepping the served HTML for the client ID found nothing and looked
+like a build problem. The client ID *is* in the build, in `static/chunks/3tz5insxh96vh.js`.
+
+**Fix:** add `https://accounts.google.com` to `script-src` and `frame-src` in
+`apps/admin/next.config.mjs`. Note this loosens a header that is deliberately strict because
+the console renders unmoderated user content — widen it to those exact origins, not to `*`.
+
+**Verify with a browser, not curl.** Curl does not run JavaScript, so it can never show a
+Google-rendered button. Reuse `scripts/acceptance-browser.mjs` (`new CdpBrowser()`, `start()`,
+`navigate()`, `evaluate()`, and read `browser.errors`).
+
+### 2. Quarantined images can never be released
+
+Worse than the scanner being down. The moderation API has:
+
+- `GET  moderation/media/:id/preview` — look at a quarantined image
+- `POST moderation/media/:id/block`   — reject it
+- `POST moderation/listings/:id/approve` — approves the *listing*, not its images
+
+There is **no route, no service method and no button that moves media out of
+`REVIEW_REQUIRED`**. The only path to `READY` is `media.service.ts:302`, reached when the
+automated scanner returns `APPROVE`. With the scanner unreachable that path never runs, so
+every image is stuck by design omission — a moderator sitting at the queue full time could not
+publish one.
+
+**Fix, roughly an hour:**
+
+1. `releaseFromQuarantine(mediaId, moderatorId)` in `MediaService` — copy the four objects from
+   `quarantine/...` to the public prefix, strip `quarantine/` from `storageKey`, `thumbKey`,
+   `cardKey`, `fullKey`, set `READY`, clear `failureReason`, write an audit entry
+2. `POST moderation/media/:id/approve` behind `listing:moderate`
+3. An Approve button beside Block in the console queue
+
+One image was released by hand on 2 August as a stopgap
+(`019fa55a-9b8d-76ac-98fa-d9b6a1b9d96d`). The quarantine copies were left in place rather than
+moved, so it can be reverted. Every subsequent upload will stick in the same way until the
+above exists.
+
+**Note on verifying:** media is served through short-lived signed URLs from a private bucket.
+An unsigned request returns 403 even for a correctly released image. Check the API response
+for the listing, not the storage URL.
