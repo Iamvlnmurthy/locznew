@@ -2413,3 +2413,41 @@ tbody tr:hover {
     animation: none;
   }
 }
+
+/* ---------- Google sign-in on the console ----------
+   Google renders its own button, so this only positions it. The divider is what stops the
+   two buttons reading as one control stacked twice: they are alternatives, not a sequence. */
+.google-console-signin {
+  margin-top: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.google-console-signin::before {
+  content: 'or';
+  align-self: stretch;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-size: 0.8rem;
+  opacity: 0.6;
+}
+
+/* The rules on either side of the word. */
+.google-console-signin::before {
+  background-image: linear-gradient(currentColor, currentColor), linear-gradient(currentColor, currentColor);
+  background-size: calc(50% - 1.5rem) 1px, calc(50% - 1.5rem) 1px;
+  background-position: left center, right center;
+  background-repeat: no-repeat;
+  justify-content: center;
+  opacity: 0.35;
+}
+
+.google-console-signin p[role='alert'] {
+  margin: 0;
+  font-size: 0.85rem;
+  color: #b3261e;
+  text-align: center;
+}
