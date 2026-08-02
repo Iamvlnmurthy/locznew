@@ -1,5 +1,6 @@
 'use client';
 
+import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { googleLoginAction } from './actions';
 
@@ -23,14 +24,23 @@ interface GoogleIdentity {
  * may use the console: the API verifies Google's signature, and the role check runs after.
  */
 export function GoogleConsoleSignIn({ clientId }: { clientId: string }) {
+  const router = useRouter();
   const container = useRef<HTMLDivElement>(null);
   const [error, setError] = useState<string | null>(null);
 
   const onCredential = useCallback(async (response: { credential: string }) => {
     const result = await googleLoginAction(response.credential);
-    // A successful sign-in redirects, so anything returned here is a refusal.
-    if (result?.error) setError(result.error);
-  }, []);
+
+    if (result.redirectTo) {
+      // Navigated here rather than in the action: a server action called from a click
+      // handler cannot redirect, because Next signals redirects by throwing and only acts
+      // on that when the action runs through a form.
+      router.replace(result.redirectTo);
+      return;
+    }
+
+    setError(result.error ?? 'Could not sign in with Google.');
+  }, [router]);
 
   useEffect(() => {
     if (!clientId || !container.current) return;

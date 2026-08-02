@@ -7,6 +7,15 @@ import { clearSession, storeSession } from '@/lib/session';
 
 export interface LoginState {
   error?: string;
+  /**
+   * Where to go on success, for callers that cannot use `redirect()`.
+   *
+   * A server action invoked from a click handler rather than a form cannot redirect: Next
+   * signals redirects by throwing, and that signal is only acted on when the action runs
+   * through a form or `useActionState`. Called directly it is swallowed and the page simply
+   * sits there — which is exactly how the Google button failed.
+   */
+  redirectTo?: string;
 }
 
 /**
@@ -41,7 +50,11 @@ export async function loginAction(_prev: LoginState, formData: FormData): Promis
 
   // Authorisation is still enforced on every API call; this check exists so someone
   // without console access gets a clear message instead of a wall of empty pages.
-  return finishConsoleSignIn(session);
+  const result = await finishConsoleSignIn(session);
+  if (result.error) return result;
+
+  // This path runs through useActionState, so redirect() works and is the better exit.
+  redirect(result.redirectTo ?? '/');
 }
 
 export async function googleLoginAction(idToken: string): Promise<LoginState> {
@@ -60,6 +73,7 @@ export async function googleLoginAction(idToken: string): Promise<LoginState> {
     return { error: 'Could not reach the API. Is it running?' };
   }
 
+  // Returned rather than redirected, because the caller is a click handler.
   return finishConsoleSignIn(session);
 }
 
@@ -83,7 +97,7 @@ async function finishConsoleSignIn(session: AuthSession): Promise<LoginState> {
     !session.user.permissions.includes('metrics:read') &&
     !session.user.permissions.includes('listing:moderate');
 
-  redirect(safetyOnly ? '/safety' : '/');
+  return { redirectTo: safetyOnly ? '/safety' : '/' };
 }
 
 export async function logoutAction(): Promise<void> {
