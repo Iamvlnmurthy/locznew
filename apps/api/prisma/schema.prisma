@@ -224,6 +224,8 @@ enum NotificationType {
   NEARBY_OFFER
   JOB_ENQUIRY
   BUSINESS_VERIFICATION_UPDATE
+  /// Somebody who asked to take over an imported directory record is told the outcome.
+  BUSINESS_CLAIM_UPDATE
   REPORT_RESOLUTION
   SECURITY_ALERT
 }
@@ -357,6 +359,8 @@ model User {
   sessions        Session[]
   savedLocations  SavedLocation[]
   ownedBusinesses Business[]      @relation("BusinessOwner")
+  businessClaims  BusinessClaim[] @relation("BusinessClaimant")
+  claimsReviewed  BusinessClaim[] @relation("BusinessClaimReviewer")
   businessStaffOf BusinessStaff[]
   /// How this person sells, when they are not trading as a business. Describes the posting,
   /// not the person: everyone is a buyer and a seller here, and nobody is asked to choose.
@@ -792,6 +796,7 @@ model Business {
   hours                BusinessHour[]
   holidays             BusinessHoliday[]
   serviceAreas         ServiceArea[]
+  claims               BusinessClaim[]
   listings             Listing[]
   requirementResponses RequirementResponse[]
   savedBy              SavedBusiness[]
@@ -1889,4 +1894,55 @@ model ExpiryRule {
   updatedAt      DateTime    @updatedAt
 
   @@map("expiry_rules")
+}
+
+/// Where a claim stands. Separate from BusinessClaimStatus, which describes the business.
+enum ClaimReviewStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  /// The claimant changed their mind before anybody reviewed it.
+  WITHDRAWN
+}
+
+/// Somebody asking to take over an imported directory record.
+///
+/// The whole four-million-record directory rests on this: a scraped business is only useful
+/// to its owner once they can take control of it, and only trustworthy to a buyer once a
+/// person has stood behind it.
+///
+/// Reviewed by a human rather than granted on the spot. Handing over a business hands over
+/// its listings, its enquiries and its identity in search, and the only evidence anybody has
+/// at this stage is a claim typed into a form. An automatic grant would make impersonating a
+/// shop a matter of being first.
+model BusinessClaim {
+  id         String            @id @db.Uuid
+  businessId String            @db.Uuid
+  claimantId String            @db.Uuid
+  status     ClaimReviewStatus @default(PENDING)
+
+  /// What the claimant says their relationship to the business is, in their own words.
+  evidence     String  @db.Text
+  /// A number a reviewer can ring. Not shown publicly, and not the account's number, because
+  /// the shop's landline is often the only thing that proves the connection.
+  contactPhone String? @db.VarChar(20)
+
+  reviewedById    String?   @db.Uuid
+  reviewedAt      DateTime?
+  /// Why a claim was refused. A rejection nobody can explain is one nobody can appeal.
+  rejectionReason String?   @db.VarChar(400)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  business Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  claimant User     @relation("BusinessClaimant", fields: [claimantId], references: [id])
+  reviewer User?    @relation("BusinessClaimReviewer", fields: [reviewedById], references: [id])
+
+  /// One live claim per person per business. Without this a single account could flood the
+  /// review queue for one shop, and a reviewer would have no way to tell the duplicates apart.
+  @@unique([businessId, claimantId, status])
+  @@index([status, createdAt])
+  @@index([businessId])
+  @@map("business_claims")
 }
