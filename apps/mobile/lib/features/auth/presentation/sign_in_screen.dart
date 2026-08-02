@@ -23,6 +23,8 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
   final _formKey = GlobalKey<FormState>();
   final _phoneController = TextEditingController();
   final _passwordController = TextEditingController();
+  // Must be the WEB OAuth client id. It determines the ID token audience checked by the
+  // API; the Android client id is resolved natively from com.locz.app and the signing SHA.
   late final GoogleSignIn _googleSignIn = GoogleSignIn(
     scopes: const ['email'],
     serverClientId: Env.googleClientId,

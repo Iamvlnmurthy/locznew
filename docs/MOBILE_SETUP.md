@@ -113,6 +113,24 @@ values in `firebase.json` or the mobile binary.
 uncaught Flutter, platform and Dart-zone failures are reported after contact details,
 credentials and URL queries are removed. See `docs/OBSERVABILITY.md`.
 
+## Google sign-in
+
+Google sign-in is configuration-gated. Pass the **web OAuth client ID** as
+`GOOGLE_CLIENT_ID`; the app supplies it to `google_sign_in` as `serverClientId`, which
+makes Google mint an ID token for the audience verified by the API.
+
+```bash
+--dart-define=GOOGLE_CLIENT_ID=327351912011-9332b953dn137qsnukmgbrljj0g3u1t5.apps.googleusercontent.com
+```
+
+Do not pass the Android OAuth client ID as `serverClientId`. The Android credential is
+registered in Google Cloud for package `com.locz.app` and the release signing SHA-1;
+Google selects it from the installed app's signature. Putting that client ID in the Dart
+build produces a token with the wrong audience, which the LocZ API correctly rejects.
+
+An empty `GOOGLE_CLIENT_ID` hides the Google control rather than exposing a sign-in path
+that cannot succeed.
+
 ## Deep links
 
 Routes mirror the web app, so one URL serves both: `https://locz.in/ad/<slug>` opens the
@@ -145,7 +163,8 @@ credential vault; never send it through chat or commit it.
 ```bash
 flutter build appbundle --release \
   --dart-define=API_BASE_URL=https://locz.in/api/v1 \
-  --dart-define=SITE_URL=https://locz.in
+  --dart-define=SITE_URL=https://locz.in \
+  --dart-define=GOOGLE_CLIENT_ID=327351912011-9332b953dn137qsnukmgbrljj0g3u1t5.apps.googleusercontent.com
 
 flutter build ipa --release \
   --dart-define=API_BASE_URL=https://locz.in/api/v1 \

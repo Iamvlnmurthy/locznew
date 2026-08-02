@@ -19,6 +19,11 @@ MOBILE_DIR="$(cd "$(dirname "$0")/../apps/mobile" && pwd)"
 
 API_URL="${LOCZ_API_URL:-https://api.locz.in/api/v1}"
 SITE_URL="${LOCZ_SITE_URL:-https://locz.in}"
+# This is the WEB OAuth client id, deliberately. `google_sign_in` sends it as
+# `serverClientId`, so Google mints an ID token whose audience is the same id the API
+# verifies. The Android OAuth client is discovered from com.locz.app + the signing SHA-1
+# and must never be passed here.
+GOOGLE_CLIENT_ID="${LOCZ_GOOGLE_CLIENT_ID:-327351912011-9332b953dn137qsnukmgbrljj0g3u1t5.apps.googleusercontent.com}"
 
 cd "$MOBILE_DIR"
 
@@ -38,7 +43,8 @@ fi
 echo "→ Building LocZ $VERSION_NAME (build $VERSION_CODE)"
 flutter build apk --release \
   --dart-define=API_BASE_URL="$API_URL" \
-  --dart-define=SITE_URL="$SITE_URL"
+  --dart-define=SITE_URL="$SITE_URL" \
+  --dart-define=GOOGLE_CLIENT_ID="$GOOGLE_CLIENT_ID"
 
 APK="build/app/outputs/flutter-apk/app-release.apk"
 [ -f "$APK" ] || { echo "Build produced no APK at $APK" >&2; exit 1; }
