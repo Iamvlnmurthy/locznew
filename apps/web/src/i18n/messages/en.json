@@ -73,14 +73,19 @@
     "saved": "Saved",
     "chats": "Chats",
     "notifications": "Notifications",
-    "account": "Account",
+    "account": "Your account",
     "signIn": "Sign in",
     "signOut": "Sign out",
     "language": "Language",
     "toggleTheme": "Switch light or dark mode",
     "listBusiness": "List your business",
     "primary": "Primary navigation",
-    "getApp": "Get the app"
+    "getApp": "Get the app",
+    "messages": "Messages",
+    "businesses": "Your businesses",
+    "verifyPhone": "Confirm mobile number",
+    "location": "Change area",
+    "signedInAs": "Signed in as"
   },
   "location": {
     "label": "Location",

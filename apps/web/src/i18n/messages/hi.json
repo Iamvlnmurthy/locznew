@@ -73,14 +73,19 @@
     "saved": "सहेजे गए",
     "chats": "संदेश",
     "notifications": "सूचनाएँ",
-    "account": "खाता",
+    "account": "आपका खाता",
     "signIn": "साइन इन",
     "signOut": "साइन आउट",
     "language": "भाषा",
     "toggleTheme": "लाइट या डार्क मोड बदलें",
     "listBusiness": "अपना व्यवसाय जोड़ें",
     "primary": "मुख्य नेविगेशन",
-    "getApp": "ऐप पाएँ"
+    "getApp": "ऐप पाएँ",
+    "messages": "संदेश",
+    "businesses": "आपके व्यवसाय",
+    "verifyPhone": "मोबाइल नंबर पुष्ट करें",
+    "location": "क्षेत्र बदलें",
+    "signedInAs": "साइन इन:"
   },
   "location": {
     "label": "स्थान",

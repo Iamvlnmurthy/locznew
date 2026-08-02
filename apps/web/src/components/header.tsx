@@ -5,7 +5,7 @@ import { getCurrentUser, getSelectedCity } from '@/lib/session';
 import { LocationChip } from './location-chip';
 import { LocaleSwitcher } from './locale-switcher';
 import { Icon } from './icons';
-import { SignOutButton } from './sign-out-button';
+import { AccountMenu } from './account-menu';
 import { ThemeToggle } from './theme-toggle';
 import { RecentSearchInput } from './recent-search-input';
 
@@ -84,10 +84,20 @@ export async function Header({ locale }: { locale: Locale }) {
                   </strong>
                 ) : null}
               </Link>
-              <Link href="/dashboard" className="btn btn--ghost">
-                {t('nav.myAds')}
-              </Link>
-              <SignOutButton label={t('nav.signOut')} />
+              <AccountMenu
+                displayName={user.displayName}
+                labels={{
+                  account: t('nav.account'),
+                  myAds: t('nav.myAds'),
+                  messages: t('nav.messages'),
+                  saved: t('nav.saved'),
+                  businesses: t('nav.businesses'),
+                  verifyPhone: t('nav.verifyPhone'),
+                  location: t('nav.location'),
+                  signOut: t('nav.signOut'),
+                  signedInAs: t('nav.signedInAs'),
+                }}
+              />
             </>
           ) : (
             <Link href="/signin" className="btn btn--ghost">

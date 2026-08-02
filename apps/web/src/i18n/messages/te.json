@@ -73,14 +73,19 @@
     "saved": "సేవ్ చేసినవి",
     "chats": "సందేశాలు",
     "notifications": "నోటిఫికేషన్లు",
-    "account": "ఖాతా",
+    "account": "మీ ఖాతా",
     "signIn": "సైన్ ఇన్",
     "signOut": "సైన్ అవుట్",
     "language": "భాష",
     "toggleTheme": "లైట్ లేదా డార్క్ మోడ్ మార్చండి",
     "listBusiness": "మీ వ్యాపారాన్ని చేర్చండి",
     "primary": "ప్రధాన నావిగేషన్",
-    "getApp": "యాప్ పొందండి"
+    "getApp": "యాప్ పొందండి",
+    "messages": "సందేశాలు",
+    "businesses": "మీ వ్యాపారాలు",
+    "verifyPhone": "మొబైల్ నంబర్ ధృవీకరించండి",
+    "location": "ప్రాంతం మార్చండి",
+    "signedInAs": "సైన్ ఇన్:"
   },
   "location": {
     "label": "ప్రాంతం",
