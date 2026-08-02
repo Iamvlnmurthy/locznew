@@ -78,3 +78,42 @@ Build it contextually instead: ask when somebody does something location-shaped,
 show what to do next. LocZ already has the alternative — the pincode chip — so a refusal is not
 a dead end. Permanent denial needs different copy from a first refusal, because "Allow" will
 not appear again; offer `openAppSettings()` and the pincode picker side by side.
+
+## What the audit should have been
+
+The first pass checked that routes return 200 and that no protected page leaks data, then
+reported itself as a full review. That is a smoke test, not an audit. The owner found three
+real defects in three minutes afterwards, which is the correct verdict on the method.
+
+A real audit exercises each **feature** end to end with real data, signed in, in a browser or
+on a device. Route coverage and unit tests do not substitute: every defect below passed both.
+
+### Found immediately after, by using the app
+
+**Every uploaded image is stuck in quarantine.** 100% of production media sits in
+`REVIEW_REQUIRED` under `quarantine/listings/...`. The safety pipeline holds uploads until a
+scanner clears them; the scanner is configured but unreachable, so nothing is ever released.
+The upload succeeds, the listing publishes, and the only symptom is a grey placeholder. No
+error, no alert. Either make the scanner reachable or let an unavailable scanner fail open for
+low-risk uploads — a safety feature that silently traps all media is an outage wearing a
+feature's clothes.
+
+**Google One Tap fires on page load and leaves an error on arrival.** It auto-triggers, fails
+for an address with no LocZ account, and sets the error state before the visitor has done
+anything. Both auth pages show a red notice on arrival. An earlier check of this concluded it
+was correct because the notice only renders when `state.error` is set — true, and irrelevant,
+because One Tap sets it unprompted.
+
+### The checklist a real audit needs
+
+Signed in, on a device, with real data. For each: does it work, and does it tell the truth when
+it fails?
+
+post an ad · upload images and see them appear · edit an ad · delete an ad · search by keyword ·
+search by category and attribute filters · switch area by pincode · switch area by location ·
+open a listing · save a listing · share a listing · message a seller · reply · notifications ·
+create a business · edit a business · claim a business · confirm a mobile number · sign up ·
+sign in by email · sign in with Google · reset a password · change your details · sign out ·
+switch language to Hindi and Telugu · every admin queue
+
+Anything that cannot be exercised is not "done".
