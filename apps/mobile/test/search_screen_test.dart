@@ -14,6 +14,51 @@ import 'package:locz/features/listings/presentation/search_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
+  testWidgets('shows directory businesses alongside listings', (tester) async {
+    SharedPreferences.setMockInitialValues({});
+    final listings = _FakeListingRepository();
+    // The API has always returned these. The app parsed `items` and dropped the rest, so
+    // 3.4 million businesses were invisible on a phone while the website showed them.
+    listings.businesses = const [
+      BusinessSummary(
+        id: 'b1',
+        slug: 'anjali-kirana-store',
+        name: 'Anjali Kirana Store',
+        categoryName: 'Grocery',
+        localityName: 'Chainpur',
+      ),
+    ];
+    listings.businessTotal = 42;
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [listingRepositoryProvider.overrideWithValue(listings)],
+        child: MaterialApp(
+          theme: AppTheme.light,
+          locale: const Locale('en'),
+          supportedLocales: const [Locale('en'), Locale('te'), Locale('hi')],
+          localizationsDelegates: const [
+            StringsDelegate(AppLocaleOption.en),
+            GlobalMaterialLocalizations.delegate,
+            GlobalWidgetsLocalizations.delegate,
+            GlobalCupertinoLocalizations.delegate,
+          ],
+          home: const SearchScreen(),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('Shops and businesses'), findsOneWidget);
+    expect(find.text('Anjali Kirana Store'), findsOneWidget);
+    // Category and place, so a name alone does not have to carry the whole answer.
+    expect(find.text('Grocery · Chainpur'), findsOneWidget);
+    // An imported record is shown as what it is, not dressed up as a verified shop.
+    expect(find.text('From the local directory'), findsOneWidget);
+    // The count is the total that matched, not the handful rendered.
+    expect(find.text('42 found'), findsOneWidget);
+  });
+
   testWidgets('intent search visibly filters by listing type', (tester) async {
     SharedPreferences.setMockInitialValues({});
     final listings = _FakeListingRepository();
@@ -262,12 +307,15 @@ class _SearchCall {
 }
 
 class _FakeListingRepository extends ListingRepository {
+  List<BusinessSummary> businesses = const [];
+  int businessTotal = 0;
+
   _FakeListingRepository() : super(ApiClient(TokenStorage()));
 
   final List<_SearchCall> calls = [];
 
   @override
-  Future<List<ListingSummary>> search({
+  Future<SearchResults> search({
     String? query,
     String? cityId,
     String? categoryId,
@@ -292,7 +340,7 @@ class _FakeListingRepository extends ListingRepository {
         attributes: [...attributes],
       ),
     );
-    return const [];
+    return SearchResults(listings: const [], businesses: businesses, businessTotal: businessTotal);
   }
 
   @override

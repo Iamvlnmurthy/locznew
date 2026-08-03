@@ -53,9 +53,8 @@ class ListingSummary {
         thumbUrl: json['thumbUrl'] as String?,
         isFeatured: json['isFeatured'] as bool? ?? false,
         viewCount: json['viewCount'] as int? ?? 0,
-        publishedAt: json['publishedAt'] == null
-            ? null
-            : DateTime.tryParse(json['publishedAt'] as String),
+        publishedAt:
+            json['publishedAt'] == null ? null : DateTime.tryParse(json['publishedAt'] as String),
         distanceMeters: json['distanceMeters'] as num?,
         isSaved: json['isSaved'] as bool?,
       );
@@ -160,11 +159,9 @@ class ListingDetail {
         addressLine: json['addressLine'] as String?,
         cityId: json['cityId'] as String?,
         pincodeCode: json['pincodeCode'] as String?,
-        contactPreference:
-            json['contactPreference'] as String? ?? 'IN_APP_ONLY',
+        contactPreference: json['contactPreference'] as String? ?? 'IN_APP_ONLY',
         marketplace: (json['marketplace'] as Map<String, dynamic>?) ?? const {},
-        buyerRequirement:
-            (json['buyerRequirement'] as Map<String, dynamic>?) ?? const {},
+        buyerRequirement: (json['buyerRequirement'] as Map<String, dynamic>?) ?? const {},
       );
 }
 
@@ -195,8 +192,7 @@ class RequirementResponse {
   final String? conversationId;
   final DateTime createdAt;
 
-  factory RequirementResponse.fromJson(Map<String, dynamic> json) =>
-      RequirementResponse(
+  factory RequirementResponse.fromJson(Map<String, dynamic> json) => RequirementResponse(
         id: json['id'] as String,
         listingId: json['listingId'] as String,
         responderId: json['responderId'] as String,
@@ -366,8 +362,7 @@ class CategoryAttributeOption {
   final String? labelTe;
   final String? labelHi;
 
-  factory CategoryAttributeOption.fromJson(Map<String, dynamic> json) =>
-      CategoryAttributeOption(
+  factory CategoryAttributeOption.fromJson(Map<String, dynamic> json) => CategoryAttributeOption(
         value: json['value'] as String,
         label: json['label'] as String,
         labelTe: json['labelTe'] as String?,
@@ -402,8 +397,7 @@ class CategoryAttribute {
   final num? minValue;
   final num? maxValue;
 
-  factory CategoryAttribute.fromJson(Map<String, dynamic> json) =>
-      CategoryAttribute(
+  factory CategoryAttribute.fromJson(Map<String, dynamic> json) => CategoryAttribute(
         key: json['key'] as String,
         label: json['label'] as String,
         labelTe: json['labelTe'] as String?,
@@ -454,8 +448,7 @@ class Category {
         iconKey: json['iconKey'] as String?,
         attributes: (json['attributes'] as List<dynamic>? ?? [])
             .map(
-              (entry) =>
-                  CategoryAttribute.fromJson(entry as Map<String, dynamic>),
+              (entry) => CategoryAttribute.fromJson(entry as Map<String, dynamic>),
             )
             .toList(),
         children: (json['children'] as List<dynamic>? ?? [])
@@ -483,8 +476,7 @@ class ConversationSummary {
   final String? lastMessagePreview;
   final DateTime? lastMessageAt;
 
-  factory ConversationSummary.fromJson(Map<String, dynamic> json) =>
-      ConversationSummary(
+  factory ConversationSummary.fromJson(Map<String, dynamic> json) => ConversationSummary(
         id: json['id'] as String,
         otherPartyName: json['otherPartyName'] as String,
         unreadCount: json['unreadCount'] as int? ?? 0,
@@ -516,4 +508,71 @@ class ChatMessage {
         isMine: json['isMine'] as bool? ?? false,
         createdAt: DateTime.parse(json['createdAt'] as String),
       );
+}
+
+/// A business from the directory, as search returns it.
+///
+/// Deliberately thin. The directory holds 3.4 million records and a search result only
+/// needs enough to decide whether to tap: who they are, what they do, and where. Anything
+/// more is a second request the user may never want.
+class BusinessSummary {
+  const BusinessSummary({
+    required this.id,
+    required this.slug,
+    required this.name,
+    this.categoryName,
+    this.localityName,
+    this.cityName,
+    this.isVerified = false,
+    this.isClaimed = false,
+  });
+
+  final String id;
+  final String slug;
+  final String name;
+  final String? categoryName;
+  final String? localityName;
+  final String? cityName;
+
+  /// Someone at LocZ confirmed this record. Not the same as claimed.
+  final bool isVerified;
+
+  /// The owner has taken it over, so what it says is theirs rather than imported.
+  final bool isClaimed;
+
+  /// "Grocery · Kaimur" — whichever parts exist, joined without empty gaps.
+  String get subtitle => [
+        categoryName,
+        localityName ?? cityName,
+      ].whereType<String>().where((part) => part.trim().isNotEmpty).join(' · ');
+
+  factory BusinessSummary.fromJson(Map<String, dynamic> json) => BusinessSummary(
+        id: json['id'] as String,
+        slug: json['slug'] as String? ?? '',
+        name: json['name'] as String? ?? '',
+        categoryName: json['categoryName'] as String?,
+        localityName: json['localityName'] as String?,
+        cityName: json['cityName'] as String?,
+        isVerified: json['isVerified'] as bool? ?? false,
+        isClaimed: json['isClaimed'] as bool? ?? false,
+      );
+}
+
+/// What one search returns: the ads, and the shops.
+///
+/// Kept apart rather than merged. A shop and a for-sale ad do not answer the same
+/// question, and the API scores them in separate indexes for that reason — flattening
+/// them here would invent a ranking neither side computed.
+class SearchResults {
+  const SearchResults({
+    required this.listings,
+    this.businesses = const [],
+    this.businessTotal = 0,
+  });
+
+  final List<ListingSummary> listings;
+  final List<BusinessSummary> businesses;
+
+  /// How many businesses matched in total, not how many were returned.
+  final int businessTotal;
 }

@@ -34,7 +34,12 @@ class ListingRepository {
     return Feed.fromJson(_portableMediaUrls(json));
   }
 
-  Future<List<ListingSummary>> search({
+  /// Returns businesses alongside listings.
+  ///
+  /// The API has always sent them; this client parsed `items` and dropped the rest, so
+  /// 3.4 million directory businesses were invisible to every phone user while the
+  /// website showed them.
+  Future<SearchResults> search({
     String? query,
     String? cityId,
     String? categoryId,
@@ -71,13 +76,19 @@ class ListingRepository {
       },
     );
 
-    return (json['items'] as List<dynamic>)
-        .map(
-          (entry) => ListingSummary.fromJson(
-            _portableMediaUrls(entry as Map<String, dynamic>),
-          ),
-        )
-        .toList();
+    return SearchResults(
+      listings: (json['items'] as List<dynamic>)
+          .map(
+            (entry) => ListingSummary.fromJson(
+              _portableMediaUrls(entry as Map<String, dynamic>),
+            ),
+          )
+          .toList(),
+      businesses: (json['businesses'] as List<dynamic>? ?? const [])
+          .map((entry) => BusinessSummary.fromJson(entry as Map<String, dynamic>))
+          .toList(),
+      businessTotal: (json['businessTotal'] as num?)?.toInt() ?? 0,
+    );
   }
 
   Future<ListingDetail> detail(String slug) async {
@@ -96,14 +107,12 @@ class ListingRepository {
           'targetType': 'LISTING',
           'targetId': listingId,
           'reason': reason,
-          if (details != null && details.trim().isNotEmpty)
-            'details': details.trim(),
+          if (details != null && details.trim().isNotEmpty) 'details': details.trim(),
         },
       );
 
   Future<List<ListingSummary>> myListings() async {
-    final json = await _api
-        .get<Map<String, dynamic>>('/listings/mine', query: {'limit': 50});
+    final json = await _api.get<Map<String, dynamic>>('/listings/mine', query: {'limit': 50});
     return (json['items'] as List<dynamic>)
         .map(
           (entry) => ListingSummary.fromJson(
@@ -114,8 +123,7 @@ class ListingRepository {
   }
 
   Future<List<ListingSummary>> savedListings() async {
-    final json = await _api
-        .get<Map<String, dynamic>>('/listings/saved', query: {'limit': 50});
+    final json = await _api.get<Map<String, dynamic>>('/listings/saved', query: {'limit': 50});
     return (json['items'] as List<dynamic>)
         .map(
           (entry) => ListingSummary.fromJson(
@@ -169,8 +177,7 @@ class ListingRepository {
             if (budgetMax != null) 'budgetMax': budgetMax,
             if (requiredBy != null) 'requiredBy': requiredBy.toIso8601String(),
             if (quantity != null) 'quantity': quantity,
-            if (preferredCondition != null)
-              'preferredCondition': preferredCondition,
+            if (preferredCondition != null) 'preferredCondition': preferredCondition,
           }
         else
           'marketplace': {
@@ -218,8 +225,7 @@ class ListingRepository {
             if (budgetMax != null) 'budgetMax': budgetMax,
             if (requiredBy != null) 'requiredBy': requiredBy.toIso8601String(),
             if (quantity != null) 'quantity': quantity,
-            if (preferredCondition != null)
-              'preferredCondition': preferredCondition,
+            if (preferredCondition != null) 'preferredCondition': preferredCondition,
           }
         else
           'marketplace': {
@@ -263,8 +269,7 @@ class ListingRepository {
       },
     );
 
-    final media = await _api
-        .post<Map<String, dynamic>>('/media/${signed['mediaId']}/confirm');
+    final media = await _api.post<Map<String, dynamic>>('/media/${signed['mediaId']}/confirm');
     return media['id'] as String;
   }
 
@@ -290,9 +295,7 @@ class ListingRepository {
       query: {if (listingType != null) 'listingType': listingType},
       auth: false,
     );
-    return json
-        .map((entry) => Category.fromJson(entry as Map<String, dynamic>))
-        .toList();
+    return json.map((entry) => Category.fromJson(entry as Map<String, dynamic>)).toList();
   }
 
   Future<Category> categoryDetail(String slug) async {
@@ -323,12 +326,10 @@ class ListingRepository {
   Future<List<RequirementResponse>> requirementResponses(
     String listingId,
   ) async {
-    final json =
-        await _api.get<List<dynamic>>('/requirements/$listingId/responses');
+    final json = await _api.get<List<dynamic>>('/requirements/$listingId/responses');
     return json
         .map(
-          (entry) =>
-              RequirementResponse.fromJson(entry as Map<String, dynamic>),
+          (entry) => RequirementResponse.fromJson(entry as Map<String, dynamic>),
         )
         .toList();
   }
@@ -347,8 +348,7 @@ class ListingRepository {
       body: {
         'kind': kind,
         if (offeredPrice != null) 'offeredPrice': offeredPrice,
-        if (availableFrom != null)
-          'availableFrom': availableFrom.toIso8601String(),
+        if (availableFrom != null) 'availableFrom': availableFrom.toIso8601String(),
         if (message != null && message.isNotEmpty) 'message': message,
         if (offeredListingId != null) 'offeredListingId': offeredListingId,
         if (businessId != null) 'businessId': businessId,
@@ -387,9 +387,7 @@ class ListingRepository {
 
   Future<List<SavedSearch>> savedSearches() async {
     final json = await _api.get<List<dynamic>>('/saved-searches');
-    return json
-        .map((entry) => SavedSearch.fromJson(entry as Map<String, dynamic>))
-        .toList();
+    return json.map((entry) => SavedSearch.fromJson(entry as Map<String, dynamic>)).toList();
   }
 
   Future<SavedSearch> saveSearch({
@@ -421,8 +419,7 @@ class ListingRepository {
   Future<void> setSavedSearchActive(String id, {required bool active}) =>
       _api.put<void>('/saved-searches/$id/active', body: {'isActive': active});
 
-  Future<void> deleteSavedSearch(String id) =>
-      _api.delete<void>('/saved-searches/$id');
+  Future<void> deleteSavedSearch(String id) => _api.delete<void>('/saved-searches/$id');
 
   Future<List<City>> cities({bool launchedOnly = false, String? query}) async {
     final json = await _api.get<List<dynamic>>(
@@ -434,9 +431,7 @@ class ListingRepository {
       },
       auth: false,
     );
-    return json
-        .map((entry) => City.fromJson(entry as Map<String, dynamic>))
-        .toList();
+    return json.map((entry) => City.fromJson(entry as Map<String, dynamic>)).toList();
   }
 
   /// Resolves device coordinates to a launched city. Null means the user is outside
@@ -476,9 +471,7 @@ class ListingRepository {
       auth: false,
     );
     final pincode = json['pincode'];
-    return pincode == null
-        ? null
-        : PincodeArea.fromJson(pincode as Map<String, dynamic>);
+    return pincode == null ? null : PincodeArea.fromJson(pincode as Map<String, dynamic>);
   }
 
   /// Seeded and development records can contain a loopback web URL. `localhost`
@@ -552,6 +545,5 @@ class PincodeArea {
   final int listingCount;
 
   /// "Madhapur, Hyderabad" — what the user recognises, not the bare number.
-  String get label =>
-      cityName == null ? '$name, $districtName' : '$name, $cityName';
+  String get label => cityName == null ? '$name, $districtName' : '$name, $cityName';
 }

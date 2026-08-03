@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../../core/config/env.dart';
 import '../../../core/i18n/strings.dart';
@@ -49,7 +50,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
   String? _categoryId;
   String? _categoryLabel;
   List<String> _attributes = const [];
-  Future<List<ListingSummary>>? _results;
+  Future<SearchResults>? _results;
 
   @override
   void initState() {
@@ -516,7 +517,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
             ),
           ),
           Expanded(
-            child: FutureBuilder<List<ListingSummary>>(
+            child: FutureBuilder<SearchResults>(
               future: _results,
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
@@ -551,8 +552,10 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                   );
                 }
 
-                final items = snapshot.data ?? const <ListingSummary>[];
-                if (items.isEmpty) {
+                final results = snapshot.data;
+                final items = results?.listings ?? const <ListingSummary>[];
+                final businesses = results?.businesses ?? const <BusinessSummary>[];
+                if (items.isEmpty && businesses.isEmpty) {
                   return Center(
                     child: Padding(
                       padding: const EdgeInsets.all(LoczSpacing.x8),
@@ -578,21 +581,32 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                 return Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Padding(
-                      padding: const EdgeInsets.fromLTRB(
-                        LoczSpacing.x4,
-                        LoczSpacing.x3,
-                        LoczSpacing.x4,
-                        0,
+                    // Shops first, kept in their own section rather than mixed in.
+                    // A shop and a for-sale ad do not answer the same question, and the
+                    // API scores them in separate indexes — flattening them here would
+                    // invent a ranking neither side computed.
+                    if (businesses.isNotEmpty)
+                      _BusinessResults(
+                        businesses: businesses,
+                        total: results?.businessTotal ?? businesses.length,
+                        strings: strings,
                       ),
-                      child: Text(
-                        strings(
-                          items.length == 1 ? 'search.resultCountOne' : 'search.resultCountMany',
-                          {'count': items.length},
+                    if (items.isNotEmpty)
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(
+                          LoczSpacing.x4,
+                          LoczSpacing.x3,
+                          LoczSpacing.x4,
+                          0,
                         ),
-                        style: Theme.of(context).textTheme.labelMedium,
+                        child: Text(
+                          strings(
+                            items.length == 1 ? 'search.resultCountOne' : 'search.resultCountMany',
+                            {'count': items.length},
+                          ),
+                          style: Theme.of(context).textTheme.labelMedium,
+                        ),
                       ),
-                    ),
                     Expanded(
                       child: GridView.builder(
                         padding: const EdgeInsets.all(LoczSpacing.x3),
@@ -1060,4 +1074,174 @@ List<(String, String)> _flattenMobileCategories(
     }
   }
   return result;
+}
+
+/// Directory businesses in a search result.
+///
+/// A horizontal strip rather than a full list: on a phone the shops are context for the
+/// listings below, not a replacement for them. Somebody who wants only shops has the
+/// category filter; somebody searching "kirana" wants both, with the ads still reachable
+/// without scrolling past thirty results.
+///
+/// Tapping opens the business on the website. The app has no business screen yet, and a
+/// tap that goes nowhere is worse than one that leaves the app: the web page already
+/// carries the address, phone, hours and the claim flow.
+class _BusinessResults extends StatelessWidget {
+  const _BusinessResults({
+    required this.businesses,
+    required this.total,
+    required this.strings,
+  });
+
+  final List<BusinessSummary> businesses;
+  final int total;
+  final Strings strings;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(
+            LoczSpacing.x4,
+            LoczSpacing.x3,
+            LoczSpacing.x4,
+            LoczSpacing.x2,
+          ),
+          child: Row(
+            children: [
+              Expanded(
+                child: Text(
+                  strings('search.businessesTitle'),
+                  style: theme.textTheme.titleSmall,
+                ),
+              ),
+              Text(
+                strings('search.businessCount', {'count': total}),
+                style: theme.textTheme.labelSmall?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
+              ),
+            ],
+          ),
+        ),
+        SizedBox(
+          height: 118,
+          child: ListView.separated(
+            scrollDirection: Axis.horizontal,
+            padding: const EdgeInsets.symmetric(horizontal: LoczSpacing.x4),
+            itemCount: businesses.length,
+            separatorBuilder: (_, __) => const SizedBox(width: LoczSpacing.x3),
+            itemBuilder: (context, index) {
+              final business = businesses[index];
+              return _BusinessCard(
+                business: business,
+                strings: strings,
+                onTap: () => launchUrl(
+                  Uri.parse('${Env.siteUrl}/b/${business.slug}'),
+                  mode: LaunchMode.externalApplication,
+                ),
+              );
+            },
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _BusinessCard extends StatelessWidget {
+  const _BusinessCard({
+    required this.business,
+    required this.strings,
+    required this.onTap,
+  });
+
+  final BusinessSummary business;
+  final Strings strings;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return SizedBox(
+      width: 240,
+      child: Card(
+        clipBehavior: Clip.antiAlias,
+        margin: EdgeInsets.zero,
+        child: InkWell(
+          onTap: onTap,
+          child: Padding(
+            padding: const EdgeInsets.all(LoczSpacing.x3),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Icon(
+                      Icons.storefront_outlined,
+                      size: 18,
+                      color: theme.colorScheme.primary,
+                    ),
+                    const SizedBox(width: LoczSpacing.x2),
+                    Expanded(
+                      child: Text(
+                        business.name,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: theme.textTheme.titleSmall,
+                      ),
+                    ),
+                  ],
+                ),
+                if (business.subtitle.isNotEmpty)
+                  Text(
+                    business.subtitle,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                // Only claimed records say anything about themselves. An imported one is
+                // shown as unclaimed rather than dressed up as a verified shop.
+                Row(
+                  children: [
+                    Icon(
+                      business.isClaimed ? Icons.verified_rounded : Icons.info_outline_rounded,
+                      size: 14,
+                      color: business.isClaimed
+                          ? theme.colorScheme.primary
+                          : theme.colorScheme.onSurfaceVariant,
+                    ),
+                    const SizedBox(width: 4),
+                    Expanded(
+                      child: Text(
+                        strings(
+                          business.isClaimed
+                              ? 'search.businessClaimed'
+                              : 'search.businessUnclaimed',
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: theme.textTheme.labelSmall?.copyWith(
+                          color: theme.colorScheme.onSurfaceVariant,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
 }
