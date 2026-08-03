@@ -15,6 +15,13 @@ export interface ModerationSubject {
   ownerPublishedCount: number;
   /** True when an identical listing already exists for this owner. */
   isDuplicate: boolean;
+  /**
+   * Where the listing was filed, so rules can be stricter about what carries real risk.
+   *
+   * Slug rather than id: a rule that reads `medicines-pharmacy` says what it means in the
+   * code, and survives the categories being reseeded with different ids.
+   */
+  categorySlug?: string | null;
 }
 
 export interface ModerationVerdict {

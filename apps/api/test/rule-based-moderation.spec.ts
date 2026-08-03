@@ -58,9 +58,7 @@ describe('RuleBasedModerationProvider', () => {
     });
 
     expect(verdict.decision).toBe(ModerationDecision.REVIEW);
-    expect(verdict.reasons).toEqual(
-      expect.arrayContaining(['SHORTENED_URL', 'NEW_ACCOUNT']),
-    );
+    expect(verdict.reasons).toEqual(expect.arrayContaining(['SHORTENED_URL', 'NEW_ACCOUNT']));
   });
 
   it('auto-rejects a severity-2 banned keyword on its own', async () => {
@@ -118,5 +116,69 @@ describe('RuleBasedModerationProvider', () => {
     });
 
     expect(verdict.score).toBeLessThanOrEqual(100);
+  });
+});
+
+describe('a first listing in a category where being wrong hurts somebody', () => {
+  function build() {
+    const prisma = { bannedKeyword: { findMany: jest.fn().mockResolvedValue([]) } };
+    return new RuleBasedModerationProvider(prisma as never);
+  }
+
+  const clean = {
+    ownerId: 'u1',
+    type: 'PRODUCT',
+    title: 'Paracetamol 500mg strip',
+    description: 'Sealed strip, well within expiry, available at our medical store nearby.',
+    isDuplicate: false,
+  };
+
+  it('holds medicines from a brand-new account, however clean the text', async () => {
+    const verdict = await build().evaluate({
+      ...clean,
+      ownerPublishedCount: 0,
+      categorySlug: 'medicines-pharmacy',
+    } as never);
+
+    // Nothing in the words is wrong. That was a reasonable basis for publishing a used
+    // sofa unread; it is not one for medicines from an account created a minute ago.
+    expect(verdict.decision).toBe('REVIEW');
+    expect(verdict.reasons).toContain('NEW_ACCOUNT_SENSITIVE_CATEGORY');
+  });
+
+  it('still publishes an ordinary category immediately', async () => {
+    const verdict = await build().evaluate({
+      ...clean,
+      title: 'Wooden study desk',
+      description: 'Solid wooden study desk with two drawers, good condition, barely used.',
+      ownerPublishedCount: 0,
+      categorySlug: 'furniture-home',
+    } as never);
+
+    // The whole reason first listings publish is that a queue nobody works is worse than
+    // no queue. That stays true everywhere the risk is somebody buying a poor desk.
+    expect(verdict.decision).toBe('AUTO_APPROVE');
+  });
+
+  it('does not hold an established seller in a sensitive category', async () => {
+    const verdict = await build().evaluate({
+      ...clean,
+      ownerPublishedCount: 40,
+      categorySlug: 'medicines-pharmacy',
+    } as never);
+
+    expect(verdict.decision).toBe('AUTO_APPROVE');
+    expect(verdict.reasons).not.toContain('NEW_ACCOUNT_SENSITIVE_CATEGORY');
+  });
+
+  it('never rejects on the category alone', async () => {
+    const verdict = await build().evaluate({
+      ...clean,
+      ownerPublishedCount: 0,
+      categorySlug: 'baby-food-diapers',
+    } as never);
+
+    // Held for a person, not refused. A category is a reason to look, never a verdict.
+    expect(verdict.decision).not.toBe('AUTO_REJECT');
   });
 });

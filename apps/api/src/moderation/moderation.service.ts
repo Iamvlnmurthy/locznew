@@ -78,7 +78,7 @@ export class ModerationService {
   async screenListing(listing: Listing, price?: number | null): Promise<ModerationOutcome> {
     const duplicateHash = this.fingerprint(listing.ownerId, listing.title, price);
 
-    const [ownerPublishedCount, duplicate] = await Promise.all([
+    const [ownerPublishedCount, duplicate, category] = await Promise.all([
       this.prisma.listing.count({
         where: { ownerId: listing.ownerId, status: ListingStatus.PUBLISHED, deletedAt: null },
       }),
@@ -89,6 +89,11 @@ export class ModerationService {
           deletedAt: null,
           status: { in: [ListingStatus.PUBLISHED, ListingStatus.PENDING_REVIEW] },
         },
+      }),
+      // Only the slug, so a rule can be stricter about medicines than about furniture.
+      this.prisma.category.findUnique({
+        where: { id: listing.categoryId },
+        select: { slug: true },
       }),
     ]);
 
@@ -102,6 +107,7 @@ export class ModerationService {
       contactPhone: listing.contactPhone,
       ownerPublishedCount,
       isDuplicate: Boolean(duplicate),
+      categorySlug: category?.slug ?? null,
     });
 
     const outcome = this.applyVerdict(verdict);

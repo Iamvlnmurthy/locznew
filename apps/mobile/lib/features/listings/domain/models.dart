@@ -576,3 +576,84 @@ class SearchResults {
   /// How many businesses matched in total, not how many were returned.
   final int businessTotal;
 }
+
+/// A directory business, in full.
+///
+/// `attribution` is not decoration. The directory is built from OpenStreetMap (ODbL-1.0)
+/// and Overture Maps (CDLA-Permissive-2.0), and both licences require the credit to appear
+/// wherever the data is shown. Dropping it from a screen is a licence breach, not a tidy-up.
+class BusinessDetail {
+  const BusinessDetail({
+    required this.id,
+    required this.name,
+    required this.slug,
+    this.categoryName,
+    this.cityName,
+    this.addressLine,
+    this.description,
+    this.descriptionIsGenerated = false,
+    this.attribution,
+    this.primaryPhone,
+    this.whatsappNumber,
+    this.website,
+    this.hours,
+    this.latitude,
+    this.longitude,
+    this.listingCount = 0,
+    this.isOwner = false,
+    this.verificationStatus,
+  });
+
+  final String id;
+  final String name;
+  final String slug;
+  final String? categoryName;
+  final String? cityName;
+  final String? addressLine;
+  final String? description;
+
+  /// Written by the platform from the category and place, not by the owner. Said plainly
+  /// on screen so nobody mistakes it for a shop describing itself.
+  final bool descriptionIsGenerated;
+
+  /// Required credit for the open data this record came from.
+  final String? attribution;
+
+  final String? primaryPhone;
+  final String? whatsappNumber;
+  final String? website;
+  final String? hours;
+  final double? latitude;
+  final double? longitude;
+  final int listingCount;
+  final bool isOwner;
+  final String? verificationStatus;
+
+  bool get isClaimed => verificationStatus == 'VERIFIED' || isOwner;
+
+  String get subtitle => [
+        categoryName,
+        cityName,
+      ].whereType<String>().where((part) => part.trim().isNotEmpty).join(' · ');
+
+  factory BusinessDetail.fromJson(Map<String, dynamic> json) => BusinessDetail(
+        id: json['id'] as String,
+        name: json['name'] as String? ?? '',
+        slug: json['slug'] as String? ?? '',
+        categoryName: json['categoryName'] as String?,
+        cityName: json['cityName'] as String?,
+        addressLine: json['addressLine'] as String?,
+        description: json['description'] as String?,
+        descriptionIsGenerated: json['descriptionIsGenerated'] as bool? ?? false,
+        attribution: json['attribution'] as String?,
+        primaryPhone: json['primaryPhone'] as String?,
+        whatsappNumber: json['whatsappNumber'] as String?,
+        website: json['website'] as String?,
+        hours: json['hours'] as String?,
+        latitude: (json['latitude'] as num?)?.toDouble(),
+        longitude: (json['longitude'] as num?)?.toDouble(),
+        listingCount: (json['listingCount'] as num?)?.toInt() ?? 0,
+        isOwner: json['isOwner'] as bool? ?? false,
+        verificationStatus: json['verificationStatus'] as String?,
+      );
+}

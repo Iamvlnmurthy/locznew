@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:url_launcher/url_launcher.dart';
 
 import '../../../core/config/env.dart';
 import '../../../core/i18n/strings.dart';
@@ -1140,10 +1139,7 @@ class _BusinessResults extends StatelessWidget {
               return _BusinessCard(
                 business: business,
                 strings: strings,
-                onTap: () => launchUrl(
-                  Uri.parse('${Env.siteUrl}/b/${business.slug}'),
-                  mode: LaunchMode.externalApplication,
-                ),
+                onTap: () => context.push('/b/${business.slug}'),
               );
             },
           ),

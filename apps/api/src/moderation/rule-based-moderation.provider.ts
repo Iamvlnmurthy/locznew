@@ -64,6 +64,37 @@ export class RuleBasedModerationProvider implements ModerationProvider {
   readonly name = 'rule-based';
   private readonly logger = new Logger(RuleBasedModerationProvider.name);
 
+  /**
+   * Categories where a first-time seller is always read by a person.
+   *
+   * The auto-approve rule was written when eight categories existed and all of them were
+   * second-hand goods — a used phone, a sofa. It now covers a hundred and eighteen,
+   * including medicines, baby food and meat. "No rule objected" is a reasonable basis for
+   * publishing a used sofa unread; it is not a reasonable basis for publishing medicines
+   * from an account created a minute ago.
+   *
+   * Deliberately narrow: things that are swallowed, applied to skin, given to an infant,
+   * or that carry a real safety claim. Everything else keeps the existing behaviour, so a
+   * new seller still gets the immediate publish that makes the platform usable without a
+   * staffed queue.
+   */
+  private static readonly SENSITIVE_CATEGORIES = new Set([
+    'medicines-pharmacy',
+    'ayurveda-herbal',
+    'supplements',
+    'health-devices',
+    'baby-food-diapers',
+    'meat-fish-poultry',
+    'chicken',
+    'mutton',
+    'fish-seafood',
+    'processed-meat',
+    'dairy-bakery-eggs',
+    'milk-curd',
+    'sanitary-hygiene',
+    'fertilizers-pesticides',
+  ]);
+
   private static readonly AUTO_APPROVE_BELOW = 20;
   private static readonly AUTO_REJECT_AT = 80;
   /** New accounts always get human eyes on their first listings. */
@@ -218,7 +249,14 @@ export class RuleBasedModerationProvider implements ModerationProvider {
       reasons.push('NEW_ACCOUNT');
     }
 
-    const decision = this.decide(score, isNewAccount);
+    const sensitive =
+      isNewAccount &&
+      subject.categorySlug !== undefined &&
+      subject.categorySlug !== null &&
+      RuleBasedModerationProvider.SENSITIVE_CATEGORIES.has(subject.categorySlug);
+    if (sensitive) reasons.push('NEW_ACCOUNT_SENSITIVE_CATEGORY');
+
+    const decision = this.decide(score, isNewAccount, sensitive);
 
     if (decision !== ModerationDecision.AUTO_APPROVE) {
       this.logger.log(
@@ -229,10 +267,18 @@ export class RuleBasedModerationProvider implements ModerationProvider {
     return { decision, score: Math.min(score, 100), reasons };
   }
 
-  private decide(score: number, isNewAccount: boolean): ModerationDecision {
+  private decide(
+    score: number,
+    isNewAccount: boolean,
+    sensitiveCategory = false,
+  ): ModerationDecision {
     if (score >= RuleBasedModerationProvider.AUTO_REJECT_AT) {
       return ModerationDecision.AUTO_REJECT;
     }
+
+    // A first listing in a category where being wrong hurts somebody gets read, whatever
+    // the score says. Never rejected on that basis alone — only held.
+    if (sensitiveCategory) return ModerationDecision.REVIEW;
     // A new account is held for review the moment anything at all is suspicious — a far
     // stricter bar than the score of 20 an established account is allowed, so the brake on
     // a spam wave is still there. What it no longer does is hold a listing that raised no

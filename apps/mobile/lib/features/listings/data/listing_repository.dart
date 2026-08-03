@@ -91,6 +91,11 @@ class ListingRepository {
     );
   }
 
+  Future<BusinessDetail> businessDetail(String slug) async {
+    final json = await _api.get<Map<String, dynamic>>('/businesses/$slug');
+    return BusinessDetail.fromJson(json);
+  }
+
   Future<ListingDetail> detail(String slug) async {
     final json = await _api.get<Map<String, dynamic>>('/listings/$slug');
     return ListingDetail.fromJson(_portableMediaUrls(json));

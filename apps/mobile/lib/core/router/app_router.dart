@@ -8,6 +8,7 @@ import '../../features/auth/presentation/register_screen.dart';
 import '../../features/auth/presentation/sign_in_screen.dart';
 import '../../features/chat/presentation/chat_screens.dart';
 import '../../features/feed/presentation/home_screen.dart';
+import '../../features/listings/presentation/business_detail_screen.dart';
 import '../../features/listings/presentation/listing_detail_screen.dart';
 import '../../features/listings/presentation/listing_navigation.dart';
 import '../../features/listings/presentation/report_listing_screen.dart';
@@ -157,6 +158,14 @@ final routerProvider = Provider<GoRouter>((ref) {
           final listingId = state.uri.queryParameters['listing'];
           return listingId == null ? const HomeScreen() : ReportListingScreen(listingId: listingId);
         },
+      ),
+      GoRoute(
+        path: '/b/:slug',
+        pageBuilder: (context, state) => _motionPage(
+          context,
+          state,
+          BusinessDetailScreen(slug: state.pathParameters['slug']!),
+        ),
       ),
       GoRoute(
         path: '/seller/:id',
