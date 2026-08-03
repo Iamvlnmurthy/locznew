@@ -26,12 +26,24 @@ CREATE EXTENSION IF NOT EXISTS unaccent;
 -- Stores" filed under grocery no longer matches the word "kirana" — and it is also the
 -- fix for a bug found on 3 August, where that same vocabulary made "kirana" return
 -- astrologers. Category is a filter now, which is what `categoryId` was always for.
+-- Two things a generated column insists on, both learned the hard way here.
+--
+-- `to_tsvector('simple', ...)` resolves to the STABLE two-argument form; only the
+-- `regconfig` overload is IMMUTABLE, so the cast is required rather than decorative.
+--
+-- `array_to_string` is STABLE — it defers to a type's output function, which may depend on
+-- session settings. For a text[] with a constant separator that volatility is theoretical,
+-- so it is wrapped rather than worked around.
+CREATE OR REPLACE FUNCTION locz_keywords_text(text[]) RETURNS text
+  LANGUAGE sql IMMUTABLE PARALLEL SAFE AS
+$fn$ SELECT coalesce(array_to_string($1, ' '), '') $fn$;
+
 ALTER TABLE "businesses"
   ADD COLUMN "searchDoc" tsvector
   GENERATED ALWAYS AS (
-    setweight(to_tsvector('simple', coalesce("name", '')), 'A') ||
-    setweight(to_tsvector('simple', array_to_string("keywords", ' ')), 'B') ||
-    setweight(to_tsvector('simple', coalesce("sourceRecordId", '')), 'D')
+    setweight(to_tsvector('simple'::regconfig, coalesce("name", '')), 'A') ||
+    setweight(to_tsvector('simple'::regconfig, locz_keywords_text("keywords")), 'B') ||
+    setweight(to_tsvector('simple'::regconfig, coalesce("sourceRecordId", '')), 'D')
   ) STORED;
 
 -- `simple` rather than `english`: these are proper nouns and Indic transliterations, where
