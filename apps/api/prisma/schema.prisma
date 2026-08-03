@@ -844,6 +844,17 @@ model Business {
   requirementResponses RequirementResponse[]
   savedBy              SavedBusiness[]
 
+  /// Full-text document for business search, maintained by Postgres itself.
+  ///
+  /// `Unsupported` because Prisma cannot express a generated tsvector column; it is
+  /// declared here only so `prisma migrate` does not try to drop it. Nothing reads it
+  /// through the client — `BusinessSearchService` queries it with raw SQL.
+  ///
+  /// Generated rather than derived by the application on write: a column the database
+  /// computes cannot fall out of step with the row, which is exactly how the previous
+  /// Meilisearch index came to hold 400 of 3.4 million businesses without anyone noticing.
+  searchDoc Unsupported("tsvector")?
+
   /// One import cannot create the same source record twice.
   @@unique([sourceName, sourceRecordId])
   @@index([ownerId])

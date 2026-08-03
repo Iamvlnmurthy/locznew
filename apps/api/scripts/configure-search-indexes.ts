@@ -28,8 +28,10 @@ async function main(): Promise<void> {
     await app.get(SearchService).configureIndex();
     console.log('Listing index settings applied.');
 
-    await app.get(BusinessSearchService).configureIndex();
-    console.log('Business index settings applied.');
+    // Businesses have no index to configure: their search document is a generated
+    // Postgres column, created by migration. Reporting the count is the honest equivalent.
+    const { indexed } = await app.get(BusinessSearchService).reindexAll();
+    console.log(`Business search is a generated column; ${indexed} businesses are searchable.`);
   } finally {
     await app.close();
   }
