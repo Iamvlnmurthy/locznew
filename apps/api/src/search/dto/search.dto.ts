@@ -14,6 +14,7 @@ import {
   Matches,
   IsString,
   IsUUID,
+  Max,
   MaxLength,
   Min,
 } from 'class-validator';
@@ -34,6 +35,27 @@ export class SearchQueryDto extends PaginationQueryDto {
   @IsOptional()
   @IsEnum(ListingType)
   type?: ListingType;
+
+  /**
+   * Paging for the businesses strip, separate from the listings page.
+   *
+   * Shops and ads are browsed at different speeds — somebody swiping through kirana stores
+   * should not move the classified ads underneath them, which one shared page number did.
+   */
+  @ApiPropertyOptional({ minimum: 1, description: 'Page of businesses, independent of listings' })
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  businessPage?: number;
+
+  @ApiPropertyOptional({ minimum: 1, maximum: 50, default: 10 })
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  @Max(50)
+  businessLimit?: number;
 
   @ApiPropertyOptional() @IsOptional() @IsUUID() categoryId?: string;
   @ApiPropertyOptional() @IsOptional() @IsUUID() cityId?: string;

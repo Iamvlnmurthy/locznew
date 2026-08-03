@@ -45,14 +45,15 @@ export class SearchController {
   })
   businesses(
     @Query() query: SearchQueryDto,
-    @Query('businessPage') businessPage?: string,
-    @Query('businessLimit') businessLimit?: string,
   ): Promise<{ businesses: unknown[]; businessTotal: number }> {
-    // Clamped rather than trusted. An unbounded limit on a term matching 30,000 shops is a
-    // slow query somebody can ask for by editing a URL.
-    const page = Math.max(1, Number.parseInt(businessPage ?? '1', 10) || 1);
-    const limit = Math.min(50, Math.max(1, Number.parseInt(businessLimit ?? '10', 10) || 10));
-    return this.searchQuery.searchBusinesses(query, page, limit);
+    // Bounds live on the DTO, so the validation pipe rejects an out-of-range page before
+    // it reaches a query. An unbounded limit on a term matching 30,000 shops is a slow
+    // query anybody can ask for by editing a URL.
+    return this.searchQuery.searchBusinesses(
+      query,
+      query.businessPage ?? 1,
+      query.businessLimit ?? 10,
+    );
   }
 
   @Get('index/status')
