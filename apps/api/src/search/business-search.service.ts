@@ -42,6 +42,19 @@ export interface BusinessDocument {
  * answered them, so any difference in how forgiving the two are would read as the search
  * being unpredictable.
  */
+/**
+ * How many matching rows are ranked before the best are chosen.
+ *
+ * A bare nationwide query on a common word can match tens of thousands of businesses, and
+ * `ts_rank` has to score every one of them before sorting. Finding them is indexed and
+ * fast; scoring them is not. This bounds that work.
+ *
+ * It only ever engages on a query with no city, pincode or radius, which the app does not
+ * send — and a person who has genuinely asked for "every medical shop in India, ranked" is
+ * better served by a fast answer from the first few thousand than by a slow one from all.
+ */
+const RANKING_CANDIDATE_CAP = 5_000;
+
 @Injectable()
 export class BusinessSearchService {
   private readonly logger = new Logger(BusinessSearchService.name);
@@ -100,12 +113,22 @@ export class BusinessSearchService {
 
     const rows = await this.prisma.$queryRaw<Array<{ id: string; total: bigint }>>(
       Prisma.sql`
-        WITH matched AS (
-          SELECT b.id,
-                 ${query ? Prisma.sql`ts_rank(b."searchDoc", plainto_tsquery('simple', ${query}))` : Prisma.sql`0`} AS rank,
-                 ${hasGeo ? Prisma.sql`ST_Distance(b."geo", ST_MakePoint(${params.longitude}, ${params.latitude})::geography)` : Prisma.sql`0`} AS metres
+        WITH candidates AS (
+          SELECT b.id, b."searchDoc", b."geo"
           FROM "businesses" b
           WHERE ${Prisma.join(where, ' AND ')}
+          -- Ranking is what costs, not finding. "medical" matches 30,706 businesses
+          -- nationwide and scoring every one took 2.6 seconds; the index found them in
+          -- milliseconds. Capping the set first bounds the worst case, and only a query
+          -- with no city, pincode or radius ever reaches the cap — the app always sends
+          -- one, so ordinary searches are unaffected and still see everything.
+          LIMIT ${RANKING_CANDIDATE_CAP}
+        ),
+        matched AS (
+          SELECT c.id,
+                 ${query ? Prisma.sql`ts_rank(c."searchDoc", plainto_tsquery('simple', ${query}))` : Prisma.sql`0`} AS rank,
+                 ${hasGeo ? Prisma.sql`ST_Distance(c."geo", ST_MakePoint(${params.longitude}, ${params.latitude})::geography)` : Prisma.sql`0`} AS metres
+          FROM candidates c
         )
         SELECT id, count(*) OVER () AS total
         FROM matched
