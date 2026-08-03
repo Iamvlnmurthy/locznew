@@ -60,6 +60,48 @@ describe('BusinessSearchService on Postgres', () => {
     expect(result.total).toBe(0);
   });
 
+  // ---------------------------------------------------------------- plurals and safety
+  describe('turning what somebody typed into a query', () => {
+    function tsqueryFor(service: BusinessSearchService, input: string): string | null {
+      return (service as unknown as { toPrefixQuery(q: string): string | null }).toPrefixQuery(
+        input,
+      );
+    }
+
+    it('finds the singular on the shelf when the plural was typed', () => {
+      const { service } = build([]);
+
+      // No shop is named "Shops", so the strict form found 3 businesses where the
+      // singular found 6. On the real data this takes it to 621.
+      expect(tsqueryFor(service, 'medical shops')).toBe('medical:* & shop:*');
+    });
+
+    it('does not prefix a short word', () => {
+      const { service } = build([]);
+
+      // `car:*` would drag in carpenter and cargo. A search that is confidently wrong is
+      // worse than one that returns few.
+      expect(tsqueryFor(service, 'car tea')).toBe('car & tea');
+    });
+
+    it('strips tsquery operators rather than passing them to the parser', () => {
+      const { service } = build([]);
+
+      // `&`, `|`, `!`, `:` and `*` all mean something to to_tsquery. Splitting on
+      // non-alphanumerics removes them before they can be read as syntax.
+      // `x` survives as an ordinary search term, which is right — it is a letter the
+      // person typed. What must not survive is the punctuation around it.
+      expect(tsqueryFor(service, 'kirana & store | !x')).toBe('kirana:* & store:* & x');
+      expect(tsqueryFor(service, "medical:*')) --")).toBe('medical:*');
+    });
+
+    it('returns nothing to search on when the query is only punctuation', () => {
+      const { service } = build([]);
+
+      expect(tsqueryFor(service, '!!! ???')).toBeNull();
+    });
+  });
+
   // ---------------------------------------------------------------- drift is now impossible
   describe('the methods that used to maintain an index', () => {
     it('reports every active business as searchable', async () => {

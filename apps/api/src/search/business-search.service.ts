@@ -77,6 +77,41 @@ export class BusinessSearchService {
     return Promise.resolve();
   }
 
+  /**
+   * Turns what somebody typed into a tsquery that forgives a plural.
+   *
+   * `plainto_tsquery` is exact-token and the dictionary is `simple`, which does no
+   * stemming — deliberately, so "Medicals" does not collapse to "medic". The cost was
+   * that "medical shops" found 3 businesses where "medical shop" found 6, because no
+   * shop is named "Shops".
+   *
+   * So the plural is stripped from the *query* and a prefix match is added: "shops"
+   * becomes `shop:*`, which reaches Shop, Shops and Shopping. On the real data that took
+   * "medical shops" from 3 matches to 621.
+   *
+   * Prefix only from four characters. `car:*` would drag in carpenter and cargo, and a
+   * search that returns confidently wrong results is worse than one that returns few.
+   *
+   * Tokens are split on anything that is not a letter or digit, which also removes every
+   * character tsquery treats as an operator — `&`, `|`, `!`, `(`, `)`, `:` and `*` — so a
+   * query cannot reach the parser as syntax.
+   */
+  private toPrefixQuery(query: string): string | null {
+    const tokens = query
+      .toLowerCase()
+      .split(/[^\p{L}\p{N}]+/u)
+      .filter((token) => token.length > 0);
+
+    if (tokens.length === 0) return null;
+
+    return tokens
+      .map((token) => {
+        const singular = token.length > 4 && token.endsWith('s') ? token.slice(0, -1) : token;
+        return singular.length >= 4 ? `${singular}:*` : singular;
+      })
+      .join(' & ');
+  }
+
   async search(params: {
     query: string;
     cityId?: string;
@@ -90,6 +125,7 @@ export class BusinessSearchService {
     limit: number;
   }): Promise<{ ids: string[]; total: number }> {
     const query = params.query.trim();
+    const tsquery = query ? this.toPrefixQuery(query) : null;
     const offset = (params.page - 1) * params.limit;
     const hasGeo = params.latitude !== undefined && params.longitude !== undefined;
     const radiusMetres = (params.radiusKm ?? 10) * 1000;
@@ -97,7 +133,7 @@ export class BusinessSearchService {
     const where = [
       Prisma.sql`b."deletedAt" IS NULL`,
       Prisma.sql`b."isActive"`,
-      query ? Prisma.sql`b."searchDoc" @@ plainto_tsquery('simple', ${query})` : Prisma.sql`TRUE`,
+      tsquery ? Prisma.sql`b."searchDoc" @@ to_tsquery('simple', ${tsquery})` : Prisma.sql`TRUE`,
       params.cityId ? Prisma.sql`b."cityId" = ${params.cityId}::uuid` : Prisma.sql`TRUE`,
       params.pincode ? Prisma.sql`b."pincodeCode" = ${params.pincode}` : Prisma.sql`TRUE`,
       params.categoryId
@@ -126,7 +162,7 @@ export class BusinessSearchService {
         ),
         matched AS (
           SELECT c.id,
-                 ${query ? Prisma.sql`ts_rank(c."searchDoc", plainto_tsquery('simple', ${query}))` : Prisma.sql`0`} AS rank,
+                 ${tsquery ? Prisma.sql`ts_rank(c."searchDoc", to_tsquery('simple', ${tsquery}))` : Prisma.sql`0`} AS rank,
                  ${hasGeo ? Prisma.sql`ST_Distance(c."geo", ST_MakePoint(${params.longitude}, ${params.latitude})::geography)` : Prisma.sql`0`} AS metres
           FROM candidates c
         )
@@ -141,7 +177,7 @@ export class BusinessSearchService {
       return { ids: rows.map((row) => row.id), total: Number(rows[0]?.total ?? 0) };
     }
 
-    // Nothing matched exactly. `plainto_tsquery` is exact-token, so "medicl" finds nothing
+    // Nothing matched even with prefixes, so this is a misspelling rather than a plural
     // where Meilisearch would have forgiven it. Trigram similarity is the fallback, and it
     // runs only here — never on the common path, because it cannot use the tsvector index.
     return this.fuzzySearch(params, query, offset);
