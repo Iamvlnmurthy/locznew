@@ -148,9 +148,12 @@ class _BusinessBody extends StatelessWidget {
           const SizedBox(height: LoczSpacing.x4),
           _Row(icon: Icons.place_outlined, text: business.addressLine!),
         ],
-        if (business.hours != null && business.hours!.trim().isNotEmpty) ...[
+        if (business.hours.isNotEmpty) ...[
           const SizedBox(height: LoczSpacing.x2),
-          _Row(icon: Icons.schedule_outlined, text: business.hours!),
+          _Row(
+            icon: Icons.schedule_outlined,
+            text: business.hours.map((hour) => hour.label).join('  ·  '),
+          ),
         ],
 
         if (business.description != null && business.description!.trim().isNotEmpty) ...[

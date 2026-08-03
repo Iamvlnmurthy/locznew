@@ -577,6 +577,40 @@ class SearchResults {
   final int businessTotal;
 }
 
+/// One day's opening hours.
+///
+/// The API sends a list of these, not a string. Reading it as a string is what made every
+/// business detail screen fail with "could not load this business" — the cast threw before
+/// anything reached the widget.
+class BusinessHour {
+  const BusinessHour({
+    required this.dayOfWeek,
+    required this.opensAt,
+    required this.closesAt,
+    this.isClosed = false,
+  });
+
+  /// 0 = Sunday, matching the API.
+  final int dayOfWeek;
+  final String opensAt;
+  final String closesAt;
+  final bool isClosed;
+
+  static const _dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+
+  String get label {
+    final day = dayOfWeek >= 0 && dayOfWeek < 7 ? _dayNames[dayOfWeek] : '';
+    return isClosed ? '$day closed' : '$day $opensAt-$closesAt';
+  }
+
+  factory BusinessHour.fromJson(Map<String, dynamic> json) => BusinessHour(
+        dayOfWeek: (json['dayOfWeek'] as num?)?.toInt() ?? 0,
+        opensAt: json['opensAt'] as String? ?? '',
+        closesAt: json['closesAt'] as String? ?? '',
+        isClosed: json['isClosed'] as bool? ?? false,
+      );
+}
+
 /// A directory business, in full.
 ///
 /// `attribution` is not decoration. The directory is built from OpenStreetMap (ODbL-1.0)
@@ -596,7 +630,7 @@ class BusinessDetail {
     this.primaryPhone,
     this.whatsappNumber,
     this.website,
-    this.hours,
+    this.hours = const [],
     this.latitude,
     this.longitude,
     this.listingCount = 0,
@@ -622,7 +656,7 @@ class BusinessDetail {
   final String? primaryPhone;
   final String? whatsappNumber;
   final String? website;
-  final String? hours;
+  final List<BusinessHour> hours;
   final double? latitude;
   final double? longitude;
   final int listingCount;
@@ -649,7 +683,9 @@ class BusinessDetail {
         primaryPhone: json['primaryPhone'] as String?,
         whatsappNumber: json['whatsappNumber'] as String?,
         website: json['website'] as String?,
-        hours: json['hours'] as String?,
+        hours: (json['hours'] as List<dynamic>? ?? const [])
+            .map((entry) => BusinessHour.fromJson(entry as Map<String, dynamic>))
+            .toList(),
         latitude: (json['latitude'] as num?)?.toDouble(),
         longitude: (json['longitude'] as num?)?.toDouble(),
         listingCount: (json['listingCount'] as num?)?.toInt() ?? 0,
