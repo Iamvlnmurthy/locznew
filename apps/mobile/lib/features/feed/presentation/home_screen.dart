@@ -141,24 +141,24 @@ class _HomeAppBar extends StatelessWidget implements PreferredSizeWidget {
   final VoidCallback onTheme;
 
   @override
-  Size get preferredSize => const Size.fromHeight(106);
+  Size get preferredSize => const Size.fromHeight(118);
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return AppBar(
       titleSpacing: 16,
-      toolbarHeight: 52,
+      toolbarHeight: 64,
       title: Row(
         children: [
           Image.asset(
             'assets/brand/locz-mark.png',
             key: const Key('home-brand-mark'),
-            width: 28,
-            height: 32,
+            width: 38,
+            height: 44,
             fit: BoxFit.contain,
           ),
-          const SizedBox(width: 8),
+          const SizedBox(width: 10),
           Flexible(
             child: Semantics(
               button: true,
@@ -166,27 +166,27 @@ class _HomeAppBar extends StatelessWidget implements PreferredSizeWidget {
               child: Material(
                 key: const Key('home-location-control'),
                 color: theme.colorScheme.primaryContainer,
-                borderRadius: BorderRadius.circular(16),
+                borderRadius: BorderRadius.circular(18),
                 child: InkWell(
                   onTap: onLocation,
-                  borderRadius: BorderRadius.circular(16),
+                  borderRadius: BorderRadius.circular(18),
                   child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 6),
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         Icon(
                           Icons.near_me_outlined,
-                          size: 15,
+                          size: 18,
                           color: theme.colorScheme.onPrimaryContainer,
                         ),
-                        const SizedBox(width: 5),
+                        const SizedBox(width: 6),
                         Flexible(
                           child: Text(
                             cityLabel,
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
-                            style: theme.textTheme.labelMedium?.copyWith(
+                            style: theme.textTheme.titleSmall?.copyWith(
                               color: theme.colorScheme.onPrimaryContainer,
                               fontWeight: FontWeight.w700,
                             ),
@@ -195,7 +195,7 @@ class _HomeAppBar extends StatelessWidget implements PreferredSizeWidget {
                         const SizedBox(width: 2),
                         Icon(
                           Icons.keyboard_arrow_down_rounded,
-                          size: 16,
+                          size: 20,
                           color: theme.colorScheme.onPrimaryContainer,
                         ),
                       ],
@@ -211,7 +211,7 @@ class _HomeAppBar extends StatelessWidget implements PreferredSizeWidget {
         IconButton(
           key: const Key('home-theme-toggle'),
           visualDensity: VisualDensity.compact,
-          constraints: const BoxConstraints.tightFor(width: 36, height: 36),
+          constraints: const BoxConstraints.tightFor(width: 44, height: 44),
           icon: AnimatedSwitcher(
             duration: LoczMotion.standard,
             child: Icon(
@@ -227,7 +227,7 @@ class _HomeAppBar extends StatelessWidget implements PreferredSizeWidget {
         ),
         IconButton(
           visualDensity: VisualDensity.compact,
-          constraints: const BoxConstraints.tightFor(width: 36, height: 36),
+          constraints: const BoxConstraints.tightFor(width: 44, height: 44),
           icon: const Icon(Icons.notifications_none_rounded, size: 19),
           onPressed: onNotifications,
           tooltip: strings('account.notifications'),
@@ -247,7 +247,7 @@ class _HomeAppBar extends StatelessWidget implements PreferredSizeWidget {
               padding: const EdgeInsets.symmetric(horizontal: 14),
               decoration: BoxDecoration(
                 color: theme.colorScheme.surface,
-                borderRadius: BorderRadius.circular(16),
+                borderRadius: BorderRadius.circular(18),
                 border: Border.all(color: theme.colorScheme.outlineVariant),
                 boxShadow: [
                   BoxShadow(
@@ -416,7 +416,7 @@ class _DiscoveryIntroState extends State<_DiscoveryIntro> with SingleTickerProvi
                             borderRadius: BorderRadius.circular(4),
                           ),
                         ),
-                        const SizedBox(width: 8),
+                        const SizedBox(width: 10),
                         Expanded(
                           child: Text(
                             widget.eyebrow,
@@ -485,7 +485,7 @@ class _DiscoveryIntroState extends State<_DiscoveryIntro> with SingleTickerProvi
                                     shape: BoxShape.circle,
                                   ),
                                 ),
-                                const SizedBox(width: 8),
+                                const SizedBox(width: 10),
                                 Expanded(
                                   child: Column(
                                     mainAxisAlignment: MainAxisAlignment.center,
