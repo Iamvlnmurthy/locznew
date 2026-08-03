@@ -48,10 +48,12 @@ ALTER TABLE "businesses"
 
 -- `simple` rather than `english`: these are proper nouns and Indic transliterations, where
 -- English stemming does more harm than good. "Medicals" must not stem to "medic".
-CREATE INDEX "businesses_search_doc_idx" ON "businesses" USING gin ("searchDoc");
+CREATE INDEX IF NOT EXISTS "businesses_search_doc_idx" ON "businesses" USING gin ("searchDoc");
 
--- Typo tolerance, used only as a fallback when the strict query finds nothing.
-CREATE INDEX "businesses_name_trgm_idx" ON "businesses" USING gin ("name" gin_trgm_ops);
+-- Typo tolerance, used only as a fallback when the strict query finds nothing. IF NOT
+-- EXISTS because the directory import created this one first; a migration that assumes it
+-- is the only writer fails on exactly the database that matters.
+CREATE INDEX IF NOT EXISTS "businesses_name_trgm_idx" ON "businesses" USING gin ("name" gin_trgm_ops);
 
 -- Proximity. Already present in most environments; created here so a fresh database that
 -- has never run the spatial migration still gets it.
