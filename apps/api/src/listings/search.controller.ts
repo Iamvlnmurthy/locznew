@@ -34,6 +34,27 @@ export class SearchController {
     return this.searchQuery.search(query, user?.id);
   }
 
+  @Get('businesses')
+  @Public()
+  @ApiOperation({
+    summary: 'Search businesses on their own, paged',
+    description:
+      'The mixed search returns six businesses beside the listings, which suits a first ' +
+      'glance and not browsing. This pages through the rest without re-running the listing ' +
+      'search, so a strip can load more as somebody swipes.',
+  })
+  businesses(
+    @Query() query: SearchQueryDto,
+    @Query('businessPage') businessPage?: string,
+    @Query('businessLimit') businessLimit?: string,
+  ): Promise<{ businesses: unknown[]; businessTotal: number }> {
+    // Clamped rather than trusted. An unbounded limit on a term matching 30,000 shops is a
+    // slow query somebody can ask for by editing a URL.
+    const page = Math.max(1, Number.parseInt(businessPage ?? '1', 10) || 1);
+    const limit = Math.min(50, Math.max(1, Number.parseInt(businessLimit ?? '10', 10) || 10));
+    return this.searchQuery.searchBusinesses(query, page, limit);
+  }
+
   @Get('index/status')
   @ApiBearerAuth()
   @RequirePermissions('search:reindex')

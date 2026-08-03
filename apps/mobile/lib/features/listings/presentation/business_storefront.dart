@@ -38,8 +38,18 @@ class BusinessStorefront extends StatelessWidget {
   String get _initials {
     final words = name.trim().split(RegExp(r'\s+')).where((w) => w.isNotEmpty).toList();
     if (words.isEmpty) return '?';
-    if (words.length == 1) return words.first.substring(0, 1).toUpperCase();
-    return (words[0].substring(0, 1) + words[1].substring(0, 1)).toUpperCase();
+    if (words.length == 1) return words.first.characters.first.toUpperCase();
+    return (words[0].characters.first + words[1].characters.first).toUpperCase();
+  }
+
+  int get _composition {
+    // FNV-1a gives a stable, cheap variant without relying on Dart's runtime hashCode.
+    var hash = 0x811C9DC5;
+    for (final unit in businessId.codeUnits) {
+      hash ^= unit;
+      hash = (hash * 0x01000193) & 0xFFFFFFFF;
+    }
+    return hash % 6;
   }
 
   @override
@@ -52,58 +62,184 @@ class BusinessStorefront extends StatelessWidget {
     final foreground = palette.foreground(brightness);
     final accent = palette.accent(brightness);
 
-    return SizedBox(
-      height: height,
-      width: double.infinity,
-      child: DecoratedBox(
-        decoration: BoxDecoration(color: background),
-        child: Stack(
-          fit: StackFit.expand,
-          children: [
-            // An oversized, cropped glyph as the backdrop. It reads as a pattern rather
-            // than an icon, which is what stops three million cards looking like a
-            // spreadsheet of the same eight symbols.
-            Positioned(
-              right: -height * 0.22,
-              bottom: -height * 0.28,
-              child: Opacity(
-                opacity: 0.20,
-                child: CustomPaint(
-                  size: Size(height * 1.05, height * 1.05),
-                  painter: _GlyphPainter(glyph: glyph, color: accent, strokeWidth: 1.1),
-                ),
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.all(20),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  SizedBox(
-                    width: 34,
-                    height: 34,
-                    child: CustomPaint(
-                      painter: _GlyphPainter(glyph: glyph, color: foreground, strokeWidth: 1.6),
-                    ),
-                  ),
-                  if (showInitials)
-                    Text(
-                      _initials,
-                      style: Theme.of(context).textTheme.displaySmall?.copyWith(
-                            color: foreground,
-                            fontWeight: FontWeight.w800,
-                            height: 1,
-                          ),
-                    ),
+    final compact = height < 100;
+    final padding = compact ? 12.0 : 20.0;
+    final glyphTile = compact ? 34.0 : 46.0;
+
+    return ExcludeSemantics(
+      child: SizedBox(
+        height: height,
+        width: double.infinity,
+        child: ClipRect(
+          child: DecoratedBox(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  background,
+                  Color.lerp(
+                    background,
+                    accent,
+                    brightness == Brightness.dark ? 0.13 : 0.08,
+                  )!,
                 ],
               ),
             ),
-          ],
+            child: Stack(
+              fit: StackFit.expand,
+              children: [
+                CustomPaint(
+                  painter: _StorefrontBackdropPainter(
+                    foreground: foreground,
+                    accent: accent,
+                    variant: _composition,
+                  ),
+                ),
+                Positioned(
+                  right: compact ? -12 : -height * 0.06,
+                  bottom: compact ? -14 : -height * 0.16,
+                  child: Container(
+                    width: compact ? 82 : height * 0.9,
+                    height: compact ? 82 : height * 0.9,
+                    padding: EdgeInsets.all(compact ? 20 : height * 0.22),
+                    decoration: BoxDecoration(
+                      color: foreground.withValues(alpha: 0.065),
+                      shape: BoxShape.circle,
+                      border: Border.all(color: foreground.withValues(alpha: 0.1)),
+                    ),
+                    child: CustomPaint(
+                      painter: _GlyphPainter(
+                        glyph: glyph,
+                        color: accent.withValues(alpha: 0.72),
+                        strokeWidth: compact ? 1.35 : 1.15,
+                      ),
+                    ),
+                  ),
+                ),
+                Padding(
+                  padding: EdgeInsets.all(padding),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Row(
+                        children: [
+                          Container(
+                            width: glyphTile,
+                            height: glyphTile,
+                            padding: EdgeInsets.all(compact ? 8 : 11),
+                            decoration: BoxDecoration(
+                              color: foreground.withValues(alpha: 0.1),
+                              borderRadius: BorderRadius.circular(compact ? 11 : 15),
+                              border: Border.all(
+                                color: foreground.withValues(alpha: 0.18),
+                              ),
+                            ),
+                            child: CustomPaint(
+                              painter: _GlyphPainter(
+                                glyph: glyph,
+                                color: foreground,
+                                strokeWidth: 1.7,
+                              ),
+                            ),
+                          ),
+                          const Spacer(),
+                          Row(
+                            children: List.generate(
+                              3,
+                              (index) => Container(
+                                width: index == _composition % 3 ? 16 : 5,
+                                height: 5,
+                                margin: const EdgeInsets.only(left: 5),
+                                decoration: BoxDecoration(
+                                  color: foreground.withValues(
+                                    alpha: index == _composition % 3 ? 0.7 : 0.24,
+                                  ),
+                                  borderRadius: BorderRadius.circular(99),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      if (showInitials && !compact)
+                        Text(
+                          _initials,
+                          style: Theme.of(context).textTheme.displaySmall?.copyWith(
+                                color: foreground,
+                                fontWeight: FontWeight.w900,
+                                height: 0.9,
+                                letterSpacing: -1.8,
+                              ),
+                        ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
         ),
       ),
     );
   }
+}
+
+class _StorefrontBackdropPainter extends CustomPainter {
+  const _StorefrontBackdropPainter({
+    required this.foreground,
+    required this.accent,
+    required this.variant,
+  });
+
+  final Color foreground;
+  final Color accent;
+  final int variant;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final fine = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1
+      ..color = foreground.withValues(alpha: 0.105);
+    final wash = Paint()
+      ..style = PaintingStyle.fill
+      ..color = accent.withValues(alpha: 0.075);
+
+    final anchor = switch (variant % 3) {
+      0 => Offset(size.width * 0.78, size.height * 0.18),
+      1 => Offset(size.width * 0.68, size.height * 0.08),
+      _ => Offset(size.width * 0.86, size.height * 0.34),
+    };
+    for (var index = 0; index < 3; index++) {
+      canvas.drawCircle(anchor, size.height * (0.28 + index * 0.2), fine);
+    }
+
+    final bandTop = size.height * (variant.isEven ? 0.72 : 0.66);
+    final band = Path()
+      ..moveTo(0, bandTop)
+      ..lineTo(size.width, bandTop - size.height * 0.08)
+      ..lineTo(size.width, size.height)
+      ..lineTo(0, size.height)
+      ..close();
+    canvas.drawPath(band, wash);
+
+    final dashY = size.height * 0.24;
+    for (var index = 0; index < 5; index++) {
+      final x = size.width * 0.34 + index * size.width * 0.065;
+      canvas.drawLine(
+        Offset(x, dashY),
+        Offset(x + size.width * 0.032, dashY),
+        fine,
+      );
+    }
+  }
+
+  @override
+  bool shouldRepaint(_StorefrontBackdropPainter oldDelegate) =>
+      oldDelegate.foreground != foreground ||
+      oldDelegate.accent != accent ||
+      oldDelegate.variant != variant;
 }
 
 /// Draws SVG path data directly, so no image and no SVG package is needed.
@@ -114,7 +250,11 @@ class BusinessStorefront extends StatelessWidget {
 /// future glyph uses something unsupported it will simply not draw that segment, which is
 /// visible immediately rather than silently wrong.
 class _GlyphPainter extends CustomPainter {
-  const _GlyphPainter({required this.glyph, required this.color, required this.strokeWidth});
+  const _GlyphPainter({
+    required this.glyph,
+    required this.color,
+    required this.strokeWidth,
+  });
 
   final LoczBusinessGlyph glyph;
   final Color color;

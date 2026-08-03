@@ -45,8 +45,11 @@ export class SearchQueryService {
         cityId: query.cityId,
         pincode: query.pincode,
         categoryId: query.categoryId,
-        hadFilters: this.needsDatabaseFilters(query) || query.priceMin !== undefined ||
-          query.priceMax !== undefined || query.condition !== undefined,
+        hadFilters:
+          this.needsDatabaseFilters(query) ||
+          query.priceMin !== undefined ||
+          query.priceMax !== undefined ||
+          query.condition !== undefined,
       });
 
     // With no keyword there is nothing for a search engine to do better than the
@@ -233,6 +236,7 @@ export class SearchQueryService {
    */
   private async findBusinesses(
     query: SearchQueryDto,
+    options: { page?: number; limit?: number } = {},
   ): Promise<{ businesses: BusinessResultDto[]; businessTotal: number }> {
     const empty = { businesses: [], businessTotal: 0 };
     if (!query.q?.trim()) return empty;
@@ -245,10 +249,13 @@ export class SearchQueryService {
         latitude: query.latitude,
         longitude: query.longitude,
         radiusKm: query.radiusKm,
-        page: query.page,
-        // A handful alongside the listings. Somebody searching "biryani" wants a few nearby
-        // hotels beside the ads, not a second full page of them.
-        limit: 6,
+        // Paged independently of the listings when a caller asks. The strip in the app
+        // swipes through shops without disturbing the ads underneath it, which sharing a
+        // page number would have done.
+        page: options.page ?? query.page,
+        // A handful alongside the listings by default. Somebody searching "biryani" wants a
+        // few nearby hotels beside the ads, not a second full page of them.
+        limit: options.limit ?? 6,
       });
       if (ids.length === 0) return { businesses: [], businessTotal: total };
 
@@ -287,17 +294,32 @@ export class SearchQueryService {
     }
   }
 
+  /**
+   * Businesses on their own, paged.
+   *
+   * The mixed search returns six beside the listings, which is right for a first glance and
+   * useless for browsing. This lets the caller walk the rest without re-running the listing
+   * search on every page — a wasted query, and a slow one on a common word.
+   */
+  async searchBusinesses(
+    query: SearchQueryDto,
+    page: number,
+    limit: number,
+  ): Promise<{ businesses: BusinessResultDto[]; businessTotal: number }> {
+    return this.findBusinesses(query, { page, limit });
+  }
+
   /** Filters Meilisearch cannot express, because they are not in the indexed document. */
   private needsDatabaseFilters(query: SearchQueryDto): boolean {
     return Boolean(
       query.attr?.length ||
-        query.brand ||
-        query.model ||
-        query.yearMin !== undefined ||
-        query.yearMax !== undefined ||
-        query.bedroomsMin !== undefined ||
-        query.areaMin !== undefined ||
-        query.areaMax !== undefined,
+      query.brand ||
+      query.model ||
+      query.yearMin !== undefined ||
+      query.yearMax !== undefined ||
+      query.bedroomsMin !== undefined ||
+      query.areaMin !== undefined ||
+      query.areaMax !== undefined,
     );
   }
 

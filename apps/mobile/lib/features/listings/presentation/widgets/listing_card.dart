@@ -26,7 +26,9 @@ SliverGridDelegateWithMaxCrossAxisExtent listingCardGridDelegate(
       maxCrossAxisExtent: textScale > 1.15 ? 480 : 400,
       mainAxisSpacing: 12,
       crossAxisSpacing: 12,
-      childAspectRatio: textScale > 1.15 ? 0.66 : 1.02,
+      // At 320dp the 1.34 image plus three content rows needs slightly more vertical
+      // room than a square card. 1.02 clipped the locality by 8.7px on a real emulator.
+      childAspectRatio: textScale > 1.15 ? 0.66 : 0.96,
     );
 
 class ListingCard extends StatelessWidget {

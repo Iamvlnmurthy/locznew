@@ -141,24 +141,24 @@ class _HomeAppBar extends StatelessWidget implements PreferredSizeWidget {
   final VoidCallback onTheme;
 
   @override
-  Size get preferredSize => const Size.fromHeight(118);
+  Size get preferredSize => const Size.fromHeight(112);
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return AppBar(
-      titleSpacing: 16,
-      toolbarHeight: 64,
+      titleSpacing: 14,
+      toolbarHeight: 60,
       title: Row(
         children: [
           Image.asset(
             'assets/brand/locz-mark.png',
             key: const Key('home-brand-mark'),
-            width: 38,
-            height: 44,
+            width: 32,
+            height: 38,
             fit: BoxFit.contain,
           ),
-          const SizedBox(width: 10),
+          const SizedBox(width: 8),
           Flexible(
             child: Semantics(
               button: true,
@@ -166,18 +166,18 @@ class _HomeAppBar extends StatelessWidget implements PreferredSizeWidget {
               child: Material(
                 key: const Key('home-location-control'),
                 color: theme.colorScheme.primaryContainer,
-                borderRadius: BorderRadius.circular(18),
+                borderRadius: BorderRadius.circular(17),
                 child: InkWell(
                   onTap: onLocation,
-                  borderRadius: BorderRadius.circular(18),
+                  borderRadius: BorderRadius.circular(17),
                   child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         Icon(
                           Icons.near_me_outlined,
-                          size: 18,
+                          size: 16,
                           color: theme.colorScheme.onPrimaryContainer,
                         ),
                         const SizedBox(width: 6),
@@ -186,7 +186,7 @@ class _HomeAppBar extends StatelessWidget implements PreferredSizeWidget {
                             cityLabel,
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
-                            style: theme.textTheme.titleSmall?.copyWith(
+                            style: theme.textTheme.bodyMedium?.copyWith(
                               color: theme.colorScheme.onPrimaryContainer,
                               fontWeight: FontWeight.w700,
                             ),
@@ -195,7 +195,7 @@ class _HomeAppBar extends StatelessWidget implements PreferredSizeWidget {
                         const SizedBox(width: 2),
                         Icon(
                           Icons.keyboard_arrow_down_rounded,
-                          size: 20,
+                          size: 18,
                           color: theme.colorScheme.onPrimaryContainer,
                         ),
                       ],
@@ -211,7 +211,7 @@ class _HomeAppBar extends StatelessWidget implements PreferredSizeWidget {
         IconButton(
           key: const Key('home-theme-toggle'),
           visualDensity: VisualDensity.compact,
-          constraints: const BoxConstraints.tightFor(width: 44, height: 44),
+          constraints: const BoxConstraints.tightFor(width: 40, height: 40),
           icon: AnimatedSwitcher(
             duration: LoczMotion.standard,
             child: Icon(
@@ -227,15 +227,15 @@ class _HomeAppBar extends StatelessWidget implements PreferredSizeWidget {
         ),
         IconButton(
           visualDensity: VisualDensity.compact,
-          constraints: const BoxConstraints.tightFor(width: 44, height: 44),
+          constraints: const BoxConstraints.tightFor(width: 40, height: 40),
           icon: const Icon(Icons.notifications_none_rounded, size: 19),
           onPressed: onNotifications,
           tooltip: strings('account.notifications'),
         ),
-        const SizedBox(width: 8),
+        const SizedBox(width: 6),
       ],
       bottom: PreferredSize(
-        preferredSize: const Size.fromHeight(54),
+        preferredSize: const Size.fromHeight(52),
         child: Padding(
           padding: const EdgeInsets.fromLTRB(16, 2, 16, 10),
           child: LoczPressable(

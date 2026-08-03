@@ -91,6 +91,46 @@ class ListingRepository {
     );
   }
 
+  /// The next page of businesses for a query, without re-running the listing search.
+  ///
+  /// The mixed `/search` returns six beside the listings. Browsing shops needs more than
+  /// that, and re-fetching the whole mixed response per page would repeat an expensive
+  /// listing query to throw its results away.
+  Future<SearchResults> searchBusinesses({
+    required String query,
+    String? cityId,
+    String? pincode,
+    double? latitude,
+    double? longitude,
+    int? radiusKm,
+    int page = 1,
+    int limit = 10,
+  }) async {
+    final json = await _api.get<Map<String, dynamic>>(
+      '/search/businesses',
+      query: {
+        'q': query,
+        'businessPage': page,
+        'businessLimit': limit,
+        if (cityId != null) 'cityId': cityId,
+        if (pincode != null) 'pincode': pincode,
+        if (radiusKm != null && latitude != null && longitude != null) ...{
+          'radiusKm': radiusKm,
+          'latitude': latitude,
+          'longitude': longitude,
+        },
+      },
+    );
+
+    return SearchResults(
+      listings: const [],
+      businesses: (json['businesses'] as List<dynamic>? ?? const [])
+          .map((entry) => BusinessSummary.fromJson(entry as Map<String, dynamic>))
+          .toList(),
+      businessTotal: (json['businessTotal'] as num?)?.toInt() ?? 0,
+    );
+  }
+
   Future<BusinessDetail> businessDetail(String slug) async {
     final json = await _api.get<Map<String, dynamic>>('/businesses/$slug');
     return BusinessDetail.fromJson(json);

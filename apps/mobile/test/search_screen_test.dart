@@ -59,6 +59,44 @@ void main() {
     expect(find.text('42 found'), findsOneWidget);
   });
 
+  testWidgets('loads more shops as the strip is swiped', (tester) async {
+    SharedPreferences.setMockInitialValues({});
+    final listings = _FakeListingRepository();
+    listings.businesses = const [
+      BusinessSummary(id: 'b1', slug: 'one', name: 'Anjali Kirana Store'),
+    ];
+    listings.businessTotal = 42;
+    listings.nextBusinessPage = const [
+      BusinessSummary(id: 'b2', slug: 'two', name: 'Ashok Kirana Store'),
+    ];
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [listingRepositoryProvider.overrideWithValue(listings)],
+        child: MaterialApp(
+          theme: AppTheme.light,
+          locale: const Locale('en'),
+          supportedLocales: const [Locale('en'), Locale('te'), Locale('hi')],
+          localizationsDelegates: const [
+            StringsDelegate(AppLocaleOption.en),
+            GlobalMaterialLocalizations.delegate,
+            GlobalWidgetsLocalizations.delegate,
+            GlobalCupertinoLocalizations.delegate,
+          ],
+          home: const SearchScreen(),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    // Page two is fetched on its own, not by re-running the listing search — sharing a
+    // page number would have moved the ads underneath while somebody swiped shops.
+    expect(listings.businessPageRequests, contains(2));
+    expect(find.text('Ashok Kirana Store'), findsOneWidget);
+    // Appended, not replaced.
+    expect(find.text('Anjali Kirana Store'), findsOneWidget);
+  });
+
   testWidgets('intent search visibly filters by listing type', (tester) async {
     SharedPreferences.setMockInitialValues({});
     final listings = _FakeListingRepository();
@@ -309,6 +347,8 @@ class _SearchCall {
 class _FakeListingRepository extends ListingRepository {
   List<BusinessSummary> businesses = const [];
   int businessTotal = 0;
+  List<BusinessSummary> nextBusinessPage = const [];
+  final List<int> businessPageRequests = [];
 
   _FakeListingRepository() : super(ApiClient(TokenStorage()));
 
@@ -341,6 +381,24 @@ class _FakeListingRepository extends ListingRepository {
       ),
     );
     return SearchResults(listings: const [], businesses: businesses, businessTotal: businessTotal);
+  }
+
+  /// The strip prefetches the next page as it nears the end of what it has. Without this
+  /// the fake falls through to the real network call and a widget test hangs.
+  @override
+  Future<SearchResults> searchBusinesses({
+    required String query,
+    String? cityId,
+    String? pincode,
+    double? latitude,
+    double? longitude,
+    int? radiusKm,
+    int page = 1,
+    int limit = 10,
+  }) async {
+    businessPageRequests.add(page);
+    return SearchResults(
+        listings: const [], businesses: nextBusinessPage, businessTotal: businessTotal);
   }
 
   @override

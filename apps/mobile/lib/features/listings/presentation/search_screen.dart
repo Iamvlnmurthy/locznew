@@ -12,6 +12,7 @@ import '../../../core/providers.dart';
 import '../../../core/theme/tokens.g.dart';
 import '../data/listing_repository.dart';
 import '../domain/models.dart';
+import 'business_storefront.dart';
 import 'listing_navigation.dart';
 import 'widgets/listing_card.dart';
 
@@ -586,9 +587,11 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                     // invent a ranking neither side computed.
                     if (businesses.isNotEmpty)
                       _BusinessResults(
+                        key: ValueKey(_query),
                         businesses: businesses,
                         total: results?.businessTotal ?? businesses.length,
                         strings: strings,
+                        query: _query,
                       ),
                     if (items.isNotEmpty)
                       Padding(
@@ -1082,23 +1085,88 @@ List<(String, String)> _flattenMobileCategories(
 /// category filter; somebody searching "kirana" wants both, with the ads still reachable
 /// without scrolling past thirty results.
 ///
-/// Tapping opens the business on the website. The app has no business screen yet, and a
-/// tap that goes nowhere is worse than one that leaves the app: the web page already
-/// carries the address, phone, hours and the claim flow.
-class _BusinessResults extends StatelessWidget {
+/// Tapping stays in the app. The compact storefront carries the same deterministic identity
+/// as the detail screen while keeping businesses visibly separate from marketplace ads.
+class _BusinessResults extends ConsumerStatefulWidget {
   const _BusinessResults({
+    super.key,
     required this.businesses,
     required this.total,
     required this.strings,
+    required this.query,
   });
 
   final List<BusinessSummary> businesses;
   final int total;
   final Strings strings;
 
+  /// Needed to ask for the next page. The strip pages on its own rather than sharing the
+  /// listings' page number, so swiping through shops does not disturb the ads below.
+  final String query;
+
+  @override
+  ConsumerState<_BusinessResults> createState() => _BusinessResultsState();
+}
+
+class _BusinessResultsState extends ConsumerState<_BusinessResults> {
+  static const _pageSize = 10;
+
+  late List<BusinessSummary> _businesses = widget.businesses;
+  int _page = 1;
+  bool _loading = false;
+  bool _exhausted = false;
+
+  @override
+  void didUpdateWidget(_BusinessResults old) {
+    super.didUpdateWidget(old);
+    // A new search resets the strip. Without this, swiping would append the next page of
+    // the previous query onto results for the new one.
+    if (old.query != widget.query) {
+      _businesses = widget.businesses;
+      _page = 1;
+      _exhausted = false;
+    }
+  }
+
+  Future<void> _loadMore() async {
+    if (_loading || _exhausted || _businesses.length >= widget.total) return;
+    setState(() => _loading = true);
+
+    try {
+      final next = await ref
+          .read(listingRepositoryProvider)
+          .searchBusinesses(query: widget.query, page: _page + 1, limit: _pageSize);
+
+      if (!mounted) return;
+      setState(() {
+        // Stop on a page that adds nothing, not merely on an empty one. A page can come
+        // back full of records already on screen — ranking ties shift between queries, and
+        // rows are deactivated underneath paging. Counting an empty *result* as the only
+        // end condition meant those cases prefetched forever without ever adding a card.
+        final seen = _businesses.map((b) => b.id).toSet();
+        final fresh = next.businesses.where((b) => !seen.contains(b.id)).toList();
+        if (fresh.isEmpty) {
+          _exhausted = true;
+        } else {
+          _businesses = [..._businesses, ...fresh];
+          _page += 1;
+        }
+      });
+    } catch (_) {
+      // A failed page is not a failed search. The shops already on screen stay, and the
+      // next swipe tries again.
+      if (mounted) setState(() => _exhausted = true);
+    } finally {
+      if (mounted) setState(() => _loading = false);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final businesses = _businesses;
+    final total = widget.total;
+    final strings = widget.strings;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -1128,13 +1196,26 @@ class _BusinessResults extends StatelessWidget {
           ),
         ),
         SizedBox(
-          height: 118,
+          height: 184,
           child: ListView.separated(
             scrollDirection: Axis.horizontal,
             padding: const EdgeInsets.symmetric(horizontal: LoczSpacing.x4),
-            itemCount: businesses.length,
+            itemCount: businesses.length + (_loading ? 1 : 0),
             separatorBuilder: (_, __) => const SizedBox(width: LoczSpacing.x3),
             itemBuilder: (context, index) {
+              if (index >= businesses.length) {
+                return const SizedBox(
+                  width: 96,
+                  child: Center(child: CircularProgressIndicator(strokeWidth: 2)),
+                );
+              }
+
+              // Fetch while there are still cards to the right, so the next ones are
+              // usually there before the swipe reaches them.
+              if (index >= businesses.length - 3) {
+                WidgetsBinding.instance.addPostFrameCallback((_) => _loadMore());
+              }
+
               final business = businesses[index];
               return _BusinessCard(
                 business: business,
@@ -1165,76 +1246,87 @@ class _BusinessCard extends StatelessWidget {
     final theme = Theme.of(context);
 
     return SizedBox(
-      width: 240,
+      width: 254,
       child: Card(
         clipBehavior: Clip.antiAlias,
         margin: EdgeInsets.zero,
         child: InkWell(
           onTap: onTap,
-          child: Padding(
-            padding: const EdgeInsets.all(LoczSpacing.x3),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Icon(
-                      Icons.storefront_outlined,
-                      size: 18,
-                      color: theme.colorScheme.primary,
-                    ),
-                    const SizedBox(width: LoczSpacing.x2),
-                    Expanded(
-                      child: Text(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              BusinessStorefront(
+                businessId: business.id,
+                name: business.name,
+                categoryName: business.categoryName,
+                height: 72,
+                showInitials: false,
+              ),
+              Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.all(LoczSpacing.x3),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
                         business.name,
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
-                        style: theme.textTheme.titleSmall,
+                        style: theme.textTheme.titleSmall?.copyWith(
+                          fontWeight: FontWeight.w800,
+                          height: 1.15,
+                        ),
                       ),
-                    ),
-                  ],
-                ),
-                if (business.subtitle.isNotEmpty)
-                  Text(
-                    business.subtitle,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      color: theme.colorScheme.onSurfaceVariant,
-                    ),
+                      if (business.subtitle.isNotEmpty) ...[
+                        const SizedBox(height: LoczSpacing.x1),
+                        Text(
+                          business.subtitle,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: theme.colorScheme.onSurfaceVariant,
+                          ),
+                        ),
+                      ],
+                      const Spacer(),
+                      Row(
+                        children: [
+                          Icon(
+                            business.isClaimed
+                                ? Icons.verified_rounded
+                                : Icons.info_outline_rounded,
+                            size: 14,
+                            color: business.isClaimed
+                                ? theme.colorScheme.primary
+                                : theme.colorScheme.onSurfaceVariant,
+                          ),
+                          const SizedBox(width: 4),
+                          Expanded(
+                            child: Text(
+                              strings(
+                                business.isClaimed
+                                    ? 'search.businessClaimed'
+                                    : 'search.businessUnclaimed',
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: theme.textTheme.labelSmall?.copyWith(
+                                color: theme.colorScheme.onSurfaceVariant,
+                              ),
+                            ),
+                          ),
+                          Icon(
+                            Icons.arrow_forward_rounded,
+                            size: 16,
+                            color: theme.colorScheme.primary,
+                          ),
+                        ],
+                      ),
+                    ],
                   ),
-                // Only claimed records say anything about themselves. An imported one is
-                // shown as unclaimed rather than dressed up as a verified shop.
-                Row(
-                  children: [
-                    Icon(
-                      business.isClaimed ? Icons.verified_rounded : Icons.info_outline_rounded,
-                      size: 14,
-                      color: business.isClaimed
-                          ? theme.colorScheme.primary
-                          : theme.colorScheme.onSurfaceVariant,
-                    ),
-                    const SizedBox(width: 4),
-                    Expanded(
-                      child: Text(
-                        strings(
-                          business.isClaimed
-                              ? 'search.businessClaimed'
-                              : 'search.businessUnclaimed',
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: theme.textTheme.labelSmall?.copyWith(
-                          color: theme.colorScheme.onSurfaceVariant,
-                        ),
-                      ),
-                    ),
-                  ],
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
         ),
       ),
