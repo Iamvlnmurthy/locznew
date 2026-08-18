@@ -398,7 +398,10 @@ class _FakeListingRepository extends ListingRepository {
   }) async {
     businessPageRequests.add(page);
     return SearchResults(
-        listings: const [], businesses: nextBusinessPage, businessTotal: businessTotal);
+      listings: const [],
+      businesses: nextBusinessPage,
+      businessTotal: businessTotal,
+    );
   }
 
   @override

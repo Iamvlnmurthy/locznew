@@ -20,10 +20,11 @@ class HomeScreen extends ConsumerWidget {
     final strings = Strings.of(context);
     final feed = ref.watch(feedProvider);
     final city = ref.watch(selectedCityProvider);
-    final textScale = MediaQuery.textScalerOf(context).scale(1);
+    final radiusKm = ref.watch(selectedRadiusProvider);
 
     return Scaffold(
       appBar: _HomeAppBar(
+        // The location pill owns the place; the radius chips below own "how far".
         cityLabel: city?.pincode ?? city?.name ?? strings('location.change'),
         strings: strings,
         onLocation: () => context.push('/location'),
@@ -53,6 +54,25 @@ class HomeScreen extends ConsumerWidget {
                 for (final item in section.items) item.id,
             }.length;
 
+            // One proximity-sorted column instead of horizontal rails — the merged
+            // "Around You Now" feed. Every item carries an API distance, so the list
+            // is ordered strictly by how close it is; ties keep API order.
+            final seen = <String>{};
+            final feedItems = <ListingSummary>[];
+            for (final section in data.sections) {
+              for (final item in section.items) {
+                if (seen.add(item.id)) feedItems.add(item);
+              }
+            }
+            feedItems.sort((a, b) {
+              final da = a.distanceMeters;
+              final db = b.distanceMeters;
+              if (da == null && db == null) return 0;
+              if (da == null) return 1;
+              if (db == null) return -1;
+              return da.compareTo(db);
+            });
+
             return CustomScrollView(
               physics: const AlwaysScrollableScrollPhysics(),
               slivers: [
@@ -60,6 +80,14 @@ class HomeScreen extends ConsumerWidget {
                   padding: const EdgeInsets.fromLTRB(16, 14, 16, 0),
                   sliver: SliverList.list(
                     children: [
+                      _RadiusSelector(
+                        label: strings('feed.within'),
+                        selected: radiusKm,
+                        onSelect: (value) =>
+                            ref.read(selectedRadiusProvider.notifier).select(value),
+                        kmLabel: strings('common.km'),
+                      ),
+                      const SizedBox(height: 14),
                       LoczEntrance(
                         child: _DiscoveryIntro(
                           eyebrow: strings('feed.heroEyebrow'),
@@ -88,7 +116,7 @@ class HomeScreen extends ConsumerWidget {
                     ],
                   ),
                 ),
-                if (data.sections.isEmpty)
+                if (feedItems.isEmpty)
                   SliverFillRemaining(
                     hasScrollBody: false,
                     child: _EmptyFeed(
@@ -97,22 +125,42 @@ class HomeScreen extends ConsumerWidget {
                       onAction: () => context.push('/post'),
                     ),
                   )
-                else
-                  for (final (index, section) in data.sections.indexed)
-                    SliverToBoxAdapter(
-                      child: LoczEntrance(
-                        delay: Duration(
-                          milliseconds: 160 + index.clamp(0, 4) * 50,
-                        ),
-                        child: _FeedSectionRail(
-                          section: section,
-                          textScale: textScale,
-                          title: strings('feed.${section.key}'),
-                          seeAll: strings('feed.seeAll'),
-                          onSeeAll: () => context.go('/search'),
-                        ),
+                else ...[
+                  SliverPadding(
+                    padding: const EdgeInsets.fromLTRB(16, 26, 16, 8),
+                    sliver: SliverToBoxAdapter(
+                      child: _SectionHeader(
+                        title: strings('feed.aroundYou'),
+                        hint: strings('feed.aroundYouHint'),
                       ),
                     ),
+                  ),
+                  SliverPadding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    sliver: SliverList.builder(
+                      itemCount: feedItems.length,
+                      itemBuilder: (context, index) {
+                        final listing = feedItems[index];
+                        final tag = 'home-feed-${listing.id}';
+                        return Padding(
+                          padding: const EdgeInsets.only(bottom: 14),
+                          child: ListingCard(
+                            listing: listing,
+                            heroTag: tag,
+                            typeLabel: strings('type.${listing.type}'),
+                            onTap: () => context.push(
+                              '/ad/${listing.slug}',
+                              extra: ListingNavigationPreview(
+                                listing: listing,
+                                heroTag: tag,
+                              ),
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                ],
                 const SliverToBoxAdapter(child: SizedBox(height: 32)),
               ],
             );
@@ -738,87 +786,73 @@ class _IntentCard extends StatelessWidget {
   }
 }
 
-class _FeedSectionRail extends StatelessWidget {
-  const _FeedSectionRail({
-    required this.section,
-    required this.textScale,
-    required this.title,
-    required this.seeAll,
-    required this.onSeeAll,
+/// The global radius chooser. Selecting a value re-queries the whole feed.
+class _RadiusSelector extends StatelessWidget {
+  const _RadiusSelector({
+    required this.label,
+    required this.selected,
+    required this.onSelect,
+    required this.kmLabel,
   });
 
-  final FeedSection section;
-  final double textScale;
-  final String title;
-  final String seeAll;
-  final VoidCallback onSeeAll;
+  final String label;
+  final int selected;
+  final ValueChanged<int> onSelect;
+  final String kmLabel;
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(top: 26),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    title,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: Theme.of(context).textTheme.titleLarge,
-                  ),
-                ),
-                TextButton.icon(
-                  onPressed: onSeeAll,
-                  iconAlignment: IconAlignment.end,
-                  icon: const Icon(Icons.arrow_forward_rounded, size: 15),
-                  label: Text(seeAll),
-                ),
-              ],
-            ),
+    final theme = Theme.of(context);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: theme.textTheme.labelLarge?.copyWith(
+            color: theme.colorScheme.onSurfaceVariant,
           ),
-          const SizedBox(height: 8),
-          LayoutBuilder(
-            builder: (context, constraints) {
-              // A home rail is editorial, not a compressed search grid. Keep
-              // enough of the next card visible to teach the horizontal
-              // gesture while giving the current listing room to breathe.
-              final cardWidth = (constraints.maxWidth * .72).clamp(232.0, 284.0);
-              final railHeight = cardWidth / 1.34 + 104 + ((textScale - 1).clamp(0, .4) * 160);
+        ),
+        const SizedBox(height: 8),
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          children: [
+            for (final km in kRadiusPresetsKm)
+              ChoiceChip(
+                label: Text('$km $kmLabel'),
+                selected: km == selected,
+                onSelected: (_) => onSelect(km),
+                visualDensity: VisualDensity.compact,
+              ),
+          ],
+        ),
+      ],
+    );
+  }
+}
 
-              return SizedBox(
-                height: railHeight,
-                child: ListView.separated(
-                  scrollDirection: Axis.horizontal,
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  itemCount: section.items.length,
-                  separatorBuilder: (_, __) => const SizedBox(width: 12),
-                  itemBuilder: (context, index) {
-                    final listing = section.items[index];
-                    final tag = 'home-${section.key}-${listing.id}';
-                    return ListingCard(
-                      listing: listing,
-                      width: cardWidth,
-                      heroTag: tag,
-                      onTap: () => context.push(
-                        '/ad/${listing.slug}',
-                        extra: ListingNavigationPreview(
-                          listing: listing,
-                          heroTag: tag,
-                        ),
-                      ),
-                    );
-                  },
-                ),
-              );
-            },
+/// Section title + one-line hint above the vertical feed.
+class _SectionHeader extends StatelessWidget {
+  const _SectionHeader({required this.title, required this.hint});
+
+  final String title;
+  final String hint;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(title, style: theme.textTheme.titleLarge),
+        const SizedBox(height: 2),
+        Text(
+          hint,
+          style: theme.textTheme.bodySmall?.copyWith(
+            color: theme.colorScheme.onSurfaceVariant,
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 }

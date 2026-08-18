@@ -21,6 +21,7 @@ import { AuditService } from '../audit/audit.service';
 import { CategoriesService } from '../categories/categories.service';
 import { PaginatedDto, paginate } from '../common/dto/pagination.dto';
 import { listingSlug } from '../common/utils/slug.util';
+import { Coordinates, distanceMetresOrNull } from '../common/utils/geo-distance';
 import { RADIUS_PRESETS_KM } from '../geo/dto/geo.dto';
 import { MediaService } from '../media/media.service';
 import { ModerationService } from '../moderation/moderation.service';
@@ -451,7 +452,11 @@ export class ListingsService {
    * Meilisearch has done the ranking. Visibility is re-checked here, so an index that is
    * momentarily ahead of the database cannot surface a listing that is no longer live.
    */
-  async findSummariesByIds(ids: string[], viewerId?: string): Promise<ListingSummaryDto[]> {
+  async findSummariesByIds(
+    ids: string[],
+    viewerId?: string,
+    origin?: Coordinates,
+  ): Promise<ListingSummaryDto[]> {
     if (ids.length === 0) return [];
 
     const listings = await this.prisma.listing.findMany({
@@ -465,7 +470,11 @@ export class ListingsService {
     });
 
     const savedIds = await this.savedIdsFor(viewerId, ids);
-    return listings.map((listing) => this.toSummaryDto(listing, savedIds));
+    // Preserve the caller's ranking: findMany does not honour the `in` order.
+    const order = new Map(ids.map((id, index) => [id, index]));
+    return listings
+      .sort((a, b) => (order.get(a.id) ?? 0) - (order.get(b.id) ?? 0))
+      .map((listing) => this.toSummaryDto(listing, savedIds, origin));
   }
 
   async listMine(
@@ -821,7 +830,11 @@ export class ListingsService {
     );
   }
 
-  async listRecentlyViewed(userId: string, limit = 10): Promise<ListingSummaryDto[]> {
+  async listRecentlyViewed(
+    userId: string,
+    limit = 10,
+    origin?: Coordinates,
+  ): Promise<ListingSummaryDto[]> {
     const views = await this.prisma.recentlyViewed.findMany({
       where: { userId, listing: { deletedAt: null, status: ListingStatus.PUBLISHED } },
       include: { listing: { include: LISTING_SUMMARY_INCLUDE } },
@@ -833,7 +846,7 @@ export class ListingsService {
       userId,
       views.map((view) => view.listingId),
     );
-    return views.map((view) => this.toSummaryDto(view.listing, savedIds));
+    return views.map((view) => this.toSummaryDto(view.listing, savedIds, origin));
   }
 
   // -------------------------------------------------------------------
@@ -1229,8 +1242,18 @@ export class ListingsService {
     }
   }
 
-  private toSummaryDto(listing: ListingWithSummary, savedIds: Set<string>): ListingSummaryDto {
+  private toSummaryDto(
+    listing: ListingWithSummary,
+    savedIds: Set<string>,
+    origin?: Coordinates,
+  ): ListingSummaryDto {
     const primary = listing.media[0];
+    // Distance is computed from the row's own coordinates against the viewer's origin, so
+    // every card can show "how far" even on city-scoped shelves that never ran a radius query.
+    const distanceMeters = distanceMetresOrNull(origin, {
+      latitude: listing.latitude != null ? Number(listing.latitude) : null,
+      longitude: listing.longitude != null ? Number(listing.longitude) : null,
+    });
     return {
       id: listing.id,
       slug: listing.slug,
@@ -1245,6 +1268,7 @@ export class ListingsService {
       isFeatured: listing.isFeatured,
       viewCount: listing.viewCount,
       publishedAt: listing.publishedAt,
+      ...(distanceMeters !== undefined ? { distanceMeters } : {}),
       ...(savedIds.size > 0 ? { isSaved: savedIds.has(listing.id) } : {}),
     };
   }

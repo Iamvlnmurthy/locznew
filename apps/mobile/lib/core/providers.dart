@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../features/auth/data/auth_repository.dart';
@@ -174,6 +175,70 @@ final selectedCityProvider = StateNotifierProvider<CityNotifier, SelectedCity?>(
 );
 
 // ---------------------------------------------------------------------------
+// Radius — the global "how far around me" context, shared by the feed and search.
+// ---------------------------------------------------------------------------
+
+/// Selectable radii in kilometres. Mirrors the API's RADIUS_PRESETS_KM.
+const kRadiusPresetsKm = <int>[1, 3, 5, 10, 25];
+
+class RadiusNotifier extends StateNotifier<int> {
+  RadiusNotifier() : super(5) {
+    _restore();
+  }
+
+  static const _key = 'locz.radiusKm';
+
+  Future<void> _restore() async {
+    final prefs = await SharedPreferences.getInstance();
+    final saved = prefs.getInt(_key);
+    if (mounted && saved != null && kRadiusPresetsKm.contains(saved)) {
+      state = saved;
+    }
+  }
+
+  Future<void> select(int radiusKm) async {
+    if (!kRadiusPresetsKm.contains(radiusKm)) return;
+    state = radiusKm;
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setInt(_key, radiusKm);
+  }
+}
+
+/// The current radius. Changing it refetches every provider that watches it (feed, search).
+final selectedRadiusProvider = StateNotifierProvider<RadiusNotifier, int>(
+  (ref) => RadiusNotifier(),
+);
+
+/// A current device fix, or null.
+///
+/// Never prompts: it returns a location only when permission is *already* granted, so the
+/// home feed can measure distance from where the user actually is without a cold permission
+/// dialog on launch (the brief asks for permission after a meaningful action, and choosing
+/// "use my location" in the picker is that action). Any denial, disabled location service,
+/// timeout, or missing platform plugin (as in unit tests) falls back to null → the selected
+/// city's centroid stands in.
+final deviceLocationProvider = FutureProvider.autoDispose<({double lat, double lng})?>((
+  ref,
+) async {
+  try {
+    final permission = await Geolocator.checkPermission();
+    final granted =
+        permission == LocationPermission.always || permission == LocationPermission.whileInUse;
+    if (!granted) return null;
+
+    final position = await Geolocator.getCurrentPosition(
+      locationSettings: const LocationSettings(
+        accuracy: LocationAccuracy.low,
+        timeLimit: Duration(seconds: 8),
+      ),
+    );
+    return (lat: position.latitude, lng: position.longitude);
+  } catch (_) {
+    return null;
+  }
+});
+
+// ---------------------------------------------------------------------------
 // Language
 // ---------------------------------------------------------------------------
 
@@ -274,14 +339,19 @@ final pushPermissionProvider = StateNotifierProvider<PushPermissionNotifier, boo
 /// automatically rather than needing an explicit invalidation at the call site.
 final feedProvider = FutureProvider.autoDispose<Feed>((ref) {
   final city = ref.watch(selectedCityProvider);
+  final radiusKm = ref.watch(selectedRadiusProvider);
   // Re-fetch when the user signs in: the feed gains personalised sections.
   ref.watch(authProvider.select((state) => state.user?.id));
+  // A real device fix (already-granted permission) measures distance from where the user
+  // actually is right now; otherwise the selected city's centroid stands in.
+  final device = ref.watch(deviceLocationProvider).valueOrNull;
 
   return ref.watch(listingRepositoryProvider).feed(
         cityId: (city?.id.isEmpty ?? true) ? null : city!.id,
-        latitude: city?.latitude,
-        longitude: city?.longitude,
+        latitude: device?.lat ?? city?.latitude,
+        longitude: device?.lng ?? city?.longitude,
         pincode: city?.pincode,
+        radiusKm: radiusKm,
       );
 });
 

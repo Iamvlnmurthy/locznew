@@ -1,5 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { ListingStatus, ListingType, Prisma } from '@prisma/client';
+import { Coordinates, withinRadius } from '../common/utils/geo-distance';
 import { ListingSummaryDto } from '../listings/dto/listing.dto';
 import { ListingsService } from '../listings/listings.service';
 import { GeoRepository } from '../prisma/geo.repository';
@@ -26,6 +27,18 @@ export class FeedService {
     const city = await this.resolveCity(query, viewerId);
     const limit = Math.min(query.limit, 20);
 
+    // The origin every card measures its distance from: the viewer's shared coordinates when
+    // present, otherwise the centre of the city being browsed. Either way every finding gets a
+    // distance — "how far" is never blank, which is the whole point of a hyperlocal feed.
+    const hasGps = query.latitude !== undefined && query.longitude !== undefined;
+    const origin: Coordinates = hasGps
+      ? { latitude: query.latitude!, longitude: query.longitude! }
+      : await this.cityCentroid(city.id);
+
+    // Radius is a hard filter only when the viewer shared real coordinates — a radius drawn
+    // around a city centroid the user never chose would hide inventory for no good reason.
+    const maxMeters = hasGps && query.radiusKm ? query.radiusKm * 1000 : undefined;
+
     // Sections are independent, so they run concurrently — the feed is as slow as its
     // slowest section, not the sum of all of them.
     const [
@@ -38,14 +51,14 @@ export class FeedService {
       recentlyViewed,
       recommended,
     ] = await Promise.all([
-      this.nearbySection(query, city.id, limit, viewerId),
-      this.typeSection(ListingType.PRODUCT, city.id, limit, viewerId),
-      this.offersSection(city.id, limit, viewerId),
-      this.typeSection(ListingType.JOB, city.id, limit, viewerId),
-      this.typeSection(ListingType.SERVICE, city.id, limit, viewerId),
-      this.typeSection(ListingType.BUYER_REQUIREMENT, city.id, limit, viewerId),
-      viewerId ? this.listings.listRecentlyViewed(viewerId, limit) : Promise.resolve([]),
-      viewerId ? this.recommendedSection(viewerId, city.id, limit) : Promise.resolve([]),
+      this.nearbySection(query, city.id, limit, viewerId, origin),
+      this.typeSection(ListingType.PRODUCT, city.id, limit, viewerId, origin),
+      this.offersSection(city.id, limit, viewerId, origin),
+      this.typeSection(ListingType.JOB, city.id, limit, viewerId, origin),
+      this.typeSection(ListingType.SERVICE, city.id, limit, viewerId, origin),
+      this.typeSection(ListingType.BUYER_REQUIREMENT, city.id, limit, viewerId, origin),
+      viewerId ? this.listings.listRecentlyViewed(viewerId, limit, origin) : Promise.resolve([]),
+      viewerId ? this.recommendedSection(viewerId, city.id, limit, origin) : Promise.resolve([]),
     ]);
 
     const sections: FeedSectionDto[] = [
@@ -84,11 +97,14 @@ export class FeedService {
       { key: 'recently_viewed', title: 'Recently viewed', items: recentlyViewed },
     ];
 
-    // An empty carousel looks broken; sections with nothing in them are dropped entirely.
+    // Apply the radius uniformly across every section, then drop sections left empty — an
+    // empty carousel looks broken.
     return {
       cityId: city.id,
       cityName: city.name,
-      sections: sections.filter((section) => section.items.length > 0),
+      sections: sections
+        .map((section) => ({ ...section, items: withinRadius(section.items, maxMeters) }))
+        .filter((section) => section.items.length > 0),
     };
   }
 
@@ -161,11 +177,21 @@ export class FeedService {
     return { id: fallback.id, name: fallback.name };
   }
 
+  /** Centre of a launched city — the origin used when the viewer shares no GPS fix. */
+  private async cityCentroid(cityId: string): Promise<Coordinates> {
+    const city = await this.prisma.city.findUnique({
+      where: { id: cityId },
+      select: { latitude: true, longitude: true },
+    });
+    return { latitude: Number(city?.latitude ?? 0), longitude: Number(city?.longitude ?? 0) };
+  }
+
   private async nearbySection(
     query: FeedQueryDto,
     cityId: string,
     limit: number,
     viewerId?: string,
+    origin?: Coordinates,
   ): Promise<ListingSummaryDto[]> {
     if (query.latitude === undefined || query.longitude === undefined) {
       // No coordinates shared — city-level browsing is a first-class path, not a
@@ -173,6 +199,7 @@ export class FeedService {
       return this.listings.findSummariesByIds(
         await this.recentListingIds({ cityId }, limit),
         viewerId,
+        origin,
       );
     }
 
@@ -191,6 +218,7 @@ export class FeedService {
         return this.listings.findSummariesByIds(
           rows.map((row) => row.id),
           viewerId,
+          origin,
         );
       }
     }
@@ -203,9 +231,10 @@ export class FeedService {
     cityId: string,
     limit: number,
     viewerId?: string,
+    origin?: Coordinates,
   ): Promise<ListingSummaryDto[]> {
     const ids = await this.recentListingIds({ cityId, type }, limit);
-    return this.listings.findSummariesByIds(ids, viewerId);
+    return this.listings.findSummariesByIds(ids, viewerId, origin);
   }
 
   /** Offers are time-bound: only those valid right now belong on the home screen. */
@@ -213,6 +242,7 @@ export class FeedService {
     cityId: string,
     limit: number,
     viewerId?: string,
+    origin?: Coordinates,
   ): Promise<ListingSummaryDto[]> {
     const now = new Date();
     const listings = await this.prisma.listing.findMany({
@@ -231,6 +261,7 @@ export class FeedService {
     return this.listings.findSummariesByIds(
       listings.map((listing) => listing.id),
       viewerId,
+      origin,
     );
   }
 
@@ -243,6 +274,7 @@ export class FeedService {
     viewerId: string,
     cityId: string,
     limit: number,
+    origin?: Coordinates,
   ): Promise<ListingSummaryDto[]> {
     const [saved, viewed] = await Promise.all([
       this.prisma.savedListing.findMany({
@@ -293,6 +325,7 @@ export class FeedService {
     return this.listings.findSummariesByIds(
       listings.map((listing) => listing.id),
       viewerId,
+      origin,
     );
   }
 

@@ -38,12 +38,17 @@ class ListingCard extends StatelessWidget {
     required this.onTap,
     this.width,
     this.heroTag,
+    this.typeLabel,
   });
 
   final ListingSummary listing;
   final VoidCallback onTap;
   final double? width;
   final String? heroTag;
+
+  /// Optional content-type label ("Deal", "Job", "Rental" …) shown on the image
+  /// so a mixed vertical feed stays legible. Null on single-type surfaces.
+  final String? typeLabel;
 
   @override
   Widget build(BuildContext context) {
@@ -150,6 +155,18 @@ class ListingCard extends StatelessWidget {
                             label: strings('listing.sold'),
                             background: theme.colorScheme.errorContainer,
                             foreground: theme.colorScheme.onErrorContainer,
+                          ),
+                        ),
+                      if (typeLabel != null)
+                        Positioned(
+                          bottom: 6,
+                          left: 6,
+                          child: _Pill(
+                            label: typeLabel!,
+                            background: isDark
+                                ? theme.colorScheme.surface.withValues(alpha: 0.82)
+                                : theme.colorScheme.surface.withValues(alpha: 0.92),
+                            foreground: theme.colorScheme.primary,
                           ),
                         ),
                     ],

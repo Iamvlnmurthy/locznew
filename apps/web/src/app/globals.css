@@ -51,7 +51,9 @@ img {
 
 .container {
   width: 100%;
-  max-width: 1180px;
+  /* Widened for 22–24" desktops: 1140px left ~380px of dead margin each side on a
+     1920px screen. 1440 uses the width while keeping text columns readable. */
+  max-width: 1440px;
   margin: 0 auto;
   padding: 0 var(--locz-space-4);
 }
@@ -146,6 +148,8 @@ img {
   cursor: pointer;
   color: var(--locz-text);
   max-width: 200px;
+  /* Never let the flex row squeeze the location control down to "50…". */
+  flex-shrink: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -706,7 +710,7 @@ textarea {
 }
 
 .container {
-  max-width: 1140px;
+  max-width: 1440px;
 }
 
 .header__row {
@@ -2385,6 +2389,59 @@ textarea {
   color: #51655d;
   font-size: clamp(1rem, 1.6vw, 1.18rem);
   line-height: 1.65;
+}
+
+.radius-selector {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--locz-space-2) var(--locz-space-3);
+  margin: var(--locz-space-4) 0 var(--locz-space-2);
+}
+
+.radius-selector__label {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--locz-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.radius-selector__options {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: var(--locz-space-2);
+}
+
+.radius-chip {
+  min-height: 32px;
+  padding: 0 var(--locz-space-3);
+  border: 1px solid var(--locz-border-strong);
+  border-radius: var(--locz-radius-full);
+  background: var(--locz-surface);
+  color: var(--locz-text);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition:
+    background 120ms ease,
+    color 120ms ease,
+    border-color 120ms ease;
+}
+
+.radius-chip:hover {
+  border-color: var(--locz-primary);
+}
+
+.radius-chip[data-active='true'] {
+  background: var(--locz-primary);
+  border-color: var(--locz-primary);
+  color: #fff;
+}
+
+.radius-chip:disabled {
+  opacity: 0.6;
+  cursor: default;
 }
 
 .hero-search {
@@ -14931,7 +14988,7 @@ body {
 }
 
 .container {
-  max-width: 1140px;
+  max-width: 1440px;
 }
 
 .header__row {

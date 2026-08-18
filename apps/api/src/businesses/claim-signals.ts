@@ -22,6 +22,8 @@
  * would turn "two signals" into "one signal and a copy of the public data".
  */
 
+import { distanceMetres } from '../common/utils/geo-distance';
+
 /** Metres. Tight, because a claimant who is genuinely at the shop is inside this. */
 export const LOCATION_MATCH_METRES = 50;
 
@@ -62,28 +64,11 @@ export interface ClaimEvidence {
 }
 
 /**
- * Metres between two points on the earth.
- *
- * Haversine rather than PostGIS: this runs on two points already in memory, and a round trip
- * to the database to compare a pair of coordinates would be slower and no more accurate at
- * this scale.
+ * Metres between two points on the earth. The implementation now lives in
+ * `common/utils/geo-distance` so the feed, listings and this module all share one source;
+ * the name is kept here for the claim-signal callers and tests.
  */
-export function distanceInMetres(
-  a: { latitude: number; longitude: number },
-  b: { latitude: number; longitude: number },
-): number {
-  const EARTH_RADIUS_M = 6_371_000;
-  const toRadians = (degrees: number): number => (degrees * Math.PI) / 180;
-
-  const dLat = toRadians(b.latitude - a.latitude);
-  const dLon = toRadians(b.longitude - a.longitude);
-  const lat1 = toRadians(a.latitude);
-  const lat2 = toRadians(b.latitude);
-
-  const h = Math.sin(dLat / 2) ** 2 + Math.sin(dLon / 2) ** 2 * Math.cos(lat1) * Math.cos(lat2);
-
-  return 2 * EARTH_RADIUS_M * Math.asin(Math.sqrt(h));
-}
+export const distanceInMetres = distanceMetres;
 
 /** Compares two Indian numbers by their last ten digits, so +91 and 0 prefixes agree. */
 function samePhone(a: string | null, b: string | null): boolean {

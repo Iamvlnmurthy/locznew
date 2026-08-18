@@ -118,11 +118,18 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Good finds, right around you'), findsOneWidget);
-    await tester.drag(find.byType(CustomScrollView), const Offset(0, -620));
+
+    // The home is one vertical "Around you now" feed now, not horizontal rails.
+    final scrollable = find.byType(Scrollable).first;
+    await tester.scrollUntilVisible(find.text('Around you now'), 300, scrollable: scrollable);
     await tester.pumpAndSettle();
-    expect(find.text('Latest items for sale'), findsOneWidget);
-    expect(find.text('See all'), findsOneWidget);
+    expect(find.text('Around you now'), findsOneWidget);
+
+    await tester.scrollUntilVisible(find.text('₹32,900'), 300, scrollable: scrollable);
+    await tester.pumpAndSettle();
     expect(find.text('₹32,900'), findsOneWidget);
+    // Each card in the merged feed is tagged with its content type.
+    expect(find.text('Marketplace'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 }

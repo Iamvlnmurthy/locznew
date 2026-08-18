@@ -20,7 +20,6 @@ const DEDUPLICATE = ['origin', 'x-forwarded-host', 'x-forwarded-proto'];
 
 export function middleware(request: NextRequest) {
   const headers = new Headers(request.headers);
-  let repaired = false;
 
   for (const name of DEDUPLICATE) {
     const value = headers.get(name);
@@ -32,10 +31,12 @@ export function middleware(request: NextRequest) {
     if (new Set(parts).size !== 1) continue;
 
     headers.set(name, parts[0]);
-    repaired = true;
   }
 
-  if (!repaired) return NextResponse.next();
+  // Expose the path to server components (the Header hides its own search on the home
+  // page, where the hero already owns search). Server components cannot read the route
+  // otherwise.
+  headers.set('x-pathname', request.nextUrl.pathname);
   return NextResponse.next({ request: { headers } });
 }
 

@@ -4,7 +4,14 @@ import { ListingCard } from '@/components/listing-card';
 import { Icon, categoryImageName } from '@/components/icons';
 import { getTranslator } from '@/i18n';
 import { apiSafe } from '@/lib/api';
-import { getCurrentUser, getLocale, getSelectedCity } from '@/lib/session';
+import {
+  RADIUS_OPTIONS_KM,
+  getCurrentUser,
+  getLocale,
+  getSelectedCity,
+  getSelectedRadius,
+} from '@/lib/session';
+import { RadiusSelector } from '@/components/radius-selector';
 
 interface FeedSection {
   key: string;
@@ -24,10 +31,11 @@ interface Feed {
 export const dynamic = 'force-dynamic';
 
 export default async function HomePage() {
-  const [locale, city, user] = await Promise.all([
+  const [locale, city, user, radiusKm] = await Promise.all([
     getLocale(),
     getSelectedCity(),
     getCurrentUser(),
+    getSelectedRadius(),
   ]);
   const t = getTranslator(locale);
 
@@ -38,6 +46,8 @@ export default async function HomePage() {
   if (city?.latitude && city?.longitude) {
     query.set('latitude', String(city.latitude));
     query.set('longitude', String(city.longitude));
+    // Radius only bites with coordinates; the API ignores it otherwise.
+    query.set('radiusKm', String(radiusKm));
   }
 
   const [feed, categories] = await Promise.all([
@@ -58,10 +68,17 @@ export default async function HomePage() {
         <div className="container home-hero__inner">
           <div className="home-hero__copy">
             <span className="eyebrow">
-              <i /> {firstName ? t('home.personalEyebrow', { name: firstName }) : t('home.eyebrow')}
+              {/* Generic, not name-injected: an all-caps first name like "Info" read as broken. */}
+              <i /> {t('home.eyebrow')}
             </span>
             <h1>{t('home.title')}</h1>
             <p>{firstName ? t('home.personalSubtitle', { city: feedCity }) : t('home.subtitle')}</p>
+            <RadiusSelector
+              options={[...RADIUS_OPTIONS_KM]}
+              selected={radiusKm}
+              label={t('home.within')}
+              kmLabel={t('common.km')}
+            />
 
             <form className="hero-search" action="/search" method="get" role="search">
               <Icon name="search" width="21" height="21" />
@@ -120,87 +137,6 @@ export default async function HomePage() {
       </section>
 
       <div className="container">
-        <section className="home-intents" aria-labelledby="home-intents-title">
-          <div className="home-intents__intro">
-            <span className="section-kicker">{t('home.intentsKicker')}</span>
-            <h2 id="home-intents-title">{t('home.intentsTitle')}</h2>
-          </div>
-          <div className="home-intents__grid">
-            {[
-              {
-                href: '/search?type=PRODUCT',
-                icon: 'tag',
-                title: t('home.intentFindTitle'),
-                text: t('home.intentFindBody'),
-              },
-              {
-                href: '/post',
-                icon: 'plus',
-                title: t('home.intentSellTitle'),
-                text: t('home.intentSellBody'),
-              },
-              {
-                href: '/search?type=JOB',
-                icon: 'briefcase',
-                title: t('home.intentWorkTitle'),
-                text: t('home.intentWorkBody'),
-              },
-              {
-                href: '/business',
-                icon: 'tools',
-                title: t('home.intentHelpTitle'),
-                text: t('home.intentHelpBody'),
-              },
-            ].map((intent) => (
-              <Link key={intent.title} href={intent.href} className="home-intent">
-                <span>
-                  <Icon name={intent.icon} />
-                </span>
-                <div>
-                  <strong>{intent.title}</strong>
-                  <p>{intent.text}</p>
-                </div>
-                <Icon name="arrow" />
-              </Link>
-            ))}
-          </div>
-        </section>
-
-        {topCategories.length > 0 ? (
-          <section className="category-section">
-            <div className="section__head">
-              <div>
-                <span className="section-kicker">{t('home.explore')}</span>
-                <h2>{t('feed.browseCategories')}</h2>
-              </div>
-              <Link href="/search" className="section-link">
-                {t('feed.seeAll')} <Icon name="arrow" />
-              </Link>
-            </div>
-            <nav className="category-strip" aria-label={t('feed.browseCategories')}>
-              {topCategories.map((category, index) => (
-                <Link
-                  key={category.id}
-                  href={`/c/${category.slug}`}
-                  className={`category-chip category-chip--${(index % 6) + 1}`}
-                >
-                  <span className="category-chip__icon" aria-hidden="true">
-                    <img
-                      src={`/icons/categories/${categoryImageName(category.iconKey)}.webp`}
-                      alt=""
-                      width="64"
-                      height="64"
-                      loading="lazy"
-                    />
-                  </span>
-                  <span>{localisedCategoryName(category, locale)}</span>
-                  <i aria-hidden="true">→</i>
-                </Link>
-              ))}
-            </nav>
-          </section>
-        ) : null}
-
         {!feed || feed.sections.length === 0 ? (
           <div className="empty-state">
             <img
@@ -293,6 +229,89 @@ export default async function HomePage() {
             })}
           </>
         )}
+
+        {/* Discovery first: the marketing intents and the full category grid sit BELOW the
+            live "around you" feed, so a returning user sees real nearby inventory first. */}
+        {topCategories.length > 0 ? (
+          <section className="category-section">
+            <div className="section__head">
+              <div>
+                <span className="section-kicker">{t('home.explore')}</span>
+                <h2>{t('feed.browseCategories')}</h2>
+              </div>
+              <Link href="/search" className="section-link">
+                {t('feed.seeAll')} <Icon name="arrow" />
+              </Link>
+            </div>
+            <nav className="category-strip" aria-label={t('feed.browseCategories')}>
+              {topCategories.map((category, index) => (
+                <Link
+                  key={category.id}
+                  href={`/c/${category.slug}`}
+                  className={`category-chip category-chip--${(index % 6) + 1}`}
+                >
+                  <span className="category-chip__icon" aria-hidden="true">
+                    <img
+                      src={`/icons/categories/${categoryImageName(category.iconKey)}.webp`}
+                      alt=""
+                      width="64"
+                      height="64"
+                      loading="lazy"
+                    />
+                  </span>
+                  <span>{localisedCategoryName(category, locale)}</span>
+                  <i aria-hidden="true">→</i>
+                </Link>
+              ))}
+            </nav>
+          </section>
+        ) : null}
+
+        <section className="home-intents" aria-labelledby="home-intents-title">
+          <div className="home-intents__intro">
+            <span className="section-kicker">{t('home.intentsKicker')}</span>
+            <h2 id="home-intents-title">{t('home.intentsTitle')}</h2>
+          </div>
+          <div className="home-intents__grid">
+            {[
+              {
+                href: '/search?type=PRODUCT',
+                icon: 'tag',
+                title: t('home.intentFindTitle'),
+                text: t('home.intentFindBody'),
+              },
+              {
+                href: '/post',
+                icon: 'plus',
+                title: t('home.intentSellTitle'),
+                text: t('home.intentSellBody'),
+              },
+              {
+                href: '/search?type=JOB',
+                icon: 'briefcase',
+                title: t('home.intentWorkTitle'),
+                text: t('home.intentWorkBody'),
+              },
+              {
+                href: '/business',
+                icon: 'tools',
+                title: t('home.intentHelpTitle'),
+                text: t('home.intentHelpBody'),
+              },
+            ].map((intent) => (
+              <Link key={intent.title} href={intent.href} className="home-intent">
+                <span>
+                  <Icon name={intent.icon} />
+                </span>
+                <div>
+                  <strong>{intent.title}</strong>
+                  <p>{intent.text}</p>
+                </div>
+                <Icon name="arrow" />
+              </Link>
+            ))}
+          </div>
+        </section>
       </div>
     </>
   );

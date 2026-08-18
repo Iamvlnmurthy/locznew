@@ -5,8 +5,9 @@
   },
   "home": {
     "eyebrow": "Your neighbourhood, closer",
-    "title": "Post your ad",
-    "subtitle": "Buy and sell near you. Join in a minute.",
+    "within": "Within",
+    "title": "Everything useful around you.",
+    "subtitle": "Deals, jobs, rentals, services and more — near you, updated as it happens.",
     "trustLabel": "Why people use LocZ",
     "trustSafe": "Safer local community",
     "trustFree": "Always local",

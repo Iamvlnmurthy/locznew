@@ -322,6 +322,53 @@ rather than transliterated.
 | Anything needing Docker          | ⬜ not runnable here                 |
 | Anything needing Flutter         | ⬜ not runnable here                 |
 
+## M16 — Compulsory distance + vertical home feed (2026-08-18)
+
+Hyperlocal-evolution step 1: make "how far" a guarantee, and turn the home feed vertical.
+
+| Item                                                                                                                                       | Status                                                   |
+| ------------------------------------------------------------------------------------------------------------------------------------------ | -------------------------------------------------------- |
+| `common/utils/geo-distance.ts` — one shared haversine (`distanceMetres` + null-safe `distanceMetresOrNull`); `claim-signals` now reuses it | ✅ typecheck + 5 new unit tests                          |
+| Feed carries `distanceMeters` on **every** item — origin = viewer GPS, else the browsed city's centroid, threaded through every section    | ✅ typecheck clean, 551/551 API tests pass               |
+| Fixed latent ordering bug: `findSummariesByIds` now preserves the caller's ranking (`in` did not)                                          | ✅                                                       |
+| Mobile home: horizontal rails → single proximity-sorted **"Around you now"** vertical feed; every card shows a type badge + exact distance | ✅ `flutter analyze` clean, **61/61 flutter tests pass** |
+| Mobile radius selector (1/3/5/10/25 km) wired as a persisted global context that refetches the feed                                        | ✅ verified with the above                               |
+
+Verified on this workstation (Flutter 3.44.2 / Dart 3.12.2): `flutter analyze` reports **no
+issues**; `flutter test` is **61/61**. The home widget test was updated to assert the vertical
+feed ("Around you now", per-card type badge) instead of the removed rails.
+
+Still to do (later step-1 work): send real GPS coordinates from the mobile home (today it keys
+off the selected city, so distance is measured from the city centroid until device GPS is
+plumbed through).
+
+## M18 — Real device GPS on mobile + feed-first web home (2026-08-18)
+
+| Item                                                                                                                                                                       | Status                                  |
+| -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------- |
+| Mobile `deviceLocationProvider` — uses an already-granted fix (never prompts on launch) as the feed origin; falls back to the city centroid on denial/timeout              | ✅ `flutter analyze` clean, 61/61 tests |
+| Web home reordered: the live "around you" feed now renders directly under the hero, with categories + marketing intents moved below (real DOM reorder, focus order intact) | ✅ typecheck + `next build` clean       |
+
+Both verified on this workstation. Web home still not screenshotted — it needs the API+DB
+running, which is not up here; verification is typecheck + build + DOM-order confirmation.
+
+## M17 — Web home: radius context, wider layout, hero fixes (2026-08-18)
+
+Web half of the hyperlocal step, plus flaws found reviewing the live home page.
+
+| Item                                                                                                    | Status                            |
+| ------------------------------------------------------------------------------------------------------- | --------------------------------- |
+| Container widened 1140→1440px for 22–24" desktops (was ~380px dead margin each side on 1920px)          | ✅ build clean                    |
+| Hero H1 "Post your ad" → "Everything useful around you." (home leads with discovery, not posting)       | ✅                                |
+| Eyebrow no longer injects the first name (rendered "MADE LOCAL FOR INFO" for the signed-in user)        | ✅                                |
+| Location chip prefers city name over a truncated pincode; `flex-shrink:0` stops it collapsing to "50…"  | ✅                                |
+| **Radius selector** (1/3/5/10/25 km) — cookie-backed, `router.refresh()` refetches the feed server-side | ✅ typecheck + i18n + build clean |
+| Distance now renders on web cards (API populates `distanceMeters`; the card already displayed it)       | ✅ surfaces the M16 backend work  |
+| Redundant header search hidden on the home route (hero owns search); pathname exposed via middleware    | ✅                                |
+
+Verified: `@locz/web` typecheck clean, i18n complete across en/te/hi, `next build` compiles 22/22
+routes. Not verified: a real render — no browser/DB on this workstation.
+
 ## M15 — Acceptance gate PASSED (2026-07-26)
 
 The rest of the stack now runs natively alongside Postgres, so the end-to-end flow is

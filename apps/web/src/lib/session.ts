@@ -1,7 +1,14 @@
 import 'server-only';
 import { cookies, headers } from 'next/headers';
 import type { AuthSession } from '@locz/shared-types';
-import { ACCESS_COOKIE, CITY_COOKIE, LOCALE_COOKIE, REFRESH_COOKIE, USER_COOKIE } from './api';
+import {
+  ACCESS_COOKIE,
+  CITY_COOKIE,
+  LOCALE_COOKIE,
+  RADIUS_COOKIE,
+  REFRESH_COOKIE,
+  USER_COOKIE,
+} from './api';
 import { DEFAULT_LOCALE, isLocale, negotiateLocale, type Locale } from '@/i18n';
 
 const secure = process.env.NODE_ENV === 'production';
@@ -83,6 +90,17 @@ export async function getSelectedCity(): Promise<SelectedCity | null> {
   } catch {
     return null;
   }
+}
+
+/** Selectable radii shown in the UI (km). Excludes 50 — the hyperlocal ceiling is 25. */
+export const RADIUS_OPTIONS_KM = [1, 3, 5, 10, 25] as const;
+export const DEFAULT_RADIUS_KM = 5;
+
+/** The "how far around me" context, shared by the feed. Defaults to 5 km. */
+export async function getSelectedRadius(): Promise<number> {
+  const raw = (await cookies()).get(RADIUS_COOKIE)?.value;
+  const value = raw ? Number(raw) : NaN;
+  return (RADIUS_OPTIONS_KM as readonly number[]).includes(value) ? value : DEFAULT_RADIUS_KM;
 }
 
 export async function setSelectedCity(city: SelectedCity): Promise<void> {

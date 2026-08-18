@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { headers } from 'next/headers';
 import { getMessageGroup, getTranslator, type Locale } from '@/i18n';
 import { apiSafe } from '@/lib/api';
 import { getCurrentUser, getSelectedCity } from '@/lib/session';
@@ -20,6 +21,8 @@ export async function Header({ locale }: { locale: Locale }) {
   const unreadNotifications = user
     ? await apiSafe<{ count: number }>('/notifications/unread-count', { auth: true })
     : null;
+  // The home hero owns a large search field, so the header one is redundant there.
+  const isHome = ((await headers()).get('x-pathname') ?? '') === '/';
 
   return (
     <header className="header">
@@ -37,30 +40,33 @@ export async function Header({ locale }: { locale: Locale }) {
           </picture>
         </Link>
 
-        {/* The pincode is what the visitor typed, so it is what the chip shows back. */}
+        {/* Prefer the readable city name; fall back to the pincode only when that is all
+            we have. A bare pincode was being squeezed to an unreadable "50…" in the chip. */}
         <LocationChip
-          cityName={city?.pincode ?? city?.name ?? null}
+          cityName={city?.name || city?.pincode || null}
           changeLabel={t('location.change')}
         />
 
         <ThemeToggle label={t('nav.toggleTheme')} className="theme-toggle--mobile" />
 
-        <form className="searchbar" action="/search" method="get" role="search">
-          <label htmlFor="site-search" className="sr-only">
-            {t('search.submit')}
-          </label>
-          <Icon name="search" className="searchbar__icon" width="19" height="19" />
-          <RecentSearchInput
-            id="site-search"
-            placeholder={t('search.placeholder')}
-            recentLabel={searchLabels.recentSearches}
-            clearLabel={searchLabels.clearRecent}
-          />
-          <button type="submit">
-            <span>{t('search.submit')}</span>
-            <Icon name="arrow" width="17" height="17" />
-          </button>
-        </form>
+        {!isHome && (
+          <form className="searchbar" action="/search" method="get" role="search">
+            <label htmlFor="site-search" className="sr-only">
+              {t('search.submit')}
+            </label>
+            <Icon name="search" className="searchbar__icon" width="19" height="19" />
+            <RecentSearchInput
+              id="site-search"
+              placeholder={t('search.placeholder')}
+              recentLabel={searchLabels.recentSearches}
+              clearLabel={searchLabels.clearRecent}
+            />
+            <button type="submit">
+              <span>{t('search.submit')}</span>
+              <Icon name="arrow" width="17" height="17" />
+            </button>
+          </form>
+        )}
 
         <div className="header__actions">
           <ThemeToggle label={t('nav.toggleTheme')} />

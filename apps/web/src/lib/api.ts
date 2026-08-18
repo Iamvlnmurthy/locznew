@@ -9,6 +9,7 @@ export const REFRESH_COOKIE = 'locz_refresh';
 export const USER_COOKIE = 'locz_user';
 export const CITY_COOKIE = 'locz_city';
 export const LOCALE_COOKIE = 'locz_locale';
+export const RADIUS_COOKIE = 'locz_radius';
 
 export class ApiError extends Error {
   constructor(

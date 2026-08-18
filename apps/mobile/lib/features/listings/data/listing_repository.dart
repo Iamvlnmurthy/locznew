@@ -20,6 +20,7 @@ class ListingRepository {
     double? latitude,
     double? longitude,
     String? pincode,
+    int? radiusKm,
   }) async {
     final json = await _api.get<Map<String, dynamic>>(
       '/feed',
@@ -29,6 +30,8 @@ class ListingRepository {
         if (pincode != null) 'pincode': pincode,
         if (latitude != null) 'latitude': latitude,
         if (longitude != null) 'longitude': longitude,
+        // Only meaningful with coordinates; the API ignores it otherwise.
+        if (radiusKm != null && latitude != null && longitude != null) 'radiusKm': radiusKm,
       },
     );
     return Feed.fromJson(_portableMediaUrls(json));

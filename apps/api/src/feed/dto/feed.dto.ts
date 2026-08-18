@@ -1,6 +1,7 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
 import { IsInt, IsLatitude, IsLongitude, IsOptional, IsUUID, Matches } from 'class-validator';
+import { RADIUS_PRESETS_KM } from '../../geo/dto/geo.dto';
 import { ListingSummaryDto } from '../../listings/dto/listing.dto';
 
 export class FeedQueryDto {
@@ -22,6 +23,16 @@ export class FeedQueryDto {
 
   @ApiPropertyOptional() @IsOptional() @Type(() => Number) @IsLatitude() latitude?: number;
   @ApiPropertyOptional() @IsOptional() @Type(() => Number) @IsLongitude() longitude?: number;
+
+  @ApiPropertyOptional({
+    enum: RADIUS_PRESETS_KM,
+    description:
+      'Only applied with latitude+longitude: restricts every section to items within this many km of the viewer. Without coordinates it is ignored — a radius around an unknown point is meaningless.',
+  })
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  radiusKm?: number;
 
   @ApiPropertyOptional({ default: 10, description: 'Items per section' })
   @IsOptional()
