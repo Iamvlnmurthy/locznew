@@ -7,6 +7,7 @@ import 'package:locz/core/providers.dart';
 import 'package:locz/core/theme/app_theme.dart';
 import 'package:locz/features/feed/presentation/home_screen.dart';
 import 'package:locz/features/listings/domain/models.dart';
+import 'package:locz/features/listings/presentation/widgets/listing_card.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
@@ -128,8 +129,12 @@ void main() {
     await tester.scrollUntilVisible(find.text('₹32,900'), 300, scrollable: scrollable);
     await tester.pumpAndSettle();
     expect(find.text('₹32,900'), findsOneWidget);
-    // Each card in the merged feed is tagged with its content type.
-    expect(find.text('Marketplace'), findsOneWidget);
+    // Each card in the merged feed is tagged with its content type (scoped to the card, since
+    // "Marketplace" now also appears as a Quick Access shortcut).
+    expect(
+      find.descendant(of: find.byType(ListingCard), matching: find.text('Marketplace')),
+      findsOneWidget,
+    );
     expect(tester.takeException(), isNull);
   });
 }

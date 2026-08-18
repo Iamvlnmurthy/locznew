@@ -4,7 +4,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../features/account/presentation/account_screen.dart';
+import '../../features/alerts/presentation/alerts_screen.dart';
 import '../../features/auth/presentation/register_screen.dart';
+import '../../features/explore/presentation/explore_screen.dart';
 import '../../features/auth/presentation/sign_in_screen.dart';
 import '../../features/chat/presentation/chat_screens.dart';
 import '../../features/feed/presentation/home_screen.dart';
@@ -53,6 +55,9 @@ final routerProvider = Provider<GoRouter>((ref) {
       // position and in-flight requests survive navigation.
       StatefulShellRoute.indexedStack(
         builder: (context, state, navigationShell) => _TabScaffold(shell: navigationShell),
+        // Home · Explore · [Post] · Alerts · Profile (prompt §5). Post is a full-screen
+        // push from the centre button; Search and Chats are pushed routes reached from the
+        // Home app bar, not their own tabs.
         branches: [
           StatefulShellBranch(
             routes: [
@@ -61,22 +66,12 @@ final routerProvider = Provider<GoRouter>((ref) {
           ),
           StatefulShellBranch(
             routes: [
-              GoRoute(
-                path: '/search',
-                builder: (_, state) => SearchScreen(
-                  key: ValueKey('search-${state.uri.query}'),
-                  initialQuery: state.uri.queryParameters['q'],
-                  initialType: state.uri.queryParameters['type'],
-                  initialCategoryId: state.uri.queryParameters['category'],
-                  initialCategoryLabel: state.uri.queryParameters['label'],
-                  initialAttributes: state.uri.queryParametersAll['attr'] ?? const [],
-                ),
-              ),
+              GoRoute(path: '/explore', builder: (_, __) => const ExploreScreen()),
             ],
           ),
           StatefulShellBranch(
             routes: [
-              GoRoute(path: '/chats', builder: (_, __) => const ChatsScreen()),
+              GoRoute(path: '/alerts', builder: (_, __) => const AlertsScreen()),
             ],
           ),
           StatefulShellBranch(
@@ -88,6 +83,27 @@ final routerProvider = Provider<GoRouter>((ref) {
             ],
           ),
         ],
+      ),
+
+      // Search and Chats moved out of the bottom bar — reached from the Home app bar.
+      GoRoute(
+        path: '/search',
+        pageBuilder: (context, state) => _motionPage(
+          context,
+          state,
+          SearchScreen(
+            key: ValueKey('search-${state.uri.query}'),
+            initialQuery: state.uri.queryParameters['q'],
+            initialType: state.uri.queryParameters['type'],
+            initialCategoryId: state.uri.queryParameters['category'],
+            initialCategoryLabel: state.uri.queryParameters['label'],
+            initialAttributes: state.uri.queryParametersAll['attr'] ?? const [],
+          ),
+        ),
+      ),
+      GoRoute(
+        path: '/chats',
+        pageBuilder: (context, state) => _motionPage(context, state, const ChatsScreen()),
       ),
 
       // Full-screen routes push over the shell — posting and sign-in deserve the whole
@@ -342,9 +358,9 @@ class _LoczBottomBar extends StatelessWidget {
                 onTap: () => onTab(0),
               ),
               _BottomDestination(
-                icon: Icons.search_rounded,
-                selectedIcon: Icons.manage_search_rounded,
-                label: strings('nav.search'),
+                icon: Icons.explore_outlined,
+                selectedIcon: Icons.explore_rounded,
+                label: strings('nav.explore'),
                 selected: currentIndex == 1,
                 onTap: () => onTab(1),
               ),
@@ -388,16 +404,16 @@ class _LoczBottomBar extends StatelessWidget {
                 ),
               ),
               _BottomDestination(
-                icon: Icons.chat_bubble_outline_rounded,
-                selectedIcon: Icons.chat_bubble_rounded,
-                label: strings('nav.chats'),
+                icon: Icons.notifications_none_rounded,
+                selectedIcon: Icons.notifications_rounded,
+                label: strings('nav.alerts'),
                 selected: currentIndex == 2,
                 onTap: () => onTab(2),
               ),
               _BottomDestination(
                 icon: Icons.person_outline_rounded,
                 selectedIcon: Icons.person_rounded,
-                label: strings('nav.account'),
+                label: strings('nav.profile'),
                 selected: currentIndex == 3,
                 onTap: () => onTab(3),
               ),

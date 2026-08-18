@@ -28,8 +28,8 @@ class HomeScreen extends ConsumerWidget {
         cityLabel: city?.pincode ?? city?.name ?? strings('location.change'),
         strings: strings,
         onLocation: () => context.push('/location'),
-        onSearch: () => context.go('/search'),
-        onNotifications: () => context.push('/notifications'),
+        onSearch: () => context.push('/search'),
+        onChats: () => context.push('/chats'),
         onTheme: () => ref.read(themeModeProvider.notifier).select(
               Theme.of(context).brightness == Brightness.dark ? ThemeMode.light : ThemeMode.dark,
             ),
@@ -107,11 +107,16 @@ class HomeScreen extends ConsumerWidget {
                         delay: const Duration(milliseconds: 70),
                         child: _IntentDeck(
                           strings: strings,
-                          onBuy: () => context.go('/search?type=PRODUCT'),
+                          onBuy: () => context.push('/search?type=PRODUCT'),
                           onSell: () => context.push('/post'),
-                          onJobs: () => context.go('/search?type=JOB'),
-                          onServices: () => context.go('/search?type=SERVICE'),
+                          onJobs: () => context.push('/search?type=JOB'),
+                          onServices: () => context.push('/search?type=SERVICE'),
                         ),
+                      ),
+                      const SizedBox(height: 18),
+                      LoczEntrance(
+                        delay: const Duration(milliseconds: 110),
+                        child: _QuickAccess(strings: strings),
                       ),
                     ],
                   ),
@@ -179,7 +184,7 @@ class _HomeAppBar extends StatelessWidget implements PreferredSizeWidget {
     required this.strings,
     required this.onLocation,
     required this.onSearch,
-    required this.onNotifications,
+    required this.onChats,
     required this.onTheme,
   });
 
@@ -187,7 +192,7 @@ class _HomeAppBar extends StatelessWidget implements PreferredSizeWidget {
   final Strings strings;
   final VoidCallback onLocation;
   final VoidCallback onSearch;
-  final VoidCallback onNotifications;
+  final VoidCallback onChats;
   final VoidCallback onTheme;
 
   @override
@@ -278,9 +283,9 @@ class _HomeAppBar extends StatelessWidget implements PreferredSizeWidget {
         IconButton(
           visualDensity: VisualDensity.compact,
           constraints: const BoxConstraints.tightFor(width: 40, height: 40),
-          icon: const Icon(Icons.notifications_none_rounded, size: 19),
-          onPressed: onNotifications,
-          tooltip: strings('account.notifications'),
+          icon: const Icon(Icons.chat_bubble_outline_rounded, size: 19),
+          onPressed: onChats,
+          tooltip: strings('nav.chats'),
         ),
         const SizedBox(width: 6),
       ],
@@ -829,6 +834,88 @@ class _RadiusSelector extends StatelessWidget {
           ],
         ),
       ],
+    );
+  }
+}
+
+/// Quick access — 6–8 high-value shortcuts; "More" opens Explore (prompt §10).
+class _QuickAccess extends StatelessWidget {
+  const _QuickAccess({required this.strings});
+
+  final Strings strings;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final items = <(IconData, String, String)>[
+      (Icons.local_offer_outlined, strings('type.OFFER'), '/search?type=OFFER'),
+      (Icons.work_outline, strings('type.JOB'), '/search?type=JOB'),
+      (Icons.home_outlined, strings('type.RENTAL'), '/search?type=RENTAL'),
+      (Icons.build_outlined, strings('type.SERVICE'), '/search?type=SERVICE'),
+      (Icons.restaurant_outlined, strings('explore.food'), '/search?q=food'),
+      (Icons.event_outlined, strings('explore.events'), '/search?type=EVENT'),
+      (Icons.storefront_outlined, strings('type.PRODUCT'), '/search?type=PRODUCT'),
+      (Icons.grid_view_rounded, strings('explore.more'), '/explore'),
+    ];
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          strings('feed.quickAccess'),
+          style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w700),
+        ),
+        const SizedBox(height: 12),
+        GridView.count(
+          crossAxisCount: 4,
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          mainAxisSpacing: 12,
+          crossAxisSpacing: 10,
+          childAspectRatio: 0.86,
+          children: [
+            for (final (icon, label, route) in items)
+              _QuickTile(icon: icon, label: label, onTap: () => context.push(route)),
+          ],
+        ),
+      ],
+    );
+  }
+}
+
+class _QuickTile extends StatelessWidget {
+  const _QuickTile({required this.icon, required this.label, required this.onTap});
+
+  final IconData icon;
+  final String label;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(14),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Container(
+            width: 46,
+            height: 46,
+            decoration: BoxDecoration(
+              color: theme.colorScheme.primaryContainer,
+              borderRadius: BorderRadius.circular(14),
+            ),
+            child: Icon(icon, size: 22, color: theme.colorScheme.onPrimaryContainer),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            label,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: theme.textTheme.labelSmall,
+          ),
+        ],
+      ),
     );
   }
 }
