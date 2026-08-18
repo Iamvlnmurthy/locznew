@@ -63,6 +63,31 @@ export default async function HomePage() {
     : 0;
   const firstName = user?.displayName.split(' ')[0];
 
+  // One merged, proximity-sorted "Around You Now" column instead of horizontal rails — the
+  // same vertical feed the mobile app uses, so results scroll like a normal feed, not sideways.
+  const feedItems: ListingSummary[] = (() => {
+    if (!feed) return [];
+    const seen = new Set<string>();
+    const items: ListingSummary[] = [];
+    for (const section of feed.sections) {
+      for (const item of section.items) {
+        if (!seen.has(item.id)) {
+          seen.add(item.id);
+          items.push(item);
+        }
+      }
+    }
+    items.sort((a, b) => {
+      const da = a.distanceMeters;
+      const db = b.distanceMeters;
+      if (da == null && db == null) return 0;
+      if (da == null) return 1;
+      if (db == null) return -1;
+      return da - db;
+    });
+    return items;
+  })();
+
   return (
     <>
       <section className="home-hero">
@@ -182,56 +207,25 @@ export default async function HomePage() {
               </div>
             </section>
 
-            {feed.sections.map((section, index) => {
-              const meta = feedSectionMeta(section.key, feed.cityName, t);
-              return (
-                <div key={section.key}>
-                  <section
-                    className={`section home-feed-section home-feed-section--${section.key}`}
-                  >
-                    <div className="section__head">
-                      <div className="home-feed-section__title">
-                        <span className="home-feed-section__icon">
-                          <Icon name={meta.icon} />
-                        </span>
-                        <div>
-                          <span className="section-kicker">{meta.kicker}</span>
-                          <h2>{t(`feed.sections.${section.key}`)}</h2>
-                          <p>{meta.description}</p>
-                        </div>
-                      </div>
-                      {section.seeAllHref ? (
-                        <Link href={section.seeAllHref} className="section-link">
-                          {t('feed.seeAll')} <Icon name="arrow" />
-                        </Link>
-                      ) : null}
-                    </div>
+            <div className="card-grid">
+              {feedItems.map((listing) => (
+                <ListingCard key={listing.id} listing={listing} t={t} />
+              ))}
+            </div>
 
-                    <div className="card-rail">
-                      {section.items.map((listing) => (
-                        <ListingCard key={listing.id} listing={listing} t={t} />
-                      ))}
-                    </div>
-                  </section>
-
-                  {index === 1 ? (
-                    <aside className="home-post-invitation">
-                      <span className="home-post-invitation__icon">
-                        <Icon name="plus" />
-                      </span>
-                      <div>
-                        <span className="section-kicker">{t('home.postKicker')}</span>
-                        <h2>{t('home.postTitle')}</h2>
-                        <p>{t('home.postBody')}</p>
-                      </div>
-                      <Link href="/post" className="btn btn--primary">
-                        {t('home.postFree')} <Icon name="arrow" />
-                      </Link>
-                    </aside>
-                  ) : null}
-                </div>
-              );
-            })}
+            <aside className="home-post-invitation">
+              <span className="home-post-invitation__icon">
+                <Icon name="plus" />
+              </span>
+              <div>
+                <span className="section-kicker">{t('home.postKicker')}</span>
+                <h2>{t('home.postTitle')}</h2>
+                <p>{t('home.postBody')}</p>
+              </div>
+              <Link href="/post" className="btn btn--primary">
+                {t('home.postFree')} <Icon name="arrow" />
+              </Link>
+            </aside>
           </>
         )}
 
@@ -319,62 +313,6 @@ export default async function HomePage() {
         </section>
       </div>
     </>
-  );
-}
-
-function feedSectionMeta(
-  key: string,
-  cityName: string,
-  t: ReturnType<typeof getTranslator>,
-): { kicker: string; description: string; icon: string } {
-  const meta: Record<string, { kicker: string; description: string; icon: string }> = {
-    nearby: {
-      kicker: t('home.sectionNearbyKicker'),
-      description: t('home.sectionNearbyBody', { city: cityName }),
-      icon: 'location',
-    },
-    recommended: {
-      kicker: t('home.sectionRecommendedKicker'),
-      description: t('home.sectionRecommendedBody'),
-      icon: 'sparkles',
-    },
-    latest_products: {
-      kicker: t('home.sectionProductsKicker'),
-      description: t('home.sectionProductsBody'),
-      icon: 'tag',
-    },
-    offers: {
-      kicker: t('home.sectionOffersKicker'),
-      description: t('home.sectionOffersBody'),
-      icon: 'store',
-    },
-    jobs: {
-      kicker: t('home.sectionJobsKicker'),
-      description: t('home.sectionJobsBody'),
-      icon: 'briefcase',
-    },
-    services: {
-      kicker: t('home.sectionServicesKicker'),
-      description: t('home.sectionServicesBody'),
-      icon: 'tools',
-    },
-    requirements: {
-      kicker: t('home.sectionRequirementsKicker'),
-      description: t('home.sectionRequirementsBody'),
-      icon: 'message',
-    },
-    recently_viewed: {
-      kicker: t('home.sectionRecentKicker'),
-      description: t('home.sectionRecentBody'),
-      icon: 'clock',
-    },
-  };
-  return (
-    meta[key] ?? {
-      kicker: t('home.sectionFallbackKicker'),
-      description: t('home.sectionFallbackBody', { city: cityName }),
-      icon: 'sparkles',
-    }
   );
 }
 
