@@ -262,13 +262,19 @@ export async function updateListingAction(
   const parsed = parseListingForm(formData);
   if ('fieldErrors' in parsed) return { fieldErrors: parsed.fieldErrors };
 
+  // `type` is not editable — a product cannot become a job without a different detail payload
+  // — and sending it made the request look as though it might be. Category and city *are*
+  // editable and now genuinely take effect; they used to be accepted and silently dropped, so
+  // a seller correcting a miscategorised ad was told it had worked when nothing had changed.
+  const { type: _type, ...editable } = parsed.payload as Record<string, unknown>;
+
   try {
     let listing = await api<{ id: string; slug: string; status: string }>(
       `/listings/${encodeURIComponent(listingId)}`,
       {
         method: 'PATCH',
         auth: true,
-        body: parsed.payload,
+        body: editable,
       },
     );
 

@@ -1,6 +1,6 @@
-import { Injectable, Logger, OnApplicationBootstrap } from '@nestjs/common';
-import * as tf from '@tensorflow/tfjs';
-import * as nsfw from 'nsfwjs';
+import { Injectable, Logger, OnApplicationBootstrap, OnModuleDestroy } from '@nestjs/common';
+import { join } from 'node:path';
+import { Worker } from 'node:worker_threads';
 import sharp from 'sharp';
 import { AppConfig } from '../config/config.module';
 import {
@@ -19,9 +19,12 @@ const MODEL_INPUT_SIZE: Record<string, number> = {
   InceptionV3: 299,
 };
 
-export function scoresFrom(
-  predictions: Array<{ className: string; probability: number }>,
-): Record<NsfwClass, number> {
+interface Prediction {
+  className: string;
+  probability: number;
+}
+
+export function scoresFrom(predictions: Prediction[]): Record<NsfwClass, number> {
   const scores: Record<NsfwClass, number> = {
     Drawing: 0,
     Hentai: 0,
@@ -46,7 +49,7 @@ export function scoresFrom(
  * person instead — which is only a real option because the release route now exists.
  */
 export function mapNsfwScores(
-  predictions: Array<{ className: string; probability: number }>,
+  predictions: Prediction[],
   explicitReviewScore: number,
   suggestiveReviewScore: number,
 ): ImageScanVerdict {
@@ -69,7 +72,7 @@ export function mapNsfwScores(
 }
 
 /**
- * Self-hosted NSFW classification, in this process.
+ * Self-hosted NSFW classification, in a worker thread.
  *
  * Deliberately not a cloud provider. Four million records and a continuous upload stream
  * make per-image pricing a standing bill, and — the reason that actually matters — every
@@ -78,38 +81,56 @@ export function mapNsfwScores(
  * The model weights ship inside the `nsfwjs` package and are loaded from disk, so this
  * provider makes no outbound request at all and cannot be "down" while the API is up.
  *
- * It runs on the pure-JavaScript CPU backend, which costs roughly a second per image. That
- * is paid once per upload, off the request path, and it avoids a native build step on
- * every machine and image that has to run this repo. `@tensorflow/tfjs-node` is a drop-in
- * speed-up if that second ever becomes the constraint.
+ * The inference runs on `nsfw-scan.worker.js` rather than here. It costs roughly a second per
+ * image on the pure-JavaScript CPU backend, and `confirmUpload` awaits this call inside the
+ * HTTP request — so on the main thread that second was a second in which the whole API
+ * answered nothing. The worker owns the model, the main thread stays free, and the shape of
+ * this class is unchanged for every caller.
+ *
+ * One worker, reused. Spawning per scan would reload a 38 MB model each time, which is far
+ * worse than the problem being solved.
  */
 @Injectable()
-export class NsfwjsImageScanProvider implements ImageScanProvider, OnApplicationBootstrap {
+export class NsfwjsImageScanProvider
+  implements ImageScanProvider, OnApplicationBootstrap, OnModuleDestroy
+{
   private readonly logger = new Logger(NsfwjsImageScanProvider.name);
-  private model: Promise<nsfw.NSFWJS> | null = null;
+
+  private worker: Worker | null = null;
+  /** Set while the module is shutting down, so a deliberate exit is not reported as a fault. */
+  private stopping = false;
+  private nextRequestId = 0;
+  private readonly pending = new Map<
+    number,
+    { resolve: (predictions: Prediction[]) => void; reject: (error: Error) => void }
+  >();
 
   constructor(private readonly config: AppConfig) {}
 
   /**
-   * Loading the model takes a few seconds. Doing it at boot rather than on the first
-   * upload keeps that cost off a user's first photograph, where it would otherwise burn
-   * the scan timeout and fail open for no reason.
+   * Loading the model takes a few seconds. Starting the worker at boot rather than on the
+   * first upload keeps that cost off a user's first photograph, where it would otherwise
+   * burn the scan timeout and fail open for no reason.
    */
   onApplicationBootstrap(): void {
     if (this.config.get('IMAGE_SCANNER_PROVIDER') !== 'nsfwjs') return;
-    void this.load().catch(() => {
-      // Already logged in load(). A failed warm-up must not stop the API from starting;
-      // the next scan retries and, failing that, fails open loudly.
-    });
+    this.ensureWorker();
+  }
+
+  async onModuleDestroy(): Promise<void> {
+    this.stopping = true;
+    const worker = this.worker;
+    this.worker = null;
+    if (worker) await worker.terminate();
   }
 
   async scan(subject: ImageScanSubject): Promise<ImageScanVerdict> {
-    const model = await this.load();
     const size = MODEL_INPUT_SIZE[this.config.get('NSFWJS_MODEL')] ?? 224;
 
     // sharp does the decoding, so the scanner accepts every format the upload pipeline
     // does — WebP and HEIC included — without a separate conversion step. `fit: 'fill'`
-    // matches what the model was trained on: a square regardless of aspect ratio.
+    // matches what the model was trained on: a square regardless of aspect ratio. This part
+    // is native and already releases the event loop while it works.
     const { data, info } = await sharp(subject.bytes)
       .rotate()
       .removeAlpha()
@@ -117,15 +138,7 @@ export class NsfwjsImageScanProvider implements ImageScanProvider, OnApplication
       .raw()
       .toBuffer({ resolveWithObject: true });
 
-    const pixels = tf.tensor3d(new Uint8Array(data), [info.height, info.width, 3], 'int32');
-    let predictions: nsfw.PredictionType[];
-    try {
-      predictions = await model.classify(pixels);
-    } finally {
-      // TensorFlow buffers are not garbage collected. One leaked input tensor per upload
-      // is a slow memory leak in a long-lived API process.
-      pixels.dispose();
-    }
+    const predictions = await this.classify(data, info.height, info.width);
 
     return mapNsfwScores(
       predictions,
@@ -134,34 +147,83 @@ export class NsfwjsImageScanProvider implements ImageScanProvider, OnApplication
     );
   }
 
+  /** Hands one image to the worker and waits for its answer. */
+  private classify(pixels: Buffer, height: number, width: number): Promise<Prediction[]> {
+    const worker = this.ensureWorker();
+    const id = this.nextRequestId++;
+
+    return new Promise<Prediction[]>((resolve, reject) => {
+      this.pending.set(id, { resolve, reject });
+      // The pixel buffer is transferred rather than copied: it is a few hundred kilobytes per
+      // image and the main thread has no further use for it.
+      const view = new Uint8Array(pixels.buffer, pixels.byteOffset, pixels.byteLength).slice();
+      worker.postMessage({ id, pixels: view, height, width }, [view.buffer]);
+    });
+  }
+
   /**
-   * One model, loaded once, shared by every scan.
+   * The running worker, started if there is not one.
    *
-   * A failed load clears the memo so the next upload tries again; caching the rejection
-   * would turn one bad moment at boot into a scanner that is down until someone restarts
-   * the process.
+   * A worker that has exited takes every request waiting on it down with a clear error rather
+   * than leaving them hanging until the scan timeout — and the next scan starts a replacement,
+   * so a crash costs one upload rather than every upload until a restart.
    */
-  private load(): Promise<nsfw.NSFWJS> {
-    if (!this.model) {
-      const modelName = this.config.get('NSFWJS_MODEL');
-      this.model = (async () => {
-        // There is no GPU and no WebGL here. Choosing the CPU backend explicitly avoids
-        // tfjs probing for one and logging a failure that looks like a real fault.
-        await tf.setBackend('cpu');
-        await tf.ready();
-        const loaded = await nsfw.load(modelName);
-        this.logger.log(`nsfwjs model ${modelName} loaded from disk; no network dependency`);
-        return loaded;
-      })().catch((error: unknown) => {
-        this.model = null;
-        this.logger.error(
-          `nsfwjs model ${modelName} failed to load: ${
-            error instanceof Error ? error.message : String(error)
-          }`,
+  private ensureWorker(): Worker {
+    if (this.worker) return this.worker;
+
+    const worker = new Worker(join(__dirname, 'nsfw-scan.worker.js'), {
+      workerData: { modelName: this.config.get('NSFWJS_MODEL') },
+    });
+
+    worker.on('message', (message: Record<string, unknown>) => {
+      if (message.ready === true) {
+        this.logger.log(
+          `nsfwjs model ${String(message.modelName)} loaded from disk in a worker thread; no network dependency`,
         );
-        throw error;
-      });
-    }
-    return this.model;
+        return;
+      }
+
+      if (typeof message.fatal === 'string') {
+        this.logger.error(`nsfwjs model failed to load: ${message.fatal}`);
+        return;
+      }
+
+      const waiting = this.pending.get(message.id as number);
+      if (!waiting) return;
+      this.pending.delete(message.id as number);
+
+      if (typeof message.error === 'string') waiting.reject(new Error(message.error));
+      else waiting.resolve(message.predictions as Prediction[]);
+    });
+
+    const fail = (reason: string): void => {
+      if (this.worker === worker) this.worker = null;
+      for (const [id, waiting] of this.pending) {
+        this.pending.delete(id);
+        waiting.reject(new Error(reason));
+      }
+    };
+
+    worker.on('error', (error: unknown) => {
+      const reason = error instanceof Error ? error.message : String(error);
+      this.logger.error(`nsfwjs worker failed: ${reason}`);
+      fail(`nsfwjs worker failed: ${reason}`);
+    });
+
+    worker.on('exit', (code) => {
+      // An exit with nothing in flight is the process going away, not a scanner fault —
+      // `unref` lets Node reclaim the thread on shutdown, and reporting that as an error
+      // teaches operators to ignore the message that matters.
+      const unexpected = code !== 0 && !this.stopping && this.pending.size > 0;
+      if (unexpected) this.logger.error(`nsfwjs worker exited with code ${code}`);
+      fail(`nsfwjs worker exited with code ${code}`);
+    });
+
+    // Nothing keeps the process alive on account of the scanner: an idle API should still be
+    // able to shut down.
+    worker.unref();
+
+    this.worker = worker;
+    return worker;
   }
 }

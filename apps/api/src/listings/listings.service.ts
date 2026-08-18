@@ -27,6 +27,7 @@ import { ModerationService } from '../moderation/moderation.service';
 import { GeoRepository } from '../prisma/geo.repository';
 import { PrismaService } from '../prisma/prisma.service';
 import { RbacService } from '../rbac/rbac.service';
+import { RedisService } from '../redis/redis.service';
 import { SearchIndexPublisher } from '../search/search-index.publisher';
 import {
   JOB_MATCH_REQUIREMENT_SELLERS,
@@ -86,6 +87,7 @@ export class ListingsService {
     private readonly audit: AuditService,
     private readonly searchIndex: SearchIndexPublisher,
     private readonly details: ListingDetailsBuilder,
+    private readonly redis: RedisService,
     @InjectQueue(QUEUE_SAVED_SEARCHES) private readonly savedSearches: Queue,
     @InjectQueue(QUEUE_REQUIREMENTS) private readonly requirementMatches: Queue,
   ) {}
@@ -281,7 +283,7 @@ export class ListingsService {
    * Public detail view. Increments the view count and records "recently viewed" for a
    * signed-in reader, both of which feed the home feed's recommendation rules.
    */
-  async getBySlug(slug: string, viewerId?: string): Promise<ListingDetailDto> {
+  async getBySlug(slug: string, viewerId?: string, viewerIp?: string): Promise<ListingDetailDto> {
     const listing = await this.prisma.listing.findFirst({
       where: { slug, deletedAt: null },
       include: {
@@ -303,7 +305,7 @@ export class ListingsService {
     }
 
     if (!isOwner) {
-      await this.recordView(listing.id, viewerId);
+      await this.recordView(listing.id, viewerId, viewerIp);
     }
 
     return this.toDetailDto(listing, viewerId);
@@ -411,7 +413,7 @@ export class ListingsService {
       );
       const items = listings
         .map((listing) => ({
-          ...this.toSummaryDto(listing, savedIds),
+          ...this.toSummaryDto(listing, savedIds, viewerId),
           distanceMeters: Math.round(distanceById.get(listing.id) ?? 0),
         }))
         // An IN query does not retain the raw query's order. Restore it so explicit price,
@@ -439,7 +441,7 @@ export class ListingsService {
       listings.map((listing) => listing.id),
     );
     return paginate(
-      listings.map((listing) => this.toSummaryDto(listing, savedIds)),
+      listings.map((listing) => this.toSummaryDto(listing, savedIds, viewerId)),
       total,
       query.page,
       query.limit,
@@ -465,7 +467,7 @@ export class ListingsService {
     });
 
     const savedIds = await this.savedIdsFor(viewerId, ids);
-    return listings.map((listing) => this.toSummaryDto(listing, savedIds));
+    return listings.map((listing) => this.toSummaryDto(listing, savedIds, viewerId));
   }
 
   async listMine(
@@ -490,6 +492,7 @@ export class ListingsService {
     ]);
 
     return paginate(
+      // The owner's own list, where `isSaved` means nothing — so no viewer is passed.
       listings.map((listing) => this.toSummaryDto(listing, new Set())),
       total,
       query.page,
@@ -505,7 +508,6 @@ export class ListingsService {
     listingId: string,
     userId: string,
     dto: UpdateListingDto,
-    roles: string[],
   ): Promise<ListingDetailDto> {
     const listing = await this.requireOwned(listingId, userId);
 
@@ -523,6 +525,55 @@ export class ListingsService {
       }
     }
 
+    /**
+     * Where the listing now says it is, and which administrative rows have to follow.
+     *
+     * A pincode carries a city. Moving one without moving `cityId` left the listing filed
+     * under the place it came from: the card kept showing the old city name, and a buyer
+     * filtering by the new city never saw it. `districtId` and `stateId` hang off the same
+     * decision, so all three move together or none do.
+     *
+     * An explicit `cityId` in the edit wins over the pincode's, because the poster chose it.
+     */
+    const targetCityId = dto.cityId ?? (movedTo?.cityId || undefined);
+    const movedCity = targetCityId
+      ? await this.prisma.city.findUnique({ where: { id: targetCityId } })
+      : null;
+    if (targetCityId && !movedCity) throw new BadRequestException('Select a valid city');
+
+    const cityIdAfter = movedCity?.id ?? listing.cityId;
+
+    /**
+     * A locality has to belong to the city the listing ends up in.
+     *
+     * `create` checks this and `update` did not, so a PATCH could attach any locality in the
+     * country to any listing — and the listing card renders the locality name above the city
+     * name, so the result reads as a real address that does not exist.
+     */
+    if (dto.localityId) {
+      const locality = await this.prisma.locality.findFirst({
+        where: { id: dto.localityId, cityId: cityIdAfter },
+      });
+      if (!locality) {
+        throw new BadRequestException('That locality does not belong to the selected city');
+      }
+    }
+
+    /**
+     * Changing the category re-validates against the listing's type and rebuilds attributes.
+     *
+     * The field was accepted by the DTO and silently dropped by this method, so a seller who
+     * miscategorised an ad was told the edit had worked and it had not. Attributes are defined
+     * per category, so moving between them without rebuilding would leave values attached to
+     * definitions the new category does not have.
+     */
+    if (dto.categoryId && dto.categoryId !== listing.categoryId) {
+      await this.categories.assertUsableFor(dto.categoryId, listing.type);
+    }
+    if (dto.subcategoryId) {
+      await this.categories.assertUsableFor(dto.subcategoryId, listing.type);
+    }
+
     // Attributes are replaced wholesale rather than merged. A partial merge cannot express
     // *removing* one — the poster who corrects a car from diesel to petrol and clears the
     // owner count would silently keep the old owner count — and `buildAttributeValues` can
@@ -530,11 +581,17 @@ export class ListingsService {
     //
     // Omitting the field entirely leaves the existing attributes untouched, which is what
     // `PATCH` should mean for a field nobody sent.
+    // Validated against the category the listing will have after this edit, not the one it
+    // had before — otherwise a category change would check the new values against the old
+    // definitions and store whatever survived.
+    const categoryIdAfter = dto.categoryId ?? listing.categoryId;
+    const subcategoryIdAfter = dto.subcategoryId ?? (dto.categoryId ? null : listing.subcategoryId);
+
     const attributeRows =
       dto.attributes === undefined
         ? null
         : await this.categories.buildAttributeValues(
-            listing.subcategoryId ?? listing.categoryId,
+            subcategoryIdAfter ?? categoryIdAfter,
             dto.attributes.map((attribute) => ({ key: attribute.key, value: attribute.value })),
           );
 
@@ -560,6 +617,22 @@ export class ListingsService {
               longitude: dto.longitude ?? movedTo.longitude,
             }
           : { latitude: dto.latitude, longitude: dto.longitude }),
+        // The administrative trio moves with the pincode or the explicit city, never
+        // independently — a listing filed under one city and placed in another is a listing
+        // its owner cannot find and its buyers cannot filter to.
+        ...(movedCity
+          ? {
+              cityId: movedCity.id,
+              districtId: movedCity.districtId,
+              stateId: movedCity.stateId,
+            }
+          : {}),
+        // Cleared when the category changes and the edit named no replacement: a subcategory
+        // of the old category is not a subcategory of the new one.
+        ...(dto.categoryId
+          ? { categoryId: dto.categoryId, subcategoryId: subcategoryIdAfter }
+          : {}),
+        ...(dto.subcategoryId ? { subcategoryId: dto.subcategoryId } : {}),
         contactPreference: dto.contactPreference,
         showPhonePublicly: dto.showPhonePublicly,
         localityId: dto.localityId,
@@ -632,7 +705,6 @@ export class ListingsService {
     // Any edit changes the indexed document, whether or not it re-entered moderation.
     await this.searchIndex.enqueueIndex(listingId);
 
-    void roles;
     return this.getByIdForOwner(listingId, userId);
   }
 
@@ -780,16 +852,26 @@ export class ListingsService {
       return { saved: false, saveCount: listing?.saveCount ?? 0 };
     }
 
-    const [, updated] = await this.prisma.$transaction([
+    // Guarded in the write, not only in the reply.
+    //
+    // The comment here used to promise a guard that did not exist: a bare `decrement` with the
+    // result clamped on the way out, so the stored column could drift below zero and stay
+    // there while every response pretended otherwise. `updateMany` with `saveCount: { gt: 0 }`
+    // makes the database decline the decrement instead.
+    await this.prisma.$transaction([
       this.prisma.savedListing.delete({ where: { id: existing.id } }),
-      this.prisma.listing.update({
-        where: { id: listingId },
-        // Guarded so a double-unsave cannot drive the counter negative.
+      this.prisma.listing.updateMany({
+        where: { id: listingId, saveCount: { gt: 0 } },
         data: { saveCount: { decrement: 1 } },
       }),
     ]);
 
-    return { saved: false, saveCount: Math.max(updated.saveCount, 0) };
+    const listing = await this.prisma.listing.findUnique({
+      where: { id: listingId },
+      select: { saveCount: true },
+    });
+
+    return { saved: false, saveCount: listing?.saveCount ?? 0 };
   }
 
   async listSaved(
@@ -814,7 +896,7 @@ export class ListingsService {
 
     const savedIds = new Set(saved.map((entry) => entry.listingId));
     return paginate(
-      saved.map((entry) => this.toSummaryDto(entry.listing, savedIds)),
+      saved.map((entry) => this.toSummaryDto(entry.listing, savedIds, userId)),
       total,
       query.page,
       query.limit,
@@ -833,7 +915,7 @@ export class ListingsService {
       userId,
       views.map((view) => view.listingId),
     );
-    return views.map((view) => this.toSummaryDto(view.listing, savedIds));
+    return views.map((view) => this.toSummaryDto(view.listing, savedIds, userId));
   }
 
   // -------------------------------------------------------------------
@@ -910,8 +992,27 @@ export class ListingsService {
    * View counting is best-effort and deliberately not transactional with the read —
    * a lost increment is irrelevant, a failed page load is not.
    */
-  private async recordView(listingId: string, viewerId?: string): Promise<void> {
+  private async recordView(listingId: string, viewerId?: string, viewerIp?: string): Promise<void> {
     try {
+      /**
+       * Once per viewer per listing per hour.
+       *
+       * Counting every request made this a measure of reloads rather than of interest, and
+       * `sort=popular` ranks on it — so a listing could be pushed up the results by
+       * refreshing its own page, and the admin console's "most viewed" reported whoever had
+       * done that. It also serialised a row-level write on the hottest rows in the table.
+       *
+       * Signed-in viewers are keyed by account, everyone else by address. Neither is exact,
+       * and both are far closer to "how many people looked at this" than the raw request
+       * count was. A viewer we cannot identify at all is still counted, because dropping
+       * those would undercount far worse than double-counting them.
+       */
+      const viewer = viewerId ?? (viewerIp ? `ip:${viewerIp}` : null);
+      if (viewer) {
+        const first = await this.redis.setIfAbsent(`view:${listingId}:${viewer}`, '1', 3600);
+        if (!first) return;
+      }
+
       await this.prisma.listing.update({
         where: { id: listingId },
         data: { viewCount: { increment: 1 } },
@@ -1229,7 +1330,11 @@ export class ListingsService {
     }
   }
 
-  private toSummaryDto(listing: ListingWithSummary, savedIds: Set<string>): ListingSummaryDto {
+  private toSummaryDto(
+    listing: ListingWithSummary,
+    savedIds: Set<string>,
+    viewerId?: string,
+  ): ListingSummaryDto {
     const primary = listing.media[0];
     return {
       id: listing.id,
@@ -1245,7 +1350,11 @@ export class ListingsService {
       isFeatured: listing.isFeatured,
       viewCount: listing.viewCount,
       publishedAt: listing.publishedAt,
-      ...(savedIds.size > 0 ? { isSaved: savedIds.has(listing.id) } : {}),
+      // Keyed on whether a viewer was identified, not on whether they happen to have saved
+      // anything. Testing `savedIds.size` meant a signed-in user with no saved listings — every
+      // new user — got no `isSaved` at all rather than `false`, so the card had no state to
+      // render and the DTO's "present when the request is authenticated" was untrue.
+      ...(viewerId ? { isSaved: savedIds.has(listing.id) } : {}),
     };
   }
 
@@ -1277,7 +1386,7 @@ export class ListingsService {
     viewerId?: string,
   ): Promise<ListingDetailDto> {
     const savedIds = await this.savedIdsFor(viewerId, [listing.id]);
-    const media = await this.media.listForListing(listing.id);
+    const media = await this.media.listForListing(listing.id, viewerId);
 
     const attributes: Record<string, unknown> = {};
     for (const value of listing.attributeValues) {
@@ -1295,8 +1404,7 @@ export class ListingsService {
       listing.showPhonePublicly && listing.contactPreference !== ContactPreference.IN_APP_ONLY;
 
     return {
-      ...this.toSummaryDto(listing, savedIds),
-      isSaved: viewerId ? savedIds.has(listing.id) : undefined,
+      ...this.toSummaryDto(listing, savedIds, viewerId),
       description: listing.description,
       categoryId: listing.category.id,
       categoryName: listing.category.name,

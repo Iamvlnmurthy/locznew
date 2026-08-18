@@ -7,6 +7,7 @@ import {
   IsBoolean,
   Matches,
   IsEnum,
+  IsIn,
   IsInt,
   IsLatitude,
   IsLongitude,
@@ -21,6 +22,7 @@ import {
   ValidateNested,
   registerDecorator,
 } from 'class-validator';
+import { booleanFromQuery } from '../../common/dto/boolean-query.transform';
 import { PaginationQueryDto } from '../../common/dto/pagination.dto';
 import {
   BuyerRequirementDetailsDto,
@@ -336,6 +338,10 @@ export class ListingDetailDto extends ListingSummaryDto {
   @ApiProperty() saveCount!: number;
 }
 
+export const BROWSE_SORTS = ['newest', 'price_asc', 'price_desc', 'popular', 'distance'] as const;
+
+export type BrowseSort = (typeof BROWSE_SORTS)[number];
+
 export class ListingSearchQueryDto extends PaginationQueryDto {
   /**
    * Keyword, used only when the search index is unavailable and the database has to answer
@@ -389,6 +395,7 @@ export class ListingSearchQueryDto extends PaginationQueryDto {
   @IsOptional()
   @Type(() => Number)
   @IsInt()
+  @IsIn(RADIUS_PRESETS_KM)
   radiusKm?: number;
 
   @ApiPropertyOptional() @IsOptional() @Type(() => Number) @IsNumber() @Min(0) priceMin?: number;
@@ -401,7 +408,9 @@ export class ListingSearchQueryDto extends PaginationQueryDto {
 
   @ApiPropertyOptional({ description: 'Only listings from verified businesses' })
   @IsOptional()
-  @Type(() => Boolean)
+  // Not `@Type(() => Boolean)`: that runs `Boolean(value)`, and every non-empty query string
+  // is truthy, so `?verifiedOnly=false` filtered to verified businesses only.
+  @Transform(booleanFromQuery)
   @IsBoolean()
   verifiedOnly?: boolean;
 
@@ -413,12 +422,14 @@ export class ListingSearchQueryDto extends PaginationQueryDto {
   postedWithinDays?: number;
 
   @ApiPropertyOptional({
-    enum: ['newest', 'price_asc', 'price_desc', 'popular', 'distance'],
+    enum: BROWSE_SORTS,
     default: 'newest',
   })
   @IsOptional()
-  @IsString()
-  sort?: 'newest' | 'price_asc' | 'price_desc' | 'popular' | 'distance';
+  // An unrecognised value used to fall through the switch and be served as the default sort,
+  // so a misspelt ranking was answered with a different one and nothing said so.
+  @IsIn(BROWSE_SORTS)
+  sort?: BrowseSort;
 
   /**
    * Filters on the typed detail columns.

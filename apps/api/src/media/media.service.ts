@@ -6,7 +6,7 @@ import {
   Logger,
   NotFoundException,
 } from '@nestjs/common';
-import { ListingMedia, MediaStatus } from '@prisma/client';
+import { ListingMedia, ListingStatus, MediaStatus } from '@prisma/client';
 import sharp from 'sharp';
 import { fingerprintImage } from './image-fingerprint';
 import { ImageModerationService } from './image-moderation.service';
@@ -141,9 +141,16 @@ export class MediaService {
   }
 
   /**
-   * Step 2: the client reports the bytes are in place. Processing is synchronous here so
-   * the poster sees a real thumbnail immediately; the same routine is what the retry job
-   * calls for a media row stuck in PROCESSING.
+   * Step 2: the client reports the bytes are in place.
+   *
+   * Processing is synchronous so the poster sees a real thumbnail immediately rather than a
+   * placeholder they have to wait on. The expensive part — NSFW classification — runs on a
+   * worker thread, so the second it costs is not a second the API spends unable to answer
+   * anything else; see `nsfwjs-image-scan.provider.ts`.
+   *
+   * A row whose processing died mid-flight is swept by `sweepOrphanMedia` after a day rather
+   * than retried: it holds a slot against the listing's image limit and an object in the
+   * bucket, and the poster can simply upload again.
    */
   async confirmUpload(mediaId: string, userId: string): Promise<MediaDto> {
     const media = await this.prisma.listingMedia.findUnique({
@@ -311,9 +318,26 @@ export class MediaService {
     });
   }
 
-  async listForListing(listingId: string): Promise<MediaDto[]> {
+  /**
+   * The images on a listing.
+   *
+   * `viewerId` decides what "visible" means. The listing itself is only public once published,
+   * and this endpoint is public — so without the check, the images on somebody's draft or on a
+   * listing a moderator rejected were readable by anyone who knew the listing's id. The owner
+   * still sees their own, because the posting flow reads this to show what it has uploaded.
+   */
+  async listForListing(listingId: string, viewerId?: string): Promise<MediaDto[]> {
+    const listing = await this.prisma.listing.findFirst({
+      where: { id: listingId, deletedAt: null },
+      select: { ownerId: true, status: true },
+    });
+    if (!listing) return [];
+
+    const visible = listing.status === ListingStatus.PUBLISHED || listing.ownerId === viewerId;
+    if (!visible) return [];
+
     const media = await this.prisma.listingMedia.findMany({
-      // This is a public endpoint: no quarantine or in-flight key may escape it.
+      // No quarantine or in-flight key may escape, whoever is asking.
       where: { listingId, status: MediaStatus.READY },
       orderBy: { sortOrder: 'asc' },
     });
@@ -394,11 +418,27 @@ export class MediaService {
       throw new BadRequestException('This image is not awaiting review');
     }
 
+    /**
+     * `quarantine/` becomes `public/`, not nothing.
+     *
+     * Stripping the prefix outright put the objects at a top-level `listings/…` path, which is
+     * neither of the two prefixes anything else in the system knows about — the bucket policy
+     * that exposes derivatives is scoped to `public/`, and `approveForListing` maps to it. Two
+     * moderator actions that publish the same image were producing two different layouts.
+     */
     const published = (key: string | null): string | null =>
-      key ? key.replace(/^quarantine\//, '') : null;
+      key ? key.replace(/^quarantine\//, 'public/') : null;
 
-    const moves = [media.storageKey, media.thumbKey, media.cardKey, media.fullKey].filter(
-      (key): key is string => Boolean(key) && key!.startsWith('quarantine/'),
+    /**
+     * Renditions only. The original is deliberately left where it is.
+     *
+     * `createUploadUrl` states the invariant this restores: "Originals always remain private;
+     * only sanitized renditions can be promoted later." The original is the one copy that still
+     * carries EXIF — `sharp` strips it from every rendition — so a seller's home coordinates
+     * ride along inside it. `approveForListing` never promoted it; this path did.
+     */
+    const moves = [media.thumbKey, media.cardKey, media.fullKey].filter(
+      (key): key is string => key !== null && key.startsWith('quarantine/'),
     );
 
     for (const key of moves) {
@@ -409,7 +449,7 @@ export class MediaService {
       where: { id: media.id },
       data: {
         status: MediaStatus.READY,
-        storageKey: published(media.storageKey) ?? media.storageKey,
+        // storageKey is untouched: the original stays in quarantine.
         thumbKey: published(media.thumbKey),
         cardKey: published(media.cardKey),
         fullKey: published(media.fullKey),
@@ -478,7 +518,9 @@ export class MediaService {
       ),
     );
 
-    return this.listForListing(listingId);
+    // The owner is reordering their own listing, so they see their own images whatever
+    // state the listing is in.
+    return this.listForListing(listingId, userId);
   }
 
   async delete(mediaId: string, userId: string): Promise<void> {

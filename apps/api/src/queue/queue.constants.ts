@@ -43,6 +43,16 @@ export const JOB_SWEEP_SESSIONS = 'sweep-sessions';
 export const JOB_TRIM_RECENTLY_VIEWED = 'trim-recently-viewed';
 export const JOB_LIFT_EXPIRED_SUSPENSIONS = 'lift-expired-suspensions';
 
+/**
+ * Anonymising accounts whose deletion request has served out its retention window.
+ *
+ * `UsersService.requestDeletion` has always described this job in its doc comment and it had
+ * never been written, so accounts sat in DELETION_REQUESTED indefinitely with their phone
+ * number, email address and name intact — a stated retention commitment with nothing behind
+ * it.
+ */
+export const JOB_ANONYMISE_DELETED_ACCOUNTS = 'anonymise-deleted-accounts';
+
 /** The job payload carries only an id — the worker re-reads current state (ADR-0005). */
 export interface IndexListingJob {
   listingId: string;

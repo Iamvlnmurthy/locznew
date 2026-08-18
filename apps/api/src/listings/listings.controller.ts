@@ -88,9 +88,12 @@ export class ListingsController {
   @ApiResponse({ status: 200, type: ListingDetailDto })
   getBySlug(
     @Param('slug') slug: string,
+    @Req() request: RequestWithUser,
     @CurrentUser() user?: AuthenticatedUser,
   ): Promise<ListingDetailDto> {
-    return this.listings.getBySlug(slug, user?.id);
+    // The address is only used to count a signed-out reader once per hour; it is never
+    // stored against the listing.
+    return this.listings.getBySlug(slug, user?.id, request.ip);
   }
 
   @Post()
@@ -125,7 +128,7 @@ export class ListingsController {
     @Body() dto: UpdateListingDto,
     @CurrentUser() user: AuthenticatedUser,
   ): Promise<ListingDetailDto> {
-    return this.listings.update(id, user.id, dto, user.roles);
+    return this.listings.update(id, user.id, dto);
   }
 
   @Post(':id/submit')

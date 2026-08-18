@@ -5,6 +5,8 @@
   "entryFile": "main",
   "compilerOptions": {
     "deleteOutDir": true,
+    "assets": [{ "include": "media/*.worker.js", "outDir": "dist" }],
+    "watchAssets": true,
     "plugins": [
       {
         "name": "@nestjs/swagger",

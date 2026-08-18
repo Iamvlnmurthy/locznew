@@ -139,6 +139,7 @@ describe('an account with no mobile number', () => {
         { record: jest.fn() } as never,
         {} as never, // searchIndex
         {} as never, // details
+        {} as never, // redis
         {} as never, // saved-search queue
         {} as never, // requirement-match queue
       );

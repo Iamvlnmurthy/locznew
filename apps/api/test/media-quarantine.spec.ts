@@ -175,6 +175,7 @@ describe('MediaService quarantine boundary', () => {
 
   it('only asks the database for media that is ready for public viewing', async () => {
     const { service, prisma } = build();
+    prisma.listing.findFirst.mockResolvedValue({ ownerId: userId, status: 'PUBLISHED' });
 
     await service.listForListing(listingId);
 
@@ -182,6 +183,21 @@ describe('MediaService quarantine boundary', () => {
       where: { listingId, status: MediaStatus.READY },
       orderBy: { sortOrder: 'asc' },
     });
+  });
+
+  it('shows nobody but the owner the images on a listing that is not published', async () => {
+    const { service, prisma } = build();
+    prisma.listing.findFirst.mockResolvedValue({ ownerId: userId, status: 'DRAFT' });
+
+    // The listing itself is not public until it is published, and neither are its
+    // photographs — this endpoint is `@Public()`, so without the check a draft's images were
+    // readable by anybody who knew the listing id.
+    await expect(service.listForListing(listingId)).resolves.toEqual([]);
+    expect(prisma.listingMedia.findMany).not.toHaveBeenCalled();
+
+    // The owner still sees them: the posting flow reads this to show what it has uploaded.
+    await service.listForListing(listingId, userId);
+    expect(prisma.listingMedia.findMany).toHaveBeenCalled();
   });
 
   it('keeps review-required renditions private until a moderator approves them', async () => {

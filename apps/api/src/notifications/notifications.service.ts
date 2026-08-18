@@ -35,7 +35,7 @@ export class NotificationsService {
   ) {}
 
   async create(input: CreateNotificationInput): Promise<void> {
-    const inApp = await this.prisma.notification.create({
+    await this.prisma.notification.create({
       data: {
         id: uuid(),
         userId: input.userId,
@@ -77,8 +77,6 @@ export class NotificationsService {
         );
       }
     }
-
-    void inApp;
   }
 
   /**

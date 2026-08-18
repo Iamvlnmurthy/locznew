@@ -1,8 +1,9 @@
 import { Processor, WorkerHost } from '@nestjs/bullmq';
 import { Logger } from '@nestjs/common';
-import { ListingStatus, MediaStatus, NotificationType } from '@prisma/client';
+import { ListingStatus, MediaStatus, NotificationType, UserStatus } from '@prisma/client';
 import { Job } from 'bullmq';
 import {
+  JOB_ANONYMISE_DELETED_ACCOUNTS,
   JOB_EXPIRE_LISTINGS,
   JOB_SWEEP_ORPHAN_MEDIA,
   JOB_SWEEP_SESSIONS,
@@ -13,6 +14,7 @@ import {
 } from '../queue/queue.constants';
 import { NotificationsService } from '../notifications/notifications.service';
 import { ModerationService } from '../moderation/moderation.service';
+import { AuditService } from '../audit/audit.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { SearchIndexPublisher } from '../search/search-index.publisher';
 import { StorageService } from '../media/storage.service';
@@ -21,6 +23,15 @@ import { StorageService } from '../media/storage.service';
  * Scheduled housekeeping. Every job here is idempotent and bounded — each one is backed
  * by a partial index so it scans only rows that can actually be due, not the whole table.
  */
+/**
+ * How long a deletion request is held before the account is anonymised.
+ *
+ * Long enough that somebody who changed their mind can sign in and reverse it — signing in
+ * restores a DELETION_REQUESTED account — and long enough to cover the dispute window on a
+ * report or a conversation the account is part of.
+ */
+const RETENTION_DAYS = 30;
+
 @Processor(QUEUE_LIFECYCLE, { concurrency: 1 })
 export class LifecycleProcessor extends WorkerHost {
   private readonly logger = new Logger(LifecycleProcessor.name);
@@ -31,6 +42,7 @@ export class LifecycleProcessor extends WorkerHost {
     private readonly notifications: NotificationsService,
     private readonly storage: StorageService,
     private readonly moderation: ModerationService,
+    private readonly audit: AuditService,
   ) {
     super();
   }
@@ -47,6 +59,8 @@ export class LifecycleProcessor extends WorkerHost {
         return this.sweepSessions();
       case JOB_LIFT_EXPIRED_SUSPENSIONS:
         return this.moderation.liftExpiredSuspensions();
+      case JOB_ANONYMISE_DELETED_ACCOUNTS:
+        return this.anonymiseDeletedAccounts();
       case JOB_TRIM_RECENTLY_VIEWED:
         return this.trimRecentlyViewed();
       default:
@@ -142,7 +156,16 @@ export class LifecycleProcessor extends WorkerHost {
     const cutoff = new Date(Date.now() - 24 * 60 * 60 * 1000);
 
     const orphans = await this.prisma.listingMedia.findMany({
-      where: { status: MediaStatus.PENDING_UPLOAD, createdAt: { lt: cutoff } },
+      where: {
+        // PENDING_UPLOAD is an upload that never arrived. QUARANTINED and SCANNING are
+        // uploads that arrived and whose processing died — a restart mid-`confirmUpload`
+        // leaves one in either state forever, holding a slot against the listing's image
+        // limit and an object in the bucket, with nothing to move it on.
+        status: {
+          in: [MediaStatus.PENDING_UPLOAD, MediaStatus.QUARANTINED, MediaStatus.SCANNING],
+        },
+        createdAt: { lt: cutoff },
+      },
       take: 500,
     });
 
@@ -166,28 +189,117 @@ export class LifecycleProcessor extends WorkerHost {
    * `RecentlyViewed` holds one row per distinct listing a user has opened and is never
    * pruned by the read path, so an active user accumulates rows indefinitely. Only the
    * most recent handful are ever displayed, so anything past the cap is pure storage and
-   * index cost. Done in one statement per user rather than a global scan so the job stays
-   * bounded regardless of table size.
+   * index cost.
+   *
+   * Only users who are actually over the cap are touched. The previous statement ranked every
+   * row in the table in one window function — which is the global scan its own comment said it
+   * was avoiding, and the only job here without a bound on the work it does. Narrowing to the
+   * offenders first means a table of ten million rows with fifty users over the limit costs
+   * fifty deletes, and the `(userId, viewedAt DESC)` index answers each one.
    */
   private async trimRecentlyViewed(): Promise<{ removed: number }> {
     const KEEP_PER_USER = 200;
+    const USERS_PER_RUN = 500;
 
-    const removed = await this.prisma.$executeRaw`
-      DELETE FROM "recently_viewed"
-      WHERE "id" IN (
-        SELECT "id" FROM (
-          SELECT "id",
-                 ROW_NUMBER() OVER (PARTITION BY "userId" ORDER BY "viewedAt" DESC) AS position
-          FROM "recently_viewed"
-        ) ranked
-        WHERE ranked.position > ${KEEP_PER_USER}
-      )
+    const over = await this.prisma.$queryRaw<Array<{ userId: string }>>`
+      SELECT "userId"
+      FROM "recently_viewed"
+      GROUP BY "userId"
+      HAVING COUNT(*) > ${KEEP_PER_USER}
+      LIMIT ${USERS_PER_RUN}
     `;
 
+    if (over.length === 0) return { removed: 0 };
+
+    let removed = 0;
+    for (const { userId } of over) {
+      removed += await this.prisma.$executeRaw`
+        DELETE FROM "recently_viewed"
+        WHERE "id" IN (
+          SELECT "id"
+          FROM "recently_viewed"
+          WHERE "userId" = ${userId}::uuid
+          ORDER BY "viewedAt" DESC
+          OFFSET ${KEEP_PER_USER}
+        )
+      `;
+    }
+
     if (removed > 0) {
-      this.logger.log(`Trimmed ${removed} recently-viewed rows`);
+      this.logger.log(`Trimmed ${removed} recently-viewed rows across ${over.length} user(s)`);
     }
     return { removed };
+  }
+
+  /**
+   * Anonymises accounts whose deletion request has served out the retention window.
+   *
+   * `UsersService.requestDeletion` has described this job since it was written and it did not
+   * exist, so "deletion is a request, not an immediate purge" was true only in the first half:
+   * the request was recorded and the purge never came. Accounts kept their number, address and
+   * name indefinitely.
+   *
+   * Anonymised rather than deleted, because the rows are referenced by reports, moderation
+   * history and conversations that have to stay coherent — a dispute cannot be reconstructed
+   * against a dangling id. What goes is everything that identifies a person: the number, the
+   * address, the name, the bio, the password and every device token. What stays is a row with
+   * an id, which is the minimum the rest of the schema needs.
+   *
+   * Thirty days, matching the refresh-token lifetime and the window in which a person who
+   * changed their mind can still sign in and reverse it.
+   */
+  private async anonymiseDeletedAccounts(): Promise<{ anonymised: number }> {
+    const cutoff = new Date(Date.now() - RETENTION_DAYS * 24 * 60 * 60 * 1000);
+
+    const due = await this.prisma.user.findMany({
+      where: {
+        status: UserStatus.DELETION_REQUESTED,
+        deletionRequestedAt: { not: null, lte: cutoff },
+        deletedAt: null,
+      },
+      select: { id: true },
+      take: 200,
+    });
+
+    if (due.length === 0) return { anonymised: 0 };
+
+    for (const { id } of due) {
+      await this.prisma.$transaction([
+        this.prisma.user.update({
+          where: { id },
+          data: {
+            // Null rather than a placeholder: the columns are unique, and a shared sentinel
+            // would make the second anonymisation fail.
+            phoneE164: null,
+            email: null,
+            passwordHash: null,
+            bio: null,
+            avatarMediaId: null,
+            displayName: 'Deleted account',
+            phoneVerifiedAt: null,
+            emailVerifiedAt: null,
+            deletedAt: new Date(),
+          },
+        }),
+        // A push token is a live channel to a device belonging to somebody who asked to be
+        // forgotten.
+        this.prisma.device.updateMany({
+          where: { userId: id },
+          data: { pushToken: null, revokedAt: new Date() },
+        }),
+      ]);
+
+      await this.audit.record({
+        action: 'user.anonymise',
+        entityType: 'User',
+        entityId: id,
+        actorRole: 'SYSTEM',
+        changes: { retentionDays: RETENTION_DAYS },
+      });
+    }
+
+    this.logger.log(`Anonymised ${due.length} account(s) past the retention window`);
+    return { anonymised: due.length };
   }
 
   /** Expired and revoked sessions have no further purpose; keeping them only grows the table. */

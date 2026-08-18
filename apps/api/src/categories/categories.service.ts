@@ -184,7 +184,17 @@ export class CategoriesService {
     const provided = new Map(inputs.map((input) => [input.key, input.value]));
 
     for (const definition of definitions) {
-      if (definition.isRequired && (provided.get(definition.key) ?? null) === null) {
+      // Blank counts as absent. Testing only for null let an empty string satisfy a required
+      // attribute here and then be skipped by the loop below, so the listing was stored
+      // without the value the category insists on.
+      const supplied = provided.get(definition.key);
+      const isBlank =
+        supplied === undefined ||
+        supplied === null ||
+        (typeof supplied === 'string' && supplied.trim() === '') ||
+        (Array.isArray(supplied) && supplied.length === 0);
+
+      if (definition.isRequired && isBlank) {
         throw new BadRequestException(`${definition.label} is required`);
       }
     }
@@ -220,12 +230,14 @@ export class CategoriesService {
         if (Number.isNaN(numeric)) {
           throw new BadRequestException(`${definition.label} must be a number`);
         }
-        if (definition.minValue && numeric < Number(definition.minValue)) {
+        // `!= null`, not truthiness: a bound of zero is a real bound, and "must be at least
+        // 0" was the one rule this silently declined to enforce.
+        if (definition.minValue != null && numeric < Number(definition.minValue)) {
           throw new BadRequestException(
             `${definition.label} must be at least ${String(definition.minValue)}`,
           );
         }
-        if (definition.maxValue && numeric > Number(definition.maxValue)) {
+        if (definition.maxValue != null && numeric > Number(definition.maxValue)) {
           throw new BadRequestException(
             `${definition.label} must be at most ${String(definition.maxValue)}`,
           );

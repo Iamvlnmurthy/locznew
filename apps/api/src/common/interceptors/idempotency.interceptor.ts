@@ -32,6 +32,28 @@ export class IdempotencyInterceptor implements NestInterceptor {
   /** Long enough to cover a retry, short enough that a deliberate repost still works. */
   private static readonly TTL_SECONDS = 24 * 60 * 60;
 
+  /**
+   * How long an unfinished request holds its key.
+   *
+   * Much shorter than the completed-response TTL, and separate from it on purpose. The
+   * in-flight marker used to be written with the full day: if the process died mid-request —
+   * a deploy, a crash, a client that hung up — the `error` handler that clears it never ran,
+   * and that key answered 409 for twenty-four hours. A minute covers any request this API
+   * legitimately serves and expires on its own if nothing comes back.
+   */
+  private static readonly IN_FLIGHT_TTL_SECONDS = 60;
+
+  /**
+   * Paths where replaying a stored response would be worse than repeating the work.
+   *
+   * The authentication routes return tokens. Caching one for a day means a credential sitting
+   * in Redis, and replaying it hands the same session to whoever presents the key again —
+   * neither of which is what a client asking for idempotent posting had in mind. Sign-in is
+   * also not an operation anybody needs to be idempotent: repeating it issues a new session,
+   * which is the correct outcome.
+   */
+  private static readonly EXCLUDED = ['/auth/'];
+
   constructor(private readonly redis: RedisService) {}
 
   intercept(context: ExecutionContext, next: CallHandler): Observable<unknown> {
@@ -42,6 +64,10 @@ export class IdempotencyInterceptor implements NestInterceptor {
 
     // Only mutating requests, and only when the client asked for the guarantee.
     if (!key || !['POST', 'PATCH', 'PUT'].includes(request.method)) {
+      return next.handle();
+    }
+
+    if (IdempotencyInterceptor.EXCLUDED.some((prefix) => request.url.includes(prefix))) {
       return next.handle();
     }
 
@@ -67,7 +93,7 @@ export class IdempotencyInterceptor implements NestInterceptor {
           this.redis.setIfAbsent(
             cacheKey,
             JSON.stringify({ status: 'in-flight' }),
-            IdempotencyInterceptor.TTL_SECONDS,
+            IdempotencyInterceptor.IN_FLIGHT_TTL_SECONDS,
           ),
         ).pipe(
           switchMap((claimed) => {

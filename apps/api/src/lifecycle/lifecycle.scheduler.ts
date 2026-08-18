@@ -3,6 +3,7 @@ import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { Queue } from 'bullmq';
 import { AppConfig } from '../config/config.module';
 import {
+  JOB_ANONYMISE_DELETED_ACCOUNTS,
   JOB_EXPIRE_LISTINGS,
   JOB_REINDEX_ALL,
   JOB_SWEEP_ORPHAN_MEDIA,
@@ -89,6 +90,17 @@ export class LifecycleScheduler implements OnModuleInit {
       JOB_LIFT_EXPIRED_SUSPENSIONS,
       {},
       { repeat: { pattern: '5 * * * *' }, jobId: 'repeat:lift-expired-suspensions' },
+    );
+
+    // Daily, off-peak. Deletion is a promise with a date on it; a job that runs once a day is
+    // as prompt as that promise needs to be, and the work is bounded per run.
+    await this.lifecycle.add(
+      JOB_ANONYMISE_DELETED_ACCOUNTS,
+      {},
+      {
+        repeat: { pattern: '15 4 * * *', tz: 'Asia/Kolkata' },
+        jobId: 'repeat:anonymise-deleted-accounts',
+      },
     );
 
     // Nightly consistency rebuild. This is what makes it safe for the index publisher to

@@ -25,6 +25,15 @@ import {
   StartConversationDto,
 } from './dto/conversation.dto';
 
+/**
+ * Messages returned when a thread is opened.
+ *
+ * Enough that scrolling back covers any real negotiation, few enough that the payload stays
+ * small on a phone. Older messages are not lost — they are simply not in this response, and
+ * a thread that needs more than this needs a cursor rather than a bigger number.
+ */
+const MESSAGE_PAGE_SIZE = 200;
+
 const CONVERSATION_INCLUDE = {
   listing: {
     select: {
@@ -184,7 +193,10 @@ export class ConversationsService {
       }));
 
     await this.appendMessage(conversation.id, userId, dto.message);
-    if (dto.listingId) {
+    // Only when this actually opened a thread. Counting every tap of "Message seller"
+    // inflated the figure with repeat visits by the same buyer, which is not what an enquiry
+    // count means to the seller reading it.
+    if (dto.listingId && !existing) {
       await this.prisma.listing.update({
         where: { id: dto.listingId },
         data: { enquiryCount: { increment: 1 } },
@@ -304,11 +316,20 @@ export class ConversationsService {
     const conversation = await this.requireParticipant(conversationId, userId);
     const isInitiator = conversation.initiatorId === userId;
 
-    const messages = await this.prisma.message.findMany({
+    /**
+     * The most recent messages, not the oldest.
+     *
+     * `orderBy: 'asc'` with `take` returns the *first* 200, so once a buyer and seller passed
+     * that many the thread froze: new messages were written, the unread counter moved, the
+     * notification fired, and opening the conversation showed the same old screen. Read newest
+     * first and reverse, so the window follows the conversation.
+     */
+    const recent = await this.prisma.message.findMany({
       where: { conversationId, deletedAt: null },
-      orderBy: { createdAt: 'asc' },
-      take: 200,
+      orderBy: { createdAt: 'desc' },
+      take: MESSAGE_PAGE_SIZE,
     });
+    const messages = recent.reverse();
 
     await this.prisma.$transaction([
       this.prisma.message.updateMany({

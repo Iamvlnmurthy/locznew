@@ -11,7 +11,7 @@ import {
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { AuthenticatedUser, CurrentUser } from '../common/decorators/current-user.decorator';
-import { Public, RequirePermissions } from '../rbac/rbac.decorators';
+import { OptionalAuth, Public, RequirePermissions } from '../rbac/rbac.decorators';
 import { CreateUploadUrlDto, MediaDto, ReorderMediaDto, UploadUrlDto } from './dto/media.dto';
 import { MediaService } from './media.service';
 
@@ -54,11 +54,21 @@ export class MediaController {
   }
 
   @Public()
+  @OptionalAuth()
   @Get('listings/:listingId/media')
-  @ApiOperation({ summary: 'Images on a listing' })
+  @ApiOperation({
+    summary: 'Images on a listing',
+    description:
+      'Public for a published listing. A draft or rejected listing returns its images only to ' +
+      'its owner — the listing itself is not public until it is published, and neither are its ' +
+      'photographs.',
+  })
   @ApiResponse({ status: 200, type: [MediaDto] })
-  list(@Param('listingId') listingId: string): Promise<MediaDto[]> {
-    return this.media.listForListing(listingId);
+  list(
+    @Param('listingId') listingId: string,
+    @CurrentUser() user?: AuthenticatedUser,
+  ): Promise<MediaDto[]> {
+    return this.media.listForListing(listingId, user?.id);
   }
 
   @Put('listings/:listingId/media/order')
