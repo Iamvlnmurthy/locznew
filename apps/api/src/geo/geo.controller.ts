@@ -9,9 +9,15 @@ import {
   Param,
   Post,
   Query,
+  Req,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
-import { AuthenticatedUser, CurrentUser } from '../common/decorators/current-user.decorator';
+import { Throttle } from '@nestjs/throttler';
+import {
+  AuthenticatedUser,
+  CurrentUser,
+  RequestWithUser,
+} from '../common/decorators/current-user.decorator';
 import { OptionalAuth, Public } from '../rbac/rbac.decorators';
 import {
   AreaDto,
@@ -171,14 +177,20 @@ export class GeoController {
   @Post('resolve/area/correct')
   @OptionalAuth()
   @HttpCode(HttpStatus.OK)
+  // Two agreeing corrections change the area everybody nearby is shown, so this writes to
+  // shared state from an unauthenticated route. The distinct-voter count is what stops one
+  // caller clearing that bar alone; this is what stops them filling the table trying.
+  @Throttle({ default: { limit: 10, ttl: 3_600_000 } })
   @ApiOperation({
     summary: 'Tell us the detected area was wrong',
     description:
-      'Recorded whether or not you are signed in, because a correction is a fact about a place rather than an opinion. Once two people near the same spot choose the same area, it becomes the answer everyone there is given.',
+      'Recorded whether or not you are signed in, because a correction is a fact about a place rather than an opinion. Once two *different* people near the same spot choose the same area, it becomes the answer everyone there is given — resubmitting counts once.',
   })
   @ApiResponse({ status: 200, description: 'Correction recorded' })
+  @ApiResponse({ status: 429, description: 'Too many corrections from this client' })
   correctArea(
     @Body() dto: CorrectAreaDto,
+    @Req() request: RequestWithUser,
     @CurrentUser() user?: AuthenticatedUser,
   ): Promise<{ recorded: true; agreeingNearby: number }> {
     return this.geo.recordAreaCorrection(
@@ -187,6 +199,7 @@ export class GeoController {
       dto.detectedCode,
       dto.chosenCode,
       user?.id,
+      request.ip,
     );
   }
 }

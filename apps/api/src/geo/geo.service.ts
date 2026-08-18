@@ -1,6 +1,7 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { ListingStatus, Prisma } from '@prisma/client';
 import { v7 as uuid } from 'uuid';
+import { escapeLike } from '../common/utils/like.util';
 import { GeoRepository } from '../prisma/geo.repository';
 import { PrismaService } from '../prisma/prisma.service';
 import {
@@ -58,7 +59,8 @@ export class GeoService {
         isActive: true,
         ...(query.id ? { id: query.id } : {}),
         ...(query.launchedOnly ? { isLaunched: true } : {}),
-        ...(query.q ? { name: { contains: query.q, mode: 'insensitive' } } : {}),
+        // Escaped: `contains` compiles to LIKE, so `%` and `_` would arrive as wildcards.
+        ...(query.q ? { name: { contains: escapeLike(query.q), mode: 'insensitive' } } : {}),
       },
       include: { state: true, district: true },
       // Launched cities first, then by size — a user typing "vi" should see Vijayawada
@@ -219,14 +221,16 @@ export class GeoService {
     }
 
     const isNumeric = /^\d+$/.test(term);
+    // Both branches compile to LIKE, so both need the user's wildcards neutralised.
+    const pattern = escapeLike(term);
 
     const matches = await this.prisma.pincode.findMany({
       where: isNumeric
-        ? { code: { startsWith: term } }
+        ? { code: { startsWith: pattern } }
         : {
             OR: [
-              { name: { contains: term, mode: 'insensitive' } },
-              { districtName: { contains: term, mode: 'insensitive' } },
+              { name: { contains: pattern, mode: 'insensitive' } },
+              { districtName: { contains: pattern, mode: 'insensitive' } },
             ],
           },
       include: { city: { select: { name: true } } },
@@ -362,6 +366,12 @@ export class GeoService {
    * demanding an account before accepting it would throw away most of them. The chosen
    * code is checked against the pincode table so this cannot be used to write arbitrary
    * strings into a table that later influences what other people are shown.
+   *
+   * The submitter is recorded — account if there is one, address otherwise — because two
+   * corrections here change the area shown to everybody nearby. Without it the threshold
+   * counted requests rather than people, and one caller could clear it alone. Resubmitting
+   * is not an error and not a second vote: the existing row is refreshed, so a person who
+   * corrects the same corner twice still counts once.
    */
   async recordAreaCorrection(
     latitude: number,
@@ -369,6 +379,7 @@ export class GeoService {
     detectedCode: string,
     chosenCode: string,
     userId?: string,
+    submittedIp?: string,
   ): Promise<{ recorded: true; agreeingNearby: number }> {
     const chosen = await this.prisma.pincode.findUnique({ where: { code: chosenCode } });
     if (!chosen) throw new BadRequestException(`We do not recognise pincode ${chosenCode}`);
@@ -378,7 +389,15 @@ export class GeoService {
     }
 
     await this.prisma.areaCorrection.create({
-      data: { id: uuid(), latitude, longitude, detectedCode, chosenCode, userId: userId ?? null },
+      data: {
+        id: uuid(),
+        latitude,
+        longitude,
+        detectedCode,
+        chosenCode,
+        userId: userId ?? null,
+        submittedIp: submittedIp ?? null,
+      },
     });
 
     const nearby = await this.geo.findAreaCorrections(latitude, longitude, 500);

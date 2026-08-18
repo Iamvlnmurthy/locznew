@@ -146,14 +146,26 @@ describe('BusinessClaimsService', () => {
 
       await service.approve('admin-1', 'claim-1');
 
-      expect(prisma.business.update).toHaveBeenCalledWith(
+      // Guarded on the business still having no owner, so two reviewers deciding at once
+      // cannot hand the same shop to two people — the loser gets a conflict, not a silent
+      // overwrite.
+      expect(prisma.business.updateMany).toHaveBeenCalledWith(
         expect.objectContaining({
+          where: { id: 'biz-1', ownerId: null },
           data: expect.objectContaining({
             ownerId: 'user-1',
             claimStatus: BusinessClaimStatus.CLAIMED,
           }),
         }),
       );
+    });
+
+    it('refuses when the business was claimed between the queue and the decision', async () => {
+      const { service, prisma } = build({ claim: pending });
+      // Nothing was updated: somebody else already owns it.
+      prisma.business.updateMany.mockResolvedValue({ count: 0 });
+
+      await expect(service.approve('admin-1', 'claim-1')).rejects.toThrow('already has an owner');
     });
 
     it('applies what the claimant said the business is', async () => {
@@ -171,7 +183,7 @@ describe('BusinessClaimsService', () => {
       // An imported record's category was inferred from map tags and is often wrong. The
       // owner is the first person able to correct it — but only once a reviewer agrees the
       // business is theirs, or the claim form becomes an edit form for unowned records.
-      expect(prisma.business.update).toHaveBeenCalledWith(
+      expect(prisma.business.updateMany).toHaveBeenCalledWith(
         expect.objectContaining({
           data: expect.objectContaining({
             scale: BusinessScale.HOME_BUSINESS,
@@ -188,7 +200,7 @@ describe('BusinessClaimsService', () => {
       await service.approve('admin-1', 'claim-1');
 
       // Overwriting an inferred category with nothing is not an improvement on the guess.
-      const data = prisma.business.update.mock.calls[0][0].data as Record<string, unknown>;
+      const data = prisma.business.updateMany.mock.calls[0][0].data as Record<string, unknown>;
       expect(data).not.toHaveProperty('categoryId');
     });
 
@@ -242,7 +254,7 @@ describe('BusinessClaimsService', () => {
 
       // The decision is the record. Failing it because a message did not send would leave the
       // shop unowned over something that can be retried.
-      expect(prisma.business.update).toHaveBeenCalled();
+      expect(prisma.business.updateMany).toHaveBeenCalled();
     });
   });
 

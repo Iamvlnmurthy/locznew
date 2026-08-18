@@ -20,6 +20,9 @@
  * a phone number was typed at sign-up and never confirmed, matching it against the directory
  * proves only that the claimant can read the directory — which everybody can. Counting it
  * would turn "two signals" into "one signal and a copy of the public data".
+ *
+ * The same rule applies to a signal the claimant supplies about themselves, which is why
+ * `LOCATION` cannot make up half of an automatic approval — see `SELF_ASSERTED_SIGNALS`.
  */
 
 /** Metres. Tight, because a claimant who is genuinely at the shop is inside this. */
@@ -148,7 +151,39 @@ export function matchedSignals(
   return signals;
 }
 
-/** Whether the evidence is strong enough that nobody needs to read this claim. */
+/**
+ * Signals the claimant produces themselves, which therefore cannot stand on their own.
+ *
+ * `LOCATION` is the whole set. The other two match a confirmed identifier the platform issued
+ * a challenge for — a number Firebase verified, an address Google verified — so defeating one
+ * means controlling that identifier. `LOCATION` matches a pair of coordinates the claimant
+ * types into the request body against a pair the public business endpoint hands out to
+ * anybody who asks. Reading the target's coordinates and posting them back with a small
+ * `locationAccuracyM` is not evidence of standing anywhere.
+ *
+ * That is the same failure this file's header warns about for unverified phone numbers —
+ * "one signal and a copy of the public data" — arriving through a different field. Until the
+ * fix, PHONE + LOCATION or EMAIL + LOCATION cleared the bar, so the documented requirement
+ * for two independent mechanisms was in practice a requirement for one.
+ *
+ * It is kept rather than deleted because it is real corroboration when it accompanies a
+ * challenged identifier, and it is recorded on every claim either way for the reviewer to
+ * weigh. It simply cannot be half of an automatic handover.
+ *
+ * Making it trustworthy is possible — a platform attestation, or repeated fixes over hours
+ * rather than one submitted point — and at that stage it can move out of this set.
+ */
+const SELF_ASSERTED_SIGNALS = new Set<ClaimSignal>(['LOCATION']);
+
+/**
+ * Whether the evidence is strong enough that nobody needs to read this claim.
+ *
+ * Two signals, of which at least two must be ones the claimant could not simply assert. In
+ * practice that means PHONE and EMAIL together: a confirmed number matching the directory
+ * *and* a verified address matching it. Anything less goes to a human, which is the correct
+ * default for handing over a business's listings, enquiries and identity in search.
+ */
 export function qualifiesForAutoApproval(signals: ClaimSignal[]): boolean {
-  return signals.length >= SIGNALS_REQUIRED_FOR_AUTO_APPROVAL;
+  const challenged = signals.filter((signal) => !SELF_ASSERTED_SIGNALS.has(signal));
+  return challenged.length >= SIGNALS_REQUIRED_FOR_AUTO_APPROVAL;
 }

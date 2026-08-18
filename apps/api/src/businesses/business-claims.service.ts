@@ -28,22 +28,46 @@ const SUGGESTION_RADIUS_METRES = 200;
 /** Enough to recognise their own shop, few enough to read before giving up. */
 const MAX_SUGGESTIONS = 5;
 
-/** Shop names vary in punctuation and honorifics far more than they vary in words. */
+/** Words that appear in half the shop names in India and distinguish none of them. */
+const NAME_NOISE = /\b(the|shop|store|and|co|pvt|ltd)\b/g;
+
+/**
+ * Shop names vary in punctuation and honorifics far more than they vary in words.
+ *
+ * The word boundaries in `NAME_NOISE` are load-bearing rather than decorative. They were
+ * written as escapes but had been resolved into literal U+0008 bytes at some point, so the
+ * alternation required a backspace character on either side and therefore never matched
+ * anything at all: "Sri Lakshmi Store" never normalised to "Sri Lakshmi", and the duplicate
+ * suggestion this exists to power was weaker than intended in exactly the cases it was
+ * written for. Dropping the boundaries instead of restoring them is not an option — `co`
+ * would eat the middle of "cosmetics" and `and` the middle of "chandan".
+ *
+ * Containment has to be whole words too. A bare `left.includes(right)` made a shop called
+ * "Sri" match every name containing those three letters, which is a suggestion nobody can act
+ * on and a card everybody has to dismiss.
+ */
 function sameName(a: string, b: string): boolean {
   const normalise = (value: string): string =>
     value
       .toLowerCase()
       .replace(/[^a-z0-9\s]/g, ' ')
-      .replace(/(the|shop|store|and|co|pvt|ltd)/g, ' ')
+      .replace(NAME_NOISE, ' ')
       .replace(/\s+/g, ' ')
       .trim();
 
   const left = normalise(a);
   const right = normalise(b);
   if (!left || !right) return false;
+  if (left === right) return true;
 
-  return left === right || left.includes(right) || right.includes(left);
+  // One name being the other plus extra words — "lakshmi electronics" against "lakshmi
+  // electronics and mobiles" — counts; a substring landing mid-word does not.
+  const containsWords = (haystack: string, needle: string): boolean =>
+    ` ${haystack} `.includes(` ${needle} `);
+
+  return containsWords(left, right) || containsWords(right, left);
 }
+import { escapeLike } from '../common/utils/like.util';
 import { paginate, PaginatedDto } from '../common/dto/pagination.dto';
 import { NotificationsService } from '../notifications/notifications.service';
 import { PrismaService } from '../prisma/prisma.service';
@@ -128,7 +152,14 @@ export class BusinessClaimsService {
         isActive: true,
         ownerId: null,
         OR: [
-          { name: { contains: input.name.trim().split(/\s+/)[0] ?? '', mode: 'insensitive' } },
+          // Escaped: `contains` compiles to LIKE, so a shop whose name begins with `%` would
+          // otherwise pull the whole unclaimed directory into the candidate set.
+          {
+            name: {
+              contains: escapeLike(input.name.trim().split(/\s+/)[0] ?? ''),
+              mode: 'insensitive',
+            },
+          },
           ...(phoneDigits && phoneDigits.length === 10
             ? [
                 { primaryPhone: { endsWith: phoneDigits } },
@@ -443,8 +474,14 @@ export class BusinessClaimsService {
         },
       });
 
-      await transaction.business.update({
-        where: { id: claim.businessId },
+      // Guarded on `ownerId` still being null, the same way the automatic path is.
+      //
+      // `loadPending` checks it, but outside this transaction: two reviewers working the queue
+      // at once — or a reviewer and an auto-approval — both pass that check and the second
+      // `update` silently overwrites the first, handing one shop to two people with no trace
+      // of the collision. `updateMany` returns a count, so the loser is told.
+      const handed = await transaction.business.updateMany({
+        where: { id: claim.businessId, ownerId: null },
         data: {
           ownerId: claim.claimantId,
           claimStatus: BusinessClaimStatus.CLAIMED,
@@ -457,6 +494,10 @@ export class BusinessClaimsService {
           ...(claim.proposedCategoryId ? { categoryId: claim.proposedCategoryId } : {}),
         },
       });
+
+      if (handed.count === 0) {
+        throw new ConflictException('That business already has an owner.');
+      }
 
       // Everybody else who wanted this shop is refused now, with a reason, rather than left
       // waiting on a queue that can no longer produce an answer for them.

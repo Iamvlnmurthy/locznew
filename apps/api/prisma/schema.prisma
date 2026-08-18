@@ -1611,10 +1611,19 @@ model AreaCorrection {
   chosenCode   String                                 @db.VarChar(6)
   // Null for a signed-out visitor: a correction is worth having either way.
   userId       String?                                @db.Uuid
+  // Who submitted it, when there is no account to attribute it to.
+  //
+  // Two corrections near the same spot override the pincode everybody there is shown, and the
+  // endpoint is deliberately open — so without something to tell submitters apart, one caller
+  // sending the same correction twice cleared a threshold written to mean "two people agreed".
+  // Votes are counted distinct over (userId, submittedIp); this is the second half of that key.
+  submittedIp  String?                                @db.VarChar(64)
   createdAt    DateTime                               @default(now())
 
   @@index([detectedCode])
   @@index([chosenCode])
+  // Serves the distinct-voter count, which groups by chosen code over a spatial window.
+  @@index([chosenCode, userId, submittedIp])
   @@map("area_corrections")
 }
 

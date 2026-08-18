@@ -240,6 +240,13 @@ export class GeoRepository {
    * Grouped by the code they chose and counted, nearest first. The radius is deliberately
    * tight: a correction made two kilometres away is about a different street corner, and
    * borrowing it would spread one person's local knowledge over places they never stood.
+   *
+   * **Votes are distinct people, not rows.** Counting rows made the threshold meaningless:
+   * the endpoint is open to anyone, so one caller sending the same correction twice cleared
+   * a bar written to mean "two people who were both there agreed". A signed-in person counts
+   * once by user id and an anonymous one once by address; a correction with neither is
+   * recorded but cannot vote, because there is nothing to distinguish it from the same
+   * caller submitting again.
    */
   async findAreaCorrections(
     latitude: number,
@@ -249,10 +256,12 @@ export class GeoRepository {
     const point = Prisma.sql`ST_SetSRID(ST_MakePoint(${longitude}::double precision, ${latitude}::double precision), 4326)::geography`;
 
     return this.prisma.$queryRaw<Array<{ chosenCode: string; votes: number }>>`
-      SELECT c."chosenCode", COUNT(*)::int AS votes
+      SELECT c."chosenCode",
+             COUNT(DISTINCT COALESCE(c."userId"::text, 'ip:' || c."submittedIp"))::int AS votes
       FROM "area_corrections" c
       WHERE c."geo" IS NOT NULL
         AND ST_DWithin(c."geo", ${point}, ${radiusMeters})
+        AND (c."userId" IS NOT NULL OR c."submittedIp" IS NOT NULL)
       GROUP BY c."chosenCode"
       ORDER BY votes DESC
     `;
