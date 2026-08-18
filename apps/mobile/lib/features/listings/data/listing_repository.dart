@@ -490,8 +490,33 @@ class ListingRepository {
       body: {'latitude': latitude, 'longitude': longitude},
       auth: false,
     );
-    final city = json['city'];
-    return city == null ? null : City.fromJson(city as Map<String, dynamic>);
+    final cityJson = json['city'];
+    if (cityJson == null) return null;
+    final city = City.fromJson(cityJson as Map<String, dynamic>);
+
+    // Prefer the nearest locality so "my location" reads "Gachibowli, Hyderabad" rather than
+    // just "Hyderabad" — but only when it's genuinely close, so a coarse fix in an area with
+    // no mapped locality isn't mislabelled with one kilometres away.
+    final localities = (json['nearbyLocalities'] as List?) ?? const [];
+    if (localities.isNotEmpty) {
+      final nearest = localities.first as Map<String, dynamic>;
+      final name = nearest['name'] as String?;
+      final distance = (nearest['distanceMeters'] as num?)?.toDouble() ?? double.infinity;
+      if (name != null && name.isNotEmpty && distance <= 8000) {
+        return City(
+          id: city.id,
+          name: '$name, ${city.name}',
+          slug: city.slug,
+          stateName: city.stateName,
+          latitude: city.latitude,
+          longitude: city.longitude,
+          isLaunched: city.isLaunched,
+          nameTe: city.nameTe,
+          nameHi: city.nameHi,
+        );
+      }
+    }
+    return city;
   }
 
   /// Looks up a pincode. Null means the dataset does not know it, which the caller
