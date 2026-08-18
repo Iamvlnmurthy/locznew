@@ -1,5 +1,6 @@
 import { Logger, ValidationPipe, VersioningType } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
+import type { NestExpressApplication } from '@nestjs/platform-express';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import helmet from 'helmet';
 import 'reflect-metadata';
@@ -7,9 +8,25 @@ import { AppModule } from './app.module';
 import { AppConfig } from './config/config.module';
 
 async function bootstrap(): Promise<void> {
-  const app = await NestFactory.create(AppModule, { bufferLogs: false });
+  const app = await NestFactory.create<NestExpressApplication>(AppModule, { bufferLogs: false });
   const config = app.get(AppConfig);
   const logger = new Logger('Bootstrap');
+
+  /**
+   * Trust the reverse proxy's `X-Forwarded-For`.
+   *
+   * Without this Express reports the socket address, which behind Nginx is the proxy itself —
+   * identical for every request on the platform. `infrastructure/nginx/proxy_params_locz` sets
+   * the header and says why it matters, and the API was silently ignoring it: the global
+   * throttler, the OTP per-IP ceiling and the idempotency scope all collapsed into a single
+   * bucket, so the 120-requests-a-minute limit was a platform-wide ceiling rather than a
+   * per-client one, and every audit row recorded the proxy's address.
+   *
+   * `1` rather than `true`: exactly one proxy sits in front of this, so only the last hop is
+   * trusted. `true` would honour a client-supplied `X-Forwarded-For`, which turns a per-IP
+   * limit into a header anybody can rewrite.
+   */
+  app.set('trust proxy', 1);
 
   // Secure headers. CSP is left to Nginx and the Next.js apps — the API serves JSON,
   // and a CSP here would only duplicate policy in a second place.

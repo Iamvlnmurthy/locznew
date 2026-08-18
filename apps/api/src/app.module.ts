@@ -11,7 +11,7 @@ import { RequestLoggingInterceptor } from './common/interceptors/request-logging
 import { ResponseInterceptor } from './common/interceptors/response.interceptor';
 import { ErrorReporter } from './common/monitoring/error-reporter';
 import { CorrelationIdMiddleware } from './common/middleware/correlation-id.middleware';
-import { AppConfigModule } from './config/config.module';
+import { AppConfig, AppConfigModule } from './config/config.module';
 import { CategoriesModule } from './categories/categories.module';
 import { GeoModule } from './geo/geo.module';
 import { HealthModule } from './health/health.module';
@@ -29,11 +29,13 @@ import { MediaModule } from './media/media.module';
 import { ModerationModule } from './moderation/moderation.module';
 import { ReportsModule } from './reports/reports.module';
 import { PrismaModule } from './prisma/prisma.module';
+import { RedisThrottlerStorage } from './common/guards/redis-throttler.storage';
 import { RetryAwareThrottlerGuard } from './common/guards/retry-aware-throttler.guard';
 import { JwtAuthGuard } from './rbac/jwt-auth.guard';
 import { PermissionsGuard } from './rbac/permissions.guard';
 import { RbacModule } from './rbac/rbac.module';
 import { RedisModule } from './redis/redis.module';
+import { RedisService } from './redis/redis.service';
 import { UsersModule } from './users/users.module';
 
 @Module({
@@ -65,13 +67,26 @@ import { UsersModule } from './users/users.module';
     HealthModule,
     // Baseline API rate limit. Individual routes tighten it with @Throttle; the OTP
     // endpoints add their own per-phone limits on top.
-    ThrottlerModule.forRoot([
-      {
-        name: 'default',
-        ttl: Number(process.env.RATE_LIMIT_TTL_SECONDS ?? 60) * 1000,
-        limit: Number(process.env.RATE_LIMIT_MAX_REQUESTS ?? 120),
-      },
-    ]),
+    //
+    // Async so the window comes from AppConfig rather than a second reading of process.env —
+    // the environment contract has one enforcement point, and a module that reads around it
+    // can disagree with it without anything failing.
+    ThrottlerModule.forRootAsync({
+      imports: [AppConfigModule, RedisModule],
+      inject: [AppConfig, RedisService],
+      useFactory: (config: AppConfig, redis: RedisService) => ({
+        throttlers: [
+          {
+            name: 'default',
+            ttl: config.get('RATE_LIMIT_TTL_SECONDS') * 1000,
+            limit: config.get('RATE_LIMIT_MAX_REQUESTS'),
+          },
+        ],
+        // Counters in Redis, so the configured rate is the platform's rate rather than each
+        // replica's. See RedisThrottlerStorage.
+        storage: new RedisThrottlerStorage(redis),
+      }),
+    }),
   ],
   providers: [
     // Order matters: throttle before doing work, authenticate, then authorise.
