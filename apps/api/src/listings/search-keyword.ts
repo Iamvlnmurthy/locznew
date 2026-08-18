@@ -1,4 +1,5 @@
 import { Prisma } from '@prisma/client';
+import { escapeLike } from '../common/utils/like.util';
 
 /**
  * Keyword matching for the database path — what serves search when Meilisearch is down.
@@ -25,22 +26,7 @@ import { Prisma } from '@prisma/client';
  * an opening bracket is missed. That is the intended trade. Everything it returns genuinely
  * contains the word.
  */
-/**
- * Makes a user's word safe to put inside a `LIKE` pattern.
- *
- * Prisma's `contains` and `startsWith` compile to `LIKE`, and they pass the value through
- * untouched — so `%` and `_` arrive as wildcards rather than as the characters somebody typed.
- * Searching for `%` matched every listing in the database, which is precisely the failure this
- * whole file exists to prevent, reachable by typing one character. `_` matched any single
- * character, and a pattern like `%a%b%c%` makes PostgreSQL scan the table to answer it.
- *
- * PostgreSQL's `LIKE` treats backslash as the escape character by default, so prefixing the
- * three meaningful characters is enough and no `ESCAPE` clause is needed. Backslash is escaped
- * first, or it would go on to escape the escapes added after it.
- */
-function escapeLike(term: string): string {
-  return term.replace(/\\/g, '\\\\').replace(/%/g, '\\%').replace(/_/g, '\\_');
-}
+/* Wildcard escaping lives in `common/utils/like.util` — five call sites need it. */
 
 export const SearchKeyword = {
   /**

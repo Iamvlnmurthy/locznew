@@ -107,10 +107,33 @@ export class SearchSubscriptionsService {
         },
       });
 
+      /**
+       * Distinct filter sets, asked once each.
+       *
+       * Every subscription was costing its own COUNT against the database, so publishing one
+       * listing ran one query per saved search on the platform — ten thousand saved searches,
+       * ten thousand queries, for a single post. Saved searches repeat heavily (the same
+       * category in the same city, saved by hundreds of people), so grouping identical filter
+       * sets collapses that to one query per distinct question. The question asked is still
+       * `ListingsService`'s, which is the property that matters: one implementation of "does
+       * this match", not two.
+       */
+      const verdicts = new Map<string, boolean>();
       let notified = 0;
 
       for (const subscription of candidates) {
-        if (!(await this.matches(subscription, listing.id))) continue;
+        const signature = JSON.stringify([
+          subscription.query,
+          subscription.cityId,
+          subscription.filters,
+        ]);
+
+        let matched = verdicts.get(signature);
+        if (matched === undefined) {
+          matched = await this.matches(subscription, listing.id);
+          verdicts.set(signature, matched);
+        }
+        if (!matched) continue;
 
         // `createOnce` keys on entityId, so a user who has already been told about this
         // listing by one saved search is not told again by a second that also matches.

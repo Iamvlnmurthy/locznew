@@ -2,8 +2,10 @@ import { BadRequestException, Injectable, Logger } from '@nestjs/common';
 import { InjectQueue } from '@nestjs/bullmq';
 import { Queue } from 'bullmq';
 import { ListingStatus, ModerationStatus, ReportStatus, UserStatus } from '@prisma/client';
+import { escapeLike } from '../common/utils/like.util';
 import { PrismaService } from '../prisma/prisma.service';
 import {
+  JOB_ANONYMISE_DELETED_ACCOUNTS,
   JOB_EXPIRE_LISTINGS,
   JOB_SWEEP_ORPHAN_MEDIA,
   JOB_SWEEP_SESSIONS,
@@ -34,6 +36,7 @@ const RUNNABLE_JOBS: string[] = [
   JOB_SWEEP_SESSIONS,
   JOB_TRIM_RECENTLY_VIEWED,
   JOB_LIFT_EXPIRED_SUSPENSIONS,
+  JOB_ANONYMISE_DELETED_ACCOUNTS,
 ];
 
 @Injectable()
@@ -262,12 +265,18 @@ export class AdminService {
       );
     }
 
-    // A fixed job id per name means an impatient double-click is a no-op rather than two
-    // concurrent sweeps. Hyphen, not colon: BullMQ rejects a custom id containing ':'.
+    // A job id fixed to the minute, so an impatient double-click really is a no-op rather
+    // than two concurrent sweeps — which is what the previous `Date.now()` suffix produced,
+    // one unique id per click, while claiming the opposite. Coarse enough to absorb repeated
+    // clicking, fine enough that an administrator who genuinely wants to run it again after
+    // watching the first one finish can.
+    //
+    // Hyphen, not colon: BullMQ rejects a custom id containing ':'.
+    const minute = Math.floor(Date.now() / 60_000);
     await this.lifecycle.add(
       name,
       { requestedBy },
-      { jobId: `manual-${name}-${Date.now()}`, removeOnComplete: true },
+      { jobId: `manual-${name}-${minute}`, removeOnComplete: true },
     );
 
     this.logger.log(`${name} queued manually by ${requestedBy}`);
@@ -283,13 +292,16 @@ export class AdminService {
     limit: number,
     search?: string,
   ): Promise<{ items: AdminUserDto[]; total: number }> {
-    const where = search
+    // Escaped: `contains` compiles to LIKE, and an administrator pasting a `%` from a support
+    // ticket should search for that character rather than for every account on the platform.
+    const pattern = search ? escapeLike(search) : undefined;
+    const where = pattern
       ? {
           deletedAt: null,
           OR: [
-            { displayName: { contains: search, mode: 'insensitive' as const } },
-            { phoneE164: { contains: search } },
-            { email: { contains: search, mode: 'insensitive' as const } },
+            { displayName: { contains: pattern, mode: 'insensitive' as const } },
+            { phoneE164: { contains: pattern } },
+            { email: { contains: pattern, mode: 'insensitive' as const } },
           ],
         }
       : { deletedAt: null };

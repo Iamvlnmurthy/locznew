@@ -1,11 +1,14 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { ModerationDecision } from '@prisma/client';
+import { BannedKeyword, ModerationDecision } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import {
   ModerationProvider,
   ModerationSubject,
   ModerationVerdict,
 } from './moderation-provider.interface';
+
+/** How long the banned-keyword list is reused before it is read again. */
+const KEYWORD_CACHE_MS = 60_000;
 
 interface Rule {
   code: string;
@@ -211,7 +214,39 @@ export class RuleBasedModerationProvider implements ModerationProvider {
     },
   ];
 
+  /** Cached banned-keyword list, with the moment it stops being trusted. */
+  private keywordCache: { entries: BannedKeyword[]; expiresAt: number } | null = null;
+
   constructor(private readonly prisma: PrismaService) {}
+
+  /**
+   * The active banned keywords, re-read at most once a minute.
+   *
+   * A failed refresh keeps serving the previous list rather than moderating with none: an
+   * empty keyword list does not mean "nothing is banned", and behaving as though it did would
+   * quietly publish exactly what this exists to stop.
+   */
+  private async activeKeywords(): Promise<BannedKeyword[]> {
+    if (this.keywordCache && Date.now() < this.keywordCache.expiresAt) {
+      return this.keywordCache.entries;
+    }
+
+    try {
+      const entries = await this.prisma.bannedKeyword.findMany({ where: { isActive: true } });
+      this.keywordCache = { entries, expiresAt: Date.now() + KEYWORD_CACHE_MS };
+      return entries;
+    } catch (error) {
+      if (this.keywordCache) {
+        this.logger.warn(
+          `Could not refresh banned keywords, using the previous list: ${
+            error instanceof Error ? error.message : String(error)
+          }`,
+        );
+        return this.keywordCache.entries;
+      }
+      throw error;
+    }
+  }
 
   async evaluate(subject: ModerationSubject): Promise<ModerationVerdict> {
     const text = `${subject.title}\n${subject.description}`.toLowerCase();
@@ -226,8 +261,10 @@ export class RuleBasedModerationProvider implements ModerationProvider {
     }
 
     // Banned keywords come from the database so moderators can react to a new scam
-    // without a deployment.
-    const keywords = await this.prisma.bannedKeyword.findMany({ where: { isActive: true } });
+    // without a deployment — and are cached briefly, because otherwise every listing create
+    // and every edit re-read the whole table. A minute is short enough that a moderator
+    // adding a term during an incident sees it take effect while they are still watching.
+    const keywords = await this.activeKeywords();
     for (const entry of keywords) {
       const scopeText =
         entry.scope === 'TITLE'

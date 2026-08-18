@@ -155,9 +155,17 @@ export class BusinessSearchService {
           WHERE ${Prisma.join(where, ' AND ')}
           -- Ranking is what costs, not finding. "medical" matches 30,706 businesses
           -- nationwide and scoring every one took 2.6 seconds; the index found them in
-          -- milliseconds. Capping the set first bounds the worst case, and only a query
-          -- with no city, pincode or radius ever reaches the cap — the app always sends
-          -- one, so ordinary searches are unaffected and still see everything.
+          -- milliseconds. Capping the set first bounds the worst case.
+          --
+          -- The cap engages whenever the *filtered* count exceeds it, city filter or not —
+          -- a common word in a large metro will reach it — so which rows it keeps has to be
+          -- decided rather than left to the planner. A bare LIMIT takes an arbitrary
+          -- 5,000, and PostgreSQL does not promise the same 5,000 twice: a parallel scan
+          -- does not assemble its workers' output identically. Page two was therefore drawn
+          -- from a different candidate set than page one, so a shop appeared on both while
+          -- another was never shown. Ordering by id makes the window stable across the
+          -- requests that page through it.
+          ORDER BY b.id
           LIMIT ${RANKING_CANDIDATE_CAP}
         ),
         matched AS (
@@ -169,11 +177,19 @@ export class BusinessSearchService {
         SELECT id, count(*) OVER () AS total
         FROM matched
         -- Relevance first, then distance. The nearest irrelevant shop is still irrelevant.
-        ORDER BY rank DESC, metres ASC
+        --
+        -- id last, for the same reason the listing queries carry a tie-breaker: without a
+        -- keyword every rank is 0 and without coordinates every distance is 0, so every row
+        -- ties and the order is whatever the planner returns — which is not the same order
+        -- on the next request for the next page.
+        ORDER BY rank DESC, metres ASC, id ASC
         LIMIT ${params.limit} OFFSET ${offset}`,
     );
 
-    if (rows.length > 0 || !query || query.length < 4) {
+    // `offset === 0` as well as the length check: an empty page four is the end of the
+    // results, not a misspelling, and falling through to the fuzzy path there would answer a
+    // request for "more of the same" with a different set of shops entirely.
+    if (rows.length > 0 || !query || query.length < 4 || offset > 0) {
       return { ids: rows.map((row) => row.id), total: Number(rows[0]?.total ?? 0) };
     }
 
@@ -232,7 +248,9 @@ export class BusinessSearchService {
         )
         SELECT id, count(*) OVER () AS total
         FROM matched
-        ORDER BY score DESC
+        -- Tie-break on id: similarity scores collide freely, and without it the same query
+        -- returns a different arrangement each time it is paged.
+        ORDER BY score DESC, id ASC
         LIMIT ${params.limit} OFFSET ${offset}`,
     );
 

@@ -62,7 +62,15 @@ const IDENTITY_ATTRIBUTES = new Set(['title', 'brand', 'categoryName', 'locality
  * this removes are rare — the common query drops nothing and pays only for a wider read.
  */
 const OVERFETCH = 4;
-const MAX_WINDOW = 200;
+/**
+ * The deepest raw window read in one query.
+ *
+ * With a page size of 20 this covers the first ten pages at full overfetch, which is far past
+ * where anybody browses and comfortably inside the engine's own `maxTotalHits`. Beyond it the
+ * page is served from whatever the window held, which is the same trade the ceiling below
+ * already makes.
+ */
+const MAX_WINDOW = 800;
 
 /**
  * The deepest result Meilisearch will return, and therefore the largest total we may claim.
@@ -181,14 +189,61 @@ export class SearchService implements OnModuleInit {
        * all three languages.
        */
       stopWords: [
-        'a', 'an', 'the', 'in', 'at', 'on', 'of', 'for', 'to', 'and', 'or',
-        'is', 'are', 'my', 'me', 'i', 'we', 'you',
-        'near', 'nearby', 'around', 'close', 'closest', 'nearest',
-        'best', 'good', 'top', 'cheap', 'cheapest', 'low', 'price',
-        'here', 'this', 'that', 'any', 'some', 'available', 'need', 'want', 'looking',
-        'shop', 'shops', 'place', 'places',
-        'పక్కన', 'దగ్గర', 'నాకు', 'కావాలి', 'మంచి',
-        'पास', 'नजदीक', 'मुझे', 'चाहिए', 'अच्छा', 'सबसे',
+        'a',
+        'an',
+        'the',
+        'in',
+        'at',
+        'on',
+        'of',
+        'for',
+        'to',
+        'and',
+        'or',
+        'is',
+        'are',
+        'my',
+        'me',
+        'i',
+        'we',
+        'you',
+        'near',
+        'nearby',
+        'around',
+        'close',
+        'closest',
+        'nearest',
+        'best',
+        'good',
+        'top',
+        'cheap',
+        'cheapest',
+        'low',
+        'price',
+        'here',
+        'this',
+        'that',
+        'any',
+        'some',
+        'available',
+        'need',
+        'want',
+        'looking',
+        'shop',
+        'shops',
+        'place',
+        'places',
+        'పక్కన',
+        'దగ్గర',
+        'నాకు',
+        'కావాలి',
+        'మంచి',
+        'पास',
+        'नजदीक',
+        'मुझे',
+        'चाहिए',
+        'अच्छा',
+        'सबसे',
       ],
       searchableAttributes: [
         'title',
@@ -413,13 +468,26 @@ export class SearchService implements OnModuleInit {
       filter.push(`_geoRadius(${params.latitude}, ${params.longitude}, ${params.radiusKm * 1000})`);
     }
 
-    const offset = (params.page - 1) * params.limit;
-    const window = Math.min(params.limit * OVERFETCH, MAX_WINDOW);
+    /**
+     * Read from the top of the results, not from the page's own offset.
+     *
+     * The window exists so that discarding a coincidence still leaves a full page — but the
+     * discards happen *inside* the window, so the raw offset a page ends at is not
+     * `page × limit`. Reading page two from offset 20 after page one had consumed 25 raw hits
+     * to produce its 20 rows re-served five of them, which is the duplicate-across-pages
+     * failure the listing queries carry a tie-breaker to avoid.
+     *
+     * Paging over the filtered sequence instead means reading `page × limit` survivors and
+     * keeping the last `limit`. Bounded by MAX_WINDOW, which is what caps the work: past that
+     * depth the engine's own `maxTotalHits` ceiling has been reached anyway.
+     */
+    const wanted = params.page * params.limit;
+    const window = Math.min(wanted * OVERFETCH, MAX_WINDOW);
 
     const result = await this.index.search(params.query, {
       filter: filter.length > 0 ? filter : undefined,
       sort: params.sort,
-      offset,
+      offset: 0,
       limit: window,
       // Needed to tell a real match from a coincidence; see `isRelevant`.
       showMatchesPosition: true,
@@ -453,7 +521,9 @@ export class SearchService implements OnModuleInit {
       );
     }
 
-    const documents = relevant.slice(0, params.limit);
+    // The slice belonging to this page, taken from the filtered sequence so consecutive
+    // pages neither repeat nor skip.
+    const documents = relevant.slice(wanted - params.limit, wanted);
 
     // The engine counted the coincidences, so the count has to lose them too. Anything else
     // shows "1 result" above an empty page. `estimatedTotalHits` was already an estimate;

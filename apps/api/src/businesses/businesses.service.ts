@@ -15,6 +15,7 @@ import {
 import { v7 as uuid } from 'uuid';
 import { AuditService } from '../audit/audit.service';
 import { paginate, PaginatedDto } from '../common/dto/pagination.dto';
+import { escapeLike } from '../common/utils/like.util';
 import { slugify } from '../common/utils/slug.util';
 import { attributionFor, describeBusiness } from './business-description';
 import { matchesKeyword } from '../moderation/rule-based-moderation.provider';
@@ -22,6 +23,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { RbacService } from '../rbac/rbac.service';
 import { StorageService } from '../media/storage.service';
 import { NotificationsService } from '../notifications/notifications.service';
+import { SearchIndexPublisher } from '../search/search-index.publisher';
 import {
   AddStaffDto,
   BusinessDetailDto,
@@ -65,10 +67,14 @@ export class BusinessesService {
     private readonly audit: AuditService,
     private readonly storage: StorageService,
     private readonly notifications: NotificationsService,
+    private readonly searchIndex: SearchIndexPublisher,
   ) {}
 
   async listPublic(query: BusinessSearchQueryDto): Promise<PaginatedDto<BusinessSummaryDto>> {
-    const term = query.q?.trim();
+    // Escaped before it reaches `contains`, which compiles to LIKE. Unescaped, `?q=%` matched
+    // all 3.4 million rows and `?q=%a%b%c%` was a one-request sequential scan of the largest
+    // table in the schema, from a public endpoint.
+    const term = query.q?.trim() ? escapeLike(query.q.trim()) : undefined;
     const where: Prisma.BusinessWhereInput = {
       deletedAt: null,
       isActive: true,
@@ -531,6 +537,14 @@ export class BusinessesService {
       },
     });
 
+    // `isVerifiedBusiness` is denormalised onto every one of this business's listing
+    // documents, so the badge and the "verified businesses only" filter both go stale here
+    // until something reindexes them. Granting verification and having it not show for a day
+    // is the visible half; keeping it after a revocation is the half that matters.
+    if (business.verificationStatus !== status) {
+      await this.reindexListingsOf(businessId);
+    }
+
     await this.audit.record({
       action: 'business.verification',
       entityType: 'Business',
@@ -565,6 +579,13 @@ export class BusinessesService {
   async delete(businessId: string, userId: string): Promise<void> {
     await this.requireOwner(businessId, userId);
 
+    // Read before the update, because afterwards they no longer match the filter and there
+    // would be nothing left to tell the index about.
+    const affected = await this.prisma.listing.findMany({
+      where: { businessId, status: { in: [ListingStatus.PUBLISHED, ListingStatus.PAUSED] } },
+      select: { id: true },
+    });
+
     // Soft delete, and the business's listings go with it — leaving orphaned listings
     // pointing at a business that no longer exists is worse than hiding both.
     await this.prisma.$transaction([
@@ -578,15 +599,41 @@ export class BusinessesService {
       }),
     ]);
 
+    // Archiving a listing has to remove it from search, or it stays findable and openable
+    // through its own URL until the nightly rebuild — up to a day of results pointing at a
+    // shop that has closed. Every other path that archives a listing already does this.
+    for (const listing of affected) {
+      await this.searchIndex.enqueueRemoval(listing.id);
+    }
+
     await this.audit.record({
       action: 'business.delete',
       entityType: 'Business',
       entityId: businessId,
       actorId: userId,
+      changes: { archivedListings: affected.length },
     });
   }
 
   // -------------------------------------------------------------------
+
+  /**
+   * Rebuilds the search document of every live listing this business owns.
+   *
+   * Used when something on the business changes that its listings carry a copy of. Bounded by
+   * status rather than paged: a business posts tens of listings, not thousands, and the job is
+   * a single id per listing.
+   */
+  private async reindexListingsOf(businessId: string): Promise<void> {
+    const listings = await this.prisma.listing.findMany({
+      where: { businessId, status: ListingStatus.PUBLISHED, deletedAt: null },
+      select: { id: true },
+    });
+
+    for (const listing of listings) {
+      await this.searchIndex.enqueueIndex(listing.id);
+    }
+  }
 
   private async requireOwner(businessId: string, userId: string) {
     const business = await this.prisma.business.findFirst({
