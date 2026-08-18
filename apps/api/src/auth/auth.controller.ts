@@ -1,4 +1,4 @@
-import { Body, Controller, Get, HttpCode, HttpStatus, Post, Req, Query } from '@nestjs/common';
+import { Body, Controller, Get, HttpCode, HttpStatus, Post, Req } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
 import {
@@ -21,6 +21,7 @@ import {
   VerifyOtpDto,
   GoogleLoginDto,
   RequestPasswordResetDto,
+  CheckPasswordResetDto,
   CompletePasswordResetDto,
 } from './dto/auth.dto';
 
@@ -168,15 +169,25 @@ export class AuthController {
   }
 
   @Public()
-  @Get('password/reset/check')
+  @Post('password/reset/check')
+  @HttpCode(HttpStatus.OK)
+  @Throttle({ default: { limit: 20, ttl: 300_000 } })
   @ApiOperation({
     summary: 'Whether a reset link can still be used',
     description:
       'Lets the form say a link has expired before somebody types a new password rather ' +
       'than after. Answers only yes or no, never why.',
   })
-  async checkPasswordReset(@Query('token') token: string): Promise<{ usable: boolean }> {
-    return { usable: await this.passwordReset.isUsable(token ?? '') };
+  async checkPasswordReset(
+    // POST with the token in the body, not GET with it in the query string.
+    //
+    // A reset token is a live credential for the account. In a URL it lands in the access
+    // log of every proxy it passes, in the browser's history, and — because the page that
+    // calls this also links to the terms and safety pages — in the `Referer` sent to
+    // whatever is clicked next. None of that is true of a request body.
+    @Body() dto: CheckPasswordResetDto,
+  ): Promise<{ usable: boolean }> {
+    return { usable: await this.passwordReset.isUsable(dto.token) };
   }
 
   @Public()

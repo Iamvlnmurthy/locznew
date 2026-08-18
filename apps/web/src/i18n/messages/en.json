@@ -1466,7 +1466,8 @@
     "emailHint": "The address you signed up with",
     "invalidEmail": "Enter a valid email address",
     "phoneIdentityHint": "Buyers use this to reach you. You will not sign in with it.",
-    "emailTaken": "That email already has an account. Sign in instead."
+    "emailTaken": "That email already has an account. Sign in instead.",
+    "forgotPassword": "Forgot your password?"
   },
   "dashboard": {
     "title": "Post your ad",
@@ -1616,5 +1617,34 @@
     "phoneTitle": "Mobile number",
     "phoneConfirmed": "confirmed",
     "phoneAction": "Confirm a mobile number"
+  },
+  "passwordReset": {
+    "requestTitle": "Reset your password",
+    "requestSubtitle": "Enter the email address on your account and we will send you a link to choose a new password.",
+    "email": "Email address",
+    "submit": "Send the reset link",
+    "submitting": "Sending…",
+    "invalidEmail": "Enter a valid email address",
+    "sentTitle": "Check your email",
+    "sentBody": "If that address has a LocZ account, a reset link is on its way. It works for one hour.",
+    "sentNote": "Nothing arrived? Check your spam folder, or try again in a few minutes.",
+    "backToSignIn": "Back to sign in",
+    "completeTitle": "Choose a new password",
+    "completeSubtitle": "Pick something you have not used elsewhere.",
+    "newPassword": "New password",
+    "confirmPassword": "Confirm new password",
+    "save": "Save and sign in",
+    "saving": "Saving…",
+    "tooShort": "Use at least 8 characters",
+    "mismatch": "Both passwords must match",
+    "expiredTitle": "That link no longer works",
+    "expiredBody": "Reset links expire after an hour and can only be used once. Request a new one and it will arrive in a moment.",
+    "requestAnother": "Request a new link",
+    "doneTitle": "Password changed",
+    "doneBody": "You have been signed out everywhere else. Sign in with your new password to continue.",
+    "signOutNote": "Every other device was signed out, in case somebody else had the old password.",
+    "showPassword": "Show",
+    "hidePassword": "Hide",
+    "failed": "Something went wrong. Request a new link and try again."
   }
 }

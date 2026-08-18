@@ -65,6 +65,7 @@ export default async function SignInPage({
           googleButton: t('auth.googleButton'),
           googleUnavailable: t('auth.googleUnavailable'),
           googleFailed: t('auth.googleFailed'),
+          forgotPassword: t('auth.forgotPassword'),
         }}
       />
     </AuthShell>

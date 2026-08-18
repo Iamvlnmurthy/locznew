@@ -188,13 +188,6 @@ export class RefreshTokenDto {
   refreshToken!: string;
 }
 
-export class LogoutDto {
-  @ApiPropertyOptional({ description: 'Omit to log out of the current session only' })
-  @IsOptional()
-  @IsString()
-  refreshToken?: string;
-}
-
 export class AuthUserDto {
   @ApiProperty() id!: string;
   /**
@@ -258,6 +251,13 @@ export class RequestPasswordResetDto {
   @ApiProperty({ example: 'you@example.com' })
   @IsEmail()
   email!: string;
+}
+
+export class CheckPasswordResetDto {
+  @ApiProperty({ description: 'The token from the emailed link' })
+  @IsString()
+  @Length(20, 200)
+  token!: string;
 }
 
 export class CompletePasswordResetDto {

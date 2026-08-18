@@ -26,6 +26,7 @@ interface Labels {
   googleButton: string;
   googleUnavailable: string;
   googleFailed: string;
+  forgotPassword: string;
 }
 
 function Submit({ idle, busy }: { idle: string; busy: string }) {
@@ -114,6 +115,11 @@ export function PasswordSignInForm({
           autoComplete="current-password"
           required
         />
+        {/* The only way into the reset flow. The API has always implemented it and nothing
+            in any client linked to it, so a forgotten password meant a lost account. */}
+        <small className="field__hint signin-form__forgot">
+          <a href="/reset-password">{labels.forgotPassword}</a>
+        </small>
       </div>
 
       <Submit idle={labels.submit} busy={labels.submitting} />
