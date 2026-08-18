@@ -14,6 +14,8 @@ import {
 import { getLocale, getSelectedCity } from '@/lib/session';
 import { SearchFilters } from './search-filters';
 import { SearchSort } from './search-sort';
+import { NearbyBusinesses } from './nearby-businesses';
+import { loadNearbyBusinesses } from './businesses-actions';
 import { RecentSearchInput } from '@/components/recent-search-input';
 
 interface SearchResult {
@@ -103,8 +105,13 @@ export default async function SearchPage({
   const activeFilters = buildActiveFilters(rawParams, categories, s, locale);
   const resultCount = result?.total ?? 0;
   const visibleResultCount = result?.items.length ?? 0;
-  const businesses = result?.businesses ?? [];
-  const businessTotal = result?.businessTotal ?? 0;
+  // "Places nearby" is now a paginated, infinite-scroll list scoped to the pincode/city —
+  // 20 at a time, pulled as the user scrolls, rather than a fixed preview.
+  const businessPage =
+    pincode || cityId
+      ? await loadNearbyBusinesses({ q: params.q, pincode, cityId, page: 1 })
+      : { items: [], total: 0, page: 1, hasNextPage: false };
+  const businessTotal = businessPage.total;
   const isSparse = visibleResultCount > 0 && visibleResultCount <= 2;
   const resultHeading = params.q
     ? (resultCount === 1 ? s.resultForOne : s.resultsForMany)
@@ -201,7 +208,7 @@ export default async function SearchPage({
           />
 
           <div className={`search-results${isSparse ? ' search-results--sparse' : ''}`}>
-            {businesses.length > 0 ? (
+            {businessPage.items.length > 0 ? (
               <section className="search-businesses" aria-labelledby="search-businesses-title">
                 <div className="search-businesses__head">
                   <div>
@@ -214,43 +221,17 @@ export default async function SearchPage({
                       )}
                     </p>
                   </div>
-                  {businessTotal > businesses.length ? (
-                    <Link href={buildBusinessDirectoryHref(params)}>
-                      {s.viewAllBusinesses} <Icon name="arrow" />
-                    </Link>
-                  ) : null}
                 </div>
-                <div className="search-businesses__grid">
-                  {businesses.map((business) => {
-                    const place = business.localityName ?? business.cityName ?? s.nearYou;
-                    return (
-                      <Link
-                        key={business.id}
-                        href={`/b/${business.slug}`}
-                        className="search-business-card"
-                      >
-                        <span className="search-business-card__mark" aria-hidden="true">
-                          {business.name.slice(0, 1).toUpperCase()}
-                        </span>
-                        <span className="search-business-card__body">
-                          <span className="search-business-card__category">
-                            {business.categoryName}
-                          </span>
-                          <strong>{business.name}</strong>
-                          <span className="search-business-card__place">
-                            <Icon name="location" /> {place}
-                          </span>
-                        </span>
-                        {business.isVerified ? (
-                          <span className="search-business-card__verified">
-                            <Icon name="shield" /> {s.businessVerified}
-                          </span>
-                        ) : null}
-                        <Icon name="arrow" />
-                      </Link>
-                    );
-                  })}
-                </div>
+                <NearbyBusinesses
+                  q={params.q}
+                  pincode={pincode}
+                  cityId={cityId}
+                  initial={businessPage.items}
+                  initialHasMore={businessPage.hasNextPage}
+                  verifiedLabel={s.businessVerified}
+                  nearYou={s.nearYou}
+                  loadingLabel={s.loadingMoreBusinesses}
+                />
               </section>
             ) : null}
 
@@ -361,13 +342,6 @@ function buildPageHref(params: SearchParams, page: number): string {
   }
   next.set('page', String(page));
   return `/search?${next.toString()}`;
-}
-
-function buildBusinessDirectoryHref(params: Record<string, string | undefined>): string {
-  const query = new URLSearchParams();
-  if (params.q) query.set('q', params.q);
-  if (params.cityId) query.set('cityId', params.cityId);
-  return `/business${query.size ? `?${query.toString()}` : ''}`;
 }
 
 function buildActiveFilters(

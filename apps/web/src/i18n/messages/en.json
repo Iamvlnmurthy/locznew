@@ -950,6 +950,7 @@
     "businessCountMany": "{count} local businesses match this search",
     "businessCountOne": "1 local business matches this search",
     "businessesKicker": "Places nearby",
+    "loadingMoreBusinesses": "Loading more nearby businesses…",
     "businessesTitle": "Businesses near you",
     "businessVerified": "Verified",
     "category": "Category",

@@ -73,6 +73,7 @@ export class BusinessesService {
       deletedAt: null,
       isActive: true,
       ...(query.cityId ? { cityId: query.cityId } : {}),
+      ...(query.pincode ? { pincodeCode: query.pincode } : {}),
       ...(query.categoryId ? { categoryId: query.categoryId } : {}),
       ...(query.verificationStatus
         ? { verificationStatus: query.verificationStatus }
@@ -639,6 +640,7 @@ export class BusinessesService {
       businessType: business.businessType,
       categoryName: business.category.name,
       cityName: business.city.name,
+      pincode: business.pincodeCode ?? null,
       logoUrl: business.logoMediaId ? this.storage.publicUrl(business.logoMediaId) : null,
       verificationStatus: business.verificationStatus,
       listingCount: business._count.listings,

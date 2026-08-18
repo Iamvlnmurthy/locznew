@@ -176,6 +176,7 @@ export class BusinessSummaryDto {
   @ApiProperty({ enum: BusinessType }) businessType!: BusinessType;
   @ApiProperty() categoryName!: string;
   @ApiProperty() cityName!: string;
+  @ApiPropertyOptional() pincode!: string | null;
   @ApiPropertyOptional() logoUrl!: string | null;
   @ApiProperty({ enum: VerificationStatus }) verificationStatus!: VerificationStatus;
   @ApiProperty() listingCount!: number;
@@ -196,6 +197,11 @@ export class BusinessSearchQueryDto extends PaginationQueryDto {
   @IsOptional()
   @IsUUID()
   cityId?: string;
+
+  @ApiPropertyOptional({ example: '500081', description: 'Scope to a single pincode' })
+  @IsOptional()
+  @Matches(/^\d{6}$/, { message: 'A pincode is exactly six digits' })
+  pincode?: string;
 
   @ApiPropertyOptional()
   @IsOptional()

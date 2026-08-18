@@ -918,6 +918,7 @@
     "businessCountMany": "ఈ శోధనకు {count} స్థానిక వ్యాపారాలు సరిపోలాయి",
     "businessCountOne": "ఈ శోధనకు 1 స్థానిక వ్యాపారం సరిపోలింది",
     "businessesKicker": "సమీపంలోని ప్రదేశాలు",
+    "loadingMoreBusinesses": "సమీపంలోని మరిన్ని వ్యాపారాలను లోడ్ చేస్తోంది…",
     "businessesTitle": "మీ దగ్గరలోని వ్యాపారాలు",
     "businessVerified": "ధృవీకరించబడింది",
     "category": "వర్గం",
