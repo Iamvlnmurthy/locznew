@@ -204,9 +204,11 @@ export default async function ListingPage({ params }: { params: Promise<{ slug: 
       <nav className="breadcrumbs" aria-label={t('listing.breadcrumb')}>
         <Link href="/">{t('nav.home')}</Link>
         <span>›</span>
-        <Link href={`/search?cityId=${encodeURIComponent(listing.cityName)}`}>
-          {listing.cityName}
-        </Link>
+        {/* The city *name*, not an id: `cityId` is validated as a UUID by the API, so this
+            link used to 400, get swallowed by `apiSafe`, and land the reader on an empty
+            results page. A free-text search for the city name is the honest version of what
+            the breadcrumb was trying to offer. */}
+        <Link href={`/search?q=${encodeURIComponent(listing.cityName)}`}>{listing.cityName}</Link>
         <span>›</span>
         <span>{listing.categoryName}</span>
       </nav>
@@ -408,12 +410,20 @@ export default async function ListingPage({ params }: { params: Promise<{ slug: 
                 })}
               </p>
             </div>
+            {/* No "phone verified" badge.
+
+                `AuthService.register` deliberately leaves `phoneVerifiedAt` null — its comment
+                explains that recording otherwise would "put a claim in the database that no
+                evidence supports" — and the API does not expose the flag on this response at
+                all. Rendering the badge unconditionally asserted, on every listing, exactly
+                the thing the backend refuses to assert, and on a marketplace that is a safety
+                signal people act on. What is left is true of every seller here. */}
             <div className="detail__seller-trust">
               <span>
-                <Icon name="check" /> {t('listing.phoneVerified')}
+                <Icon name="message" /> {t('listing.contactThrough')}
               </span>
               <span>
-                <Icon name="message" /> {t('listing.contactThrough')}
+                <Icon name="shield" /> {t('listing.moderated')}
               </span>
             </div>
             <Link href={`/report?listing=${listing.id}`} className="detail__report">

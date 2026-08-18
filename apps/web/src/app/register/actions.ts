@@ -3,6 +3,7 @@
 import { redirect } from 'next/navigation';
 import type { AuthSession } from '@locz/shared-types';
 import { api } from '@/lib/api';
+import { browserDeviceKey } from '@/lib/device';
 import { storeSession } from '@/lib/session';
 
 export interface RegisterState {
@@ -56,7 +57,9 @@ export async function registerAction(
         phone: `+91${national}`,
         displayName: name,
         password,
-        device: { deviceKey: `web-${Date.now()}`, platform: 'WEB', name: 'LocZ web' },
+        // The browser's stable key, not a fresh one per submission — otherwise the account
+        // starts life with a device row nothing will ever match again. See `browserDeviceKey`.
+        device: { deviceKey: await browserDeviceKey(), platform: 'WEB', name: 'LocZ web' },
       },
     });
   } catch (error) {

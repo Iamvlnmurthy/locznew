@@ -3,6 +3,7 @@
 import { redirect } from 'next/navigation';
 import type { AuthSession } from '@locz/shared-types';
 import { api, ApiError } from '@/lib/api';
+import { browserDeviceKey } from '@/lib/device';
 import { storeSession } from '@/lib/session';
 
 export interface SignInState {
@@ -70,6 +71,8 @@ export async function passwordSignInAction(
   if (!email.includes('@') || email.length < 5) return { step: 'phone', error: 'invalidEmail' };
   if (!password) return { step: 'phone', email, error: 'missingPassword' };
 
+  const deviceKey = await browserDeviceKey(String(formData.get('deviceKey') ?? ''));
+
   let session: AuthSession;
   try {
     session = await api<AuthSession>('/auth/login/email', {
@@ -77,7 +80,7 @@ export async function passwordSignInAction(
       body: {
         email,
         password,
-        device: { deviceKey: `web-${Date.now()}`, platform: 'WEB', name: 'Web browser' },
+        device: { deviceKey, platform: 'WEB', name: 'Web browser' },
       },
     });
   } catch {
@@ -108,17 +111,15 @@ export async function googleSignInAction(
   const next = String(formData.get('next') ?? '/');
   if (!idToken) return { error: 'failed' };
 
+  const deviceKey = await browserDeviceKey(String(formData.get('deviceKey') ?? ''));
+
   let session: AuthSession;
   try {
     session = await api<AuthSession>('/auth/login/google', {
       method: 'POST',
       body: {
         idToken,
-        device: {
-          deviceKey: `web-google-${Date.now()}`,
-          platform: 'WEB',
-          name: 'Web browser',
-        },
+        device: { deviceKey, platform: 'WEB', name: 'Web browser' },
       },
     });
   } catch (error) {
@@ -164,10 +165,7 @@ export async function verifyCodeAction(
         // The client persists one random identifier per browser. The fallback keeps
         // non-browser clients compatible without accepting an unbounded value.
         device: {
-          deviceKey:
-            submittedDeviceKey.length >= 8 && submittedDeviceKey.length <= 128
-              ? submittedDeviceKey
-              : `web-${phone}`,
+          deviceKey: await browserDeviceKey(submittedDeviceKey),
           platform: 'WEB',
           name: 'Web browser',
         },
