@@ -137,3 +137,45 @@ All additive migrations, no user-facing regression, and each is independently ve
   provider, weather, jobs/events APIs are approved for commercial use in India — each needs a
   terms review recorded in `DataSource` before it runs.
 - **Object storage**: stay on the current MinIO, or move LocZ uploads to R2/S3 + CDN (Part 25)?
+
+---
+
+## 9. Owner decisions (answered 2026-08-18) + storage sizing
+
+**(1) Coverage = all-India pincodes.** The schema/geo layer already supports the whole country;
+pincode is metadata, discovery is lat/lon + distance (Part 62). Ingestion runs per **geo cell**,
+not per pincode. Roll cities out via `City.launchState` (SEEDING→ACTIVE) even though the DB
+covers all pincodes — density-first beats thin nationwide coverage.
+
+**(2) Sources — chosen defaults (each still gated by the `DataSource` licence checklist):**
+
+- **Now:** OpenStreetMap / Overpass for POI seed (open data, ODbL, attribution shipped in the
+  connector). This alone seeds Businesses/Food/Health/Services/Play/Mobility.
+- **Next:** OpenWeather free tier → Local Now (display-only, short TTL, no storage).
+- **Deferred until terms + real Indian coverage are reviewed:** Foursquare/paid POI, paid
+  jobs/events (Adzuna/Ticketmaster), NDMA SACHET, data.gov.in. None run until their row's
+  `termsReviewed`+`commercialUse`(+`storagePermitted`) are set — enforced by
+  `sourceMayRunInProduction()`.
+
+**(3) Storage sizing (all-India):**
+
+| Layer                                                              | Estimate                                                                              | Where                                   |
+| ------------------------------------------------------------------ | ------------------------------------------------------------------------------------- | --------------------------------------- |
+| Canonical structured entities (~15–20M POIs incl. the existing 4M) | ~80–150 GB incl. GiST/trigram indexes                                                 | Postgres                                |
+| Raw ingestion (`SourceRawRecord`, jsonb)                           | ~40–80 GB (prune after processing)                                                    | Postgres                                |
+| **→ provision**                                                    | **~250–500 GB Postgres volume for national scale** (launch-city seed is only ~1–5 GB) | Postgres                                |
+| LocZ-uploaded media (business/user photos)                         | ~hundreds of GB at scale, grows with users                                            | **Object storage (R2/S3), NOT the VPS** |
+| External media                                                     | **0 on VPS** — reference-only per source rights (Parts 23–24)                         | —                                       |
+
+Current VPS Postgres is small and fine for the **launch-city seed**. Before national ingestion:
+grow the DB volume and move LocZ uploads to R2/S3 + CDN (the MinIO abstraction already exists).
+
+## 10. P1 status — DELIVERED (2026-08-18)
+
+Built + verified (typecheck clean, 562 API tests): `DataSource` registry + **licence gate**
+(`sourceMayRunInProduction`), `SourceRawRecord` raw layer, `SourceConnector` interface, a pure
+**dedup confidence scorer** (Part 8), OSM→canonical **category map**, the **OSM Overpass
+connector** (pure `normalize`), admin endpoints (`/admin/data-sources`), and the additive
+migration `20260818000000_data_engine_foundations` (new tables/enums only — no change to the
+4M-row `Business`/`City`). Next: apply the migration on the VPS, then P2 (run the OSM connector
+for the launch city through the dedup→canonical pipeline).

@@ -2,6 +2,7 @@ import { MiddlewareConsumer, Module, NestModule } from '@nestjs/common';
 import { APP_FILTER, APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
 import { ThrottlerModule } from '@nestjs/throttler';
 import { AdminModule } from './admin/admin.module';
+import { DataEngineModule } from './data-engine/data-engine.module';
 import { AuditModule } from './audit/audit.module';
 import { BusinessesModule } from './businesses/businesses.module';
 import { AuthModule } from './auth/auth.module';
@@ -62,6 +63,7 @@ import { UsersModule } from './users/users.module';
     ReportsModule,
     LifecycleModule,
     AdminModule,
+    DataEngineModule,
     HealthModule,
     // Baseline API rate limit. Individual routes tighten it with @Throttle; the OTP
     // endpoints add their own per-phone limits on top.

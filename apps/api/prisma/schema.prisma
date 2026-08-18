@@ -2041,3 +2041,108 @@ model BusinessClaim {
   @@index([businessId])
   @@map("business_claims")
 }
+
+// =====================================================================
+// Data Engine — external-source ingestion (see docs/DATA_ENGINE_PLAN.md)
+// Additive only: new tables + enums, nothing on existing entities.
+// =====================================================================
+
+enum MediaOrigin {
+  EXTERNAL // hosted by the source; LocZ keeps a reference only
+  LOCZ_UPLOAD // uploaded by a business/user to LocZ object storage
+  LOCZ_GENERATED // produced by LocZ (e.g. a rendered map card)
+  PERMITTED_CACHE // cached from a source that explicitly allows caching
+}
+
+enum SourceTrustLevel {
+  OFFICIAL
+  VERIFIED_LOCZ_BUSINESS
+  LOCZ_PARTNER
+  LICENSED_SOURCE
+  OPEN_DATA_SOURCE
+  COMMUNITY
+  UNVERIFIED
+}
+
+enum SourceHealth {
+  HEALTHY
+  DEGRADED
+  FAILING
+  DISABLED
+}
+
+enum IngestionStatus {
+  PENDING
+  PROCESSED
+  FAILED
+  SKIPPED
+}
+
+enum CityLaunchState {
+  PLANNED
+  SEEDING
+  REVIEW
+  ACTIVE
+  LIMITED
+}
+
+/// A registered external data source. One row per provider/feed. NO API keys here —
+/// credentials stay in env/secrets; this row describes the source and its licence gate.
+model DataSource {
+  id                  String            @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  key                 String            @unique
+  name                String
+  type                String
+  docsUrl             String?
+  baseUrl             String?
+  authMethod          String            @default("none")
+  enabled             Boolean           @default(false)
+  priority            Int               @default(100)
+  trustLevel          SourceTrustLevel  @default(OPEN_DATA_SOURCE)
+  refreshSeconds      Int               @default(86400)
+  rateLimitPerMin     Int?
+  attributionText     String?
+  termsReviewed       Boolean           @default(false)
+  commercialUse       Boolean           @default(false)
+  storagePermitted    Boolean           @default(false)
+  cachingPermitted    Boolean           @default(false)
+  mediaDisplay        Boolean           @default(false)
+  attributionRequired Boolean           @default(false)
+  reviewedAt          DateTime?
+  reviewNotes         String?
+  health              SourceHealth      @default(DISABLED)
+  lastSuccessAt       DateTime?
+  lastFailureAt       DateTime?
+  errorCount          Int               @default(0)
+  requestCount        Int               @default(0)
+  recordsCreated      Int               @default(0)
+  recordsUpdated      Int               @default(0)
+  duplicatesRejected  Int               @default(0)
+  createdAt           DateTime          @default(now())
+  updatedAt           DateTime          @updatedAt
+  rawRecords          SourceRawRecord[]
+
+  @@index([type, enabled])
+}
+
+/// The unmodified payload of one external record, kept for reprocessing, dedup and audit.
+/// Never exposed to users (Part 6).
+model SourceRawRecord {
+  id              String          @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  sourceId        String          @db.Uuid
+  source          DataSource      @relation(fields: [sourceId], references: [id], onDelete: Cascade)
+  externalId      String
+  hash            String
+  rawPayload      Json
+  retrievedAt     DateTime        @default(now())
+  sourceUpdatedAt DateTime?
+  status          IngestionStatus @default(PENDING)
+  processingError String?
+  h3              String?
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+
+  @@unique([sourceId, externalId])
+  @@index([status])
+  @@index([h3])
+}
