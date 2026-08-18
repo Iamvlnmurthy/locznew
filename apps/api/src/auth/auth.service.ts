@@ -35,6 +35,26 @@ export interface RequestContext {
   correlationId?: string;
 }
 
+/**
+ * Scope written on password-path lockout rows.
+ *
+ * `'IP'` previously, which was simply wrong: the identifier stored alongside it is an email
+ * address or a mobile number, never an address. A mislabelled scope is a row nobody can
+ * interpret later, and it collides in meaning with the genuinely IP-scoped rows.
+ */
+const PASSWORD_LOCKOUT_SCOPE = 'CREDENTIAL';
+
+/** Consecutive failures before the account is held. */
+const MAX_PASSWORD_FAILURES = 5;
+
+/**
+ * How long a failure keeps counting towards the next one.
+ *
+ * Beyond this the tally starts again, so the threshold describes a burst of attempts rather
+ * than a lifetime total.
+ */
+const FAILURE_WINDOW_MS = 60 * 60 * 1000;
+
 @Injectable()
 export class AuthService {
   private readonly logger = new Logger(AuthService.name);
@@ -251,7 +271,9 @@ export class AuthService {
       throw invalid;
     }
 
-    await this.prisma.authLockout.deleteMany({ where: { scope: 'IP', identifier: email } });
+    await this.prisma.authLockout.deleteMany({
+      where: { scope: PASSWORD_LOCKOUT_SCOPE, identifier: email },
+    });
 
     const device = await this.registerDevice(user.id, dto.device, context);
     return this.buildSession(user, device, context, false);
@@ -288,7 +310,9 @@ export class AuthService {
       throw invalid;
     }
 
-    await this.prisma.authLockout.deleteMany({ where: { scope: 'IP', identifier: dto.phone } });
+    await this.prisma.authLockout.deleteMany({
+      where: { scope: PASSWORD_LOCKOUT_SCOPE, identifier: dto.phone },
+    });
 
     const device = await this.registerDevice(user.id, dto.device, context);
     return this.buildSession(user, device, context, false);
@@ -506,34 +530,67 @@ export class AuthService {
     };
   }
 
-  private async assertNotLockedOut(email: string): Promise<void> {
+  /**
+   * Refuses a sign-in while a lockout is in force, and clears one that has run out.
+   *
+   * Clearing matters as much as refusing. Without it `failedCount` is a lifetime tally rather
+   * than a count of consecutive failures: an account that once mistyped its password five
+   * times over a year stays permanently one typo away from another fifteen-minute lockout,
+   * because nothing ever resets the counter except a successful sign-in. `OtpService` already
+   * deletes the expired row for the same reason; this is the same rule on the password path.
+   */
+  private async assertNotLockedOut(identifier: string): Promise<void> {
     const lockout = await this.prisma.authLockout.findUnique({
-      where: { scope_identifier: { scope: 'IP', identifier: email } },
+      where: { scope_identifier: { scope: PASSWORD_LOCKOUT_SCOPE, identifier } },
     });
-    if (lockout && lockout.lockedUntil.getTime() > Date.now()) {
+    if (!lockout) return;
+
+    if (lockout.lockedUntil.getTime() > Date.now()) {
       const seconds = Math.ceil((lockout.lockedUntil.getTime() - Date.now()) / 1000);
       throw new ForbiddenException(`Too many failed attempts. Try again in ${seconds} seconds.`);
     }
+
+    await this.prisma.authLockout.deleteMany({
+      where: { scope: PASSWORD_LOCKOUT_SCOPE, identifier },
+    });
   }
 
   /**
-   * Password brute-force brake. Counts against the email rather than the IP so a
-   * distributed attempt on one account is still throttled.
+   * Password brute-force brake. Counts against the identifier — the email address or the
+   * mobile number — rather than the IP, so a distributed attempt on one account is still
+   * throttled.
    */
-  private async recordFailedPasswordAttempt(email: string): Promise<void> {
+  private async recordFailedPasswordAttempt(identifier: string): Promise<void> {
     const lockoutSeconds = this.config.get('OTP_LOCKOUT_SECONDS');
     const existing = await this.prisma.authLockout.findUnique({
-      where: { scope_identifier: { scope: 'IP', identifier: email } },
+      where: { scope_identifier: { scope: PASSWORD_LOCKOUT_SCOPE, identifier } },
     });
 
-    const failedCount = (existing?.failedCount ?? 0) + 1;
+    // A lapsed lockout starts a fresh count rather than continuing the old one, so the
+    // threshold means "five failures in a row" and not "five failures ever".
+    const carried =
+      existing && existing.lockedUntil.getTime() > Date.now() - FAILURE_WINDOW_MS
+        ? existing.failedCount
+        : 0;
+
+    const failedCount = carried + 1;
     const lockedUntil =
-      failedCount >= 5 ? new Date(Date.now() + lockoutSeconds * 1000) : new Date(Date.now() + 1000);
+      failedCount >= MAX_PASSWORD_FAILURES
+        ? new Date(Date.now() + lockoutSeconds * 1000)
+        : // Not a lockout: a marker carrying when this failure happened, so the window above
+          // can tell a fresh run of attempts from one that petered out weeks ago.
+          new Date(Date.now() + 1000);
 
     await this.prisma.authLockout.upsert({
-      where: { scope_identifier: { scope: 'IP', identifier: email } },
+      where: { scope_identifier: { scope: PASSWORD_LOCKOUT_SCOPE, identifier } },
       update: { failedCount, lockedUntil },
-      create: { id: uuid(), scope: 'IP', identifier: email, failedCount, lockedUntil },
+      create: {
+        id: uuid(),
+        scope: PASSWORD_LOCKOUT_SCOPE,
+        identifier,
+        failedCount,
+        lockedUntil,
+      },
     });
   }
 }

@@ -123,16 +123,35 @@ export class TokenService {
       throw new UnauthorizedException('This session has been revoked. Please sign in again.');
     }
 
-    if (session.rotatedAt) {
+    if (session.expiresAt.getTime() < Date.now()) {
+      throw new UnauthorizedException('This session has expired. Please sign in again.');
+    }
+
+    /**
+     * Claim the rotation before issuing anything.
+     *
+     * Reading `rotatedAt` and writing it afterwards leaves a window between the two: an app
+     * that fires several requests on a stale token — which is the ordinary case, not a rare
+     * one — has them all pass the check and all mint a session, and the reuse this exists to
+     * detect goes unnoticed. Worse, it is unnoticed in exactly the scenario the family
+     * revocation was built for.
+     *
+     * `updateMany` guarded on `rotatedAt: null` makes the claim itself the check: the
+     * database decides which caller wins, and `count === 0` means somebody else already
+     * rotated this token. That is either a replay or a stolen token racing the real client,
+     * and both answers are the same — revoke the family.
+     */
+    const claimed = await this.prisma.session.updateMany({
+      where: { id: session.id, rotatedAt: null, revokedAt: null },
+      data: { rotatedAt: new Date() },
+    });
+
+    if (claimed.count === 0) {
       await this.revokeFamily(session.familyId, 'REFRESH_TOKEN_REUSE_DETECTED');
       this.logger.warn(
         `Refresh token reuse detected for user ${session.userId}; family ${session.familyId} revoked`,
       );
       throw new UnauthorizedException('This session is no longer valid. Please sign in again.');
-    }
-
-    if (session.expiresAt.getTime() < Date.now()) {
-      throw new UnauthorizedException('This session has expired. Please sign in again.');
     }
 
     const pair = await this.issuePair(
@@ -144,11 +163,6 @@ export class TokenService {
       session.familyId,
       session.id,
     );
-
-    await this.prisma.session.update({
-      where: { id: session.id },
-      data: { rotatedAt: new Date() },
-    });
 
     return { pair, userId: session.userId };
   }

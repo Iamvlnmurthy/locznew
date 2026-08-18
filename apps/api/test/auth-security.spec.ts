@@ -92,6 +92,8 @@ describe('TokenService', () => {
       expiresAt: new Date('2099-01-01T00:00:00Z'),
     });
 
+    (prisma.session.updateMany as jest.Mock).mockResolvedValue({ count: 0 });
+
     await expect(service.rotate('stolen-token', [], [])).rejects.toThrow(UnauthorizedException);
 
     expect(prisma.session.updateMany).toHaveBeenCalledWith(
@@ -144,6 +146,8 @@ describe('TokenService', () => {
       expiresAt: new Date('2099-01-01T00:00:00Z'),
     });
     (prisma.session.create as jest.Mock).mockResolvedValue({});
+    // The rotation claim succeeds: this caller is the one that won it.
+    (prisma.session.updateMany as jest.Mock).mockResolvedValue({ count: 1 });
 
     const { pair } = await service.rotate('good-token', [], []);
     const created = (prisma.session.create as jest.Mock).mock.calls[0][0];
@@ -151,10 +155,40 @@ describe('TokenService', () => {
     expect(created.data.familyId).toBe('family-1');
     expect(created.data.previousSessionId).toBe('session-1');
     expect(pair.refreshToken).toBeDefined();
-    // The consumed token is marked rotated, so replaying it now trips the check above.
-    expect(prisma.session.update).toHaveBeenCalledWith(
-      expect.objectContaining({ where: { id: 'session-1' } }),
+    // The consumed token is claimed before anything is issued, guarded on it not having been
+    // rotated already — so two concurrent refreshes cannot both succeed.
+    expect(prisma.session.updateMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { id: 'session-1', rotatedAt: null, revokedAt: null },
+        data: expect.objectContaining({ rotatedAt: expect.any(Date) as Date }),
+      }),
     );
+  });
+
+  it('revokes the family when two refreshes race for the same token', async () => {
+    const { prisma, service } = build();
+    (prisma.session.findUnique as jest.Mock).mockResolvedValue({
+      id: 'session-1',
+      userId: 'user-1',
+      deviceId: 'device-1',
+      familyId: 'family-1',
+      rotatedAt: null,
+      revokedAt: null,
+      expiresAt: new Date('2099-01-01T00:00:00Z'),
+    });
+    // Somebody else claimed the rotation between the read and the write. Reading `rotatedAt`
+    // and trusting it would have let both callers mint a session and seen no reuse at all.
+    (prisma.session.updateMany as jest.Mock).mockResolvedValue({ count: 0 });
+
+    await expect(service.rotate('good-token', [], [])).rejects.toThrow(UnauthorizedException);
+
+    expect(prisma.session.updateMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { familyId: 'family-1', revokedAt: null },
+        data: expect.objectContaining({ revokedReason: 'REFRESH_TOKEN_REUSE_DETECTED' }),
+      }),
+    );
+    expect(prisma.session.create).not.toHaveBeenCalled();
   });
 
   it('treats a session as inactive once revoked', async () => {
