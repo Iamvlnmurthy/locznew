@@ -401,6 +401,13 @@ if (!options.has('--skip-node')) {
     if (!run('workspace typecheck', npm, [...npmPrefix, 'run', 'typecheck'], candidate)) {
       return false;
     }
+    // Lint was named in a comment here and never actually run, by this gate or by any git
+    // hook — which is how a regex whose word boundaries had turned into literal backspace
+    // characters shipped and stayed. `no-control-regex` had been reporting it all along and
+    // nothing was listening.
+    if (!run('lint', npm, [...npmPrefix, 'run', 'lint'], candidate)) {
+      return false;
+    }
     // Needs no running stack, so it belongs in the default path rather than behind --stack.
     if (!run('translation coverage', npm, [...npmPrefix, 'run', 'check:i18n'], candidate)) {
       return false;

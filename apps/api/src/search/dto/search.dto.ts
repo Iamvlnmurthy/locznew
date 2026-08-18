@@ -6,6 +6,7 @@ import {
   IsArray,
   IsBoolean,
   IsEnum,
+  IsIn,
   IsInt,
   IsLatitude,
   IsLongitude,
@@ -18,11 +19,21 @@ import {
   MaxLength,
   Min,
 } from 'class-validator';
+import { booleanFromQuery } from '../../common/dto/boolean-query.transform';
 import { PaginationQueryDto } from '../../common/dto/pagination.dto';
+import { RADIUS_PRESETS_KM } from '../../geo/dto/geo.dto';
 import { ListingSummaryDto } from '../../listings/dto/listing.dto';
 
-export type SearchSort =
-  'relevance' | 'newest' | 'price_asc' | 'price_desc' | 'popular' | 'distance';
+export const SEARCH_SORTS = [
+  'relevance',
+  'newest',
+  'price_asc',
+  'price_desc',
+  'popular',
+  'distance',
+] as const;
+
+export type SearchSort = (typeof SEARCH_SORTS)[number];
 
 export class SearchQueryDto extends PaginationQueryDto {
   @ApiPropertyOptional({ example: 'samsung tv', description: 'Typo-tolerant keyword query' })
@@ -76,7 +87,7 @@ export class SearchQueryDto extends PaginationQueryDto {
 
   @ApiPropertyOptional({ description: 'Only listings from verified businesses' })
   @IsOptional()
-  @Type(() => Boolean)
+  @Transform(booleanFromQuery)
   @IsBoolean()
   verifiedOnly?: boolean;
 
@@ -89,7 +100,16 @@ export class SearchQueryDto extends PaginationQueryDto {
 
   @ApiPropertyOptional() @IsOptional() @Type(() => Number) @IsLatitude() latitude?: number;
   @ApiPropertyOptional() @IsOptional() @Type(() => Number) @IsLongitude() longitude?: number;
-  @ApiPropertyOptional() @IsOptional() @Type(() => Number) @IsInt() radiusKm?: number;
+
+  @ApiPropertyOptional({ enum: RADIUS_PRESETS_KM })
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  // Bounded here, as it already is on the browse DTO. Unbounded, a negative or enormous
+  // radius reached Meilisearch's `_geoRadius` and the same request answered differently
+  // depending on which path served it.
+  @IsIn(RADIUS_PRESETS_KM)
+  radiusKm?: number;
 
   @ApiPropertyOptional({
     example: '500081',
@@ -101,11 +121,14 @@ export class SearchQueryDto extends PaginationQueryDto {
   pincode?: string;
 
   @ApiPropertyOptional({
-    enum: ['relevance', 'newest', 'price_asc', 'price_desc', 'popular', 'distance'],
+    enum: SEARCH_SORTS,
     default: 'relevance',
   })
   @IsOptional()
-  @IsString()
+  // `@IsIn`, not `@IsString`: an unrecognised sort was accepted and then silently ignored by
+  // the switch that reads it, so a caller asking for a ranking they had misspelt was shown a
+  // different one with nothing to say so.
+  @IsIn(SEARCH_SORTS)
   sort?: SearchSort;
 
   /**
@@ -126,6 +149,13 @@ export class SearchQueryDto extends PaginationQueryDto {
   @IsArray()
   @ArrayMaxSize(10)
   @IsString({ each: true })
+  // The same shape guard the browse DTO carries. The two endpoints answer the same question
+  // and were validating it differently, so a filter rejected on one was accepted and quietly
+  // ignored on the other.
+  @Matches(/^[a-z0-9_]{1,60}:.{1,120}$/, {
+    each: true,
+    message: 'Each attribute filter must look like key:value',
+  })
   attr?: string[];
 
   @ApiPropertyOptional({ example: 'Maruti Suzuki' })

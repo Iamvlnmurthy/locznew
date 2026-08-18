@@ -48,6 +48,9 @@ services:
       dockerfile: infrastructure/docker/Dockerfile.api
     restart: unless-stopped
     env_file: [.env]
+    environment:
+      # Scheduling belongs to the worker; see the note there.
+      SCHEDULER_ENABLED: 'false'
     depends_on:
       migrate:
         condition: service_completed_successfully
@@ -67,6 +70,13 @@ services:
       dockerfile: infrastructure/docker/Dockerfile.api
     restart: unless-stopped
     env_file: [.env]
+    environment:
+      # The repeatable jobs are registered by exactly one deployment, and this is it. Both
+      # services read the same .env, so without this override the API replicas registered the
+      # schedule too — harmless in practice, because BullMQ keys a repeatable job, but not what
+      # SCHEDULER_ENABLED is documented to mean, and it stops being harmless the moment a job
+      # key changes.
+      SCHEDULER_ENABLED: 'true'
     depends_on:
       migrate:
         condition: service_completed_successfully

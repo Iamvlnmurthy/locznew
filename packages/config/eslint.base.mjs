@@ -29,7 +29,17 @@ export default tseslint.config(
         { prefer: 'type-imports', fixStyle: 'inline-type-imports' },
       ],
       'no-console': ['error', { allow: ['warn', 'error'] }],
-      eqeqeq: ['error', 'always'],
+      /**
+       * `null: 'ignore'` so `value != null` stays available.
+       *
+       * That comparison is the one place loose equality says something the strict form
+       * cannot say in a single expression: "neither null nor undefined". The codebase uses it
+       * where both are genuinely possible — an optional coordinate that may be absent from the
+       * request or null in the database — and the strict rewrite is
+       * `x !== null && x !== undefined` on every one of them, which is longer and easier to
+       * get half-right. Every other loose comparison is still an error.
+       */
+      eqeqeq: ['error', 'always', { null: 'ignore' }],
       'prefer-const': 'error',
     },
   },

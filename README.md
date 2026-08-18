@@ -16,7 +16,7 @@ the data model, but no payment path is active in Phase 1.
 | Web + Admin    | Next.js 15 (App Router), TypeScript                          |
 | Mobile         | Flutter + Riverpod, one codebase for Android and iOS         |
 | API            | NestJS modular monolith, REST `/api/v1`                      |
-| Database       | PostgreSQL 16 + PostGIS 3.4, Prisma                          |
+| Database       | PostgreSQL 18 + PostGIS 3.6, Prisma                          |
 | Cache / queues | Redis 7, BullMQ                                              |
 | Search         | Meilisearch (derived index; Postgres is the source of truth) |
 | Storage        | Cloudflare R2 / S3-compatible (MinIO locally)                |
@@ -33,7 +33,7 @@ apps/mobile     Flutter application
 packages/       shared-types · validation · ui-tokens · config
 infrastructure/ docker · nginx · database
 docs/           architecture, setup, mobile setup, acceptance, troubleshooting
-docs/openapi.json  committed API contract — 80 paths (npm run openapi -w @locz/api)
+docs/openapi.json  committed API contract — 126 paths (npm run openapi -w @locz/api)
 ```
 
 ## Quick start
@@ -85,7 +85,7 @@ Hindi) · SEO-ready public pages with structured data.
 
 Read [PROGRESS.md](PROGRESS.md) before trusting any part of this. In summary:
 
-- ✅ **Verified here:** all workspaces typecheck; **89 API tests** pass; the six core
+- ✅ **Verified here:** all workspaces typecheck and lint clean; **549 API tests** pass; the six core
   acceptance gates cover 337 assertions, with a separate 51-assertion attacker gate;
   API, web and admin production builds are clean. Flutter reports zero analyzer issues,
   passes 4 unit tests and an authenticated Android integration journey, builds an APK,

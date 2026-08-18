@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:math';
 
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
@@ -59,10 +60,18 @@ class TokenStorage {
     return generated;
   }
 
-  static String _random() => List.generate(
-        8,
-        (_) => '0123456789abcdef'[DateTime.now().microsecond % 16],
-      ).join();
+  /// Eight random hex characters.
+  ///
+  /// `Random.secure()` rather than the clock. The previous version read
+  /// `DateTime.now().microsecond` eight times in a tight loop, which on most platforms returns
+  /// the same value each time — so the "random" suffix was eight identical characters and
+  /// carried essentially no entropy. Uniqueness came entirely from the timestamp prefix, so
+  /// two installs starting in the same microsecond would have collided on a value the server
+  /// treats as identifying a device.
+  static String _random() {
+    final random = Random.secure();
+    return List.generate(8, (_) => '0123456789abcdef'[random.nextInt(16)]).join();
+  }
 
   Future<void> clear() async {
     await _storage.delete(key: _accessKey);

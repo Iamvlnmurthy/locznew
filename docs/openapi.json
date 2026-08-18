@@ -72,8 +72,75 @@
         "tags": ["auth"]
       }
     },
+    "/api/auth/register": {
+      "post": {
+        "description": "The mobile number is not treated as verified — no SMS has proved the person holds it. Verification is a separate step once an SMS provider is configured.",
+        "operationId": "AuthController_register",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RegisterDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthSessionDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "That mobile number already has an account"
+          }
+        },
+        "summary": "Create an account with a mobile number and password",
+        "tags": ["auth"]
+      }
+    },
+    "/api/auth/phone/confirm": {
+      "post": {
+        "description": "The device verifies the number with Firebase and sends the resulting ID token here. A confirmed number is what lets it count towards claiming a business — matching an unconfirmed one against a public directory proves only that you can read.",
+        "operationId": "AuthController_confirmPhone",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ConfirmPhoneDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The number is now confirmed on your account"
+          },
+          "409": {
+            "description": "That number is already on another account"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Confirm your mobile number with a Firebase verification",
+        "tags": ["auth"]
+      }
+    },
     "/api/auth/login/email": {
       "post": {
+        "description": "The ordinary way in. Email rather than the mobile number, because signing in must not depend on an SMS arriving. The number is still identity and contact.",
         "operationId": "AuthController_loginWithEmail",
         "parameters": [],
         "requestBody": {
@@ -96,9 +163,148 @@
                 }
               }
             }
+          },
+          "401": {
+            "description": "Incorrect email or password"
           }
         },
-        "summary": "Optional email and password sign-in",
+        "summary": "Sign in with an email address and password",
+        "tags": ["auth"]
+      }
+    },
+    "/api/auth/login/phone": {
+      "post": {
+        "operationId": "AuthController_loginWithPhone",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PhoneLoginDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthSessionDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Incorrect mobile number or password"
+          }
+        },
+        "summary": "Sign in with a mobile number and password",
+        "tags": ["auth"]
+      }
+    },
+    "/api/auth/password/reset/request": {
+      "post": {
+        "description": "Always answers the same way, whether or not the address has an account. A form that said \"no such user\" would be an account enumeration tool, and on a marketplace that means learning who trades here.",
+        "operationId": "AuthController_requestPasswordReset",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RequestPasswordResetDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "202": {
+            "description": ""
+          }
+        },
+        "summary": "Ask for a password reset link",
+        "tags": ["auth"]
+      }
+    },
+    "/api/auth/password/reset/check": {
+      "post": {
+        "description": "Lets the form say a link has expired before somebody types a new password rather than after. Answers only yes or no, never why.",
+        "operationId": "AuthController_checkPasswordReset",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CheckPasswordResetDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "summary": "Whether a reset link can still be used",
+        "tags": ["auth"]
+      }
+    },
+    "/api/auth/password/reset": {
+      "post": {
+        "description": "Signs every session out. If the password was changed because somebody else had it, leaving their session alive would make the reset pointless.",
+        "operationId": "AuthController_completePasswordReset",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CompletePasswordResetDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "summary": "Set a new password using a reset link",
+        "tags": ["auth"]
+      }
+    },
+    "/api/auth/login/google": {
+      "post": {
+        "description": "Send the ID token Google issued. It is verified against Google signature, audience and issuer here — nothing the client asserts about identity is trusted. An account is created on first sign-in, and linked to an existing one only when Google reports the email address as verified.",
+        "operationId": "AuthController_loginWithGoogle",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GoogleLoginDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthSessionDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Sign in with Google",
         "tags": ["auth"]
       }
     },
@@ -185,6 +391,41 @@
         ],
         "summary": "The identity behind the current access token",
         "tags": ["auth"]
+      }
+    },
+    "/api/users/{id}/profile": {
+      "get": {
+        "description": "Derived from what the platform observed, never from what the seller typed. Carries no phone and no email: a number published on one listing stays on that listing.",
+        "operationId": "UsersController_getSellerProfile",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SellerProfileDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "What LocZ can honestly say about a seller",
+        "tags": ["users"]
       }
     },
     "/api/users/me": {
@@ -381,6 +622,15 @@
       "get": {
         "operationId": "GeoController_searchCities",
         "parameters": [
+          {
+            "name": "id",
+            "required": false,
+            "in": "query",
+            "description": "Return one exact city by its public id",
+            "schema": {
+              "type": "string"
+            }
+          },
           {
             "name": "q",
             "required": false,
@@ -759,6 +1009,64 @@
         "tags": ["locations"]
       }
     },
+    "/api/locations/resolve/area": {
+      "post": {
+        "description": "Returns the area and pincode, the district and state, the city page it belongs to, how far the match is and how much to trust it, plus the neighbouring areas to offer if the caller says it is wrong. Available everywhere in India.",
+        "operationId": "GeoController_resolveArea",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ResolveLocationDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AreaDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Where these coordinates are, in the terms a person would use",
+        "tags": ["locations"]
+      }
+    },
+    "/api/locations/resolve/area/correct": {
+      "post": {
+        "description": "Recorded whether or not you are signed in, because a correction is a fact about a place rather than an opinion. Once two *different* people near the same spot choose the same area, it becomes the answer everyone there is given — resubmitting counts once.",
+        "operationId": "GeoController_correctArea",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CorrectAreaDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Correction recorded"
+          },
+          "429": {
+            "description": "Too many corrections from this client"
+          }
+        },
+        "summary": "Tell us the detected area was wrong",
+        "tags": ["locations"]
+      }
+    },
     "/api/categories": {
       "get": {
         "description": "Filter by `listingType` to get exactly the categories a posting flow should offer.",
@@ -873,6 +1181,69 @@
           }
         },
         "summary": "One category with its attribute definitions",
+        "tags": ["categories"]
+      }
+    },
+    "/api/categories/{slug}/models": {
+      "get": {
+        "description": "Suggestions only. The model a listing stores is free text, because no list of models stays complete and a seller whose phone is missing from a picklist simply does not post. Narrow by `brand` once the brand is known, and by `q` as the user types.",
+        "operationId": "CategoriesController_getModelSuggestions",
+        "parameters": [
+          {
+            "name": "slug",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "brand",
+            "required": false,
+            "in": "query",
+            "description": "Attribute option value of the brand, when the user has already chosen one",
+            "schema": {
+              "example": "MARUTI_SUZUKI",
+              "type": "string"
+            }
+          },
+          {
+            "name": "q",
+            "required": false,
+            "in": "query",
+            "description": "What the user has typed so far",
+            "schema": {
+              "example": "swi",
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "maximum": 50,
+              "default": 20,
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "summary": "Model-name suggestions for a category",
         "tags": ["categories"]
       }
     },
@@ -1047,6 +1418,7 @@
     },
     "/api/listings/{listingId}/media": {
       "get": {
+        "description": "Public for a published listing. A draft or rejected listing returns its images only to its owner — the listing itself is not public until it is published, and neither are its photographs.",
         "operationId": "MediaController_list",
         "parameters": [
           {
@@ -1151,89 +1523,13 @@
         "tags": ["media"]
       }
     },
-    "/api/notifications": {
-      "get": {
-        "operationId": "NotificationsController_list",
-        "parameters": [
-          {
-            "name": "page",
-            "required": false,
-            "in": "query",
-            "schema": {
-              "minimum": 1,
-              "default": 1,
-              "type": "number"
-            }
-          },
-          {
-            "name": "limit",
-            "required": false,
-            "in": "query",
-            "schema": {
-              "minimum": 1,
-              "maximum": 50,
-              "default": 20,
-              "type": "number"
-            }
-          },
-          {
-            "name": "unreadOnly",
-            "required": false,
-            "in": "query",
-            "schema": {
-              "default": false,
-              "type": "boolean"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/NotificationDto"
-                  }
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "bearer": []
-          }
-        ],
-        "summary": "Notification centre",
-        "tags": ["notifications"]
-      }
-    },
-    "/api/notifications/unread-count": {
-      "get": {
-        "operationId": "NotificationsController_unreadCount",
-        "parameters": [],
-        "responses": {
-          "200": {
-            "description": ""
-          }
-        },
-        "security": [
-          {
-            "bearer": []
-          }
-        ],
-        "summary": "Unread count for the badge",
-        "tags": ["notifications"]
-      }
-    },
-    "/api/notifications/{id}/read": {
+    "/api/requirements/{listingId}/responses": {
       "post": {
-        "operationId": "NotificationsController_markRead",
+        "description": "One answer per seller per requirement, enforced by the database. Answering again updates your answer rather than adding a second: a seller whose price changed is not spamming.",
+        "operationId": "RequirementsController_respond",
         "parameters": [
           {
-            "name": "id",
+            "name": "listingId",
             "required": true,
             "in": "path",
             "schema": {
@@ -1241,53 +1537,23 @@
             }
           }
         ],
-        "responses": {
-          "204": {
-            "description": ""
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RespondToRequirementDto"
+              }
+            }
           }
         },
-        "security": [
-          {
-            "bearer": []
-          }
-        ],
-        "summary": "Mark one notification as read",
-        "tags": ["notifications"]
-      }
-    },
-    "/api/notifications/read-all": {
-      "post": {
-        "operationId": "NotificationsController_markAllRead",
-        "parameters": [],
         "responses": {
-          "200": {
-            "description": ""
-          }
-        },
-        "security": [
-          {
-            "bearer": []
-          }
-        ],
-        "summary": "Mark everything as read",
-        "tags": ["notifications"]
-      }
-    },
-    "/api/notifications/preferences": {
-      "get": {
-        "description": "Returns the full type × channel matrix with platform defaults applied.",
-        "operationId": "NotificationsController_listPreferences",
-        "parameters": [],
-        "responses": {
-          "200": {
+          "201": {
             "description": "",
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/NotificationPreferenceDto"
-                  }
+                  "$ref": "#/components/schemas/RequirementResponseDto"
                 }
               }
             }
@@ -1298,18 +1564,130 @@
             "bearer": []
           }
         ],
-        "summary": "Notification preferences",
-        "tags": ["notifications"]
+        "summary": "Answer a buyer requirement",
+        "tags": ["requirements"]
       },
-      "put": {
-        "operationId": "NotificationsController_setPreference",
-        "parameters": [],
+      "get": {
+        "description": "The buyer sees every answer. A seller sees only their own, because showing them the competition would turn a buyer requirement into price discovery for sellers.",
+        "operationId": "RequirementsController_listResponses",
+        "parameters": [
+          {
+            "name": "listingId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/RequirementResponseDto"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Answers to a requirement",
+        "tags": ["requirements"]
+      }
+    },
+    "/api/requirements/responses/{responseId}": {
+      "delete": {
+        "operationId": "RequirementsController_withdraw",
+        "parameters": [
+          {
+            "name": "responseId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Withdraw your answer",
+        "tags": ["requirements"]
+      }
+    },
+    "/api/requirements/responses/{responseId}/chat": {
+      "post": {
+        "operationId": "RequirementsController_openChat",
+        "parameters": [
+          {
+            "name": "responseId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
         "requestBody": {
           "required": true,
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/UpdateNotificationPreferenceDto"
+                "$ref": "#/components/schemas/OpenRequirementChatDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Buyer opens a conversation with a seller who answered",
+        "tags": ["requirements"]
+      }
+    },
+    "/api/requirements/{listingId}/fulfilled": {
+      "put": {
+        "description": "Kept rather than deleted. A requirement nobody could answer names demand this area could not meet, which is the most valuable thing the platform learns.",
+        "operationId": "RequirementsController_markFulfilled",
+        "parameters": [
+          {
+            "name": "listingId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MarkRequirementFulfilledDto"
               }
             }
           }
@@ -1324,14 +1702,47 @@
             "bearer": []
           }
         ],
-        "summary": "Turn one notification type and channel on or off",
-        "tags": ["notifications"]
+        "summary": "Close a requirement once the buyer has what they needed",
+        "tags": ["requirements"]
       }
     },
-    "/api/moderation/queue": {
+    "/api/conversations": {
+      "post": {
+        "description": "One thread per buyer per listing — sending again continues the existing conversation. Contact details are never exchanged automatically.",
+        "operationId": "ConversationsController_start",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/StartConversationDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConversationDetailDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Start or continue an enquiry",
+        "tags": ["conversations"]
+      },
       "get": {
-        "description": "Each item carries the automated reasons that flagged it, so a moderator sees why.",
-        "operationId": "ModerationController_getQueue",
+        "operationId": "ConversationsController_list",
         "parameters": [
           {
             "name": "page",
@@ -1363,7 +1774,7 @@
                 "schema": {
                   "type": "array",
                   "items": {
-                    "$ref": "#/components/schemas/ModerationQueueItemDto"
+                    "$ref": "#/components/schemas/ConversationSummaryDto"
                   }
                 }
               }
@@ -1375,77 +1786,13 @@
             "bearer": []
           }
         ],
-        "summary": "Listings awaiting review, oldest first",
-        "tags": ["moderation"]
+        "summary": "Conversation list, most recent first",
+        "tags": ["conversations"]
       }
     },
-    "/api/moderation/listings/{id}/approve": {
-      "post": {
-        "operationId": "ModerationController_approve",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/ApproveListingDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": ""
-          }
-        },
-        "security": [
-          {
-            "bearer": []
-          }
-        ],
-        "summary": "Publish a listing from the queue",
-        "tags": ["moderation"]
-      }
-    },
-    "/api/moderation/media/{id}/preview": {
+    "/api/conversations/unread-count": {
       "get": {
-        "operationId": "ModerationController_moderationPreview",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": ""
-          }
-        },
-        "security": [
-          {
-            "bearer": []
-          }
-        ],
-        "summary": "Create a short-lived private preview for an image awaiting review",
-        "tags": ["moderation"]
-      }
-    },
-    "/api/moderation/safety/cases": {
-      "get": {
-        "operationId": "ModerationController_safetyCases",
+        "operationId": "ConversationsController_unreadCount",
         "parameters": [],
         "responses": {
           "200": {
@@ -1457,14 +1804,14 @@
             "bearer": []
           }
         ],
-        "summary": "Restricted child-safety case queue without image content",
-        "tags": ["moderation"]
+        "summary": "Total unread messages across all threads",
+        "tags": ["conversations"]
       }
     },
-    "/api/moderation/safety/cases/{id}": {
+    "/api/conversations/{id}": {
       "get": {
-        "description": "Returns no image, storage key, hash, or URL. Viewing the detail is itself recorded in the restricted audit log.",
-        "operationId": "ModerationController_safetyCaseDetail",
+        "description": "Opening a thread marks the other party’s messages as read.",
+        "operationId": "ConversationsController_getOne",
         "parameters": [
           {
             "name": "id",
@@ -1481,7 +1828,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/SafetyCaseDetailDto"
+                  "$ref": "#/components/schemas/ConversationDetailDto"
                 }
               }
             }
@@ -1492,14 +1839,13 @@
             "bearer": []
           }
         ],
-        "summary": "Restricted safety-case metadata and prior access history",
-        "tags": ["moderation"]
+        "summary": "One conversation with its messages",
+        "tags": ["conversations"]
       }
     },
-    "/api/moderation/safety/cases/{id}/evidence-preview": {
+    "/api/conversations/{id}/messages": {
       "post": {
-        "description": "Not available to ordinary moderators. The justification is recorded before storage signs the URL.",
-        "operationId": "ModerationController_safetyEvidencePreview",
+        "operationId": "ConversationsController_sendMessage",
         "parameters": [
           {
             "name": "id",
@@ -1515,14 +1861,21 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/SafetyEvidenceAccessDto"
+                "$ref": "#/components/schemas/SendMessageDto"
               }
             }
           }
         },
         "responses": {
-          "200": {
-            "description": ""
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MessageDto"
+                }
+              }
+            }
           }
         },
         "security": [
@@ -1530,181 +1883,21 @@
             "bearer": []
           }
         ],
-        "summary": "Issue an audited, short-lived preview for held evidence",
-        "tags": ["moderation"]
+        "summary": "Reply in a conversation",
+        "tags": ["conversations"]
       }
     },
-    "/api/moderation/safety/cases/{id}/report": {
+    "/api/conversations/block": {
       "post": {
-        "description": "Only an open case can be reported. The external acknowledgement and actor justification are retained as restricted metadata.",
-        "operationId": "ModerationController_reportSafetyCase",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
+        "description": "Stops contact in both directions and closes any existing threads.",
+        "operationId": "ConversationsController_block",
+        "parameters": [],
         "requestBody": {
           "required": true,
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/ReportSafetyCaseDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": ""
-          }
-        },
-        "security": [
-          {
-            "bearer": []
-          }
-        ],
-        "summary": "Record a safety case as reported through the approved channel",
-        "tags": ["moderation"]
-      }
-    },
-    "/api/moderation/safety/cases/{id}/release": {
-      "post": {
-        "description": "Does not publish the image or listing. The quarantined media returns to REVIEW_REQUIRED.",
-        "operationId": "ModerationController_releaseSafetyCase",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/ResolveSafetyCaseDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": ""
-          }
-        },
-        "security": [
-          {
-            "bearer": []
-          }
-        ],
-        "summary": "Release a false-positive hold back to ordinary human review",
-        "tags": ["moderation"]
-      }
-    },
-    "/api/moderation/safety/cases/{id}/close": {
-      "post": {
-        "description": "Closing ends active handling; it does not delete evidence or release held media.",
-        "operationId": "ModerationController_closeSafetyCase",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/ResolveSafetyCaseDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": ""
-          }
-        },
-        "security": [
-          {
-            "bearer": []
-          }
-        ],
-        "summary": "Close a reported safety case while preserving its legal hold",
-        "tags": ["moderation"]
-      }
-    },
-    "/api/moderation/listings/{id}/reject": {
-      "post": {
-        "description": "The reason is shown to the poster, so it must be written for them, not for internal notes.",
-        "operationId": "ModerationController_reject",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/RejectListingDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": ""
-          }
-        },
-        "security": [
-          {
-            "bearer": []
-          }
-        ],
-        "summary": "Reject a listing",
-        "tags": ["moderation"]
-      }
-    },
-    "/api/moderation/listings/{id}/remove": {
-      "post": {
-        "operationId": "ModerationController_remove",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/RejectListingDto"
+                "$ref": "#/components/schemas/BlockUserDto"
               }
             }
           }
@@ -1719,37 +1912,27 @@
             "bearer": []
           }
         ],
-        "summary": "Remove a listing that is already published",
-        "tags": ["moderation"]
+        "summary": "Block a user",
+        "tags": ["conversations"]
       }
     },
-    "/api/moderation/users/{id}/suspend": {
-      "post": {
-        "description": "Takes effect immediately: every session is revoked, so the account cannot keep acting on a token it already holds. Listings are left alone, because hiding the content of an account is a separate decision with its own trail.",
-        "operationId": "ModerationController_suspendUser",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/SuspendUserDto"
-              }
-            }
-          }
-        },
+    "/api/saved-searches": {
+      "get": {
+        "operationId": "SearchSubscriptionsController_list",
+        "parameters": [],
         "responses": {
           "200": {
-            "description": "Account suspended"
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/SavedSearchDto"
+                  }
+                }
+              }
+            }
           }
         },
         "security": [
@@ -1757,14 +1940,47 @@
             "bearer": []
           }
         ],
-        "summary": "Suspend an account",
-        "tags": ["moderation"]
+        "summary": "Searches this user has saved",
+        "tags": ["saved-searches"]
+      },
+      "post": {
+        "description": "Alerts arrive when a listing is first published, not when one is resumed or republished — an alert should mean the listing is new.",
+        "operationId": "SearchSubscriptionsController_create",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SaveSearchDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SavedSearchDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Save a search and be told when a new listing answers it",
+        "tags": ["saved-searches"]
       }
     },
-    "/api/moderation/users/{id}/reinstate": {
-      "post": {
-        "description": "The account signs in again; revoked sessions are not restored.",
-        "operationId": "ModerationController_reinstateUser",
+    "/api/saved-searches/{id}/active": {
+      "put": {
+        "operationId": "SearchSubscriptionsController_setActive",
         "parameters": [
           {
             "name": "id",
@@ -1780,11 +1996,45 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/SuspendUserDto"
+                "$ref": "#/components/schemas/SetSavedSearchActiveDto"
               }
             }
           }
         },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SavedSearchDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Pause or resume alerts without losing the search",
+        "tags": ["saved-searches"]
+      }
+    },
+    "/api/saved-searches/{id}": {
+      "delete": {
+        "operationId": "SearchSubscriptionsController_remove",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
         "responses": {
           "204": {
             "description": ""
@@ -1795,46 +2045,8 @@
             "bearer": []
           }
         ],
-        "summary": "Lift a suspension",
-        "tags": ["moderation"]
-      }
-    },
-    "/api/moderation/media/{id}/block": {
-      "post": {
-        "description": "Removing a listing does not stop the same photograph being uploaded again a minute later. Blocking records both an exact and a perceptual hash, so a re-crop or a re-save of the same picture is refused too.",
-        "operationId": "ModerationController_blockImage",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/BlockImageDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Image blocked"
-          }
-        },
-        "security": [
-          {
-            "bearer": []
-          }
-        ],
-        "summary": "Refuse this image from now on",
-        "tags": ["moderation"]
+        "summary": "Forget a saved search",
+        "tags": ["saved-searches"]
       }
     },
     "/api/listings": {
@@ -1861,6 +2073,15 @@
               "maximum": 50,
               "default": 20,
               "type": "number"
+            }
+          },
+          {
+            "name": "q",
+            "required": false,
+            "in": "query",
+            "description": "Keyword; matched against title, brand and category",
+            "schema": {
+              "type": "string"
             }
           },
           {
@@ -2004,6 +2225,88 @@
               "default": "newest",
               "type": "string",
               "enum": ["newest", "price_asc", "price_desc", "popular", "distance"]
+            }
+          },
+          {
+            "name": "brand",
+            "required": false,
+            "in": "query",
+            "description": "Marketplace brand",
+            "schema": {
+              "example": "Maruti Suzuki",
+              "type": "string"
+            }
+          },
+          {
+            "name": "model",
+            "required": false,
+            "in": "query",
+            "description": "Marketplace model, matched loosely",
+            "schema": {
+              "example": "Swift",
+              "type": "string"
+            }
+          },
+          {
+            "name": "yearMin",
+            "required": false,
+            "in": "query",
+            "description": "Earliest purchase year",
+            "schema": {
+              "example": 2018,
+              "type": "number"
+            }
+          },
+          {
+            "name": "yearMax",
+            "required": false,
+            "in": "query",
+            "description": "Latest purchase year",
+            "schema": {
+              "example": 2024,
+              "type": "number"
+            }
+          },
+          {
+            "name": "bedroomsMin",
+            "required": false,
+            "in": "query",
+            "description": "Rentals with at least this many bedrooms",
+            "schema": {
+              "example": 2,
+              "type": "number"
+            }
+          },
+          {
+            "name": "areaMin",
+            "required": false,
+            "in": "query",
+            "description": "Rentals of at least this carpet area",
+            "schema": {
+              "example": 600,
+              "type": "number"
+            }
+          },
+          {
+            "name": "areaMax",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "example": 1200,
+              "type": "number"
+            }
+          },
+          {
+            "name": "attr",
+            "required": false,
+            "in": "query",
+            "description": "Category attribute filters as key:value; ranges as key:min..max",
+            "schema": {
+              "example": ["fuel_type:PETROL", "km_driven:..50000"],
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
             }
           }
         ],
@@ -2535,6 +2838,27 @@
             }
           },
           {
+            "name": "businessPage",
+            "required": false,
+            "in": "query",
+            "description": "Page of businesses, independent of listings",
+            "schema": {
+              "minimum": 1,
+              "type": "number"
+            }
+          },
+          {
+            "name": "businessLimit",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "minimum": 1,
+              "maximum": 50,
+              "default": 10,
+              "type": "number"
+            }
+          },
+          {
             "name": "categoryId",
             "required": false,
             "in": "query",
@@ -2631,7 +2955,8 @@
             "required": false,
             "in": "query",
             "schema": {
-              "type": "number"
+              "type": "number",
+              "enum": [1, 3, 5, 10, 25, 50]
             }
           },
           {
@@ -2653,6 +2978,81 @@
               "type": "string",
               "enum": ["relevance", "newest", "price_asc", "price_desc", "popular", "distance"]
             }
+          },
+          {
+            "name": "attr",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "example": ["fuel_type:PETROL"],
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          },
+          {
+            "name": "brand",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "example": "Maruti Suzuki",
+              "type": "string"
+            }
+          },
+          {
+            "name": "model",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "example": "Swift",
+              "type": "string"
+            }
+          },
+          {
+            "name": "yearMin",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "example": 2018,
+              "type": "number"
+            }
+          },
+          {
+            "name": "yearMax",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "example": 2024,
+              "type": "number"
+            }
+          },
+          {
+            "name": "bedroomsMin",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "example": 2,
+              "type": "number"
+            }
+          },
+          {
+            "name": "areaMin",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "example": 600,
+              "type": "number"
+            }
+          },
+          {
+            "name": "areaMax",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "example": 1200,
+              "type": "number"
+            }
           }
         ],
         "responses": {
@@ -2668,6 +3068,288 @@
           }
         },
         "summary": "Search listings",
+        "tags": ["search"]
+      }
+    },
+    "/api/search/businesses": {
+      "get": {
+        "description": "The mixed search returns six businesses beside the listings, which suits a first glance and not browsing. This pages through the rest without re-running the listing search, so a strip can load more as somebody swipes.",
+        "operationId": "SearchController_businesses",
+        "parameters": [
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "minimum": 1,
+              "default": 1,
+              "type": "number"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "minimum": 1,
+              "maximum": 50,
+              "default": 20,
+              "type": "number"
+            }
+          },
+          {
+            "name": "q",
+            "required": false,
+            "in": "query",
+            "description": "Typo-tolerant keyword query",
+            "schema": {
+              "example": "samsung tv",
+              "type": "string"
+            }
+          },
+          {
+            "name": "type",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "CLASSIFIED",
+                "PRODUCT",
+                "BUYER_REQUIREMENT",
+                "OFFER",
+                "JOB",
+                "SERVICE",
+                "RENTAL",
+                "EVENT",
+                "BUSINESS_LISTING"
+              ]
+            }
+          },
+          {
+            "name": "businessPage",
+            "required": false,
+            "in": "query",
+            "description": "Page of businesses, independent of listings",
+            "schema": {
+              "minimum": 1,
+              "type": "number"
+            }
+          },
+          {
+            "name": "businessLimit",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "minimum": 1,
+              "maximum": 50,
+              "default": 10,
+              "type": "number"
+            }
+          },
+          {
+            "name": "categoryId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "cityId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "localityId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "businessId",
+            "required": false,
+            "in": "query",
+            "description": "Only listings posted by this business",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "priceMin",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "priceMax",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "condition",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": ["NEW", "LIKE_NEW", "GOOD", "FAIR", "FOR_PARTS"]
+            }
+          },
+          {
+            "name": "verifiedOnly",
+            "required": false,
+            "in": "query",
+            "description": "Only listings from verified businesses",
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "postedWithinDays",
+            "required": false,
+            "in": "query",
+            "description": "Posted within the last N days",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "latitude",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "longitude",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "radiusKm",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "number",
+              "enum": [1, 3, 5, 10, 25, 50]
+            }
+          },
+          {
+            "name": "pincode",
+            "required": false,
+            "in": "query",
+            "description": "Search in and around this pincode. Resolved to the code’s centroid and searched by radius (10 km by default), so neighbouring codes are included.",
+            "schema": {
+              "example": "500081",
+              "type": "string"
+            }
+          },
+          {
+            "name": "sort",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "default": "relevance",
+              "type": "string",
+              "enum": ["relevance", "newest", "price_asc", "price_desc", "popular", "distance"]
+            }
+          },
+          {
+            "name": "attr",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "example": ["fuel_type:PETROL"],
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          },
+          {
+            "name": "brand",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "example": "Maruti Suzuki",
+              "type": "string"
+            }
+          },
+          {
+            "name": "model",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "example": "Swift",
+              "type": "string"
+            }
+          },
+          {
+            "name": "yearMin",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "example": 2018,
+              "type": "number"
+            }
+          },
+          {
+            "name": "yearMax",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "example": 2024,
+              "type": "number"
+            }
+          },
+          {
+            "name": "bedroomsMin",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "example": 2,
+              "type": "number"
+            }
+          },
+          {
+            "name": "areaMin",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "example": 600,
+              "type": "number"
+            }
+          },
+          {
+            "name": "areaMax",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "example": 1200,
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "summary": "Search businesses on their own, paged",
         "tags": ["search"]
       }
     },
@@ -2697,6 +3379,43 @@
         "tags": ["search"]
       }
     },
+    "/api/search/index/businesses/rebuild": {
+      "post": {
+        "description": "Separate from the listing index on purpose: four million businesses would dilute relevance for every listing query, and results are grouped by kind. Always safe — PostgreSQL is the source of truth.",
+        "operationId": "SearchController_rebuildBusinesses",
+        "parameters": [],
+        "responses": {
+          "202": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Rebuild the business search index from the database (admin)",
+        "tags": ["search"]
+      }
+    },
+    "/api/search/index/businesses/status": {
+      "get": {
+        "operationId": "SearchController_businessIndexStatus",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Business index health and drift (admin)",
+        "tags": ["search"]
+      }
+    },
     "/api/search/index/rebuild": {
       "post": {
         "description": "Always safe: PostgreSQL is the source of truth, so a rebuild cannot lose data.",
@@ -2714,6 +3433,771 @@
         ],
         "summary": "Rebuild the search index from the database (admin)",
         "tags": ["search"]
+      }
+    },
+    "/api/moderation/queue": {
+      "get": {
+        "description": "Each item carries the automated reasons that flagged it, so a moderator sees why.",
+        "operationId": "ModerationController_getQueue",
+        "parameters": [
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "minimum": 1,
+              "default": 1,
+              "type": "number"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "minimum": 1,
+              "maximum": 50,
+              "default": 20,
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ModerationQueueItemDto"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Listings awaiting review, oldest first",
+        "tags": ["moderation"]
+      }
+    },
+    "/api/moderation/listings/{id}/approve": {
+      "post": {
+        "operationId": "ModerationController_approve",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ApproveListingDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Publish a listing from the queue",
+        "tags": ["moderation"]
+      }
+    },
+    "/api/moderation/media/queue": {
+      "get": {
+        "description": "The list the approve and block controls needed. No image content and no signed URLs: ask for moderation/media/:id/preview when a moderator opens one. Media on legal hold is excluded — that belongs to the restricted safety-case queue.",
+        "operationId": "ModerationController_getMediaQueue",
+        "parameters": [
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "minimum": 1,
+              "default": 1,
+              "type": "number"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "minimum": 1,
+              "maximum": 50,
+              "default": 20,
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ModerationMediaQueueItemDto"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Images held in quarantine, awaiting a moderator",
+        "tags": ["moderation"]
+      }
+    },
+    "/api/moderation/media/{id}/preview": {
+      "get": {
+        "operationId": "ModerationController_moderationPreview",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Create a short-lived private preview for an image awaiting review",
+        "tags": ["moderation"]
+      }
+    },
+    "/api/moderation/safety/cases": {
+      "get": {
+        "operationId": "ModerationController_safetyCases",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Restricted child-safety case queue without image content",
+        "tags": ["moderation"]
+      }
+    },
+    "/api/moderation/safety/cases/{id}": {
+      "get": {
+        "description": "Returns no image, storage key, hash, or URL. Viewing the detail is itself recorded in the restricted audit log.",
+        "operationId": "ModerationController_safetyCaseDetail",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SafetyCaseDetailDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Restricted safety-case metadata and prior access history",
+        "tags": ["moderation"]
+      }
+    },
+    "/api/moderation/safety/cases/{id}/evidence-preview": {
+      "post": {
+        "description": "Not available to ordinary moderators. The justification is recorded before storage signs the URL.",
+        "operationId": "ModerationController_safetyEvidencePreview",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SafetyEvidenceAccessDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Issue an audited, short-lived preview for held evidence",
+        "tags": ["moderation"]
+      }
+    },
+    "/api/moderation/safety/cases/{id}/report": {
+      "post": {
+        "description": "Only an open case can be reported. The external acknowledgement and actor justification are retained as restricted metadata.",
+        "operationId": "ModerationController_reportSafetyCase",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReportSafetyCaseDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Record a safety case as reported through the approved channel",
+        "tags": ["moderation"]
+      }
+    },
+    "/api/moderation/safety/cases/{id}/release": {
+      "post": {
+        "description": "Does not publish the image or listing. The quarantined media returns to REVIEW_REQUIRED.",
+        "operationId": "ModerationController_releaseSafetyCase",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ResolveSafetyCaseDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Release a false-positive hold back to ordinary human review",
+        "tags": ["moderation"]
+      }
+    },
+    "/api/moderation/safety/cases/{id}/close": {
+      "post": {
+        "description": "Closing ends active handling; it does not delete evidence or release held media.",
+        "operationId": "ModerationController_closeSafetyCase",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ResolveSafetyCaseDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Close a reported safety case while preserving its legal hold",
+        "tags": ["moderation"]
+      }
+    },
+    "/api/moderation/listings/{id}/reject": {
+      "post": {
+        "description": "The reason is shown to the poster, so it must be written for them, not for internal notes.",
+        "operationId": "ModerationController_reject",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RejectListingDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Reject a listing",
+        "tags": ["moderation"]
+      }
+    },
+    "/api/moderation/listings/{id}/remove": {
+      "post": {
+        "operationId": "ModerationController_remove",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RejectListingDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Remove a listing that is already published",
+        "tags": ["moderation"]
+      }
+    },
+    "/api/moderation/users/{id}/suspend": {
+      "post": {
+        "description": "Takes effect immediately: every session is revoked, so the account cannot keep acting on a token it already holds. Listings are left alone, because hiding the content of an account is a separate decision with its own trail.",
+        "operationId": "ModerationController_suspendUser",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SuspendUserDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Account suspended"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Suspend an account",
+        "tags": ["moderation"]
+      }
+    },
+    "/api/moderation/users/{id}/reinstate": {
+      "post": {
+        "description": "The account signs in again; revoked sessions are not restored.",
+        "operationId": "ModerationController_reinstateUser",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SuspendUserDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Lift a suspension",
+        "tags": ["moderation"]
+      }
+    },
+    "/api/moderation/media/{id}/approve": {
+      "post": {
+        "description": "The counterpart to block, which existed on its own — leaving the only route out of quarantine the automated scanner, so an unreachable scanner trapped every upload.",
+        "operationId": "ModerationController_approveMedia",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Publish a quarantined image a moderator has accepted",
+        "tags": ["moderation"]
+      }
+    },
+    "/api/moderation/media/{id}/block": {
+      "post": {
+        "description": "Removing a listing does not stop the same photograph being uploaded again a minute later. Blocking records both an exact and a perceptual hash, so a re-crop or a re-save of the same picture is refused too.",
+        "operationId": "ModerationController_blockImage",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BlockImageDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Image blocked"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Refuse this image from now on",
+        "tags": ["moderation"]
+      }
+    },
+    "/api/notifications": {
+      "get": {
+        "operationId": "NotificationsController_list",
+        "parameters": [
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "minimum": 1,
+              "default": 1,
+              "type": "number"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "minimum": 1,
+              "maximum": 50,
+              "default": 20,
+              "type": "number"
+            }
+          },
+          {
+            "name": "unreadOnly",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "default": false,
+              "type": "boolean"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/NotificationDto"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Notification centre",
+        "tags": ["notifications"]
+      }
+    },
+    "/api/notifications/unread-count": {
+      "get": {
+        "operationId": "NotificationsController_unreadCount",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Unread count for the badge",
+        "tags": ["notifications"]
+      }
+    },
+    "/api/notifications/{id}/read": {
+      "post": {
+        "operationId": "NotificationsController_markRead",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Mark one notification as read",
+        "tags": ["notifications"]
+      }
+    },
+    "/api/notifications/read-all": {
+      "post": {
+        "operationId": "NotificationsController_markAllRead",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Mark everything as read",
+        "tags": ["notifications"]
+      }
+    },
+    "/api/notifications/preferences": {
+      "get": {
+        "description": "Returns the full type × channel matrix with platform defaults applied.",
+        "operationId": "NotificationsController_listPreferences",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/NotificationPreferenceDto"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Notification preferences",
+        "tags": ["notifications"]
+      },
+      "put": {
+        "operationId": "NotificationsController_setPreference",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateNotificationPreferenceDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Turn one notification type and channel on or off",
+        "tags": ["notifications"]
       }
     },
     "/api/feed": {
@@ -2783,31 +4267,33 @@
         "tags": ["feed"]
       }
     },
-    "/api/conversations": {
+    "/api/businesses/{id}/claims": {
       "post": {
-        "description": "One thread per buyer per listing — sending again continues the existing conversation. Contact details are never exchanged automatically.",
-        "operationId": "ConversationsController_start",
-        "parameters": [],
+        "description": "Reviewed by a person, not granted on the spot. Approving a claim hands over the business's listings, enquiries and identity in search.",
+        "operationId": "BusinessClaimsController_create",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
         "requestBody": {
           "required": true,
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/StartConversationDto"
+                "$ref": "#/components/schemas/CreateClaimDto"
               }
             }
           }
         },
         "responses": {
           "201": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ConversationDetailDto"
-                }
-              }
-            }
+            "description": ""
           }
         },
         "security": [
@@ -2815,11 +4301,98 @@
             "bearer": []
           }
         ],
-        "summary": "Start or continue an enquiry",
-        "tags": ["conversations"]
-      },
+        "summary": "Ask to take over an imported business",
+        "tags": ["business-claims"]
+      }
+    },
+    "/api/businesses/claims/possible-matches": {
       "get": {
-        "operationId": "ConversationsController_list",
+        "description": "A shopkeeper whose shop is already in the directory has no way to know that. Left alone they create a second record and their real shop stays unclaimed with the search traffic. Suggestion only — nothing is created or merged, and it can be ignored.",
+        "operationId": "BusinessClaimsController_possibleMatches",
+        "parameters": [
+          {
+            "name": "name",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "example": "Sri Lakshmi Kirana",
+              "type": "string"
+            }
+          },
+          {
+            "name": "latitude",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "longitude",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "phone",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "example": "+919876543210",
+              "type": "string"
+            }
+          },
+          {
+            "name": "cityId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Imported records that look like the business you are about to create",
+        "tags": ["business-claims"]
+      }
+    },
+    "/api/businesses/{id}/enquiries/count": {
+      "get": {
+        "description": "The claim pitch. \"Claim your free listing\" is a favour the platform is asking for; \"four people asked about your shop this week and nobody could answer\" is a fact about their business.",
+        "operationId": "BusinessClaimsController_enquiryCount",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "summary": "How many people asked about this shop recently",
+        "tags": ["business-claims"]
+      }
+    },
+    "/api/businesses/claims/mine": {
+      "get": {
+        "operationId": "BusinessClaimsController_listMine",
         "parameters": [
           {
             "name": "page",
@@ -2845,17 +4418,7 @@
         ],
         "responses": {
           "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/ConversationSummaryDto"
-                  }
-                }
-              }
-            }
+            "description": ""
           }
         },
         "security": [
@@ -2863,14 +4426,74 @@
             "bearer": []
           }
         ],
-        "summary": "Conversation list, most recent first",
-        "tags": ["conversations"]
+        "summary": "Claims you have filed, and where each one stands",
+        "tags": ["business-claims"]
       }
     },
-    "/api/conversations/unread-count": {
+    "/api/businesses/claims/{claimId}/withdraw": {
+      "post": {
+        "operationId": "BusinessClaimsController_withdraw",
+        "parameters": [
+          {
+            "name": "claimId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Withdraw your own claim while it is still pending",
+        "tags": ["business-claims"]
+      }
+    },
+    "/api/businesses/claims/queue": {
       "get": {
-        "operationId": "ConversationsController_unreadCount",
-        "parameters": [],
+        "description": "Oldest first — a claim nobody looks at is a shop that never joins.",
+        "operationId": "BusinessClaimsController_queue",
+        "parameters": [
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "minimum": 1,
+              "default": 1,
+              "type": "number"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "minimum": 1,
+              "maximum": 50,
+              "default": 20,
+              "type": "number"
+            }
+          },
+          {
+            "name": "status",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "default": "PENDING",
+              "type": "string",
+              "enum": ["PENDING", "APPROVED", "REJECTED", "WITHDRAWN"]
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": ""
@@ -2881,17 +4504,16 @@
             "bearer": []
           }
         ],
-        "summary": "Total unread messages across all threads",
-        "tags": ["conversations"]
+        "summary": "The claim review queue (admin)",
+        "tags": ["business-claims"]
       }
     },
-    "/api/conversations/{id}": {
-      "get": {
-        "description": "Opening a thread marks the other party’s messages as read.",
-        "operationId": "ConversationsController_getOne",
+    "/api/businesses/claims/{claimId}/approve": {
+      "post": {
+        "operationId": "BusinessClaimsController_approve",
         "parameters": [
           {
-            "name": "id",
+            "name": "claimId",
             "required": true,
             "in": "path",
             "schema": {
@@ -2900,15 +4522,8 @@
           }
         ],
         "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ConversationDetailDto"
-                }
-              }
-            }
+          "204": {
+            "description": ""
           }
         },
         "security": [
@@ -2916,16 +4531,17 @@
             "bearer": []
           }
         ],
-        "summary": "One conversation with its messages",
-        "tags": ["conversations"]
+        "summary": "Approve a claim and hand the business over (admin)",
+        "tags": ["business-claims"]
       }
     },
-    "/api/conversations/{id}/messages": {
+    "/api/businesses/claims/{claimId}/reject": {
       "post": {
-        "operationId": "ConversationsController_sendMessage",
+        "description": "The reason reaches the claimant. A rejection nobody can explain cannot be appealed.",
+        "operationId": "BusinessClaimsController_reject",
         "parameters": [
           {
-            "name": "id",
+            "name": "claimId",
             "required": true,
             "in": "path",
             "schema": {
@@ -2938,43 +4554,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/SendMessageDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "201": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/MessageDto"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "bearer": []
-          }
-        ],
-        "summary": "Reply in a conversation",
-        "tags": ["conversations"]
-      }
-    },
-    "/api/conversations/block": {
-      "post": {
-        "description": "Stops contact in both directions and closes any existing threads.",
-        "operationId": "ConversationsController_block",
-        "parameters": [],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/BlockUserDto"
+                "$ref": "#/components/schemas/RejectClaimDto"
               }
             }
           }
@@ -2989,8 +4569,8 @@
             "bearer": []
           }
         ],
-        "summary": "Block a user",
-        "tags": ["conversations"]
+        "summary": "Refuse a claim, with a reason (admin)",
+        "tags": ["business-claims"]
       }
     },
     "/api/businesses": {
@@ -4073,7 +5653,8 @@
             "type": "string"
           },
           "phone": {
-            "type": "string"
+            "type": "object",
+            "nullable": true
           },
           "email": {
             "type": "object"
@@ -4099,6 +5680,10 @@
           "isNewUser": {
             "type": "boolean",
             "description": "True when the account was created by this request"
+          },
+          "requiresPhone": {
+            "type": "boolean",
+            "description": "True when the account has no confirmed mobile number and should be sent to /account/phone"
           }
         },
         "required": [
@@ -4108,7 +5693,8 @@
           "preferredLanguage",
           "roles",
           "permissions",
-          "isNewUser"
+          "isNewUser",
+          "requiresPhone"
         ]
       },
       "AuthTokensDto": {
@@ -4143,22 +5729,124 @@
         },
         "required": ["user", "tokens"]
       },
+      "RegisterDto": {
+        "type": "object",
+        "properties": {
+          "email": {
+            "type": "string",
+            "example": "anjali@example.com",
+            "description": "How you sign in. Email rather than the mobile number, because signing in must not depend on an SMS that may not arrive."
+          },
+          "phone": {
+            "type": "string",
+            "example": "+919876543210",
+            "description": "Mobile number in E.164 format. Kept for identity and for buyers to reach a seller, not used to sign in."
+          },
+          "displayName": {
+            "type": "string",
+            "example": "Anjali Rao"
+          },
+          "password": {
+            "type": "string",
+            "example": "a strong passphrase",
+            "minLength": 8
+          },
+          "device": {
+            "$ref": "#/components/schemas/DeviceInfoDto"
+          }
+        },
+        "required": ["email", "phone", "displayName", "password", "device"]
+      },
+      "ConfirmPhoneDto": {
+        "type": "object",
+        "properties": {
+          "idToken": {
+            "type": "string",
+            "description": "The ID token Firebase returned after the device verified the number. Its signature, audience and issuer are all checked — an unverified assertion is what the field already held."
+          }
+        },
+        "required": ["idToken"]
+      },
       "EmailLoginDto": {
         "type": "object",
         "properties": {
           "email": {
             "type": "string",
-            "example": "admin@locz.test"
+            "example": "anjali@example.com"
           },
           "password": {
             "type": "string",
-            "example": "LocZ@dev1234"
+            "example": "a strong passphrase"
           },
           "device": {
             "$ref": "#/components/schemas/DeviceInfoDto"
           }
         },
         "required": ["email", "password", "device"]
+      },
+      "PhoneLoginDto": {
+        "type": "object",
+        "properties": {
+          "phone": {
+            "type": "string",
+            "example": "+919876543210"
+          },
+          "password": {
+            "type": "string",
+            "example": "a strong passphrase"
+          },
+          "device": {
+            "$ref": "#/components/schemas/DeviceInfoDto"
+          }
+        },
+        "required": ["phone", "password", "device"]
+      },
+      "RequestPasswordResetDto": {
+        "type": "object",
+        "properties": {
+          "email": {
+            "type": "string",
+            "example": "you@example.com"
+          }
+        },
+        "required": ["email"]
+      },
+      "CheckPasswordResetDto": {
+        "type": "object",
+        "properties": {
+          "token": {
+            "type": "string",
+            "description": "The token from the emailed link"
+          }
+        },
+        "required": ["token"]
+      },
+      "CompletePasswordResetDto": {
+        "type": "object",
+        "properties": {
+          "token": {
+            "type": "string",
+            "description": "The token from the emailed link"
+          },
+          "password": {
+            "type": "string",
+            "minLength": 8
+          }
+        },
+        "required": ["token", "password"]
+      },
+      "GoogleLoginDto": {
+        "type": "object",
+        "properties": {
+          "idToken": {
+            "type": "string",
+            "description": "The ID token Google issued to your app. Verified here against Google signature, audience and issuer — nothing the client asserts about identity is trusted."
+          },
+          "device": {
+            "$ref": "#/components/schemas/DeviceInfoDto"
+          }
+        },
+        "required": ["idToken", "device"]
       },
       "RefreshTokenDto": {
         "type": "object",
@@ -4169,6 +5857,41 @@
         },
         "required": ["refreshToken"]
       },
+      "SellerProfileDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "displayName": {
+            "type": "string"
+          },
+          "bio": {
+            "type": "object"
+          },
+          "memberSince": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "publishedListings": {
+            "type": "number",
+            "description": "Listings currently live"
+          },
+          "soldListings": {
+            "type": "number",
+            "description": "Listings this seller marked sold"
+          },
+          "responseRate": {
+            "type": "object",
+            "description": "Percentage of enquiries answered in the last 90 days. Null until there are enough conversations to say anything honest — a rate over three is a number about a coin toss."
+          },
+          "medianResponseMinutes": {
+            "type": "object",
+            "description": "Median minutes to a first reply, on the same basis. Median, not mean."
+          }
+        },
+        "required": ["id", "displayName", "memberSince", "publishedListings", "soldListings"]
+      },
       "UserProfileDto": {
         "type": "object",
         "properties": {
@@ -4176,7 +5899,8 @@
             "type": "string"
           },
           "phone": {
-            "type": "string"
+            "type": "object",
+            "nullable": true
           },
           "email": {
             "type": "object"
@@ -4581,6 +6305,132 @@
           }
         },
         "required": ["label", "cityId"]
+      },
+      "NearbyAreaDto": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string",
+            "example": "500084"
+          },
+          "name": {
+            "type": "string",
+            "example": "Kondapur"
+          },
+          "districtName": {
+            "type": "string",
+            "example": "Hyderabad"
+          },
+          "distanceMeters": {
+            "type": "number",
+            "example": 2140
+          }
+        },
+        "required": ["code", "name", "districtName", "distanceMeters"]
+      },
+      "AreaDto": {
+        "type": "object",
+        "properties": {
+          "pincode": {
+            "$ref": "#/components/schemas/PincodeDto"
+          },
+          "areaName": {
+            "type": "string",
+            "example": "Madhapur",
+            "description": "The post office area"
+          },
+          "localityName": {
+            "type": "object",
+            "example": "Gachibowli",
+            "description": "The nearest of 155,543 named villages and areas — finer than a pincode"
+          },
+          "mandal": {
+            "type": "object",
+            "example": "Serilingampally",
+            "description": "The sub-district: mandal in the Telugu states, taluk in the south, tehsil in the north, block in the east"
+          },
+          "listingsNearby": {
+            "type": "number",
+            "example": 43,
+            "description": "Published listings within 10 km — what there is to see, returned with the name"
+          },
+          "districtName": {
+            "type": "string",
+            "example": "Hyderabad"
+          },
+          "stateName": {
+            "type": "string",
+            "example": "Telangana"
+          },
+          "cityId": {
+            "type": "object"
+          },
+          "cityName": {
+            "type": "object",
+            "example": "Hyderabad"
+          },
+          "citySlug": {
+            "type": "object",
+            "example": "hyderabad"
+          },
+          "distanceMeters": {
+            "type": "number",
+            "example": 412,
+            "description": "From the caller to the pincode centroid"
+          },
+          "confidence": {
+            "type": "string",
+            "enum": ["HIGH", "MEDIUM", "LOW"],
+            "description": "HIGH within 2 km, MEDIUM within 5 km, LOW beyond — how much to trust the match"
+          },
+          "correctedByNeighbours": {
+            "type": "boolean",
+            "example": false,
+            "description": "True when people standing near this point corrected the automatic answer and this is what they chose instead."
+          },
+          "nearby": {
+            "description": "Offer these when the caller says no",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/NearbyAreaDto"
+            }
+          }
+        },
+        "required": [
+          "pincode",
+          "areaName",
+          "listingsNearby",
+          "districtName",
+          "stateName",
+          "distanceMeters",
+          "confidence",
+          "correctedByNeighbours",
+          "nearby"
+        ]
+      },
+      "CorrectAreaDto": {
+        "type": "object",
+        "properties": {
+          "latitude": {
+            "type": "number",
+            "example": 17.4483
+          },
+          "longitude": {
+            "type": "number",
+            "example": 78.3915
+          },
+          "detectedCode": {
+            "type": "string",
+            "example": "500081",
+            "description": "What we suggested"
+          },
+          "chosenCode": {
+            "type": "string",
+            "example": "500084",
+            "description": "What it actually is"
+          }
+        },
+        "required": ["latitude", "longitude", "detectedCode", "chosenCode"]
       },
       "CategoryDto": {
         "type": "object",
@@ -5000,39 +6850,150 @@
         },
         "required": ["mediaIds"]
       },
-      "NotificationDto": {
+      "RespondToRequirementDto": {
+        "type": "object",
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": [
+              "AVAILABLE",
+              "AVAILABLE_AT_DIFFERENT_PRICE",
+              "SIMILAR_AVAILABLE",
+              "CAN_ARRANGE",
+              "MADE_TO_ORDER",
+              "AVAILABLE_LATER",
+              "NOT_AVAILABLE"
+            ],
+            "description": "Real answers are conditional. \"Can arrange\" and \"made to order\" are the common cases, and collapsing them into yes/no loses the condition the buyer decides on."
+          },
+          "offeredPrice": {
+            "type": "number",
+            "example": 1400,
+            "description": "When it differs from the buyer budget"
+          },
+          "availableFrom": {
+            "format": "date-time",
+            "type": "string",
+            "description": "For can-arrange, made-to-order and available-later"
+          },
+          "message": {
+            "type": "string",
+            "maxLength": 500,
+            "description": "A short note, not a conversation"
+          },
+          "offeredListingId": {
+            "type": "string",
+            "description": "Your own listing, when you have exactly this"
+          },
+          "businessId": {
+            "type": "string",
+            "description": "Answer as a business you own or work for"
+          }
+        },
+        "required": ["kind"]
+      },
+      "RequirementResponseDto": {
         "type": "object",
         "properties": {
           "id": {
             "type": "string"
           },
-          "type": {
+          "listingId": {
+            "type": "string"
+          },
+          "responderId": {
+            "type": "string"
+          },
+          "businessId": {
+            "type": "object"
+          },
+          "kind": {
             "type": "string",
             "enum": [
-              "LISTING_APPROVED",
-              "LISTING_REJECTED",
-              "LISTING_EXPIRING",
-              "LISTING_EXPIRED",
-              "NEW_ENQUIRY",
-              "NEW_MESSAGE",
-              "SAVED_SEARCH_MATCH",
-              "NEARBY_OFFER",
-              "JOB_ENQUIRY",
-              "BUSINESS_VERIFICATION_UPDATE",
-              "REPORT_RESOLUTION",
-              "SECURITY_ALERT"
+              "AVAILABLE",
+              "AVAILABLE_AT_DIFFERENT_PRICE",
+              "SIMILAR_AVAILABLE",
+              "CAN_ARRANGE",
+              "MADE_TO_ORDER",
+              "AVAILABLE_LATER",
+              "NOT_AVAILABLE"
             ]
           },
-          "title": {
+          "offeredPrice": {
+            "type": "object"
+          },
+          "availableFrom": {
+            "type": "object"
+          },
+          "message": {
+            "type": "object"
+          },
+          "offeredListingId": {
+            "type": "object"
+          },
+          "conversationId": {
+            "type": "object",
+            "description": "Set once the buyer opens a chat with this seller"
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "required": ["id", "listingId", "responderId", "kind", "createdAt"]
+      },
+      "OpenRequirementChatDto": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string",
+            "example": "Is it still available?"
+          }
+        },
+        "required": ["message"]
+      },
+      "MarkRequirementFulfilledDto": {
+        "type": "object",
+        "properties": {
+          "fulfilled": {
+            "type": "boolean",
+            "description": "False reopens a requirement closed by mistake"
+          }
+        },
+        "required": ["fulfilled"]
+      },
+      "StartConversationDto": {
+        "type": "object",
+        "properties": {
+          "listingId": {
+            "type": "string",
+            "description": "Required for a listing or job enquiry"
+          },
+          "businessId": {
+            "type": "string",
+            "description": "Required for a business enquiry"
+          },
+          "message": {
+            "type": "string",
+            "example": "Is this still available?"
+          }
+        },
+        "required": ["message"]
+      },
+      "MessageDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "senderId": {
             "type": "string"
           },
           "body": {
             "type": "string"
           },
-          "data": {
-            "type": "object",
-            "additionalProperties": true,
-            "description": "Deep-link payload: entityType, entityId, route"
+          "isMine": {
+            "type": "boolean"
           },
           "readAt": {
             "type": "object"
@@ -5042,338 +7003,264 @@
             "type": "string"
           }
         },
-        "required": ["id", "type", "title", "body", "data", "createdAt"]
+        "required": ["id", "senderId", "body", "isMine", "createdAt"]
       },
-      "NotificationPreferenceDto": {
-        "type": "object",
-        "properties": {
-          "type": {
-            "type": "string",
-            "enum": [
-              "LISTING_APPROVED",
-              "LISTING_REJECTED",
-              "LISTING_EXPIRING",
-              "LISTING_EXPIRED",
-              "NEW_ENQUIRY",
-              "NEW_MESSAGE",
-              "SAVED_SEARCH_MATCH",
-              "NEARBY_OFFER",
-              "JOB_ENQUIRY",
-              "BUSINESS_VERIFICATION_UPDATE",
-              "REPORT_RESOLUTION",
-              "SECURITY_ALERT"
-            ]
-          },
-          "channel": {
-            "type": "string",
-            "enum": ["IN_APP", "PUSH", "EMAIL", "SMS"]
-          },
-          "enabled": {
-            "type": "boolean"
-          }
-        },
-        "required": ["type", "channel", "enabled"]
-      },
-      "UpdateNotificationPreferenceDto": {
-        "type": "object",
-        "properties": {
-          "type": {
-            "type": "string",
-            "enum": [
-              "LISTING_APPROVED",
-              "LISTING_REJECTED",
-              "LISTING_EXPIRING",
-              "LISTING_EXPIRED",
-              "NEW_ENQUIRY",
-              "NEW_MESSAGE",
-              "SAVED_SEARCH_MATCH",
-              "NEARBY_OFFER",
-              "JOB_ENQUIRY",
-              "BUSINESS_VERIFICATION_UPDATE",
-              "REPORT_RESOLUTION",
-              "SECURITY_ALERT"
-            ]
-          },
-          "channel": {
-            "type": "string",
-            "enum": ["IN_APP", "PUSH", "EMAIL", "SMS"]
-          },
-          "enabled": {
-            "type": "boolean"
-          }
-        },
-        "required": ["type", "channel", "enabled"]
-      },
-      "ModerationQueueItemDto": {
+      "ConversationDetailDto": {
         "type": "object",
         "properties": {
           "id": {
             "type": "string"
           },
-          "title": {
+          "context": {
+            "type": "string",
+            "enum": ["LISTING_ENQUIRY", "BUSINESS_ENQUIRY", "JOB_ENQUIRY", "REQUIREMENT_ENQUIRY"]
+          },
+          "listingId": {
+            "type": "object"
+          },
+          "listingTitle": {
+            "type": "object"
+          },
+          "listingThumbUrl": {
+            "type": "object"
+          },
+          "otherPartyId": {
             "type": "string"
+          },
+          "otherPartyName": {
+            "type": "string"
+          },
+          "lastMessagePreview": {
+            "type": "object"
+          },
+          "lastMessageAt": {
+            "type": "object"
+          },
+          "unreadCount": {
+            "type": "number"
+          },
+          "isInitiator": {
+            "type": "boolean",
+            "description": "True when this user started the thread"
+          },
+          "messages": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MessageDto"
+            }
+          }
+        },
+        "required": [
+          "id",
+          "context",
+          "otherPartyId",
+          "otherPartyName",
+          "unreadCount",
+          "isInitiator",
+          "messages"
+        ]
+      },
+      "ConversationSummaryDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "context": {
+            "type": "string",
+            "enum": ["LISTING_ENQUIRY", "BUSINESS_ENQUIRY", "JOB_ENQUIRY", "REQUIREMENT_ENQUIRY"]
+          },
+          "listingId": {
+            "type": "object"
+          },
+          "listingTitle": {
+            "type": "object"
+          },
+          "listingThumbUrl": {
+            "type": "object"
+          },
+          "otherPartyId": {
+            "type": "string"
+          },
+          "otherPartyName": {
+            "type": "string"
+          },
+          "lastMessagePreview": {
+            "type": "object"
+          },
+          "lastMessageAt": {
+            "type": "object"
+          },
+          "unreadCount": {
+            "type": "number"
+          },
+          "isInitiator": {
+            "type": "boolean",
+            "description": "True when this user started the thread"
+          }
+        },
+        "required": [
+          "id",
+          "context",
+          "otherPartyId",
+          "otherPartyName",
+          "unreadCount",
+          "isInitiator"
+        ]
+      },
+      "SendMessageDto": {
+        "type": "object",
+        "properties": {
+          "body": {
+            "type": "string"
+          }
+        },
+        "required": ["body"]
+      },
+      "BlockUserDto": {
+        "type": "object",
+        "properties": {
+          "userId": {
+            "type": "string"
+          },
+          "reason": {
+            "type": "string"
+          }
+        },
+        "required": ["userId"]
+      },
+      "SavedSearchDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "label": {
+            "type": "string"
+          },
+          "q": {
+            "type": "object"
+          },
+          "cityId": {
+            "type": "object"
+          },
+          "filters": {
+            "type": "object",
+            "description": "The stored filter set, as the search endpoint would take it"
+          },
+          "isActive": {
+            "type": "boolean"
+          },
+          "lastMatchedAt": {
+            "type": "object",
+            "description": "When this search last matched a new listing"
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "required": ["id", "label", "filters", "isActive", "createdAt"]
+      },
+      "SaveSearchDto": {
+        "type": "object",
+        "properties": {
+          "q": {
+            "type": "string",
+            "description": "Keyword; matched against title, brand and category"
           },
           "type": {
+            "type": "string",
+            "enum": [
+              "CLASSIFIED",
+              "PRODUCT",
+              "BUYER_REQUIREMENT",
+              "OFFER",
+              "JOB",
+              "SERVICE",
+              "RENTAL",
+              "EVENT",
+              "BUSINESS_LISTING"
+            ]
+          },
+          "categoryId": {
             "type": "string"
           },
-          "ownerId": {
+          "cityId": {
             "type": "string"
           },
-          "ownerName": {
+          "localityId": {
             "type": "string"
           },
-          "ownerPublishedCount": {
+          "priceMin": {
+            "type": "number"
+          },
+          "priceMax": {
+            "type": "number"
+          },
+          "condition": {
+            "type": "string",
+            "enum": ["NEW", "LIKE_NEW", "GOOD", "FAIR", "FOR_PARTS"]
+          },
+          "brand": {
+            "type": "string",
+            "example": "Maruti Suzuki",
+            "description": "Marketplace brand"
+          },
+          "model": {
+            "type": "string",
+            "example": "Swift",
+            "description": "Marketplace model, matched loosely"
+          },
+          "yearMin": {
             "type": "number",
-            "description": "Listings this owner already has published"
+            "example": 2018,
+            "description": "Earliest purchase year"
           },
-          "cityName": {
-            "type": "string"
+          "yearMax": {
+            "type": "number",
+            "example": 2024,
+            "description": "Latest purchase year"
           },
-          "categoryName": {
-            "type": "string"
+          "bedroomsMin": {
+            "type": "number",
+            "example": 2,
+            "description": "Rentals with at least this many bedrooms"
           },
-          "price": {
-            "type": "object"
+          "areaMin": {
+            "type": "number",
+            "example": 600,
+            "description": "Rentals of at least this carpet area"
           },
-          "moderationScore": {
-            "type": "object"
+          "areaMax": {
+            "type": "number",
+            "example": 1200
           },
-          "systemReasons": {
-            "description": "Why the automated pass flagged this listing",
+          "attr": {
+            "example": ["fuel_type:PETROL", "km_driven:..50000"],
+            "description": "Category attribute filters as key:value; ranges as key:min..max",
             "type": "array",
             "items": {
               "type": "string"
             }
           },
-          "imageCount": {
-            "type": "number"
-          },
-          "reportCount": {
-            "type": "number"
-          },
-          "createdAt": {
-            "format": "date-time",
-            "type": "string"
+          "label": {
+            "type": "string",
+            "example": "2BHK under 20k in Madhapur",
+            "description": "What the user calls it"
           }
         },
-        "required": [
-          "id",
-          "title",
-          "type",
-          "ownerId",
-          "ownerName",
-          "ownerPublishedCount",
-          "cityName",
-          "categoryName",
-          "systemReasons",
-          "imageCount",
-          "reportCount",
-          "createdAt"
-        ]
+        "required": ["label"]
       },
-      "ApproveListingDto": {
+      "SetSavedSearchActiveDto": {
         "type": "object",
         "properties": {
-          "note": {
-            "type": "string",
-            "example": "Checked images, genuine listing"
-          }
-        }
-      },
-      "SafetyCaseAccessLogDto": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string"
-          },
-          "actorId": {
-            "type": "string"
-          },
-          "action": {
-            "type": "string",
-            "enum": [
-              "CASE_VIEWED",
-              "EVIDENCE_PREVIEW",
-              "CASE_REPORTED",
-              "HOLD_RELEASED",
-              "CASE_CLOSED"
-            ]
-          },
-          "justification": {
-            "type": "string"
-          },
-          "createdAt": {
-            "format": "date-time",
-            "type": "string"
+          "isActive": {
+            "type": "boolean",
+            "description": "Alerts are paused while this is false"
           }
         },
-        "required": ["id", "actorId", "action", "justification", "createdAt"]
-      },
-      "SafetyCaseDetailDto": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string"
-          },
-          "mediaId": {
-            "type": "string"
-          },
-          "listingId": {
-            "type": "string"
-          },
-          "status": {
-            "type": "string",
-            "enum": ["OPEN", "REPORTED", "RELEASED", "CLOSED"]
-          },
-          "mediaStatus": {
-            "type": "string",
-            "enum": [
-              "PENDING_UPLOAD",
-              "UPLOADED",
-              "QUARANTINED",
-              "SCANNING",
-              "REVIEW_REQUIRED",
-              "PROCESSING",
-              "READY",
-              "REJECTED",
-              "LEGAL_HOLD",
-              "FAILED"
-            ]
-          },
-          "provider": {
-            "type": "string"
-          },
-          "providerReference": {
-            "type": "object",
-            "nullable": true
-          },
-          "reasonCode": {
-            "type": "string"
-          },
-          "reportReference": {
-            "type": "object",
-            "nullable": true
-          },
-          "resolutionNote": {
-            "type": "object",
-            "nullable": true
-          },
-          "openedAt": {
-            "format": "date-time",
-            "type": "string"
-          },
-          "reportedAt": {
-            "type": "object",
-            "nullable": true
-          },
-          "releasedAt": {
-            "type": "object",
-            "nullable": true
-          },
-          "closedAt": {
-            "type": "object",
-            "nullable": true
-          },
-          "accessHistory": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/SafetyCaseAccessLogDto"
-            }
-          }
-        },
-        "required": [
-          "id",
-          "mediaId",
-          "listingId",
-          "status",
-          "mediaStatus",
-          "provider",
-          "reasonCode",
-          "openedAt",
-          "accessHistory"
-        ]
-      },
-      "SafetyEvidenceAccessDto": {
-        "type": "object",
-        "properties": {
-          "justification": {
-            "type": "string",
-            "example": "Verify provider match before statutory report 2026-07-26/04",
-            "description": "Written to the restricted access log before a preview URL is issued. Never include image details."
-          }
-        },
-        "required": ["justification"]
-      },
-      "ReportSafetyCaseDto": {
-        "type": "object",
-        "properties": {
-          "reportReference": {
-            "type": "string",
-            "example": "REPORT-2026-07-26-004",
-            "description": "Opaque acknowledgement from the approved reporting channel. Do not include image details."
-          },
-          "justification": {
-            "type": "string",
-            "example": "Submitted by the named safety officer through the approved reporting channel",
-            "description": "Recorded in the restricted case access log."
-          }
-        },
-        "required": ["reportReference", "justification"]
-      },
-      "ResolveSafetyCaseDto": {
-        "type": "object",
-        "properties": {
-          "justification": {
-            "type": "string",
-            "example": "Confirmed false positive after the approved specialist review",
-            "description": "Recorded in the restricted case access log. Never include image details or provider hashes."
-          }
-        },
-        "required": ["justification"]
-      },
-      "RejectListingDto": {
-        "type": "object",
-        "properties": {
-          "reason": {
-            "type": "string",
-            "example": "Contact details in the description instead of the contact fields"
-          }
-        },
-        "required": ["reason"]
-      },
-      "SuspendUserDto": {
-        "type": "object",
-        "properties": {
-          "reason": {
-            "type": "string",
-            "example": "Repeated fake listings after two warnings",
-            "description": "Recorded in the audit trail — the reason is what makes the action reviewable"
-          },
-          "durationDays": {
-            "type": "number",
-            "example": 7,
-            "description": "Days to suspend for. Omit for indefinite — but most suspensions should not be: a fortnight is a correction, a permanent ban for a first offence is a decision to lose a user rather than teach one.",
-            "minimum": 1,
-            "maximum": 365
-          }
-        },
-        "required": ["reason"]
-      },
-      "BlockImageDto": {
-        "type": "object",
-        "properties": {
-          "reason": {
-            "type": "string",
-            "example": "Photograph of ivory carving, listed as an antique bangle",
-            "description": "Shown to the uploader if they try again, so it has to say something useful"
-          },
-          "category": {
-            "type": "string",
-            "example": "WILDLIFE",
-            "description": "Matches the banned-keyword categories, so image and text refusals report together"
-          }
-        },
-        "required": ["reason"]
+        "required": ["isActive"]
       },
       "ListingSummaryDto": {
         "type": "object",
@@ -5595,6 +7482,9 @@
             "description": "Resolved dynamic attributes"
           },
           "marketplace": {
+            "type": "object"
+          },
+          "buyerRequirement": {
             "type": "object"
           },
           "expiresAt": {
@@ -5989,6 +7879,10 @@
             "type": "string",
             "description": "Post on behalf of a business you own or manage"
           },
+          "promptedByBusinessId": {
+            "type": "string",
+            "description": "The business whose page this requirement was raised from. An unclaimed directory record has nobody to message, so asking whether they stock something becomes a requirement rather than a dead end."
+          },
           "cityId": {
             "type": "string"
           },
@@ -6129,6 +8023,10 @@
             "type": "string",
             "description": "Post on behalf of a business you own or manage"
           },
+          "promptedByBusinessId": {
+            "type": "string",
+            "description": "The business whose page this requirement was raised from. An unclaimed directory record has nobody to message, so asking whether they stock something becomes a requirement rather than a dead end."
+          },
           "cityId": {
             "type": "string"
           },
@@ -6232,6 +8130,42 @@
           }
         }
       },
+      "BusinessResultDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "slug": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "categoryName": {
+            "type": "string"
+          },
+          "localityName": {
+            "type": "object"
+          },
+          "cityName": {
+            "type": "object"
+          },
+          "isVerified": {
+            "type": "boolean",
+            "description": "Verified by LocZ, not merely present in a directory"
+          },
+          "isClaimed": {
+            "type": "boolean",
+            "description": "False for an imported record nobody has claimed yet"
+          },
+          "distanceMeters": {
+            "type": "number",
+            "description": "Present when the request supplied coordinates"
+          }
+        },
+        "required": ["id", "slug", "name", "categoryName", "isVerified", "isClaimed"]
+      },
       "SearchResultDto": {
         "type": "object",
         "properties": {
@@ -6253,9 +8187,28 @@
           "usedSearchIndex": {
             "type": "boolean",
             "description": "False when the search index was unavailable and results came from the database"
+          },
+          "businesses": {
+            "description": "Shops and services matching the same query. Separate from items because a business answers a different question from a for-sale listing, and mixing them in one ranked list would bury whichever kind the person was not looking for.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/BusinessResultDto"
+            }
+          },
+          "businessTotal": {
+            "type": "number",
+            "description": "Total matching businesses, for a \"see all\" affordance"
           }
         },
-        "required": ["items", "total", "page", "limit", "usedSearchIndex"]
+        "required": [
+          "items",
+          "total",
+          "page",
+          "limit",
+          "usedSearchIndex",
+          "businesses",
+          "businessTotal"
+        ]
       },
       "SearchIndexStatusDto": {
         "type": "object",
@@ -6275,6 +8228,416 @@
           }
         },
         "required": ["available", "publishedListings", "drift"]
+      },
+      "ModerationQueueItemDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string"
+          },
+          "ownerId": {
+            "type": "string"
+          },
+          "ownerName": {
+            "type": "string"
+          },
+          "ownerPublishedCount": {
+            "type": "number",
+            "description": "Listings this owner already has published"
+          },
+          "cityName": {
+            "type": "string"
+          },
+          "categoryName": {
+            "type": "string"
+          },
+          "price": {
+            "type": "object"
+          },
+          "moderationScore": {
+            "type": "object"
+          },
+          "systemReasons": {
+            "description": "Why the automated pass flagged this listing",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "imageCount": {
+            "type": "number"
+          },
+          "reportCount": {
+            "type": "number"
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "title",
+          "type",
+          "ownerId",
+          "ownerName",
+          "ownerPublishedCount",
+          "cityName",
+          "categoryName",
+          "systemReasons",
+          "imageCount",
+          "reportCount",
+          "createdAt"
+        ]
+      },
+      "ApproveListingDto": {
+        "type": "object",
+        "properties": {
+          "note": {
+            "type": "string",
+            "example": "Checked images, genuine listing"
+          }
+        }
+      },
+      "ModerationMediaQueueItemDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "listingId": {
+            "type": "string"
+          },
+          "listingTitle": {
+            "type": "string"
+          },
+          "uploaderName": {
+            "type": "string"
+          },
+          "failureReason": {
+            "type": "object",
+            "description": "What the automated pass said, in the words shown to the uploader"
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "required": ["id", "listingId", "listingTitle", "uploaderName", "createdAt"]
+      },
+      "SafetyCaseAccessLogDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "actorId": {
+            "type": "string"
+          },
+          "action": {
+            "type": "string",
+            "enum": [
+              "CASE_VIEWED",
+              "EVIDENCE_PREVIEW",
+              "CASE_REPORTED",
+              "HOLD_RELEASED",
+              "CASE_CLOSED"
+            ]
+          },
+          "justification": {
+            "type": "string"
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "required": ["id", "actorId", "action", "justification", "createdAt"]
+      },
+      "SafetyCaseDetailDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "mediaId": {
+            "type": "string"
+          },
+          "listingId": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": ["OPEN", "REPORTED", "RELEASED", "CLOSED"]
+          },
+          "mediaStatus": {
+            "type": "string",
+            "enum": [
+              "PENDING_UPLOAD",
+              "UPLOADED",
+              "QUARANTINED",
+              "SCANNING",
+              "REVIEW_REQUIRED",
+              "PROCESSING",
+              "READY",
+              "REJECTED",
+              "LEGAL_HOLD",
+              "FAILED"
+            ]
+          },
+          "provider": {
+            "type": "string"
+          },
+          "providerReference": {
+            "type": "object",
+            "nullable": true
+          },
+          "reasonCode": {
+            "type": "string"
+          },
+          "reportReference": {
+            "type": "object",
+            "nullable": true
+          },
+          "resolutionNote": {
+            "type": "object",
+            "nullable": true
+          },
+          "openedAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "reportedAt": {
+            "type": "object",
+            "nullable": true
+          },
+          "releasedAt": {
+            "type": "object",
+            "nullable": true
+          },
+          "closedAt": {
+            "type": "object",
+            "nullable": true
+          },
+          "accessHistory": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SafetyCaseAccessLogDto"
+            }
+          }
+        },
+        "required": [
+          "id",
+          "mediaId",
+          "listingId",
+          "status",
+          "mediaStatus",
+          "provider",
+          "reasonCode",
+          "openedAt",
+          "accessHistory"
+        ]
+      },
+      "SafetyEvidenceAccessDto": {
+        "type": "object",
+        "properties": {
+          "justification": {
+            "type": "string",
+            "example": "Verify provider match before statutory report 2026-07-26/04",
+            "description": "Written to the restricted access log before a preview URL is issued. Never include image details."
+          }
+        },
+        "required": ["justification"]
+      },
+      "ReportSafetyCaseDto": {
+        "type": "object",
+        "properties": {
+          "reportReference": {
+            "type": "string",
+            "example": "REPORT-2026-07-26-004",
+            "description": "Opaque acknowledgement from the approved reporting channel. Do not include image details."
+          },
+          "justification": {
+            "type": "string",
+            "example": "Submitted by the named safety officer through the approved reporting channel",
+            "description": "Recorded in the restricted case access log."
+          }
+        },
+        "required": ["reportReference", "justification"]
+      },
+      "ResolveSafetyCaseDto": {
+        "type": "object",
+        "properties": {
+          "justification": {
+            "type": "string",
+            "example": "Confirmed false positive after the approved specialist review",
+            "description": "Recorded in the restricted case access log. Never include image details or provider hashes."
+          }
+        },
+        "required": ["justification"]
+      },
+      "RejectListingDto": {
+        "type": "object",
+        "properties": {
+          "reason": {
+            "type": "string",
+            "example": "Contact details in the description instead of the contact fields"
+          }
+        },
+        "required": ["reason"]
+      },
+      "SuspendUserDto": {
+        "type": "object",
+        "properties": {
+          "reason": {
+            "type": "string",
+            "example": "Repeated fake listings after two warnings",
+            "description": "Recorded in the audit trail — the reason is what makes the action reviewable"
+          },
+          "durationDays": {
+            "type": "number",
+            "example": 7,
+            "description": "Days to suspend for. Omit for indefinite — but most suspensions should not be: a fortnight is a correction, a permanent ban for a first offence is a decision to lose a user rather than teach one.",
+            "minimum": 1,
+            "maximum": 365
+          }
+        },
+        "required": ["reason"]
+      },
+      "BlockImageDto": {
+        "type": "object",
+        "properties": {
+          "reason": {
+            "type": "string",
+            "example": "Photograph of ivory carving, listed as an antique bangle",
+            "description": "Shown to the uploader if they try again, so it has to say something useful"
+          },
+          "category": {
+            "type": "string",
+            "example": "WILDLIFE",
+            "description": "Matches the banned-keyword categories, so image and text refusals report together"
+          }
+        },
+        "required": ["reason"]
+      },
+      "NotificationDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "LISTING_APPROVED",
+              "LISTING_REJECTED",
+              "LISTING_EXPIRING",
+              "LISTING_EXPIRED",
+              "NEW_ENQUIRY",
+              "NEW_MESSAGE",
+              "SAVED_SEARCH_MATCH",
+              "REQUIREMENT_MATCH",
+              "REQUIREMENT_RESPONSE",
+              "NEARBY_OFFER",
+              "JOB_ENQUIRY",
+              "BUSINESS_VERIFICATION_UPDATE",
+              "BUSINESS_CLAIM_UPDATE",
+              "REPORT_RESOLUTION",
+              "SECURITY_ALERT"
+            ]
+          },
+          "title": {
+            "type": "string"
+          },
+          "body": {
+            "type": "string"
+          },
+          "data": {
+            "type": "object",
+            "additionalProperties": true,
+            "description": "Deep-link payload: entityType, entityId, route"
+          },
+          "readAt": {
+            "type": "object"
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "required": ["id", "type", "title", "body", "data", "createdAt"]
+      },
+      "NotificationPreferenceDto": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": [
+              "LISTING_APPROVED",
+              "LISTING_REJECTED",
+              "LISTING_EXPIRING",
+              "LISTING_EXPIRED",
+              "NEW_ENQUIRY",
+              "NEW_MESSAGE",
+              "SAVED_SEARCH_MATCH",
+              "REQUIREMENT_MATCH",
+              "REQUIREMENT_RESPONSE",
+              "NEARBY_OFFER",
+              "JOB_ENQUIRY",
+              "BUSINESS_VERIFICATION_UPDATE",
+              "BUSINESS_CLAIM_UPDATE",
+              "REPORT_RESOLUTION",
+              "SECURITY_ALERT"
+            ]
+          },
+          "channel": {
+            "type": "string",
+            "enum": ["IN_APP", "PUSH", "EMAIL", "SMS"]
+          },
+          "enabled": {
+            "type": "boolean"
+          }
+        },
+        "required": ["type", "channel", "enabled"]
+      },
+      "UpdateNotificationPreferenceDto": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": [
+              "LISTING_APPROVED",
+              "LISTING_REJECTED",
+              "LISTING_EXPIRING",
+              "LISTING_EXPIRED",
+              "NEW_ENQUIRY",
+              "NEW_MESSAGE",
+              "SAVED_SEARCH_MATCH",
+              "REQUIREMENT_MATCH",
+              "REQUIREMENT_RESPONSE",
+              "NEARBY_OFFER",
+              "JOB_ENQUIRY",
+              "BUSINESS_VERIFICATION_UPDATE",
+              "BUSINESS_CLAIM_UPDATE",
+              "REPORT_RESOLUTION",
+              "SECURITY_ALERT"
+            ]
+          },
+          "channel": {
+            "type": "string",
+            "enum": ["IN_APP", "PUSH", "EMAIL", "SMS"]
+          },
+          "enabled": {
+            "type": "boolean"
+          }
+        },
+        "required": ["type", "channel", "enabled"]
       },
       "FeedSectionDto": {
         "type": "object",
@@ -6318,172 +8681,55 @@
         },
         "required": ["cityId", "cityName", "sections"]
       },
-      "StartConversationDto": {
+      "CreateClaimDto": {
         "type": "object",
         "properties": {
-          "listingId": {
+          "evidence": {
             "type": "string",
-            "description": "Required for a listing or job enquiry"
+            "example": "I have run this shop since 2015. The GST certificate is in my name.",
+            "description": "How the claimant is connected to the business, in their own words"
           },
-          "businessId": {
+          "scale": {
             "type": "string",
-            "description": "Required for a business enquiry"
+            "enum": ["INDIVIDUAL_SHOP", "HOME_BUSINESS", "ENTERPRISE"],
+            "description": "What the business actually is. An imported record's details were inferred from map data and are often wrong; the owner is the first person able to correct them."
           },
-          "message": {
+          "offering": {
             "type": "string",
-            "example": "Is this still available?"
-          }
-        },
-        "required": ["message"]
-      },
-      "MessageDto": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string"
+            "enum": ["PRODUCTS", "SERVICES", "BOTH"]
           },
-          "senderId": {
-            "type": "string"
-          },
-          "body": {
-            "type": "string"
-          },
-          "isMine": {
-            "type": "boolean"
-          },
-          "readAt": {
-            "type": "object"
-          },
-          "createdAt": {
-            "format": "date-time",
-            "type": "string"
-          }
-        },
-        "required": ["id", "senderId", "body", "isMine", "createdAt"]
-      },
-      "ConversationDetailDto": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string"
-          },
-          "context": {
+          "categoryId": {
             "type": "string",
-            "enum": ["LISTING_ENQUIRY", "BUSINESS_ENQUIRY", "JOB_ENQUIRY"]
+            "description": "The right category, if the imported one is wrong. Applied only when the claim is approved — an unreviewed claim must not be able to rewrite a live record."
           },
-          "listingId": {
-            "type": "object"
+          "latitude": {
+            "type": "number",
+            "description": "Where the claimant is standing. Sent with the device accuracy, which is checked: a fix accurate to two kilometres that centres nearby proves nothing."
           },
-          "listingTitle": {
-            "type": "object"
-          },
-          "listingThumbUrl": {
-            "type": "object"
-          },
-          "otherPartyId": {
-            "type": "string"
-          },
-          "otherPartyName": {
-            "type": "string"
-          },
-          "lastMessagePreview": {
-            "type": "object"
-          },
-          "lastMessageAt": {
-            "type": "object"
-          },
-          "unreadCount": {
+          "longitude": {
             "type": "number"
           },
-          "isInitiator": {
-            "type": "boolean",
-            "description": "True when this user started the thread"
+          "locationAccuracyM": {
+            "type": "number",
+            "description": "Device-reported accuracy radius, in metres."
           },
-          "messages": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/MessageDto"
-            }
-          }
-        },
-        "required": [
-          "id",
-          "context",
-          "otherPartyId",
-          "otherPartyName",
-          "unreadCount",
-          "isInitiator",
-          "messages"
-        ]
-      },
-      "ConversationSummaryDto": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string"
-          },
-          "context": {
+          "contactPhone": {
             "type": "string",
-            "enum": ["LISTING_ENQUIRY", "BUSINESS_ENQUIRY", "JOB_ENQUIRY"]
-          },
-          "listingId": {
-            "type": "object"
-          },
-          "listingTitle": {
-            "type": "object"
-          },
-          "listingThumbUrl": {
-            "type": "object"
-          },
-          "otherPartyId": {
-            "type": "string"
-          },
-          "otherPartyName": {
-            "type": "string"
-          },
-          "lastMessagePreview": {
-            "type": "object"
-          },
-          "lastMessageAt": {
-            "type": "object"
-          },
-          "unreadCount": {
-            "type": "number"
-          },
-          "isInitiator": {
-            "type": "boolean",
-            "description": "True when this user started the thread"
+            "example": "+919876543210",
+            "description": "A number a reviewer can ring. Never shown publicly."
           }
         },
-        "required": [
-          "id",
-          "context",
-          "otherPartyId",
-          "otherPartyName",
-          "unreadCount",
-          "isInitiator"
-        ]
+        "required": ["evidence", "scale", "offering"]
       },
-      "SendMessageDto": {
+      "RejectClaimDto": {
         "type": "object",
         "properties": {
-          "body": {
-            "type": "string"
-          }
-        },
-        "required": ["body"]
-      },
-      "BlockUserDto": {
-        "type": "object",
-        "properties": {
-          "userId": {
-            "type": "string"
-          },
           "reason": {
-            "type": "string"
+            "type": "string",
+            "example": "The phone number given does not match the one on the listing."
           }
         },
-        "required": ["userId"]
+        "required": ["reason"]
       },
       "BusinessHourDto": {
         "type": "object",
@@ -6522,6 +8768,19 @@
           "slug": {
             "type": "string"
           },
+          "businessType": {
+            "type": "string",
+            "enum": [
+              "RETAIL_STORE",
+              "HOME_BUSINESS",
+              "SERVICE_PROVIDER",
+              "PROFESSIONAL",
+              "MANUFACTURER",
+              "WHOLESALER",
+              "DEALER",
+              "OTHER"
+            ]
+          },
           "categoryName": {
             "type": "string"
           },
@@ -6558,6 +8817,7 @@
           "id",
           "name",
           "slug",
+          "businessType",
           "categoryName",
           "cityName",
           "verificationStatus",
@@ -6573,6 +8833,30 @@
             "type": "string",
             "example": "Sri Lakshmi Electronics"
           },
+          "businessType": {
+            "type": "string",
+            "enum": [
+              "RETAIL_STORE",
+              "HOME_BUSINESS",
+              "SERVICE_PROVIDER",
+              "PROFESSIONAL",
+              "MANUFACTURER",
+              "WHOLESALER",
+              "DEALER",
+              "OTHER"
+            ],
+            "default": "RETAIL_STORE"
+          },
+          "scale": {
+            "type": "string",
+            "enum": ["INDIVIDUAL_SHOP", "HOME_BUSINESS", "ENTERPRISE"],
+            "description": "How big the operation is. Asked rather than inferred: a home baker and a shop with a shutter are found by different searches."
+          },
+          "offering": {
+            "type": "string",
+            "enum": ["PRODUCTS", "SERVICES", "BOTH"],
+            "description": "Whether they sell things, do things, or both. Decides what the storefront can offer — \"ask if they stock this\" is meaningless for an electrician."
+          },
           "categoryId": {
             "type": "string"
           },
@@ -6581,6 +8865,15 @@
           },
           "description": {
             "type": "string"
+          },
+          "keywords": {
+            "description": "What this business sells or does, in the words a customer would type — \"toor dal\", \"bed bug spray\". Category vocabulary only reaches category level; these reach the shelf.",
+            "example": ["toor dal", "weighing machine", "atta"],
+            "maxItems": 30,
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
           },
           "addressLine": {
             "type": "string",
@@ -6614,7 +8907,7 @@
             }
           }
         },
-        "required": ["name", "categoryId", "cityId"]
+        "required": ["name", "scale", "offering", "categoryId", "cityId"]
       },
       "BusinessDetailDto": {
         "type": "object",
@@ -6627,6 +8920,19 @@
           },
           "slug": {
             "type": "string"
+          },
+          "businessType": {
+            "type": "string",
+            "enum": [
+              "RETAIL_STORE",
+              "HOME_BUSINESS",
+              "SERVICE_PROVIDER",
+              "PROFESSIONAL",
+              "MANUFACTURER",
+              "WHOLESALER",
+              "DEALER",
+              "OTHER"
+            ]
           },
           "categoryName": {
             "type": "string"
@@ -6659,6 +8965,30 @@
               "$ref": "#/components/schemas/BusinessHourDto"
             }
           },
+          "keywords": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "scale": {
+            "type": "string",
+            "enum": ["INDIVIDUAL_SHOP", "HOME_BUSINESS", "ENTERPRISE"],
+            "description": "Null on an imported record nobody has claimed — nobody may answer for them."
+          },
+          "offering": {
+            "type": "string",
+            "enum": ["PRODUCTS", "SERVICES", "BOTH"]
+          },
+          "descriptionIsGenerated": {
+            "type": "boolean",
+            "description": "True when the description was assembled from the record rather than written by the owner. The page must say so: a reader cannot judge a description without knowing who wrote it."
+          },
+          "attribution": {
+            "type": "object",
+            "description": "Required under the source licence for imported records — ODbL and CDLA both make attribution travel with the data. Null for anything a person created.",
+            "example": "Details from OpenStreetMap, licensed under ODbL 1.0."
+          },
           "latitude": {
             "type": "object"
           },
@@ -6689,12 +9019,15 @@
           "id",
           "name",
           "slug",
+          "businessType",
           "categoryName",
           "cityName",
           "verificationStatus",
           "listingCount",
           "viewCount",
           "hours",
+          "keywords",
+          "descriptionIsGenerated",
           "isOwner",
           "createdAt"
         ]
@@ -6706,6 +9039,30 @@
             "type": "string",
             "example": "Sri Lakshmi Electronics"
           },
+          "businessType": {
+            "type": "string",
+            "enum": [
+              "RETAIL_STORE",
+              "HOME_BUSINESS",
+              "SERVICE_PROVIDER",
+              "PROFESSIONAL",
+              "MANUFACTURER",
+              "WHOLESALER",
+              "DEALER",
+              "OTHER"
+            ],
+            "default": "RETAIL_STORE"
+          },
+          "scale": {
+            "type": "string",
+            "enum": ["INDIVIDUAL_SHOP", "HOME_BUSINESS", "ENTERPRISE"],
+            "description": "How big the operation is. Asked rather than inferred: a home baker and a shop with a shutter are found by different searches."
+          },
+          "offering": {
+            "type": "string",
+            "enum": ["PRODUCTS", "SERVICES", "BOTH"],
+            "description": "Whether they sell things, do things, or both. Decides what the storefront can offer — \"ask if they stock this\" is meaningless for an electrician."
+          },
           "categoryId": {
             "type": "string"
           },
@@ -6714,6 +9071,15 @@
           },
           "description": {
             "type": "string"
+          },
+          "keywords": {
+            "description": "What this business sells or does, in the words a customer would type — \"toor dal\", \"bed bug spray\". Category vocabulary only reaches category level; these reach the shelf.",
+            "example": ["toor dal", "weighing machine", "atta"],
+            "maxItems": 30,
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
           },
           "addressLine": {
             "type": "string",
@@ -7034,7 +9400,8 @@
             "type": "string"
           },
           "phone": {
-            "type": "string"
+            "type": "object",
+            "nullable": true
           },
           "email": {
             "type": "object",
