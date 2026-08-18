@@ -24,6 +24,13 @@ export class DataEngineController {
     return all.map((source) => ({ ...source, runnable: sourceMayRunInProduction(source) }));
   }
 
+  @Get('health')
+  @RequirePermissions('category:manage')
+  @ApiOperation({ summary: 'Data-health snapshot: sources + local business coverage' })
+  health() {
+    return this.sources.coverage();
+  }
+
   @Post()
   @RequirePermissions('category:manage')
   @ApiOperation({ summary: 'Register a data source (starts disabled and unreviewed)' })

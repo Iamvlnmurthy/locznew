@@ -41,6 +41,65 @@ export class DataSourceService {
     return all.filter(sourceMayRunInProduction);
   }
 
+  /**
+   * Data-health snapshot for the admin dashboard (plan Parts 36–37): the source registry plus
+   * how much local inventory exists and how much of it is claimed — the numbers that answer
+   * "is this locality ready?".
+   */
+  async coverage(): Promise<{
+    sources: Array<DataSource & { runnable: boolean }>;
+    businesses: { total: number; byClaimStatus: Record<string, number> };
+    topCities: Array<{ name: string; count: number }>;
+    topCategories: Array<{ name: string; count: number }>;
+  }> {
+    const where = { deletedAt: null };
+    const [sources, total, byStatus, byCity, byCategory] = await Promise.all([
+      this.list(),
+      this.prisma.business.count({ where }),
+      this.prisma.business.groupBy({ by: ['claimStatus'], where, _count: { _all: true } }),
+      this.prisma.business.groupBy({
+        by: ['cityId'],
+        where,
+        _count: { _all: true },
+        orderBy: { _count: { cityId: 'desc' } },
+        take: 10,
+      }),
+      this.prisma.business.groupBy({
+        by: ['categoryId'],
+        where,
+        _count: { _all: true },
+        orderBy: { _count: { categoryId: 'desc' } },
+        take: 10,
+      }),
+    ]);
+
+    const [cities, categories] = await Promise.all([
+      this.prisma.city.findMany({
+        where: { id: { in: byCity.map((r) => r.cityId) } },
+        select: { id: true, name: true },
+      }),
+      this.prisma.category.findMany({
+        where: { id: { in: byCategory.map((r) => r.categoryId) } },
+        select: { id: true, name: true },
+      }),
+    ]);
+    const cityName = new Map(cities.map((c) => [c.id, c.name]));
+    const categoryName = new Map(categories.map((c) => [c.id, c.name]));
+
+    return {
+      sources: sources.map((source) => ({ ...source, runnable: sourceMayRunInProduction(source) })),
+      businesses: {
+        total,
+        byClaimStatus: Object.fromEntries(byStatus.map((r) => [r.claimStatus, r._count._all])),
+      },
+      topCities: byCity.map((r) => ({ name: cityName.get(r.cityId) ?? '—', count: r._count._all })),
+      topCategories: byCategory.map((r) => ({
+        name: categoryName.get(r.categoryId) ?? '—',
+        count: r._count._all,
+      })),
+    };
+  }
+
   async recordSuccess(id: string, created: number, updated: number): Promise<void> {
     await this.prisma.dataSource.update({
       where: { id },

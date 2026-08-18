@@ -40,6 +40,12 @@ const NAV: Array<{
     icon: 'categories',
     permissions: ['category:manage'],
   },
+  {
+    href: '/data-health',
+    label: 'Data health',
+    icon: 'system',
+    permissions: ['category:manage'],
+  },
   { href: '/audit', label: 'Audit logs', icon: 'audit', permissions: ['audit:read'] },
   { href: '/system', label: 'System', icon: 'system', permissions: ['metrics:read', 'job:run'] },
 ];
