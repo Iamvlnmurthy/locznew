@@ -179,3 +179,41 @@ connector** (pure `normalize`), admin endpoints (`/admin/data-sources`), and the
 migration `20260818000000_data_engine_foundations` (new tables/enums only — no change to the
 4M-row `Business`/`City`). Next: apply the migration on the VPS, then P2 (run the OSM connector
 for the launch city through the dedup→canonical pipeline).
+
+---
+
+## 11. RECONCILIATION (2026-08-18) — the Data Engine already largely exists
+
+**Discovery:** a separate, mature Python pipeline — the "LocZ Pincode Business Data Engine"
+(repo: `business data scraper`) — already implements most of this plan and **has already loaded
+3,414,974 geocoded businesses** into the live LocZ DB. Verified in prod:
+
+| Source (`businesses.sourceName`)                             |          Rows |
+| ------------------------------------------------------------ | ------------: |
+| Overture Maps — Places (India)                               |     2,981,156 |
+| OpenStreetMap — Geofabrik India extract                      |       432,385 |
+| Open Charge Map                                              |         1,433 |
+| **Total** (all geocoded, all `UNCLAIMED`, 99.7% of pincodes) | **3,414,974** |
+
+That pipeline already has: a **compliance gate** (denylist of Google/Justdial/etc, no scraping,
+no fabrication), **dedup** (phone / name-within-150 m, `businesses.merged_into_id`), a **46-category
+taxonomy**, pincode resolution, **tiering** (CONTACTABLE/LOCATABLE/HELD), provenance
+(`sourceName`/`sourceRecordId` — the upsert key), and a safe **CSV-over-SSH push** that never
+overwrites claimed/verified rows and reindexes Meilisearch after.
+
+**Consequence — what changes in this plan:**
+
+- The API-side **OSM Overpass connector (P1) is redundant** with the external pipeline and will
+  **not** be run in prod. It stays only as a reference/fallback for localities an extract misses.
+- The in-app `DataSource` **registry is still useful** as an admin catalog + health view; it has
+  been **seeded with the three real sources** so `/admin/data-sources` reflects reality.
+- **P2 is no longer "ingest OSM"** (done). The real gaps are:
+  1. **Surface the 3.4M in discovery.** They are geocoded and in `businesses`, but the
+     hyperlocal **feed ("Around You Now") is Listing-based** and does not include nearby
+     directory businesses — so the whole cold-start asset only appears on explicit search.
+     _Next slice:_ add nearby directory businesses to the feed / a "Businesses near you" rail,
+     using the existing PostGIS `businesses.geo`.
+  2. **The claiming flywheel.** All 3.4M are `UNCLAIMED`; claiming exists — drive owners to it.
+  3. **Freshness / re-run cadence** of the external pipeline, surfaced via the registry health.
+- The **admin data-health/coverage dashboard** (Parts 36–37) should read from `businesses` +
+  the registry, not from a new ingestion path.
