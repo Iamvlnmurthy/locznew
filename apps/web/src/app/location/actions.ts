@@ -20,12 +20,23 @@ export interface ResolvedPincode {
  * is outside every launched area — the picker then asks them to choose rather than
  * snapping them to a city hundreds of kilometres away.
  */
+export interface ResolvedLocality {
+  id: string;
+  name: string;
+  slug: string;
+  distanceMeters: number;
+}
+
 export async function resolveCoordinatesAction(
   latitude: number,
   longitude: number,
-): Promise<{ city: City | null; pincode: ResolvedPincode | null }> {
+): Promise<{
+  city: City | null;
+  nearbyLocalities: ResolvedLocality[];
+  pincode: ResolvedPincode | null;
+}> {
   const [result, pincodeResult] = await Promise.all([
-    apiSafe<{ city: City | null }>('/locations/resolve', {
+    apiSafe<{ city: City | null; nearbyLocalities?: ResolvedLocality[] }>('/locations/resolve', {
       method: 'POST',
       body: { latitude, longitude },
     }),
@@ -37,6 +48,9 @@ export async function resolveCoordinatesAction(
 
   return {
     city: result?.city ?? null,
+    // Nearest first — the picker labels the choice "Gachibowli, Hyderabad" rather than
+    // just the city, so a person recognises exactly where they are browsing.
+    nearbyLocalities: result?.nearbyLocalities ?? [],
     pincode: pincodeResult?.pincode ?? null,
   };
 }

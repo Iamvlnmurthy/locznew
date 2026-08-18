@@ -147,9 +147,18 @@ export function LocationPicker({
             return;
           }
 
+          // Prefer the nearest locality so the label reads "Gachibowli, Hyderabad" rather
+          // than just "Hyderabad" — but only when it's genuinely close, so a coarse fix in
+          // an area with no mapped locality isn't mislabelled with one kilometres away.
+          const nearest = result.nearbyLocalities[0];
+          const displayName =
+            nearest && nearest.distanceMeters <= 8000
+              ? `${nearest.name}, ${result.city.name}`
+              : result.city.name;
+
           await selectCityAction({
             id: result.city.id,
-            name: result.city.name,
+            name: displayName,
             slug: result.city.slug,
             latitude: position.coords.latitude,
             longitude: position.coords.longitude,
