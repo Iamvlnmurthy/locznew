@@ -2,9 +2,10 @@ import 'server-only';
 import { cookies } from 'next/headers';
 import type { AuthSession, AuthUser } from '@locz/shared-types';
 
-const ACCESS_COOKIE = 'locz_admin_access';
-const REFRESH_COOKIE = 'locz_admin_refresh';
-const USER_COOKIE = 'locz_admin_user';
+// Exported so `api.ts` can rewrite them when it rotates the pair after a 401.
+export const ACCESS_COOKIE = 'locz_admin_access';
+export const REFRESH_COOKIE = 'locz_admin_refresh';
+export const USER_COOKIE = 'locz_admin_user';
 
 /**
  * Session storage for the admin console.
