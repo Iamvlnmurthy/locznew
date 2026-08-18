@@ -51,5 +51,10 @@ export class FeedSectionDto {
 export class FeedDto {
   @ApiProperty() cityId!: string;
   @ApiProperty() cityName!: string;
+  @ApiProperty({
+    description:
+      'True when the requested radius matched nothing and the feed was widened to the whole city, so the UI can say "nothing within N km — showing nearby areas" instead of an empty screen.',
+  })
+  radiusWidened!: boolean;
   @ApiProperty({ type: [FeedSectionDto] }) sections!: FeedSectionDto[];
 }

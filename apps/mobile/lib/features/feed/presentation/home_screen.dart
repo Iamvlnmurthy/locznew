@@ -131,7 +131,9 @@ class HomeScreen extends ConsumerWidget {
                     sliver: SliverToBoxAdapter(
                       child: _SectionHeader(
                         title: strings('feed.aroundYou'),
-                        hint: strings('feed.aroundYouHint'),
+                        hint: data.radiusWidened
+                            ? strings('feed.radiusWidened', {'radius': '$radiusKm'})
+                            : strings('feed.aroundYouHint'),
                       ),
                     ),
                   ),

@@ -6,6 +6,7 @@
   "home": {
     "eyebrow": "Your neighbourhood, closer",
     "within": "Within",
+    "radiusWidened": "Nothing within {radius} km — showing nearby areas.",
     "title": "Everything useful around you.",
     "subtitle": "Deals, jobs, rentals, services and more — near you, updated as it happens.",
     "trustLabel": "Why people use LocZ",

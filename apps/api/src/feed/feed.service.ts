@@ -97,14 +97,24 @@ export class FeedService {
       { key: 'recently_viewed', title: 'Recently viewed', items: recentlyViewed },
     ];
 
-    // Apply the radius uniformly across every section, then drop sections left empty — an
-    // empty carousel looks broken.
+    // Apply the radius uniformly across every section, then drop sections left empty.
+    const withinRadiusSections = sections
+      .map((section) => ({ ...section, items: withinRadius(section.items, maxMeters) }))
+      .filter((section) => section.items.length > 0);
+
+    // A radius that hides everything is a dead end. Fall back to the city-wide feed and flag
+    // it, so the UI offers "nothing within N km — showing nearby areas" rather than a blank
+    // screen. Only relevant when a radius was actually applied.
+    const radiusWidened = maxMeters !== undefined && withinRadiusSections.length === 0;
+    const finalSections = radiusWidened
+      ? sections.filter((section) => section.items.length > 0)
+      : withinRadiusSections;
+
     return {
       cityId: city.id,
       cityName: city.name,
-      sections: sections
-        .map((section) => ({ ...section, items: withinRadius(section.items, maxMeters) }))
-        .filter((section) => section.items.length > 0),
+      radiusWidened,
+      sections: finalSections,
     };
   }
 

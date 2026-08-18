@@ -298,15 +298,20 @@ class Feed {
     required this.cityId,
     required this.cityName,
     required this.sections,
+    this.radiusWidened = false,
   });
 
   final String cityId;
   final String cityName;
   final List<FeedSection> sections;
 
+  /// True when the chosen radius matched nothing and the feed was widened to the whole city.
+  final bool radiusWidened;
+
   factory Feed.fromJson(Map<String, dynamic> json) => Feed(
         cityId: json['cityId'] as String,
         cityName: json['cityName'] as String,
+        radiusWidened: json['radiusWidened'] as bool? ?? false,
         sections: (json['sections'] as List<dynamic>)
             .map((entry) => FeedSection.fromJson(entry as Map<String, dynamic>))
             .toList(),

@@ -23,6 +23,7 @@ interface FeedSection {
 interface Feed {
   cityId: string;
   cityName: string;
+  radiusWidened: boolean;
   sections: FeedSection[];
 }
 
@@ -158,7 +159,11 @@ export default async function HomePage() {
               <div>
                 <span className="section-kicker">{t('home.feedKicker')}</span>
                 <h2>{t('home.feedTitle', { city: feed.cityName })}</h2>
-                <p>{t('home.feedBody')}</p>
+                <p>
+                  {feed.radiusWidened
+                    ? t('home.radiusWidened', { radius: radiusKm })
+                    : t('home.feedBody')}
+                </p>
               </div>
               <div className="home-feed-intro__pulse" aria-label={t('home.activityAria')}>
                 <span>

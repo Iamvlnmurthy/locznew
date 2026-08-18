@@ -135,6 +135,7 @@ class Strings {
       'feed.within': 'Within',
       'feed.aroundYou': 'Around you now',
       'feed.aroundYouHint': 'Everything nearby, closest first',
+      'feed.radiusWidened': 'Nothing within {radius} km — showing nearby areas',
       'feed.empty': 'Nothing here yet. Be the first to post in your area.',
       // Content-type labels shown on every feed card. te/hi fall back to English.
       'type.PRODUCT': 'Marketplace',
