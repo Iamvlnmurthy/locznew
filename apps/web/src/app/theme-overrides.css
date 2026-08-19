@@ -1056,3 +1056,262 @@
     background: linear-gradient(145deg, #1d2e29, #182621);
   }
 }
+
+/* Tablet is neither a stretched phone nor a clipped desktop. Portrait uses a compact
+   command panel above a full-width discovery deck; landscape keeps a fluid two-column
+   split with no fixed minimums. */
+@media (min-width: 761px) and (max-width: 900px) {
+  .home-hero--discovery {
+    min-height: auto;
+    padding-block: 22px 28px;
+    align-items: start;
+  }
+
+  .home-hero--discovery .home-hero__inner {
+    width: 100%;
+    min-height: 0;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 18px;
+    padding: 0 22px;
+  }
+
+  .home-hero--discovery .home-hero__copy {
+    display: grid;
+    max-width: none;
+    min-width: 0;
+    padding: 20px 22px;
+    grid-template-columns: minmax(250px, 0.92fr) minmax(300px, 1.08fr);
+    grid-template-rows: auto auto 1fr auto;
+    gap: 7px 26px;
+    border: 1px solid rgb(255 255 255 / 18%);
+    border-radius: 25px;
+    background: rgb(5 46 38 / 38%);
+    box-shadow: inset 0 1px rgb(255 255 255 / 9%);
+    backdrop-filter: blur(10px);
+  }
+
+  .home-hero--discovery .home-hero__eyebrow {
+    grid-column: 1;
+    grid-row: 1;
+    margin: 0;
+  }
+
+  .home-hero--discovery .home-discovery__location {
+    width: max-content;
+    grid-column: 1;
+    grid-row: 2;
+  }
+
+  .home-hero--discovery .home-hero__copy h1 {
+    max-width: 9ch;
+    grid-column: 1;
+    grid-row: 3;
+    margin: 7px 0 0;
+    font-size: clamp(2.55rem, 6.2vw, 3.35rem);
+    line-height: 0.94;
+  }
+
+  .home-hero--discovery .home-hero__subtitle {
+    grid-column: 1;
+    grid-row: 4;
+    margin: 8px 0 0;
+    font-size: 0.84rem;
+    line-height: 1.45;
+  }
+
+  .home-hero--discovery .radius-selector {
+    align-self: end;
+    grid-column: 2;
+    grid-row: 1 / 3;
+    margin: 0;
+  }
+
+  .home-hero--discovery .radius-selector__options {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 5px;
+  }
+
+  .home-hero--discovery .radius-chip {
+    min-width: 0;
+    padding-inline: 5px;
+  }
+
+  .home-hero--discovery .hero-search {
+    width: 100%;
+    height: 58px;
+    align-self: center;
+    grid-column: 2;
+    grid-row: 3;
+    margin: 0;
+  }
+
+  .home-hero--discovery .hero-search input {
+    min-width: 0;
+  }
+
+  .home-hero--discovery .hero-search button {
+    height: 48px;
+    padding-inline: 16px;
+  }
+
+  .home-hero--discovery .home-hero__quick-links {
+    grid-column: 2;
+    grid-row: 4;
+    margin-top: 8px;
+  }
+
+  .home-hero--discovery .home-discovery--bento {
+    width: 100%;
+    min-width: 0;
+    padding: 20px;
+    border-radius: 25px;
+    transform: none;
+  }
+
+  .home-hero--discovery .home-discovery__head {
+    margin-bottom: 14px;
+  }
+
+  .home-hero--discovery .home-discovery__grid--bento {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    grid-template-rows: repeat(2, 76px);
+    gap: 8px;
+  }
+
+  .home-hero--discovery .home-discovery__grid--bento > .home-discovery-card {
+    min-height: 0;
+    grid-column: auto;
+    grid-row: auto;
+    align-items: center !important;
+    justify-content: flex-start;
+    padding: 8px 9px !important;
+    gap: 7px;
+    border-radius: 15px;
+  }
+
+  .home-hero--discovery .home-discovery-card--local-now {
+    color: var(--locz-text);
+    background: color-mix(in srgb, var(--locz-primary) 10%, white) !important;
+    box-shadow: inset 0 1px rgb(255 255 255 / 75%) !important;
+  }
+
+  .home-hero--discovery .home-discovery__grid--bento > a > .home-discovery-card__art,
+  .home-hero--discovery .home-discovery-card--local-now > .home-discovery-card__art {
+    width: 45px !important;
+    height: 45px !important;
+    flex-basis: 45px !important;
+    border-radius: 13px !important;
+  }
+
+  .home-hero--discovery .home-discovery-card--local-now .home-discovery-card__body strong,
+  .home-hero--discovery .home-discovery-card__body strong {
+    color: var(--locz-text);
+    font-size: 0.72rem;
+  }
+
+  .home-hero--discovery .home-discovery-card__body small,
+  .home-hero--discovery .home-discovery-card__arrow {
+    display: none;
+  }
+
+  .home-hero--discovery .home-discovery__context {
+    margin-top: 10px;
+  }
+
+  .home-desktop-content {
+    padding-inline: 22px;
+  }
+}
+
+@media (min-width: 901px) and (max-width: 1120px) {
+  .home-hero--discovery {
+    min-height: auto;
+    padding-block: 28px;
+  }
+
+  .home-hero--discovery .home-hero__inner {
+    width: 100%;
+    min-height: 0;
+    grid-template-columns: minmax(0, 0.78fr) minmax(0, 1.22fr);
+    gap: 24px;
+    padding-inline: 30px;
+  }
+
+  .home-hero--discovery .home-hero__copy,
+  .home-hero--discovery .home-discovery--bento {
+    min-width: 0;
+  }
+
+  .home-hero--discovery .home-hero__copy h1 {
+    font-size: clamp(2.8rem, 5vw, 3.55rem);
+  }
+
+  .home-hero--discovery .home-discovery--bento {
+    padding: 20px;
+    transform: none;
+  }
+
+  .home-hero--discovery .home-discovery__grid--bento {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    grid-template-rows: repeat(2, 78px);
+    gap: 8px;
+  }
+
+  .home-hero--discovery .home-discovery__grid--bento > .home-discovery-card {
+    min-height: 0;
+    grid-column: auto;
+    grid-row: auto;
+    align-items: center !important;
+    justify-content: flex-start;
+    padding: 8px 9px !important;
+    gap: 7px;
+    border-radius: 15px;
+  }
+
+  .home-hero--discovery .home-discovery-card--local-now {
+    color: var(--locz-text);
+    background: color-mix(in srgb, var(--locz-primary) 10%, white) !important;
+    box-shadow: inset 0 1px rgb(255 255 255 / 75%) !important;
+  }
+
+  .home-hero--discovery .home-discovery__grid--bento > a > .home-discovery-card__art,
+  .home-hero--discovery .home-discovery-card--local-now > .home-discovery-card__art {
+    width: 44px !important;
+    height: 44px !important;
+    flex-basis: 44px !important;
+    border-radius: 13px !important;
+  }
+
+  .home-hero--discovery .home-discovery-card--local-now .home-discovery-card__body strong,
+  .home-hero--discovery .home-discovery-card__body strong {
+    color: var(--locz-text);
+    font-size: 0.64rem;
+    white-space: normal;
+  }
+
+  .home-hero--discovery .home-discovery-card__body small,
+  .home-hero--discovery .home-discovery-card__arrow {
+    display: none;
+  }
+}
+
+@media (min-width: 761px) and (max-width: 1120px) {
+  :root[data-theme='dark'] .home-hero--discovery .home-hero__copy {
+    border-color: rgb(111 154 141 / 20%);
+    background: rgb(7 34 28 / 66%);
+  }
+
+  :root[data-theme='dark'] .home-hero--discovery .home-discovery-card--local-now {
+    color: #eff7f4;
+    background: #1b2a26 !important;
+  }
+
+  :root[data-theme='dark']
+    .home-hero--discovery
+    .home-discovery-card--local-now
+    .home-discovery-card__body
+    strong {
+    color: #eff7f4;
+  }
+}
