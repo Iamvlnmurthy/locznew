@@ -1,11 +1,11 @@
 import Image from 'next/image';
 import Link from 'next/link';
-import type { Category, ListingSummary } from '@locz/shared-types';
+import type { ListingSummary } from '@locz/shared-types';
 import { ListingCard } from '@/components/listing-card';
 import { Icon } from '@/components/icons';
 import { getTranslator, getMessageGroup } from '@/i18n';
 import { apiSafe } from '@/lib/api';
-import { premiumCategoryArtwork, premiumDiscoveryArtwork } from '@/lib/premium-icon-catalog';
+import { premiumDiscoveryArtwork } from '@/lib/premium-icon-catalog';
 import { NearbyBusinesses } from './search/nearby-businesses';
 import { loadNearbyBusinesses } from './search/businesses-actions';
 import { RADIUS_OPTIONS_KM, getLocale, getSelectedCity, getSelectedRadius } from '@/lib/session';
@@ -115,12 +115,7 @@ export default async function HomePage({
     query.set('radiusKm', String(radiusKm));
   }
 
-  const [feed, categories] = await Promise.all([
-    apiSafe<Feed>(`/feed?${query.toString()}`, { auth: true }),
-    apiSafe<Category[]>('/categories', { revalidate: 3600 }),
-  ]);
-
-  const topCategories = (categories ?? []).slice(0, 12);
+  const feed = await apiSafe<Feed>(`/feed?${query.toString()}`, { auth: true });
   const feedCity = feed?.cityName ?? city?.name ?? t('home.yourCity');
 
   // One merged, proximity-sorted "Around You Now" column instead of horizontal rails — the
@@ -190,19 +185,11 @@ export default async function HomePage({
             await loadNearbyBusinesses({ cityId: feed.cityId, page: 1 })
           : { items: [], total: 0, page: 1, hasNextPage: false };
 
-  // Live nearby business counts per category → "Food · 12,400" on the tiles, so it's obvious
-  // which local areas are actually populated.
+  // Scope live discovery counts to the visitor's selected city or pincode.
   const countScope = new URLSearchParams();
   const countCityId = city?.id ?? feed?.cityId;
   if (countCityId) countScope.set('cityId', countCityId);
   if (city?.pincode) countScope.set('pincode', city.pincode);
-  const categoryCounts = countCityId
-    ? await apiSafe<Array<{ categoryId: string; count: number }>>(
-        `/businesses/category-counts?${countScope.toString()}`,
-      )
-    : [];
-  const countByCategory = new Map((categoryCounts ?? []).map((c) => [c.categoryId, c.count]));
-
   // "Local Now" weather — display-only, and null unless OPENWEATHER_API_KEY is configured.
   const weather =
     city?.latitude !== undefined && city?.longitude !== undefined
@@ -436,49 +423,6 @@ export default async function HomePage({
             </section>
           ) : null}
         </div>
-
-        {/* Commerce categories are a discovery shortcut, not feed content. Keep them
-            between the hero context and the live three-column results shell. */}
-        {topCategories.length > 0 ? (
-          <section className="category-section home-category-band">
-            <div className="section__head">
-              <div>
-                <span className="section-kicker">{t('home.explore')}</span>
-                <h2>{t('feed.browseCategories')}</h2>
-              </div>
-              <Link href="/search" className="section-link">
-                {t('feed.seeAll')} <Icon name="arrow" />
-              </Link>
-            </div>
-            <nav className="category-strip" aria-label={t('feed.browseCategories')}>
-              {topCategories.slice(0, 6).map((category, index) => (
-                <Link
-                  key={category.id}
-                  href={`/c/${category.slug}`}
-                  className={`category-chip category-chip--${(index % 6) + 1}`}
-                >
-                  <span className="category-chip__icon" aria-hidden="true">
-                    <Image
-                      src={premiumCategoryArtwork({ slug: category.slug, name: category.name })}
-                      alt=""
-                      width={64}
-                      height={64}
-                    />
-                  </span>
-                  <span>
-                    {localisedCategoryName(category, locale)}
-                    {countByCategory.get(category.id) ? (
-                      <small className="category-chip__count">
-                        {countByCategory.get(category.id)!.toLocaleString()} {t('home.countNearby')}
-                      </small>
-                    ) : null}
-                  </span>
-                  <i aria-hidden="true">→</i>
-                </Link>
-              ))}
-            </nav>
-          </section>
-        ) : null}
 
         <div className="home-content-shell">
           {newsHeadlines.length > 0 ? (
@@ -743,10 +687,4 @@ function weatherEmoji(condition: string): string {
   if (condition === 'fair') return '🌤️';
   if (condition.includes('clearsky')) return '☀️';
   return '🌡️';
-}
-
-function localisedCategoryName(category: Category, locale: string): string {
-  if (locale === 'te' && category.nameTe) return category.nameTe;
-  if (locale === 'hi' && category.nameHi) return category.nameHi;
-  return category.name;
 }
