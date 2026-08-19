@@ -8,7 +8,11 @@ import { SITE_URL, apiSafe } from '@/lib/api';
 // per day, and repeat fetches are instant.
 export const revalidate = 86400;
 
-const SHARD_SIZE = 50000;
+// The sitemap spec allows 50k URLs/shard, but a 50k shard is a ~7MB XML doc built from a ~4MB API
+// payload — 1.5–5s warm and up to ~24s on a cold cache, past Google's fetch timeout (it reported
+// "could not be read"). 10k keeps every shard ~0.8MB and ~1s warm / a few seconds cold, so a
+// crawler always gets it in time. More shards, each reliably fetchable.
+const SHARD_SIZE = 10000;
 
 interface SlugPage {
   slugs: Array<{ slug: string; updatedAt: string }>;
@@ -23,7 +27,9 @@ const loadTotal = unstable_cache(
 
 const loadSlugPage = unstable_cache(
   async (page: number): Promise<SlugPage> =>
-    (await apiSafe<SlugPage>(`/businesses/sitemap-slugs?page=${page}`, { revalidate })) ?? {
+    (await apiSafe<SlugPage>(`/businesses/sitemap-slugs?page=${page}&pageSize=${SHARD_SIZE}`, {
+      revalidate,
+    })) ?? {
       slugs: [],
     },
   ['business-sitemap-page'],
