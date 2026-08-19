@@ -51,6 +51,18 @@ export class BusinessesController {
   }
 
   @Public()
+  @Get('sitemap-slugs')
+  @ApiOperation({ summary: 'A page of business slugs for the XML sitemap (curated set)' })
+  sitemapSlugs(
+    @Query('page') page?: string,
+    @Query('pageSize') pageSize?: string,
+  ): Promise<{ slugs: Array<{ slug: string; updatedAt: Date }>; total: number }> {
+    const p = Math.max(0, Number(page) || 0);
+    const size = Math.min(50000, Math.max(1, Number(pageSize) || 50000));
+    return this.businesses.sitemapSlugs(p, size);
+  }
+
+  @Public()
   @Get('nearby')
   @ApiOperation({ summary: 'Businesses nearest to a point, with an exact distance on each' })
   @ApiResponse({ status: 200, type: [BusinessSummaryDto] })

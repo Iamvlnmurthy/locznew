@@ -142,6 +142,40 @@ export class BusinessesService {
   }
 
   /**
+   * A page of business slugs for the XML sitemap, restricted to businesses with real substance
+   * (claimed, verified, or carrying a phone or description) — a directory that submits millions of
+   * bare name-only pages invites a thin-content penalty, so the sparse imports are held back. The
+   * caller shards `total` into 50k-URL sitemap files. Cached hard by the route, so the count runs
+   * at most once a day.
+   */
+  async sitemapSlugs(
+    page: number,
+    pageSize: number,
+  ): Promise<{ slugs: Array<{ slug: string; updatedAt: Date }>; total: number }> {
+    const where: Prisma.BusinessWhereInput = {
+      deletedAt: null,
+      isActive: true,
+      OR: [
+        { claimStatus: 'CLAIMED' },
+        { verificationStatus: 'VERIFIED' },
+        { primaryPhone: { not: null } },
+        { description: { not: null } },
+      ],
+    };
+    const [slugs, total] = await Promise.all([
+      this.prisma.business.findMany({
+        where,
+        select: { slug: true, updatedAt: true },
+        orderBy: { id: 'asc' },
+        skip: page * pageSize,
+        take: pageSize,
+      }),
+      page === 0 ? this.prisma.business.count({ where }) : Promise.resolve(-1),
+    ]);
+    return { slugs, total };
+  }
+
+  /**
    * Businesses near a point, nearest first, with an exact distance on each — the geo variant
    * of listPublic used by the Home "Businesses near you" surface. Uses the PostGIS GiST index
    * (ST_DWithin to filter, KNN `<->` to order), paginated 20 at a time.
