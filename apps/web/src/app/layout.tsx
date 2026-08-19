@@ -140,6 +140,17 @@ export default async function RootLayout({ children }: { children: React.ReactNo
               </div>
             </nav>
           </div>
+          <div className="container footer__bottom">
+            <p>© {new Date().getFullYear()} LocZ</p>
+            <span className="footer__local-promise">
+              <Icon name="location" /> {t('brand.tagline')}
+            </span>
+            <nav aria-label={t('footer.aria')}>
+              <Link href="/safety">{t('footer.safety')}</Link>
+              <Link href="/terms">{t('footer.terms')}</Link>
+              <Link href="/privacy">{t('footer.privacy')}</Link>
+            </nav>
+          </div>
         </footer>
       </body>
     </html>

@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import Image from 'next/image';
 import { headers } from 'next/headers';
 import { getMessageGroup, getTranslator, type Locale } from '@/i18n';
 import { apiSafe } from '@/lib/api';
@@ -23,21 +24,27 @@ export async function Header({ locale }: { locale: Locale }) {
     ? await apiSafe<{ count: number }>('/notifications/unread-count', { auth: true })
     : null;
   // The home hero owns a large search field, so the header one is redundant there.
-  const isHome = ((await headers()).get('x-pathname') ?? '') === '/';
+  const pathname = (await headers()).get('x-pathname') ?? '';
+  const isHome = pathname === '/';
+  const primaryLinks = [
+    { href: '/discover/local-now', label: discoveryLabels['local-now'] },
+    { href: '/business', label: discoveryLabels.businesses },
+    { href: '/discover/jobs', label: discoveryLabels.jobs },
+    { href: '/discover/services', label: discoveryLabels.services },
+  ];
 
   return (
     <header className="header">
       <div className="container header__row">
         <Link href="/" className="header__brand" aria-label={t('brand.name')}>
-          <picture>
-            <img
-              src="/brand/locz-logo.webp"
-              alt=""
-              width="214"
-              height="102"
-              className="header__logo"
-            />
-          </picture>
+          <Image
+            src="/brand/locz-logo.webp"
+            alt=""
+            width={214}
+            height={102}
+            priority
+            className="header__logo"
+          />
         </Link>
 
         {/* Prefer the readable city name; fall back to the pincode only when that is all
@@ -48,10 +55,15 @@ export async function Header({ locale }: { locale: Locale }) {
         />
 
         <nav className="header__primary" aria-label={t('nav.primary')}>
-          <Link href="/discover/local-now">{discoveryLabels['local-now']}</Link>
-          <Link href="/business">{discoveryLabels.businesses}</Link>
-          <Link href="/discover/jobs">{discoveryLabels.jobs}</Link>
-          <Link href="/discover/services">{discoveryLabels.services}</Link>
+          {primaryLinks.map((item) => (
+            <Link
+              key={item.href}
+              href={item.href}
+              className={pathname.startsWith(item.href) ? 'is-active' : undefined}
+            >
+              {item.label}
+            </Link>
+          ))}
         </nav>
 
         <ThemeToggle label={t('nav.toggleTheme')} className="theme-toggle--mobile" />

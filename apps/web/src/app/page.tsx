@@ -475,6 +475,42 @@ export default async function HomePage({
           ) : null}
 
           <main className="home-main-column">
+            {selectedArea || (feed && feed.sections.length > 0) ? (
+              <section className="home-feed-toolbar" id="local-feed">
+                <div>
+                  {selectedArea ? (
+                    <Link href="/#home-top" className="home-feed-toolbar__back">
+                      <Icon name="arrow" /> {t('home.explore')}
+                    </Link>
+                  ) : (
+                    <span className="section-kicker">{t('home.feedKicker')}</span>
+                  )}
+                  <h2>
+                    {selectedArea
+                      ? (areaLabels[selectedArea] ?? selectedArea)
+                      : t('home.feedTitle', { city: feed?.cityName ?? feedCity })}
+                  </h2>
+                </div>
+                <div className="home-feed-toolbar__filters" aria-label={searchLabels.filters}>
+                  <Link
+                    href={`/?${selectedArea ? `area=${encodeURIComponent(selectedArea)}&` : ''}sort=nearest#local-feed`}
+                    className={sort !== 'latest' ? 'is-active' : ''}
+                  >
+                    {searchLabels.nearestFirst}
+                  </Link>
+                  <Link
+                    href={`/?${selectedArea ? `area=${encodeURIComponent(selectedArea)}&` : ''}sort=latest#local-feed`}
+                    className={sort === 'latest' ? 'is-active' : ''}
+                  >
+                    {searchLabels.latestFirst}
+                  </Link>
+                  <Link href="/search">
+                    <Icon name="sliders" /> {searchLabels.filters}
+                  </Link>
+                </div>
+              </section>
+            ) : null}
+
             {!feed || feed.sections.length === 0 ? (
               <div className="empty-state">
                 <img
@@ -492,40 +528,6 @@ export default async function HomePage({
               </div>
             ) : (
               <>
-                <section className="home-feed-toolbar" id="local-feed">
-                  <div>
-                    {selectedArea ? (
-                      <Link href="/#home-top" className="home-feed-toolbar__back">
-                        <Icon name="arrow" /> {t('home.explore')}
-                      </Link>
-                    ) : (
-                      <span className="section-kicker">{t('home.feedKicker')}</span>
-                    )}
-                    <h2>
-                      {selectedArea
-                        ? (areaLabels[selectedArea] ?? selectedArea)
-                        : t('home.feedTitle', { city: feed.cityName })}
-                    </h2>
-                  </div>
-                  <div className="home-feed-toolbar__filters" aria-label={searchLabels.filters}>
-                    <Link
-                      href={`/?${selectedArea ? `area=${encodeURIComponent(selectedArea)}&` : ''}sort=nearest#local-feed`}
-                      className={sort !== 'latest' ? 'is-active' : ''}
-                    >
-                      {searchLabels.nearestFirst}
-                    </Link>
-                    <Link
-                      href={`/?${selectedArea ? `area=${encodeURIComponent(selectedArea)}&` : ''}sort=latest#local-feed`}
-                      className={sort === 'latest' ? 'is-active' : ''}
-                    >
-                      {searchLabels.latestFirst}
-                    </Link>
-                    <Link href="/search">
-                      <Icon name="sliders" /> {searchLabels.filters}
-                    </Link>
-                  </div>
-                </section>
-
                 <div className="card-grid home-feed-grid">
                   {visibleFeedItems.slice(0, 6).map((listing) => (
                     <ListingCard key={listing.id} listing={listing} t={t} />
