@@ -295,3 +295,420 @@
     border-radius: 22px 22px 12px 12px;
   }
 }
+
+/* ---------- LocZ premium dark theme ---------- */
+:root[data-theme='dark'] {
+  --locz-primary: #55cbb0;
+  --locz-primary-hover: #75dcc4;
+  --locz-primary-soft: #173d35;
+  --locz-accent: #e9b85d;
+  --locz-accent-soft: #342b19;
+  --locz-coral: #ff806d;
+  --locz-coral-soft: #3a211e;
+  --locz-lilac-soft: #28263b;
+  --locz-blue-soft: #1b3038;
+  --locz-bg: #0d1714;
+  --locz-surface: #15211e;
+  --locz-surface-elevated: #192824;
+  --locz-surface-muted: #21332e;
+  --locz-border: #2a3d37;
+  --locz-border-strong: #3a514a;
+  --locz-text: #f1f7f4;
+  --locz-text-secondary: #b7c7c1;
+  --locz-text-muted: #82978f;
+  --locz-text-inverse: #0d1714;
+  --locz-premium-border: rgb(105 145 133 / 22%);
+  --locz-shadow-sm: 0 1px 0 rgb(255 255 255 / 3%), 0 12px 28px rgb(0 0 0 / 18%);
+  --locz-shadow-md: 0 1px 0 rgb(255 255 255 / 4%), 0 18px 42px rgb(0 0 0 / 25%);
+  --locz-shadow-lg: 0 1px 0 rgb(255 255 255 / 4%), 0 28px 70px rgb(0 0 0 / 34%);
+}
+
+:root[data-theme='dark'] body {
+  background:
+    radial-gradient(circle at 8% 0%, rgb(53 145 119 / 10%), transparent 30rem),
+    radial-gradient(circle at 92% 40%, rgb(239 104 81 / 4%), transparent 34rem), var(--locz-bg);
+}
+
+:root[data-theme='dark'] .header {
+  border-bottom-color: rgb(111 154 141 / 14%);
+  background: rgb(13 25 21 / 92%);
+  box-shadow: 0 10px 34px rgb(0 0 0 / 20%);
+}
+
+:root[data-theme='dark'] .header__brand {
+  border-color: rgb(255 255 255 / 12%);
+  background: #f8fbf9;
+  box-shadow: 0 10px 24px rgb(0 0 0 / 22%);
+}
+
+:root[data-theme='dark'] .header__logo {
+  filter: none;
+}
+
+:root[data-theme='dark'] .header__primary {
+  border-color: rgb(111 154 141 / 13%);
+  background: rgb(255 255 255 / 3%);
+}
+
+:root[data-theme='dark'] .header__primary a {
+  color: #93a9a1;
+}
+
+:root[data-theme='dark'] .header__primary a:hover,
+:root[data-theme='dark'] .header__primary a.is-active {
+  color: #eaf8f3;
+  background: #20332e;
+  box-shadow: 0 7px 18px rgb(0 0 0 / 18%);
+}
+
+:root[data-theme='dark'] .location-chip,
+:root[data-theme='dark'] .theme-toggle,
+:root[data-theme='dark'] .locale-switcher select,
+:root[data-theme='dark'] .header__actions .btn--ghost,
+:root[data-theme='dark'] .header__notification {
+  border-color: #354b44;
+  background: #162521;
+  color: #c9d8d3;
+}
+
+:root[data-theme='dark'] .home-hero--discovery {
+  border-bottom-color: rgb(96 143 129 / 15%);
+  background:
+    linear-gradient(
+      90deg,
+      rgb(10 20 17 / 96%) 0%,
+      rgb(10 20 17 / 88%) 43%,
+      rgb(10 20 17 / 68%) 100%
+    ),
+    linear-gradient(180deg, transparent 56%, #0d1714 100%),
+    url('/illustrations/locz-hyderabad-premium-hero-v2.webp') center / cover no-repeat !important;
+}
+
+:root[data-theme='dark'] .home-hero--discovery::before {
+  opacity: 0.18;
+}
+
+:root[data-theme='dark'] .home-hero--discovery .home-hero__copy h1 {
+  color: #f3f8f6;
+  text-shadow: 0 5px 24px rgb(0 0 0 / 28%);
+}
+
+:root[data-theme='dark'] .home-hero--discovery .home-hero__copy > p,
+:root[data-theme='dark'] .home-hero--discovery .hero-trust {
+  color: #b9c9c3;
+}
+
+:root[data-theme='dark'] .home-hero--discovery .home-discovery__location,
+:root[data-theme='dark'] .home-hero--discovery .radius-chip,
+:root[data-theme='dark'] .home-hero--discovery .popular-chip {
+  border-color: rgb(137 175 163 / 24%);
+  background: rgb(24 39 34 / 86%);
+  color: #d7e3df;
+  box-shadow: inset 0 1px rgb(255 255 255 / 4%);
+}
+
+:root[data-theme='dark'] .home-hero--discovery .radius-chip.is-active {
+  border-color: #55cbb0;
+  background: #55cbb0;
+  color: #0b1915;
+  box-shadow: 0 8px 20px rgb(85 203 176 / 18%);
+}
+
+:root[data-theme='dark'] .home-hero--discovery .hero-search {
+  border-color: #3d554d;
+  background: rgb(20 33 29 / 94%);
+  box-shadow: 0 18px 40px rgb(0 0 0 / 25%);
+}
+
+:root[data-theme='dark'] .home-hero--discovery .hero-search input {
+  color: #eef6f2;
+}
+
+:root[data-theme='dark'] .home-hero--discovery .hero-search button {
+  background: #55cbb0;
+  color: #0c1915;
+}
+
+:root[data-theme='dark'] .home-hero--discovery .home-discovery--bento {
+  border-color: rgb(111 154 141 / 20%);
+  background:
+    linear-gradient(145deg, rgb(25 40 35 / 96%), rgb(17 29 25 / 96%)), var(--locz-surface);
+  box-shadow: 0 30px 70px rgb(0 0 0 / 32%);
+}
+
+:root[data-theme='dark'] .home-hero--discovery .home-discovery--bento::before {
+  opacity: 0.14;
+}
+
+:root[data-theme='dark'] .home-hero--discovery .home-discovery__head h2,
+:root[data-theme='dark'] .home-hero--discovery .home-discovery-card__body strong,
+:root[data-theme='dark'] .home-hero--discovery .home-discovery__context b {
+  color: #eff7f4;
+}
+
+:root[data-theme='dark'] .home-hero--discovery .home-discovery__head > a {
+  color: #68d4bb;
+  background: #20332e;
+}
+
+:root[data-theme='dark'] .home-hero--discovery .home-discovery__grid--bento > .home-discovery-card {
+  border-color: rgb(108 147 136 / 19%);
+  background: #1b2a26;
+  box-shadow: inset 0 1px rgb(255 255 255 / 3%);
+}
+
+:root[data-theme='dark']
+  .home-hero--discovery
+  .home-discovery__grid--bento
+  > .home-discovery-card:hover {
+  border-color: rgb(85 203 176 / 42%);
+  background: #213630;
+  box-shadow: 0 12px 28px rgb(0 0 0 / 22%);
+}
+
+:root[data-theme='dark'] .home-hero--discovery .home-discovery-card--local-now {
+  border-color: rgb(92 221 190 / 30%);
+  background: linear-gradient(145deg, #1b705e, #125344);
+}
+
+:root[data-theme='dark'] .home-hero--discovery .home-discovery-card__body small,
+:root[data-theme='dark'] .home-hero--discovery .home-discovery__context small {
+  color: #8fa69e;
+}
+
+:root[data-theme='dark'] .home-hero--discovery .home-discovery-card--local-now small {
+  color: #c5e8df;
+}
+
+:root[data-theme='dark'] .home-hero--discovery .home-discovery__context {
+  border-color: #31473f;
+  background: #13221e;
+}
+
+:root[data-theme='dark'] .home-desktop-content {
+  color: var(--locz-text);
+}
+
+:root[data-theme='dark'] .home-status-rail > .local-now {
+  border-color: #315249;
+  background: linear-gradient(135deg, #17352e, #14251f);
+  color: #edf7f3;
+}
+
+:root[data-theme='dark'] .home-status-rail > .local-alerts {
+  border-color: rgb(255 128 109 / 25%);
+  background: linear-gradient(135deg, #2e201e, #231a18);
+}
+
+:root[data-theme='dark'] .home-status-rail .local-alerts__head h2,
+:root[data-theme='dark'] .home-status-rail .local-alerts__list span {
+  color: #f4ded9;
+}
+
+:root[data-theme='dark'] .home-status-rail .local-alerts__list li,
+:root[data-theme='dark'] .home-status-rail .local-alerts__attribution {
+  background: rgb(255 128 109 / 7%);
+}
+
+:root[data-theme='dark'] .home-category-band,
+:root[data-theme='dark'] .home-content-shell > .local-news,
+:root[data-theme='dark'] .home-content-shell > .local-jobs,
+:root[data-theme='dark'] .search-businesses,
+:root[data-theme='dark'] .home-intents,
+:root[data-theme='dark'] .empty-state {
+  border-color: rgb(105 145 133 / 19%);
+  background: #131f1c;
+  box-shadow: 0 18px 44px rgb(0 0 0 / 22%);
+}
+
+:root[data-theme='dark'] .home-category-band .section__head h2,
+:root[data-theme='dark'] .local-city-panel__head h2,
+:root[data-theme='dark'] .search-businesses__head h2,
+:root[data-theme='dark'] .home-intents h2,
+:root[data-theme='dark'] .empty-state h1 {
+  color: #eef6f2;
+}
+
+:root[data-theme='dark'] .home-category-band .category-chip {
+  border-color: #30443e;
+  background: #192824;
+  color: #e5efeb;
+  box-shadow: inset 0 1px rgb(255 255 255 / 3%);
+}
+
+:root[data-theme='dark'] .home-category-band .category-chip:nth-child(2n) {
+  background: #20291f;
+}
+
+:root[data-theme='dark'] .home-category-band .category-chip:nth-child(3n) {
+  background: #202532;
+}
+
+:root[data-theme='dark'] .home-category-band .category-chip__icon {
+  border-color: rgb(255 255 255 / 8%);
+  background: rgb(255 255 255 / 6%);
+}
+
+:root[data-theme='dark'] .home-category-band .category-chip:hover {
+  border-color: rgb(85 203 176 / 38%);
+  background: #213630;
+}
+
+:root[data-theme='dark'] .home-content-shell .local-news__list a,
+:root[data-theme='dark'] .home-content-shell .local-jobs__list a {
+  border-color: #2b4039;
+  background: #192723;
+  color: #edf5f2;
+  box-shadow: 0 8px 20px rgb(0 0 0 / 14%);
+}
+
+:root[data-theme='dark'] .home-content-shell .local-news__list a:hover,
+:root[data-theme='dark'] .home-content-shell .local-jobs__list a:hover {
+  border-color: rgb(85 203 176 / 38%);
+  background: #20322d;
+}
+
+:root[data-theme='dark'] .home-content-shell .local-news__body strong,
+:root[data-theme='dark'] .home-content-shell .local-jobs__body strong {
+  color: #e8f2ee;
+}
+
+:root[data-theme='dark'] .home-content-shell .local-news__meta,
+:root[data-theme='dark'] .home-content-shell .local-jobs__meta,
+:root[data-theme='dark'] .home-content-shell .local-jobs__tags {
+  color: #899e96;
+}
+
+:root[data-theme='dark'] .home-content-shell .local-news__attribution,
+:root[data-theme='dark'] .home-content-shell .local-jobs__attribution,
+:root[data-theme='dark'] .local-city-panel__action {
+  border-color: #324840;
+  background: #1d2d28;
+  color: #65d2b8;
+}
+
+:root[data-theme='dark'] .home-content-shell .local-jobs__icon {
+  border-color: #315047;
+  background: #1d3a32;
+  color: #63d5b9;
+}
+
+:root[data-theme='dark'] .home-feed-toolbar,
+:root[data-theme='dark'] .discovery-feed-toolbar {
+  border-color: #30463f;
+  background: rgb(22 35 31 / 94%);
+  box-shadow: 0 14px 36px rgb(0 0 0 / 28%);
+}
+
+:root[data-theme='dark'] .home-feed-toolbar h2,
+:root[data-theme='dark'] .discovery-feed-toolbar > strong {
+  color: #f0f7f4;
+}
+
+:root[data-theme='dark'] .home-feed-toolbar__filters > a,
+:root[data-theme='dark'] .discovery-feed-toolbar nav span,
+:root[data-theme='dark'] .discovery-feed-toolbar nav a {
+  border-color: #354b44;
+  background: #1b2b27;
+  color: #a9bbb4;
+}
+
+:root[data-theme='dark'] .home-feed-toolbar__filters > a.is-active,
+:root[data-theme='dark'] .discovery-feed-toolbar nav .is-active {
+  border-color: #55cbb0;
+  background: #55cbb0;
+  color: #0b1814;
+}
+
+:root[data-theme='dark'] .listing-card,
+:root[data-theme='dark'] .search-business-card {
+  border-color: #2d423b;
+  background: #182622;
+  color: #edf6f2;
+  box-shadow: 0 12px 30px rgb(0 0 0 / 20%);
+}
+
+:root[data-theme='dark'] .listing-card__body,
+:root[data-theme='dark'] .search-business-card__content {
+  background: #182622;
+}
+
+:root[data-theme='dark'] .listing-card__title,
+:root[data-theme='dark'] .listing-card__price,
+:root[data-theme='dark'] .search-business-card__name {
+  color: #f1f7f4;
+}
+
+:root[data-theme='dark'] .listing-card__meta,
+:root[data-theme='dark'] .listing-card__location,
+:root[data-theme='dark'] .search-business-card__category,
+:root[data-theme='dark'] .search-business-card__place,
+:root[data-theme='dark'] .search-business-card__meta {
+  color: #91a59d;
+}
+
+:root[data-theme='dark'] .search-business-card__visual {
+  border-color: #30463f;
+  background: linear-gradient(145deg, #20322d, #182520);
+}
+
+:root[data-theme='dark'] .search-business-card__directions {
+  border-color: #3b574e;
+  background: #182722;
+  color: #80d8c2;
+}
+
+:root[data-theme='dark'] .search-business-card__claim {
+  background: #3a211e;
+  color: #ff9a88;
+}
+
+:root[data-theme='dark'] .home-post-invitation {
+  border-color: #315b4e;
+  background: linear-gradient(135deg, #123f34, #18372f);
+}
+
+:root[data-theme='dark'] .home-intent {
+  border-color: #2c413a;
+  background: #192824;
+  color: #e8f1ee;
+}
+
+:root[data-theme='dark'] .home-intent:nth-child(2n) {
+  background: #20291f;
+}
+
+:root[data-theme='dark'] .home-intent:nth-child(3n) {
+  background: #1b2b34;
+}
+
+:root[data-theme='dark'] .footer {
+  border-top-color: rgb(112 160 146 / 15%);
+  background: radial-gradient(circle at 12% 12%, rgb(40 137 111 / 18%), transparent 26rem), #0a1512;
+}
+
+@media (max-width: 760px) {
+  :root[data-theme='dark'] .home-hero--discovery {
+    background: linear-gradient(180deg, #11221d, #0d1714) !important;
+  }
+
+  :root[data-theme='dark'] .mobile-dock {
+    border-top-color: #2d433c;
+    background: rgb(15 26 22 / 96%);
+    box-shadow: 0 -12px 34px rgb(0 0 0 / 25%);
+  }
+}
+
+:root[data-theme='dark'] {
+  color-scheme: dark;
+}
+
+:root[data-theme='dark'] .home-hero--discovery .home-discovery__context > span {
+  border-color: #30463f;
+  background: #13221e;
+}
+
+:root[data-theme='dark'] .home-hero--discovery .home-discovery__context i,
+:root[data-theme='dark'] .home-hero--discovery .home-discovery__context svg {
+  color: #62d0b6;
+}
