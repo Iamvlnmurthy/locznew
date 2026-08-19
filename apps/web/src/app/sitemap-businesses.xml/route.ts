@@ -1,8 +1,11 @@
+import { unstable_cache } from 'next/cache';
 import { SITE_URL, apiSafe } from '@/lib/api';
 
 // Business profile pages are LocZ's largest indexable surface (millions of curated local places),
 // far beyond a single 50k-URL sitemap. So this route serves both a sitemap *index* (no `page`) and
-// each 50k-URL shard (`?page=N`), all cached hard — the count and slug queries run at most daily.
+// each 50k-URL shard (`?page=N`). The underlying count + slug queries are heavy (a filtered scan of
+// ~3.4M rows), so each page is memoised for a day — a crawler pays the cost at most once per shard
+// per day, and repeat fetches are instant.
 export const revalidate = 86400;
 
 const SHARD_SIZE = 50000;
@@ -12,21 +15,31 @@ interface SlugPage {
   total: number;
 }
 
+const loadSlugPage = unstable_cache(
+  async (page: number): Promise<SlugPage> =>
+    (await apiSafe<SlugPage>(`/businesses/sitemap-slugs?page=${page}`, { revalidate })) ?? {
+      slugs: [],
+      total: 0,
+    },
+  ['business-sitemap-page'],
+  { revalidate: 86400 },
+);
+
 function xmlResponse(body: string): Response {
   return new Response(`<?xml version="1.0" encoding="UTF-8"?>\n${body}`, {
-    headers: { 'Content-Type': 'application/xml; charset=utf-8' },
+    headers: {
+      'Content-Type': 'application/xml; charset=utf-8',
+      'Cache-Control': 'public, max-age=86400, s-maxage=86400',
+    },
   });
 }
 
 export async function GET(request: Request): Promise<Response> {
   const pageParam = new URL(request.url).searchParams.get('page');
 
-  // Index: list one <sitemap> per shard.
+  // Index: one <sitemap> per shard.
   if (pageParam === null) {
-    const first = await apiSafe<SlugPage>('/businesses/sitemap-slugs?page=0', {
-      revalidate,
-    });
-    const total = first?.total ?? 0;
+    const total = (await loadSlugPage(0)).total;
     const shards = Math.max(1, Math.ceil(total / SHARD_SIZE));
     const items = Array.from(
       { length: shards },
@@ -39,8 +52,8 @@ export async function GET(request: Request): Promise<Response> {
 
   // Shard: the business URLs for this page.
   const page = Math.max(0, Number(pageParam) || 0);
-  const data = await apiSafe<SlugPage>(`/businesses/sitemap-slugs?page=${page}`, { revalidate });
-  const urls = (data?.slugs ?? [])
+  const { slugs } = await loadSlugPage(page);
+  const urls = slugs
     .map(
       (b) =>
         `  <url><loc>${SITE_URL}/b/${b.slug}</loc><lastmod>${new Date(
