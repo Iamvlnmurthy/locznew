@@ -104,7 +104,11 @@ export default async function HomePage() {
         })
       : city?.pincode
         ? await loadNearbyBusinesses({ pincode: city.pincode, page: 1 })
-        : { items: [], total: 0, page: 1, hasNextPage: false };
+        : feed?.cityId
+          ? // No stated location: fall back to the feed's resolved city so a first-time
+            // visitor still sees nearby businesses (by city, without a distance).
+            await loadNearbyBusinesses({ cityId: feed.cityId, page: 1 })
+          : { items: [], total: 0, page: 1, hasNextPage: false };
 
   return (
     <>
@@ -257,6 +261,7 @@ export default async function HomePage() {
             </div>
             <NearbyBusinesses
               pincode={city?.pincode}
+              cityId={city?.id ?? feed?.cityId}
               latitude={city?.latitude}
               longitude={city?.longitude}
               radiusKm={radiusKm}
@@ -266,6 +271,7 @@ export default async function HomePage() {
               nearYou={searchLabels.nearYou}
               loadingLabel={searchLabels.loadingMoreBusinesses}
               kmLabel={t('common.km')}
+              withinKm={searchLabels.withinKm}
             />
           </section>
         ) : null}

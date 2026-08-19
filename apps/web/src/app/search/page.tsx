@@ -246,6 +246,7 @@ export default async function SearchPage({
                   nearYou={s.nearYou}
                   loadingLabel={s.loadingMoreBusinesses}
                   kmLabel={t('common.km')}
+                  withinKm={s.withinKm}
                 />
               </section>
             ) : null}

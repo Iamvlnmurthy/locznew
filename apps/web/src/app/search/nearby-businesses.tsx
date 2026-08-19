@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { Fragment, useCallback, useEffect, useRef, useState } from 'react';
 import { Icon } from '@/components/icons';
 import { loadNearbyBusinesses, type NearbyBusiness } from './businesses-actions';
 
@@ -13,6 +13,14 @@ import { loadNearbyBusinesses, type NearbyBusiness } from './businesses-actions'
 function formatDistance(meters: number, kmLabel: string): string {
   const km = meters / 1000;
   return km < 1 ? `${Math.round(meters)} m` : `${km.toFixed(km < 10 ? 1 : 0)} ${kmLabel}`;
+}
+
+// OLX-style progressive bands: nearest first, then widen. A header appears as the list crosses
+// each threshold, so a sparse locality reads "Nearby · more within 5 km" instead of a wall.
+const BAND_METRES = [1000, 3000, 5000, 10000, 25000];
+function bandIndex(meters: number): number {
+  for (let i = 0; i < BAND_METRES.length; i += 1) if (meters < BAND_METRES[i]) return i;
+  return BAND_METRES.length;
 }
 
 export function NearbyBusinesses({
@@ -28,6 +36,7 @@ export function NearbyBusinesses({
   nearYou,
   loadingLabel,
   kmLabel,
+  withinKm,
 }: {
   q?: string;
   pincode?: string;
@@ -41,7 +50,15 @@ export function NearbyBusinesses({
   nearYou: string;
   loadingLabel: string;
   kmLabel: string;
+  withinKm: string;
 }) {
+  const bandLabel = (index: number): string =>
+    index === 0
+      ? nearYou
+      : withinKm.replace(
+          '{km}',
+          String((index < BAND_METRES.length ? BAND_METRES[index] : 25000) / 1000),
+        );
   const [items, setItems] = useState(initial);
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(initialHasMore);
@@ -88,33 +105,42 @@ export function NearbyBusinesses({
   return (
     <>
       <div className="search-businesses__grid">
-        {items.map((business) => {
-          const area = business.pincode ?? business.cityName ?? nearYou;
-          const place =
-            business.distanceMeters !== undefined
-              ? `${formatDistance(business.distanceMeters, kmLabel)} · ${area}`
+        {(() => {
+          let lastBand = -1;
+          return items.map((business) => {
+            const hasDistance = business.distanceMeters !== undefined;
+            const band = hasDistance ? bandIndex(business.distanceMeters!) : -1;
+            const showBand = hasDistance && band !== lastBand;
+            if (showBand) lastBand = band;
+            const area = business.pincode ?? business.cityName ?? nearYou;
+            const place = hasDistance
+              ? `${formatDistance(business.distanceMeters!, kmLabel)} · ${area}`
               : area;
-          return (
-            <Link key={business.id} href={`/b/${business.slug}`} className="search-business-card">
-              <span className="search-business-card__mark" aria-hidden="true">
-                {business.name.slice(0, 1).toUpperCase()}
-              </span>
-              <span className="search-business-card__body">
-                <span className="search-business-card__category">{business.categoryName}</span>
-                <strong>{business.name}</strong>
-                <span className="search-business-card__place">
-                  <Icon name="location" /> {place}
-                </span>
-              </span>
-              {business.verificationStatus === 'VERIFIED' ? (
-                <span className="search-business-card__verified">
-                  <Icon name="shield" /> {verifiedLabel}
-                </span>
-              ) : null}
-              <Icon name="arrow" />
-            </Link>
-          );
-        })}
+            return (
+              <Fragment key={business.id}>
+                {showBand ? <h3 className="nearby-businesses__band">{bandLabel(band)}</h3> : null}
+                <Link href={`/b/${business.slug}`} className="search-business-card">
+                  <span className="search-business-card__mark" aria-hidden="true">
+                    {business.name.slice(0, 1).toUpperCase()}
+                  </span>
+                  <span className="search-business-card__body">
+                    <span className="search-business-card__category">{business.categoryName}</span>
+                    <strong>{business.name}</strong>
+                    <span className="search-business-card__place">
+                      <Icon name="location" /> {place}
+                    </span>
+                  </span>
+                  {business.verificationStatus === 'VERIFIED' ? (
+                    <span className="search-business-card__verified">
+                      <Icon name="shield" /> {verifiedLabel}
+                    </span>
+                  ) : null}
+                  <Icon name="arrow" />
+                </Link>
+              </Fragment>
+            );
+          });
+        })()}
       </div>
       {loading ? (
         <p className="nearby-businesses__loading" aria-live="polite">

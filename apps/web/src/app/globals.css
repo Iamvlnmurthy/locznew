@@ -16785,3 +16785,16 @@ body {
   font-size: 0.875rem;
   padding: var(--locz-space-4) 0;
 }
+
+.nearby-businesses__band {
+  grid-column: 1 / -1;
+  margin: var(--locz-space-3) 0 0;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--locz-primary);
+}
+.nearby-businesses__band:first-child {
+  margin-top: 0;
+}
