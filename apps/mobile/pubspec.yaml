@@ -90,6 +90,8 @@ flutter:
   assets:
     - assets/brand/
     - assets/categories/
+    - assets/category-library/
+    - assets/discovery/
   fonts:
     - family: Inter
       fonts:

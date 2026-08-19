@@ -70,7 +70,9 @@
     "exploreKicker": "Around you",
     "exploreTitle": "What's near you in {city}",
     "localNewsKicker": "Local now",
-    "localNewsTitle": "Latest around {city}"
+    "localNewsTitle": "Latest around {city}",
+    "jobsKicker": "Work nearby",
+    "jobsTitle": "Jobs in {city}"
   },
   "nav": {
     "home": "Home",

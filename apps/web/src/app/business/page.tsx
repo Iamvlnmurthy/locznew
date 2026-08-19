@@ -3,9 +3,10 @@ import Image from 'next/image';
 import Link from 'next/link';
 import type { Category, City, Paginated } from '@locz/shared-types';
 import { CityCombobox } from '@/components/city-combobox';
-import { Icon, categoryImageName } from '@/components/icons';
+import { Icon } from '@/components/icons';
 import { getTranslator, type Locale, type Translator } from '@/i18n';
 import { apiSafe } from '@/lib/api';
+import { premiumCategoryArtwork } from '@/lib/premium-icon-catalog';
 import { getLocale, getSelectedCity } from '@/lib/session';
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -177,7 +178,7 @@ export default async function BusinessDirectoryPage({
               >
                 <span className={`business-directory-start__icon is-tone-${(index % 4) + 1}`}>
                   <Image
-                    src={`/icons/categories/${categoryImageName(category.iconKey)}.webp`}
+                    src={premiumCategoryArtwork({ slug: category.slug, name: category.name })}
                     alt=""
                     width="58"
                     height="58"

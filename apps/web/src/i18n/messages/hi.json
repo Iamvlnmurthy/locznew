@@ -70,7 +70,9 @@
     "exploreKicker": "आपके आसपास",
     "exploreTitle": "{city} में आपके पास क्या है",
     "localNewsKicker": "लोकल नाउ",
-    "localNewsTitle": "{city} के आसपास ताज़ा"
+    "localNewsTitle": "{city} के आसपास ताज़ा",
+    "jobsKicker": "आसपास काम",
+    "jobsTitle": "{city} में नौकरियां"
   },
   "nav": {
     "home": "होम",

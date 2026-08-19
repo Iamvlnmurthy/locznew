@@ -4,6 +4,7 @@ import { Type } from 'class-transformer';
 import { IsLatitude, IsLongitude, IsOptional, IsString, Matches, MaxLength } from 'class-validator';
 import { Public } from '../rbac/rbac.decorators';
 import { AreaCount, LocalAreaService } from './local-area.service';
+import { JobPosting, LocalJobsService } from './local-jobs.service';
 import { LocalNewsService, NewsHeadline } from './local-news.service';
 import { LocalWeather } from './weather.mapper';
 import { WeatherService } from './weather.service';
@@ -31,6 +32,7 @@ export class WeatherController {
     private readonly weather: WeatherService,
     private readonly localArea: LocalAreaService,
     private readonly localNews: LocalNewsService,
+    private readonly localJobs: LocalJobsService,
   ) {}
 
   @Public()
@@ -52,5 +54,12 @@ export class WeatherController {
   @ApiOperation({ summary: 'Live local news headlines for an area (empty when none / on failure)' })
   async news(@Query() query: NewsQueryDto): Promise<{ headlines: NewsHeadline[] }> {
     return { headlines: await this.localNews.headlines(query.q) };
+  }
+
+  @Public()
+  @Get('jobs')
+  @ApiOperation({ summary: 'Live local job openings for an area (empty when not configured)' })
+  async jobs(@Query() query: NewsQueryDto): Promise<{ jobs: JobPosting[] }> {
+    return { jobs: await this.localJobs.nearby(query.q) };
   }
 }

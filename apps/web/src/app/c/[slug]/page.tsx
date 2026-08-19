@@ -4,9 +4,10 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import type { Category, CategoryAttribute, ListingSummary } from '@locz/shared-types';
 import { ListingCard } from '@/components/listing-card';
-import { Icon, categoryImageName } from '@/components/icons';
+import { Icon } from '@/components/icons';
 import { getTranslator } from '@/i18n';
 import { ApiError, api, apiSafe } from '@/lib/api';
+import { premiumCategoryArtwork } from '@/lib/premium-icon-catalog';
 import { getLocale, getSelectedCity } from '@/lib/session';
 
 interface CategoryDetail extends Category {
@@ -150,7 +151,7 @@ export default async function CategoryPage({ params }: { params: Promise<{ slug:
           <div className="discovery-hero__category-art" aria-hidden="true">
             <span>
               <Image
-                src={`/icons/categories/${categoryImageName(category.iconKey)}.webp`}
+                src={premiumCategoryArtwork({ slug: category.slug, name: category.name })}
                 alt=""
                 width="180"
                 height="180"

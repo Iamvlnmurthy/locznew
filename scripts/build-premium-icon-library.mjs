@@ -128,24 +128,26 @@ for (const [index, entry] of catalog.entries()) {
   const cellIndex = index % batchSize;
   const column = cellIndex % gridSize;
   const row = Math.floor(cellIndex / gridSize);
+  // The final partial sheet contains nine icons laid out as five columns by two rows
+  // in the upper half of the canvas; its row height is therefore 320px after normalization.
+  const cellHeight = sheetIndex === sheets.length - 1 ? (gridSize * cellSize) / 4 : cellSize;
   const extracted = await sharp(normalizedSheets[sheetIndex])
-    .extract({ left: column * cellSize, top: row * cellSize, width: cellSize, height: cellSize })
+    .extract({ left: column * cellSize, top: row * cellHeight, width: cellSize, height: cellHeight })
     .ensureAlpha()
     .raw()
     .toBuffer({ resolveWithObject: true });
-  // GPT occasionally draws a separator stroke close to the conceptual cell boundary.
-  // The prompt keeps artwork inside the central 72%, so clearing the outer 11% is safe.
-  const border = 28;
-  for (let y = 0; y < cellSize; y += 1) {
+  // Clear a narrow perimeter so anti-aliased pixels from an adjacent cell cannot bleed in.
+  const border = sheetIndex === sheets.length - 1 ? 28 : 8;
+  for (let y = 0; y < cellHeight; y += 1) {
     for (let x = 0; x < cellSize; x += 1) {
-      if (x >= border && x < cellSize - border && y >= border && y < cellSize - border) continue;
+      if (x >= border && x < cellSize - border && y >= border && y < cellHeight - border) continue;
       extracted.data[(y * cellSize + x) * extracted.info.channels + 3] = 0;
     }
   }
   const cell = await sharp(extracted.data, {
     raw: {
       width: cellSize,
-      height: cellSize,
+      height: cellHeight,
       channels: extracted.info.channels,
     },
   })
@@ -153,7 +155,10 @@ for (const [index, entry] of catalog.entries()) {
     .toBuffer();
   const cropped = await sharp(cell)
     .trim({ background: { r: 0, g: 0, b: 0, alpha: 0 }, threshold: 8 })
-    .resize(224, 224, { fit: 'contain' })
+    .resize(224, 224, {
+      fit: 'contain',
+      background: { r: 0, g: 0, b: 0, alpha: 0 },
+    })
     .extend({
       top: 16,
       right: 16,

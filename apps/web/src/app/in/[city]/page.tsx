@@ -4,9 +4,10 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import type { Category, City, ListingSummary } from '@locz/shared-types';
 import { ListingCard } from '@/components/listing-card';
-import { Icon, categoryImageName } from '@/components/icons';
+import { Icon } from '@/components/icons';
 import { getTranslator } from '@/i18n';
 import { ApiError, api, apiSafe } from '@/lib/api';
+import { premiumCategoryArtwork } from '@/lib/premium-icon-catalog';
 import { getLocale } from '@/lib/session';
 
 async function loadCity(slug: string): Promise<City | null> {
@@ -179,7 +180,7 @@ export default async function CityPage({ params }: { params: Promise<{ city: str
                 >
                   <span>
                     <Image
-                      src={`/icons/categories/${categoryImageName(category.iconKey)}.webp`}
+                      src={premiumCategoryArtwork({ slug: category.slug, name: category.name })}
                       alt=""
                       width="76"
                       height="76"

@@ -954,22 +954,6 @@ class _AroundYouSection extends ConsumerStatefulWidget {
 }
 
 class _AroundYouSectionState extends ConsumerState<_AroundYouSection> {
-  static const _icons = <String, IconData>{
-    'food': Icons.restaurant,
-    'health': Icons.medical_services_outlined,
-    'services': Icons.build_outlined,
-    'shopping': Icons.shopping_bag_outlined,
-    'mobility': Icons.directions_car_outlined,
-    'home': Icons.home_repair_service_outlined,
-    'jobs': Icons.work_outline,
-    'events': Icons.event_outlined,
-    'rentals': Icons.bed_outlined,
-    'deals': Icons.local_offer_outlined,
-    'businesses': Icons.storefront_outlined,
-    'play': Icons.sports_soccer_outlined,
-    'pets': Icons.pets_outlined,
-  };
-
   List<({String area, int count})> _areas = const [];
   bool _loading = true;
 
@@ -1038,7 +1022,7 @@ class _AroundYouSectionState extends ConsumerState<_AroundYouSection> {
               itemBuilder: (context, index) {
                 final entry = _areas[index];
                 return _AreaChip(
-                  icon: _icons[entry.area] ?? Icons.place_outlined,
+                  asset: discoveryAreaAsset(entry.area),
                   count: _formatCount(entry.count),
                   label: strings('area.${entry.area}'),
                   onTap: () => context.push('/search'),
@@ -1054,13 +1038,13 @@ class _AroundYouSectionState extends ConsumerState<_AroundYouSection> {
 
 class _AreaChip extends StatelessWidget {
   const _AreaChip({
-    required this.icon,
+    required this.asset,
     required this.count,
     required this.label,
     required this.onTap,
   });
 
-  final IconData icon;
+  final String asset;
   final String count;
   final String label;
   final VoidCallback onTap;
@@ -1092,7 +1076,7 @@ class _AreaChip extends StatelessWidget {
                   color: theme.colorScheme.primary.withValues(alpha: 0.10),
                   borderRadius: BorderRadius.circular(10),
                 ),
-                child: Icon(icon, size: 18, color: theme.colorScheme.primary),
+                child: Image.asset(asset, fit: BoxFit.contain),
               ),
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -1188,7 +1172,11 @@ class _WeatherStripState extends ConsumerState<_WeatherStrip> {
         ),
         child: Row(
           children: [
-            Icon(_iconFor(weather.condition), size: 20, color: theme.colorScheme.primary),
+            Icon(
+              _iconFor(weather.condition),
+              size: 20,
+              color: theme.colorScheme.primary,
+            ),
             const SizedBox(width: 10),
             Text(
               '${weather.tempC.round()}°C',
@@ -1287,7 +1275,10 @@ class _LocalNewsSectionState extends ConsumerState<_LocalNewsSection> {
                 borderRadius: BorderRadius.circular(14),
                 child: InkWell(
                   borderRadius: BorderRadius.circular(14),
-                  onTap: () => launchUrl(Uri.parse(item.url), mode: LaunchMode.externalApplication),
+                  onTap: () => launchUrl(
+                    Uri.parse(item.url),
+                    mode: LaunchMode.externalApplication,
+                  ),
                   child: Padding(
                     padding: const EdgeInsets.all(12),
                     child: Row(
@@ -1319,13 +1310,18 @@ class _LocalNewsSectionState extends ConsumerState<_LocalNewsSection> {
                                     .whereType<String>()
                                     .where((part) => part.isNotEmpty)
                                     .join(' · '),
-                                style: theme.textTheme.labelSmall
-                                    ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+                                style: theme.textTheme.labelSmall?.copyWith(
+                                  color: theme.colorScheme.onSurfaceVariant,
+                                ),
                               ),
                             ],
                           ),
                         ),
-                        Icon(Icons.north_east, size: 16, color: theme.colorScheme.onSurfaceVariant),
+                        Icon(
+                          Icons.north_east,
+                          size: 16,
+                          color: theme.colorScheme.onSurfaceVariant,
+                        ),
                       ],
                     ),
                   ),
@@ -1401,7 +1397,9 @@ class _NearbyBusinessesSectionState extends ConsumerState<_NearbyBusinessesSecti
             cityId: (city?.id.isEmpty ?? true) ? null : city!.id,
             pincode: city?.pincode,
           );
-      if (mounted) setState(() => _areaKeys = areas.map((a) => a.area).toList());
+      if (mounted) {
+        setState(() => _areaKeys = areas.map((a) => a.area).toList());
+      }
     } catch (_) {
       /* filters just stay hidden */
     }

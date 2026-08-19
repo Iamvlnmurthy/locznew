@@ -1,9 +1,11 @@
+import Image from 'next/image';
 import Link from 'next/link';
 import type { Category, ListingSummary } from '@locz/shared-types';
 import { ListingCard } from '@/components/listing-card';
-import { Icon, categoryImageName } from '@/components/icons';
+import { Icon } from '@/components/icons';
 import { getTranslator, getMessageGroup } from '@/i18n';
 import { apiSafe } from '@/lib/api';
+import { premiumCategoryArtwork, premiumDiscoveryArtwork } from '@/lib/premium-icon-catalog';
 import { NearbyBusinesses } from './search/nearby-businesses';
 import { loadNearbyBusinesses } from './search/businesses-actions';
 import {
@@ -28,6 +30,28 @@ interface NewsHeadline {
   url: string;
   source: string;
   publishedAt: string | null;
+}
+
+interface JobPosting {
+  title: string;
+  company: string | null;
+  location: string | null;
+  url: string;
+  postedAt: string | null;
+  salaryMin: number | null;
+  salaryMax: number | null;
+}
+
+/** Indian annual salary in lakhs — "₹18L–25L", "₹18L+", or null when unknown. */
+function formatSalary(min: number | null, max: number | null): string | null {
+  const lakh = (value: number): string => {
+    const l = value / 100000;
+    return `₹${l % 1 === 0 ? l.toFixed(0) : l.toFixed(1)}L`;
+  };
+  if (min && max) return min === max ? lakh(min) : `${lakh(min)}–${lakh(max)}`;
+  if (min) return `${lakh(min)}+`;
+  if (max) return `${lakh(max)}`;
+  return null;
 }
 
 /** Localised "2 hours ago" without any translation keys — Intl handles the language. */
@@ -57,23 +81,6 @@ interface Feed {
   radiusWidened: boolean;
   sections: FeedSection[];
 }
-
-// Discovery area → the SVG icon on its "Around you" chip. Keys match the API's area keys.
-const AREA_ICON: Record<string, string> = {
-  food: 'utensils',
-  health: 'stethoscope',
-  services: 'tools',
-  shopping: 'bag',
-  mobility: 'car',
-  home: 'homeCategory',
-  jobs: 'briefcase',
-  events: 'calendar',
-  rentals: 'bed',
-  deals: 'tag',
-  businesses: 'store',
-  play: 'heart',
-  pets: 'heart',
-};
 
 // The feed is personalised for signed-in users and location-dependent for everyone,
 // so it is rendered per request rather than cached.
@@ -199,6 +206,13 @@ export default async function HomePage() {
       )?.headlines ?? [])
     : [];
 
+  // "Local Now" jobs — live local openings (Adzuna), pulled on demand, cached, never stored.
+  // Empty (section hidden) when the Adzuna credentials are not configured.
+  const jobs = feedCity
+    ? ((await apiSafe<{ jobs: JobPosting[] }>(`/local-now/jobs?q=${encodeURIComponent(feedCity)}`))
+        ?.jobs ?? [])
+    : [];
+
   return (
     <>
       <section className="home-hero">
@@ -301,7 +315,7 @@ export default async function HomePage() {
                   data-area={area}
                 >
                   <span className="area-chip__icon" aria-hidden="true">
-                    <Icon name={AREA_ICON[area] ?? 'store'} />
+                    <Image src={premiumDiscoveryArtwork(area)} alt="" width={44} height={44} />
                   </span>
                   <span className="area-chip__body">
                     <strong>{count.toLocaleString('en-IN')}</strong>
@@ -341,6 +355,49 @@ export default async function HomePage() {
             </ul>
             {/* Google News is a brand name — identical in every language. */}
             <p className="local-news__attribution">{'Google News'}</p>
+          </section>
+        ) : null}
+
+        {jobs.length > 0 ? (
+          <section className="local-jobs" aria-labelledby="local-jobs-title">
+            <div className="local-jobs__head">
+              <span className="section-kicker">{t('home.jobsKicker')}</span>
+              <h2 id="local-jobs-title">{t('home.jobsTitle', { city: feedCity })}</h2>
+            </div>
+            <div className="local-jobs__list">
+              {jobs.map((job) => {
+                const salary = formatSalary(job.salaryMin, job.salaryMax);
+                const when = relativeTime(job.postedAt, locale);
+                return (
+                  <a
+                    key={job.url}
+                    href={job.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="local-jobs__card"
+                  >
+                    <span className="local-jobs__icon" aria-hidden="true">
+                      <Icon name="briefcase" />
+                    </span>
+                    <span className="local-jobs__body">
+                      <strong>{job.title}</strong>
+                      <span className="local-jobs__meta">
+                        {[job.company, job.location].filter(Boolean).join(' · ')}
+                      </span>
+                      {salary || when ? (
+                        <span className="local-jobs__tags">
+                          {salary ? <span className="local-jobs__salary">{salary}</span> : null}
+                          {when ? <span>{when}</span> : null}
+                        </span>
+                      ) : null}
+                    </span>
+                    <Icon name="arrow" />
+                  </a>
+                );
+              })}
+            </div>
+            {/* Adzuna is a brand name — identical in every language. */}
+            <p className="local-jobs__attribution">{'Adzuna'}</p>
           </section>
         ) : null}
 
@@ -467,12 +524,11 @@ export default async function HomePage() {
                   className={`category-chip category-chip--${(index % 6) + 1}`}
                 >
                   <span className="category-chip__icon" aria-hidden="true">
-                    <img
-                      src={`/icons/categories/${categoryImageName(category.iconKey)}.webp`}
+                    <Image
+                      src={premiumCategoryArtwork({ slug: category.slug, name: category.name })}
                       alt=""
-                      width="64"
-                      height="64"
-                      loading="lazy"
+                      width={64}
+                      height={64}
                     />
                   </span>
                   <span>

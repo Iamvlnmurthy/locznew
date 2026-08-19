@@ -17004,9 +17004,11 @@ body {
   background: color-mix(in srgb, var(--locz-primary) 12%, var(--locz-surface));
   color: var(--locz-primary);
 }
-.area-chip__icon svg {
-  width: 20px;
-  height: 20px;
+.area-chip__icon img {
+  width: 44px;
+  height: 44px;
+  object-fit: contain;
+  filter: drop-shadow(0 5px 8px rgba(15, 67, 58, 0.14));
 }
 .area-chip__body {
   display: flex;
@@ -17095,6 +17097,96 @@ body {
   color: var(--locz-text-secondary);
 }
 .local-news__attribution {
+  margin: 8px 0 0;
+  font-size: 0.68rem;
+  color: var(--locz-text-muted);
+}
+
+/* "Local Now" jobs — live openings (Adzuna), each linking back to the posting. */
+.local-jobs {
+  margin: 22px 0 8px;
+}
+.local-jobs__head {
+  margin-bottom: 12px;
+}
+.local-jobs__list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 8px;
+}
+.local-jobs__card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 13px 14px;
+  border: 1px solid var(--locz-border);
+  border-radius: 14px;
+  background: var(--locz-surface-elevated, var(--locz-surface));
+  color: var(--locz-text);
+  transition:
+    border-color 160ms ease,
+    transform 160ms ease,
+    box-shadow 160ms ease;
+}
+.local-jobs__card:hover {
+  border-color: color-mix(in srgb, var(--locz-primary) 36%, var(--locz-border));
+  box-shadow: var(--locz-shadow-sm);
+  transform: translateY(-1px);
+}
+.local-jobs__icon {
+  display: grid;
+  width: 38px;
+  height: 38px;
+  flex: 0 0 auto;
+  place-items: center;
+  border-radius: 11px;
+  background: color-mix(in srgb, var(--locz-primary) 12%, var(--locz-surface));
+  color: var(--locz-primary);
+}
+.local-jobs__icon svg {
+  width: 18px;
+  height: 18px;
+}
+.local-jobs__body {
+  display: flex;
+  min-width: 0;
+  flex: 1 1 auto;
+  flex-direction: column;
+  gap: 2px;
+}
+.local-jobs__body strong {
+  overflow: hidden;
+  font-size: 0.86rem;
+  font-weight: 650;
+  line-height: 1.3;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.local-jobs__meta {
+  overflow: hidden;
+  font-size: 0.72rem;
+  color: var(--locz-text-secondary);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.local-jobs__tags {
+  display: flex;
+  gap: 8px;
+  margin-top: 2px;
+  font-size: 0.7rem;
+  color: var(--locz-text-muted);
+}
+.local-jobs__salary {
+  font-weight: 700;
+  color: var(--locz-primary);
+}
+.local-jobs__card > svg:last-child {
+  width: 14px;
+  height: 14px;
+  flex: 0 0 auto;
+  color: var(--locz-text-secondary);
+}
+.local-jobs__attribution {
   margin: 8px 0 0;
   font-size: 0.68rem;
   color: var(--locz-text-muted);

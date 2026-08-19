@@ -4,6 +4,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { Fragment, useCallback, useEffect, useRef, useState } from 'react';
 import { Icon } from '@/components/icons';
+import { premiumCategoryArtwork } from '@/lib/premium-icon-catalog';
 import { loadNearbyBusinesses, type NearbyBusiness } from './businesses-actions';
 
 /**
@@ -257,7 +258,7 @@ export function NearbyBusinesses({
                       <>
                         <Image
                           className="search-business-card__art"
-                          src={`/icons/categories/${businessArtwork(business.categoryName)}-premium.webp`}
+                          src={premiumCategoryArtwork({ name: business.categoryName })}
                           alt=""
                           width={88}
                           height={88}
@@ -329,17 +330,4 @@ export function NearbyBusinesses({
       {hasMore ? <div ref={sentinel} aria-hidden="true" style={{ height: 1 }} /> : null}
     </>
   );
-}
-
-function businessArtwork(category: string): string {
-  const value = category.toLowerCase();
-  if (/food|hotel|restaurant|cafe|bakery/.test(value)) return 'food';
-  if (/phone|mobile|computer|laptop|electronic|electrical/.test(value)) return 'phones';
-  if (/home|rental|property|real estate/.test(value)) return 'rentals';
-  if (/vehicle|auto|car|bike/.test(value)) return 'vehicles';
-  if (/school|education|training|tuition/.test(value)) return 'education';
-  if (/event|wedding|party/.test(value)) return 'events';
-  if (/service|repair|professional|finance/.test(value)) return 'services';
-  if (/job|recruit|career/.test(value)) return 'jobs';
-  return 'business';
 }
