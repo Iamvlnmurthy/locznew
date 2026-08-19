@@ -1,4 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
+import { AppConfig } from '../config/config.module';
 import { RedisService } from '../redis/redis.service';
 
 /** One local job opening, display-only, linking back to the source posting. */
@@ -48,11 +49,14 @@ export class LocalJobsService {
   private static readonly TTL_SECONDS = 10800; // 3 hours — jobs turn over on the order of days
   private static readonly USER_AGENT = 'LocZ/1.0 (https://locz.in; support@locz.in)';
 
-  constructor(private readonly redis: RedisService) {}
+  constructor(
+    private readonly redis: RedisService,
+    private readonly config: AppConfig,
+  ) {}
 
   private get credentials(): { appId: string; appKey: string } | null {
-    const appId = process.env.ADZUNA_APP_ID?.trim();
-    const appKey = process.env.ADZUNA_APP_KEY?.trim();
+    const appId = this.config.get('ADZUNA_APP_ID')?.trim();
+    const appKey = this.config.get('ADZUNA_APP_KEY')?.trim();
     return appId && appKey ? { appId, appKey } : null;
   }
 
