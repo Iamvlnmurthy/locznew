@@ -1370,3 +1370,66 @@
   border-color: #f3c4ba;
   background: linear-gradient(135deg, #fffdfa, #fff2ef);
 }
+
+/* Generated category banners are opt-in. Categories without an approved image retain
+   the existing premium gradient and artwork tile. */
+.business-profile-cover.has-banner {
+  isolation: isolate;
+  height: clamp(190px, 18vw, 220px);
+  background: #38263e;
+}
+
+.business-profile-cover.has-banner::before {
+  z-index: 1;
+  inset: 0;
+  width: auto;
+  height: auto;
+  border: 0;
+  border-radius: inherit;
+  background: linear-gradient(
+    90deg,
+    rgb(43 32 38 / 58%) 0%,
+    rgb(56 38 62 / 24%) 38%,
+    transparent 72%
+  );
+  box-shadow: none;
+}
+
+.business-profile-cover.has-banner::after {
+  display: none;
+}
+
+.business-profile-cover__banner {
+  z-index: 0;
+  object-fit: cover;
+  object-position: 54% center;
+}
+
+.business-profile-cover.has-banner .business-profile-cover__copy,
+.business-profile-cover.has-banner .business-profile-cover__actions {
+  z-index: 2;
+}
+
+.business-profile-cover.has-banner .business-profile-cover__copy {
+  bottom: 46px;
+}
+
+.business-profile-cover.has-banner .business-profile-cover__actions button,
+.business-profile-cover.has-banner .business-profile-cover__actions a {
+  border-color: rgb(255 255 255 / 22%);
+  background: rgb(43 32 38 / 58%);
+}
+
+@media (max-width: 700px) {
+  .business-profile-cover.has-banner {
+    height: 136px;
+  }
+
+  .business-profile-cover__banner {
+    object-position: 56% center;
+  }
+
+  .business-profile-cover.has-banner .business-profile-cover__copy {
+    bottom: 38px;
+  }
+}

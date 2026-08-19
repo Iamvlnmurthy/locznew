@@ -8,7 +8,8 @@ import { Icon } from '@/components/icons';
 import { ListingCard } from '@/components/listing-card';
 import { getMessageGroup, getTranslator } from '@/i18n';
 import { ApiError, SITE_URL, api, apiSafe } from '@/lib/api';
-import { getCurrentUser, getLocale } from '@/lib/session';
+import { premiumCategoryBanner } from '@/lib/premium-banner-catalog';
+import { getCurrentUser, getLocale, localizedAlternates } from '@/lib/session';
 import { premiumCategoryArtwork } from '@/lib/premium-icon-catalog';
 import { BusinessEnquiry } from './business-enquiry';
 import { ShareBusiness } from './share-business';
@@ -80,7 +81,7 @@ export async function generateMetadata({
   return {
     title,
     description,
-    alternates: { canonical: `/b/${business.slug}` },
+    alternates: await localizedAlternates(`/b/${business.slug}`),
     openGraph: {
       title,
       description,
@@ -172,6 +173,7 @@ export default async function BusinessPage({ params }: { params: Promise<{ slug:
       { '@type': 'ListItem', position: 4, name: business.name },
     ],
   };
+  const categoryBanner = premiumCategoryBanner(business.categoryName);
 
   return (
     <div className="business-profile">
@@ -196,15 +198,26 @@ export default async function BusinessPage({ params }: { params: Promise<{ slug:
             <span>{business.cityName}</span>
           </nav>
 
-          <div className="business-profile-cover">
-            <span className="business-profile-cover__shape" aria-hidden="true">
+          <div className={`business-profile-cover${categoryBanner ? ' has-banner' : ''}`}>
+            {categoryBanner ? (
               <Image
-                src={premiumCategoryArtwork({ name: business.categoryName })}
+                src={categoryBanner}
                 alt=""
-                width={148}
-                height={148}
+                fill
+                priority
+                sizes="(max-width: 760px) 100vw, 1440px"
+                className="business-profile-cover__banner"
               />
-            </span>
+            ) : (
+              <span className="business-profile-cover__shape" aria-hidden="true">
+                <Image
+                  src={premiumCategoryArtwork({ name: business.categoryName })}
+                  alt=""
+                  width={148}
+                  height={148}
+                />
+              </span>
+            )}
             <div className="business-profile-cover__copy">
               <span>{business.categoryName}</span>
               <strong>{business.cityName}</strong>
