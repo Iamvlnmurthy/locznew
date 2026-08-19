@@ -685,3 +685,76 @@
 :root[data-theme='dark'] .home-hero--discovery .home-discovery__context svg {
   color: #62d0b6;
 }
+
+/* Premium storefront and listing-window dark surfaces. */
+:root[data-theme='dark'] .business-profile {
+  background:
+    radial-gradient(circle at 8% 4%, rgb(55 157 128 / 9%), transparent 32rem), var(--locz-bg);
+}
+
+:root[data-theme='dark'] .business-profile-cover {
+  border-color: rgb(116 187 165 / 18%);
+  background:
+    radial-gradient(circle at 78% 28%, rgb(92 209 176 / 18%), transparent 22rem),
+    linear-gradient(125deg, #0b3028, #104d40 58%, #17614f);
+}
+
+:root[data-theme='dark'] .business-profile-identity,
+:root[data-theme='dark'] .business-profile-section,
+:root[data-theme='dark'] .business-profile-contact > section,
+:root[data-theme='dark'] .listing-gallery,
+:root[data-theme='dark'] .detail__summary,
+:root[data-theme='dark'] .detail__seller,
+:root[data-theme='dark'] .detail__section,
+:root[data-theme='dark'] .detail__location-card {
+  border-color: #2d433c;
+  background: #15231f;
+  color: var(--locz-text);
+  box-shadow: 0 22px 54px rgb(0 0 0 / 25%);
+}
+
+:root[data-theme='dark'] .business-profile-logo {
+  border-color: #1b2c27;
+}
+
+:root[data-theme='dark'] .business-profile-stats span,
+:root[data-theme='dark'] .business-profile-promises > div,
+:root[data-theme='dark'] .attr-list > div {
+  border-color: #2c413a;
+  background: #1b2b27;
+}
+
+:root[data-theme='dark'] .business-profile-tabs {
+  border-color: #2e443d;
+  background: rgb(20 34 29 / 94%);
+}
+
+:root[data-theme='dark'] .listing-gallery__stage {
+  background:
+    radial-gradient(circle at 50% 45%, rgb(66 91 82 / 32%), transparent 25rem),
+    linear-gradient(145deg, #17231f, #202b27);
+}
+
+:root[data-theme='dark'] .listing-gallery__badge,
+:root[data-theme='dark'] .listing-gallery__arrow,
+:root[data-theme='dark'] .listing-gallery__expand {
+  border-color: #3b514a;
+  background: rgb(20 34 29 / 90%);
+  color: #dceae5;
+}
+
+:root[data-theme='dark'] .detail-action {
+  border-color: #3a5149;
+  background: #182823;
+  color: #b9cac4;
+}
+
+:root[data-theme='dark'] .detail__trust-strip {
+  border-color: #315148;
+  background: #17332c;
+}
+
+:root[data-theme='dark'] .contact-panel__composer {
+  border-color: #315048;
+  background: #172722;
+}

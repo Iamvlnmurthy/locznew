@@ -194,14 +194,14 @@ export default async function ListingPage({ params }: { params: Promise<{ slug: 
   };
 
   return (
-    <div className="container">
+    <div className="container listing-window">
       <script
         type="application/ld+json"
         // Values come from JSON.stringify of server-built data, not from raw user HTML.
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd).replace(/</g, '\\u003c') }}
       />
 
-      <nav className="breadcrumbs" aria-label={t('listing.breadcrumb')}>
+      <nav className="breadcrumbs listing-window__breadcrumbs" aria-label={t('listing.breadcrumb')}>
         <Link href="/">{t('nav.home')}</Link>
         <span>›</span>
         <Link href={`/search?cityId=${encodeURIComponent(listing.cityName)}`}>
@@ -227,6 +227,7 @@ export default async function ListingPage({ params }: { params: Promise<{ slug: 
           <ListingGallery
             media={listing.media}
             title={listing.title}
+            badge={listing.categoryName}
             brandName={t('brand.name')}
             labels={labels}
           />

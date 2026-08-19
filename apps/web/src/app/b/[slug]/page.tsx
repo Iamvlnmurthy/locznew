@@ -9,6 +9,7 @@ import { ListingCard } from '@/components/listing-card';
 import { getMessageGroup, getTranslator } from '@/i18n';
 import { ApiError, SITE_URL, api, apiSafe } from '@/lib/api';
 import { getCurrentUser, getLocale } from '@/lib/session';
+import { premiumCategoryArtwork } from '@/lib/premium-icon-catalog';
 import { BusinessEnquiry } from './business-enquiry';
 import { ShareBusiness } from './share-business';
 
@@ -175,8 +176,17 @@ export default async function BusinessPage({ params }: { params: Promise<{ slug:
 
           <div className="business-profile-cover">
             <span className="business-profile-cover__shape" aria-hidden="true">
-              <Icon name="store" />
+              <Image
+                src={premiumCategoryArtwork({ name: business.categoryName })}
+                alt=""
+                width={148}
+                height={148}
+              />
             </span>
+            <div className="business-profile-cover__copy">
+              <span>{business.categoryName}</span>
+              <strong>{business.cityName}</strong>
+            </div>
             <div className="business-profile-cover__actions">
               <ShareBusiness name={business.name} labels={p} />
               {business.isOwner ? (

@@ -13,11 +13,13 @@ interface GalleryMedia {
 export function ListingGallery({
   media,
   title,
+  badge,
   brandName,
   labels,
 }: {
   media: GalleryMedia[];
   title: string;
+  badge: string;
   brandName: string;
   labels: Record<string, string>;
 }) {
@@ -55,6 +57,7 @@ export function ListingGallery({
     <>
       <div className="listing-gallery">
         <div className="listing-gallery__stage">
+          <span className="listing-gallery__badge">{badge}</span>
           {imageUrl ? (
             <button
               type="button"
