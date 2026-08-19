@@ -42,6 +42,11 @@ interface LocalAlert {
   publishedAt: string | null;
 }
 
+/** Indian digit grouping — 1,15,109 not 115,109. Used for the hero tile counts. */
+function nf(value: number): string {
+  return value.toLocaleString('en-IN');
+}
+
 /** Indian annual salary in lakhs — "₹18L–25L", "₹18L+", or null when unknown. */
 function formatSalary(min: number | null, max: number | null): string | null {
   const lakh = (value: number): string => {
@@ -261,24 +266,26 @@ export default async function HomePage({
       ? t('home.heroUpdates', { count: newsHeadlines.length })
       : t('home.heroUpdatedNow'),
     businesses: homeBusinesses.total
-      ? t('home.heroNearby', { count: homeBusinesses.total })
+      ? t('home.heroNearby', { count: nf(homeBusinesses.total) })
       : t('home.heroBrowse'),
-    jobs: jobs.length ? t('home.heroOpenings', { count: jobs.length }) : t('home.heroExplore'),
+    jobs: jobs.length ? t('home.heroOpenings', { count: nf(jobs.length) }) : t('home.heroExplore'),
     news: newsHeadlines.length
-      ? t('home.heroUpdates', { count: newsHeadlines.length })
+      ? t('home.heroUpdates', { count: nf(newsHeadlines.length) })
       : t('home.heroExplore'),
-    alerts: alerts.length ? t('home.heroActive', { count: alerts.length }) : t('home.heroNoAlerts'),
+    alerts: alerts.length
+      ? t('home.heroActive', { count: nf(alerts.length) })
+      : t('home.heroNoAlerts'),
     deals:
       (areaCountByKey.get('deals') ?? 0)
-        ? t('home.heroNearby', { count: areaCountByKey.get('deals') ?? 0 })
+        ? t('home.heroNearby', { count: nf(areaCountByKey.get('deals') ?? 0) })
         : t('home.heroExplore'),
     services:
       (areaCountByKey.get('services') ?? 0)
-        ? t('home.heroNearby', { count: areaCountByKey.get('services') ?? 0 })
+        ? t('home.heroNearby', { count: nf(areaCountByKey.get('services') ?? 0) })
         : t('home.heroExplore'),
     marketplace:
       (areaCountByKey.get('marketplace') ?? 0)
-        ? t('home.heroNearby', { count: areaCountByKey.get('marketplace') ?? 0 })
+        ? t('home.heroNearby', { count: nf(areaCountByKey.get('marketplace') ?? 0) })
         : t('home.heroExplore'),
   };
 
