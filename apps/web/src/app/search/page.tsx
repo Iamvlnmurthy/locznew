@@ -11,9 +11,10 @@ import {
   findCategory,
   hydrateCategoryAttributes,
 } from '@/lib/category-attributes';
-import { getLocale, getSelectedCity } from '@/lib/session';
+import { getCurrentUser, getLocale, getSelectedCity } from '@/lib/session';
 import { SearchFilters } from './search-filters';
 import { SearchSort } from './search-sort';
+import { SaveSearch } from './save-search';
 import { NearbyBusinesses } from './nearby-businesses';
 import { loadNearbyBusinesses } from './businesses-actions';
 import { RecentSearchInput } from '@/components/recent-search-input';
@@ -61,6 +62,7 @@ export default async function SearchPage({
   const t = getTranslator(locale);
   const s = getMessageGroup(locale, 'searchUi');
   const city = await getSelectedCity();
+  const user = await getCurrentUser();
 
   const page = Math.max(1, Number(params.page ?? '1') || 1);
   const query = new URLSearchParams({ page: String(page), limit: '24' });
@@ -94,6 +96,29 @@ export default async function SearchPage({
     query.set('latitude', String(city.latitude));
     query.set('longitude', String(city.longitude));
   }
+
+  // The scalar filters a saved search may carry — only the keys the alert matcher honours (the
+  // API re-derives them from the same query DTO, so anything else is dropped anyway). Radius and
+  // coordinates are deliberately omitted: a radius that is stored but never matched on is an
+  // alert that silently never fires.
+  const savedSearchFilters = Object.fromEntries(
+    (
+      [
+        'q',
+        'type',
+        'categoryId',
+        'localityId',
+        'priceMin',
+        'priceMax',
+        'condition',
+        'brand',
+        'model',
+      ] as const
+    )
+      .filter((key) => params[key])
+      .map((key) => [key, params[key]!]),
+  );
+  if (cityId) savedSearchFilters.cityId = cityId;
 
   const [result, categoryTree] = await Promise.all([
     apiSafe<SearchResult>(`/search?${query.toString()}`, { auth: true }),
@@ -158,6 +183,22 @@ export default async function SearchPage({
               {t('search.submit')} <Icon name="arrow" />
             </button>
           </form>
+
+          {user ? (
+            <SaveSearch
+              filters={savedSearchFilters}
+              defaultLabel={params.q ?? city?.name ?? ''}
+              labels={{
+                saveSearch: s.saveSearch,
+                saveSearchHint: s.saveSearchHint,
+                saveSearchPlaceholder: s.saveSearchPlaceholder,
+                saveSearchSave: s.saveSearchSave,
+                saveSearchSaved: s.saveSearchSaved,
+                saveSearchManage: s.saveSearchManage,
+                saveSearchError: s.saveSearchError,
+              }}
+            />
+          ) : null}
 
           <nav className="search-type-tabs" aria-label={s.listingType}>
             {[
