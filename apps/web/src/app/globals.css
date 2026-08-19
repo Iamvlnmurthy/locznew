@@ -3483,8 +3483,75 @@ textarea {
 
 .search-businesses__grid {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  /* 3 per row on a full-width (Home) viewport, 2 on the narrower search results column,
+     1 on mobile (forced by the ≤640px rule). Wider tiles keep the two actions on one line. */
+  grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
   gap: 10px;
+}
+
+/* Filter bar above the "Businesses near you" grid: category picker + verified toggle. */
+.business-filters {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+.business-filters__category {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 12px;
+  border: 1px solid var(--locz-border);
+  border-radius: var(--locz-radius-full);
+  background: var(--locz-surface-elevated, var(--locz-surface));
+  color: var(--locz-text-secondary);
+}
+.business-filters__category svg {
+  width: 15px;
+  height: 15px;
+  flex: 0 0 auto;
+}
+.business-filters__category select {
+  min-height: 40px;
+  padding: 8px 4px;
+  border: none;
+  background: transparent;
+  color: var(--locz-text);
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+.business-filters__category select:focus-visible {
+  outline: 2px solid var(--locz-primary);
+  outline-offset: 2px;
+}
+.business-filters__toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 40px;
+  padding: 8px 14px;
+  border: 1px solid var(--locz-border);
+  border-radius: var(--locz-radius-full);
+  background: var(--locz-surface-elevated, var(--locz-surface));
+  color: var(--locz-text-secondary);
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition:
+    border-color 140ms ease,
+    background 140ms ease,
+    color 140ms ease;
+}
+.business-filters__toggle svg {
+  width: 15px;
+  height: 15px;
+}
+.business-filters__toggle.is-active {
+  border-color: var(--locz-primary);
+  background: color-mix(in srgb, var(--locz-primary) 12%, transparent);
+  color: var(--locz-primary);
 }
 
 .search-business-card {

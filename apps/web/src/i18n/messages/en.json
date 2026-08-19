@@ -1037,7 +1037,8 @@
     "verifiedOnlyBody": "Show listings from reviewed local businesses",
     "viewAllBusinesses": "View all businesses",
     "widenSearch": "Widen the search",
-    "withinKm": "Within {km} km"
+    "withinKm": "Within {km} km",
+    "noBusinessesMatch": "No businesses match these filters yet."
   },
   "safetyPage": {
     "advanceBody": "This is the single most common scam. Anyone who asks for a deposit, booking fee, registration charge or “refundable” payment before you have seen the item is almost certainly trying to steal from you. Genuine sellers are paid when you meet. The same applies to jobs: a real employer never charges you to apply.",

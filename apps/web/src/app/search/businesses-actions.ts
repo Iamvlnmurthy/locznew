@@ -46,11 +46,15 @@ export async function loadNearbyBusinesses(args: {
   latitude?: number;
   longitude?: number;
   radiusKm?: number;
+  categoryId?: string;
+  verifiedOnly?: boolean;
   page: number;
 }): Promise<BusinessPage> {
   const query = new URLSearchParams({ page: String(args.page), limit: '20' });
   if (args.q) query.set('q', args.q);
   if (args.pincode) query.set('pincode', args.pincode);
+  if (args.categoryId) query.set('categoryId', args.categoryId);
+  if (args.verifiedOnly) query.set('verifiedOnly', 'true');
 
   let path: string;
   if (args.latitude !== undefined && args.longitude !== undefined) {

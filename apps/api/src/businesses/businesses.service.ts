@@ -152,6 +152,7 @@ export class BusinessesService {
     pincode?: string;
     categoryId?: string;
     q?: string;
+    verifiedOnly?: boolean;
     page: number;
     limit: number;
     skip: number;
@@ -171,6 +172,9 @@ export class BusinessesService {
           : Prisma.sql`TRUE`,
         term
           ? Prisma.sql`(b."name" ILIKE ${`%${term}%`} OR b."description" ILIKE ${`%${term}%`})`
+          : Prisma.sql`TRUE`,
+        query.verifiedOnly
+          ? Prisma.sql`b."verificationStatus"::text = 'VERIFIED'`
           : Prisma.sql`TRUE`,
       ],
       ' AND ',

@@ -62,6 +62,7 @@ export class BusinessesController {
       pincode: query.pincode,
       categoryId: query.categoryId,
       q: query.q,
+      verifiedOnly: query.verifiedOnly,
       page: query.page,
       limit: query.limit,
       skip: query.skip,

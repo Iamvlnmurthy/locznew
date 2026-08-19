@@ -58,6 +58,10 @@ export function NearbyBusinesses({
   loadingLabel,
   kmLabel,
   withinKm,
+  categories = [],
+  allCategoriesLabel,
+  verifiedOnlyLabel,
+  emptyLabel,
 }: {
   q?: string;
   pincode?: string;
@@ -76,6 +80,10 @@ export function NearbyBusinesses({
   loadingLabel: string;
   kmLabel: string;
   withinKm: string;
+  categories?: Array<{ id: string; name: string }>;
+  allCategoriesLabel: string;
+  verifiedOnlyLabel: string;
+  emptyLabel: string;
 }) {
   const bandLabel = (index: number): string =>
     index === 0
@@ -88,6 +96,8 @@ export function NearbyBusinesses({
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(initialHasMore);
   const [loading, setLoading] = useState(false);
+  const [categoryId, setCategoryId] = useState('');
+  const [verifiedOnly, setVerifiedOnly] = useState(false);
   const sentinel = useRef<HTMLDivElement>(null);
 
   const loadMore = useCallback(async () => {
@@ -101,6 +111,8 @@ export function NearbyBusinesses({
         latitude,
         longitude,
         radiusKm,
+        categoryId: categoryId || undefined,
+        verifiedOnly: verifiedOnly || undefined,
         page: page + 1,
       });
       setItems((prev) => {
@@ -112,7 +124,19 @@ export function NearbyBusinesses({
     } finally {
       setLoading(false);
     }
-  }, [loading, hasMore, page, q, pincode, cityId, latitude, longitude, radiusKm]);
+  }, [
+    loading,
+    hasMore,
+    page,
+    q,
+    pincode,
+    cityId,
+    latitude,
+    longitude,
+    radiusKm,
+    categoryId,
+    verifiedOnly,
+  ]);
 
   useEffect(() => {
     const el = sentinel.current;
@@ -127,8 +151,72 @@ export function NearbyBusinesses({
     return () => io.disconnect();
   }, [loadMore]);
 
+  // Re-fetch page 1 from scratch when a filter changes. The initial (unfiltered) page comes from
+  // the server, so this effect skips its first run and only reacts to a user changing a filter.
+  const didMount = useRef(false);
+  useEffect(() => {
+    if (!didMount.current) {
+      didMount.current = true;
+      return;
+    }
+    let cancelled = false;
+    setLoading(true);
+    void loadNearbyBusinesses({
+      q,
+      pincode,
+      cityId,
+      latitude,
+      longitude,
+      radiusKm,
+      categoryId: categoryId || undefined,
+      verifiedOnly: verifiedOnly || undefined,
+      page: 1,
+    })
+      .then((fresh) => {
+        if (cancelled) return;
+        setItems(fresh.items);
+        setPage(1);
+        setHasMore(fresh.hasNextPage);
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+    // Only filter changes drive a reset; scope inputs (q/pincode/…) are fixed per mount.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [categoryId, verifiedOnly]);
+
   return (
     <>
+      {categories.length > 0 ? (
+        <div className="business-filters" role="group" aria-label={allCategoriesLabel}>
+          <label className="business-filters__category">
+            <Icon name="sliders" />
+            <select
+              value={categoryId}
+              onChange={(event) => setCategoryId(event.target.value)}
+              aria-label={allCategoriesLabel}
+            >
+              <option value="">{allCategoriesLabel}</option>
+              {categories.map((category) => (
+                <option key={category.id} value={category.id}>
+                  {category.name}
+                </option>
+              ))}
+            </select>
+          </label>
+          <button
+            type="button"
+            className={`business-filters__toggle${verifiedOnly ? ' is-active' : ''}`}
+            aria-pressed={verifiedOnly}
+            onClick={() => setVerifiedOnly((value) => !value)}
+          >
+            <Icon name="shield" /> {verifiedOnlyLabel}
+          </button>
+        </div>
+      ) : null}
       <div className="search-businesses__grid">
         {(() => {
           return items.map((business, index) => {
@@ -228,6 +316,11 @@ export function NearbyBusinesses({
           });
         })()}
       </div>
+      {!loading && items.length === 0 ? (
+        <p className="nearby-businesses__empty" aria-live="polite">
+          {emptyLabel}
+        </p>
+      ) : null}
       {loading ? (
         <p className="nearby-businesses__loading" aria-live="polite">
           {loadingLabel}

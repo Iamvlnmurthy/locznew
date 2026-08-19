@@ -6,7 +6,7 @@ import {
   OfferingType,
   VerificationStatus,
 } from '@prisma/client';
-import { Type } from 'class-transformer';
+import { Transform, Type } from 'class-transformer';
 import {
   ArrayMaxSize,
   IsArray,
@@ -180,6 +180,12 @@ export class BusinessNearbyQueryDto extends PaginationQueryDto {
 
   @ApiPropertyOptional() @IsOptional() @IsUUID() categoryId?: string;
   @ApiPropertyOptional() @IsOptional() @IsString() @MaxLength(120) q?: string;
+
+  @ApiPropertyOptional({ description: 'Only businesses LocZ has verified' })
+  @IsOptional()
+  @Transform(({ value }) => value === true || value === 'true' || value === '1')
+  @IsBoolean()
+  verifiedOnly?: boolean;
 }
 
 export class AddStaffDto {

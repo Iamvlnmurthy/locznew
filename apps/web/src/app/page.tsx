@@ -435,6 +435,13 @@ export default async function HomePage() {
               loadingLabel={searchLabels.loadingMoreBusinesses}
               kmLabel={t('common.km')}
               withinKm={searchLabels.withinKm}
+              categories={topCategories.map((category) => ({
+                id: category.id,
+                name: category.name,
+              }))}
+              allCategoriesLabel={searchLabels.allCategories}
+              verifiedOnlyLabel={searchLabels.verifiedOnly}
+              emptyLabel={searchLabels.noBusinessesMatch}
             />
           </section>
         ) : null}
