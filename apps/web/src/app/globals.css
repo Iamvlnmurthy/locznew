@@ -1211,6 +1211,101 @@ textarea {
   }
 }
 
+/* ---------- Category discovery band + safe work sidebar ---------- */
+@media (min-width: 761px) {
+  .home-category-band {
+    margin: 0 0 20px;
+    padding: 20px;
+    border: 1px solid var(--locz-premium-border);
+    border-radius: 24px;
+    background: color-mix(in srgb, var(--locz-surface) 95%, transparent);
+    box-shadow: 0 12px 34px rgb(31 58 50 / 6%);
+  }
+
+  .home-category-band .section__head {
+    margin-bottom: 14px;
+  }
+
+  .home-category-band .section__head h2 {
+    margin-top: 4px;
+    font-size: clamp(1.35rem, 2vw, 1.75rem);
+    letter-spacing: -0.04em;
+  }
+
+  .home-category-band .category-strip {
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+    gap: 10px;
+  }
+
+  .home-category-band .category-chip {
+    min-height: 92px;
+    padding: 12px;
+    border-radius: 17px;
+  }
+
+  .home-category-band .category-chip__icon,
+  .home-category-band .category-chip__icon img {
+    width: 46px;
+    height: 46px;
+  }
+
+  .home-category-band .category-chip > span:not(.category-chip__icon) {
+    font-size: 0.73rem;
+  }
+}
+
+@media (min-width: 1200px) {
+  .home-content-shell > .local-jobs {
+    overflow-x: hidden;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+
+  .home-content-shell .local-jobs__list,
+  .home-content-shell .local-jobs__card,
+  .home-content-shell .local-jobs__body {
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  .home-content-shell .local-jobs__card {
+    grid-template-columns: 35px minmax(0, 1fr) 14px;
+    overflow: hidden;
+  }
+
+  .home-content-shell .local-jobs__body {
+    overflow: hidden;
+  }
+
+  .home-content-shell .local-jobs__body strong {
+    display: -webkit-box;
+    overflow: hidden;
+    white-space: normal;
+    text-overflow: ellipsis;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+  }
+
+  .home-content-shell .local-jobs__meta {
+    display: block;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .home-content-shell .local-jobs__card > svg {
+    width: 14px;
+    min-width: 14px;
+  }
+}
+
+@media (min-width: 761px) and (max-width: 1100px) {
+  .home-category-band .category-strip {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
 
 .header__primary {
   display: flex;
@@ -20719,4 +20814,82 @@ h4,
     justify-content: flex-start;
     flex-wrap: wrap;
   }
+}
+
+/* Final placement overrides: this file contains older category/sidebar layers above. */
+@media (min-width: 761px) {
+  .home-category-band {
+    margin: 0 0 20px;
+    padding: 20px;
+    border: 1px solid var(--locz-premium-border);
+    border-radius: 24px;
+    background: color-mix(in srgb, var(--locz-surface) 95%, transparent);
+    box-shadow: 0 12px 34px rgb(31 58 50 / 6%);
+  }
+
+  .home-category-band .section__head { margin-bottom: 14px; }
+  .home-category-band .section__head h2 {
+    margin-top: 4px;
+    font-size: clamp(1.35rem, 2vw, 1.75rem);
+    letter-spacing: -0.04em;
+  }
+
+  .home-category-band .category-strip {
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+    gap: 10px;
+  }
+
+  .home-category-band .category-chip {
+    min-height: 92px;
+    padding: 12px;
+    border-radius: 17px;
+  }
+
+  .home-category-band .category-chip__icon,
+  .home-category-band .category-chip__icon img { width: 46px; height: 46px; }
+  .home-category-band .category-chip > span:not(.category-chip__icon) { font-size: 0.73rem; }
+}
+
+@media (min-width: 1200px) {
+  .home-content-shell > .local-jobs {
+    overflow-x: hidden;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+
+  .home-content-shell .local-jobs__list,
+  .home-content-shell .local-jobs__card,
+  .home-content-shell .local-jobs__body {
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  .home-content-shell .local-jobs__card {
+    grid-template-columns: 35px minmax(0, 1fr) 14px;
+    overflow: hidden;
+  }
+
+  .home-content-shell .local-jobs__body { overflow: hidden; }
+  .home-content-shell .local-jobs__body strong {
+    display: -webkit-box;
+    overflow: hidden;
+    white-space: normal;
+    text-overflow: ellipsis;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+  }
+
+  .home-content-shell .local-jobs__meta {
+    display: block;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .home-content-shell .local-jobs__card > svg { width: 14px; min-width: 14px; }
+}
+
+@media (min-width: 761px) and (max-width: 1100px) {
+  .home-category-band .category-strip { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 }

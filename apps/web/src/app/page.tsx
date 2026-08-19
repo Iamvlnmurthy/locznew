@@ -437,6 +437,49 @@ export default async function HomePage({
           ) : null}
         </div>
 
+        {/* Commerce categories are a discovery shortcut, not feed content. Keep them
+            between the hero context and the live three-column results shell. */}
+        {topCategories.length > 0 ? (
+          <section className="category-section home-category-band">
+            <div className="section__head">
+              <div>
+                <span className="section-kicker">{t('home.explore')}</span>
+                <h2>{t('feed.browseCategories')}</h2>
+              </div>
+              <Link href="/search" className="section-link">
+                {t('feed.seeAll')} <Icon name="arrow" />
+              </Link>
+            </div>
+            <nav className="category-strip" aria-label={t('feed.browseCategories')}>
+              {topCategories.slice(0, 6).map((category, index) => (
+                <Link
+                  key={category.id}
+                  href={`/c/${category.slug}`}
+                  className={`category-chip category-chip--${(index % 6) + 1}`}
+                >
+                  <span className="category-chip__icon" aria-hidden="true">
+                    <Image
+                      src={premiumCategoryArtwork({ slug: category.slug, name: category.name })}
+                      alt=""
+                      width={64}
+                      height={64}
+                    />
+                  </span>
+                  <span>
+                    {localisedCategoryName(category, locale)}
+                    {countByCategory.get(category.id) ? (
+                      <small className="category-chip__count">
+                        {countByCategory.get(category.id)!.toLocaleString()} {t('home.countNearby')}
+                      </small>
+                    ) : null}
+                  </span>
+                  <i aria-hidden="true">→</i>
+                </Link>
+              ))}
+            </nav>
+          </section>
+        ) : null}
+
         <div className="home-content-shell">
           {newsHeadlines.length > 0 ? (
             <section className="local-news" aria-labelledby="local-news-title">
@@ -586,50 +629,6 @@ export default async function HomePage({
                   verifiedOnlyLabel={searchLabels.verifiedOnly}
                   emptyLabel={searchLabels.noBusinessesMatch}
                 />
-              </section>
-            ) : null}
-
-            {/* Discovery first: the marketing intents and the full category grid sit BELOW the
-            live "around you" feed, so a returning user sees real nearby inventory first. */}
-            {topCategories.length > 0 ? (
-              <section className="category-section">
-                <div className="section__head">
-                  <div>
-                    <span className="section-kicker">{t('home.explore')}</span>
-                    <h2>{t('feed.browseCategories')}</h2>
-                  </div>
-                  <Link href="/search" className="section-link">
-                    {t('feed.seeAll')} <Icon name="arrow" />
-                  </Link>
-                </div>
-                <nav className="category-strip" aria-label={t('feed.browseCategories')}>
-                  {topCategories.map((category, index) => (
-                    <Link
-                      key={category.id}
-                      href={`/c/${category.slug}`}
-                      className={`category-chip category-chip--${(index % 6) + 1}`}
-                    >
-                      <span className="category-chip__icon" aria-hidden="true">
-                        <Image
-                          src={premiumCategoryArtwork({ slug: category.slug, name: category.name })}
-                          alt=""
-                          width={64}
-                          height={64}
-                        />
-                      </span>
-                      <span>
-                        {localisedCategoryName(category, locale)}
-                        {countByCategory.get(category.id) ? (
-                          <small className="category-chip__count">
-                            {countByCategory.get(category.id)!.toLocaleString()}{' '}
-                            {t('home.countNearby')}
-                          </small>
-                        ) : null}
-                      </span>
-                      <i aria-hidden="true">→</i>
-                    </Link>
-                  ))}
-                </nav>
               </section>
             ) : null}
 
