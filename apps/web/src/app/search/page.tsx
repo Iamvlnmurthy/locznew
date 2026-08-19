@@ -243,6 +243,7 @@ export default async function SearchPage({
                   initial={businessPage.items}
                   initialHasMore={businessPage.hasNextPage}
                   verifiedLabel={s.businessVerified}
+                  claimLabel={s.businessClaim}
                   nearYou={s.nearYou}
                   loadingLabel={s.loadingMoreBusinesses}
                   kmLabel={t('common.km')}

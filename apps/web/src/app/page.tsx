@@ -223,7 +223,8 @@ export default async function HomePage() {
             </span>
             <strong>{weather.tempC}°C</strong>
             <span className="local-now__desc">{weather.description}</span>
-            <span className="local-now__attribution">MET Norway</span>
+            {/* Required MET Norway attribution — a brand name, identical in every language. */}
+            <span className="local-now__attribution">{'MET Norway'}</span>
           </div>
         ) : null}
 
@@ -310,6 +311,7 @@ export default async function HomePage() {
               initial={homeBusinesses.items}
               initialHasMore={homeBusinesses.hasNextPage}
               verifiedLabel={searchLabels.businessVerified}
+              claimLabel={searchLabels.businessClaim}
               nearYou={searchLabels.nearYou}
               loadingLabel={searchLabels.loadingMoreBusinesses}
               kmLabel={t('common.km')}

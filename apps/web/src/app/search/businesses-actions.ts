@@ -11,6 +11,7 @@ export interface NearbyBusiness {
   pincode: string | null;
   distanceMeters?: number;
   verificationStatus: string;
+  claimStatus: string;
 }
 
 interface ApiPage {

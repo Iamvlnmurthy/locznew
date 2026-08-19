@@ -730,6 +730,7 @@ export class BusinessesService {
       ...(distanceMeters !== undefined ? { distanceMeters: Math.round(distanceMeters) } : {}),
       logoUrl: business.logoMediaId ? this.storage.publicUrl(business.logoMediaId) : null,
       verificationStatus: business.verificationStatus,
+      claimStatus: business.claimStatus,
       listingCount: business._count.listings,
       viewCount: business.viewCount,
       description: business.description,

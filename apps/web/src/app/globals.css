@@ -3544,11 +3544,11 @@ textarea {
   margin-bottom: 3px;
   overflow: hidden;
   color: var(--locz-coral);
-  font-size: 0.59rem;
-  font-weight: 800;
-  letter-spacing: 0.07em;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.01em;
   text-overflow: ellipsis;
-  text-transform: uppercase;
+  text-transform: capitalize;
   white-space: nowrap;
 }
 
@@ -16835,4 +16835,14 @@ body {
   color: var(--locz-text-muted);
   margin-left: auto;
   padding-left: var(--locz-space-2);
+}
+
+.search-business-card__claim {
+  font-size: 0.62rem;
+  font-weight: 700;
+  color: var(--locz-primary);
+  background: var(--locz-accent-soft, rgba(0,0,0,0.04));
+  border-radius: var(--locz-radius-full);
+  padding: 2px 8px;
+  white-space: nowrap;
 }

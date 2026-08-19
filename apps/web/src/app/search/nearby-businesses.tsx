@@ -33,6 +33,7 @@ export function NearbyBusinesses({
   initial,
   initialHasMore,
   verifiedLabel,
+  claimLabel,
   nearYou,
   loadingLabel,
   kmLabel,
@@ -47,6 +48,7 @@ export function NearbyBusinesses({
   initial: NearbyBusiness[];
   initialHasMore: boolean;
   verifiedLabel: string;
+  claimLabel: string;
   nearYou: string;
   loadingLabel: string;
   kmLabel: string;
@@ -112,10 +114,11 @@ export function NearbyBusinesses({
             const band = hasDistance ? bandIndex(business.distanceMeters!) : -1;
             const showBand = hasDistance && band !== lastBand;
             if (showBand) lastBand = band;
-            const area = business.pincode ?? business.cityName ?? nearYou;
+            // Distance already says "near you"; the repeated pincode is just noise, so show it
+            // only when there's no distance to show.
             const place = hasDistance
-              ? `${formatDistance(business.distanceMeters!, kmLabel)} · ${area}`
-              : area;
+              ? formatDistance(business.distanceMeters!, kmLabel)
+              : (business.pincode ?? business.cityName ?? nearYou);
             return (
               <Fragment key={business.id}>
                 {showBand ? <h3 className="nearby-businesses__band">{bandLabel(band)}</h3> : null}
@@ -134,6 +137,8 @@ export function NearbyBusinesses({
                     <span className="search-business-card__verified">
                       <Icon name="shield" /> {verifiedLabel}
                     </span>
+                  ) : business.claimStatus === 'UNCLAIMED' ? (
+                    <span className="search-business-card__claim">{claimLabel}</span>
                   ) : null}
                   <Icon name="arrow" />
                 </Link>

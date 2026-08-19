@@ -1,5 +1,11 @@
 import { ApiProperty, ApiPropertyOptional, PartialType } from '@nestjs/swagger';
-import { BusinessScale, BusinessType, OfferingType, VerificationStatus } from '@prisma/client';
+import {
+  BusinessClaimStatus,
+  BusinessScale,
+  BusinessType,
+  OfferingType,
+  VerificationStatus,
+} from '@prisma/client';
 import { Type } from 'class-transformer';
 import {
   ArrayMaxSize,
@@ -201,6 +207,7 @@ export class BusinessSummaryDto {
   distanceMeters?: number;
   @ApiPropertyOptional() logoUrl!: string | null;
   @ApiProperty({ enum: VerificationStatus }) verificationStatus!: VerificationStatus;
+  @ApiProperty({ enum: BusinessClaimStatus }) claimStatus!: BusinessClaimStatus;
   @ApiProperty() listingCount!: number;
   @ApiProperty() viewCount!: number;
   @ApiPropertyOptional() description!: string | null;
