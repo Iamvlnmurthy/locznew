@@ -218,16 +218,12 @@ export default async function HomePage() {
       <div className="container">
         {weather ? (
           <div className="local-now" role="status">
-            <img
-              className="local-now__icon"
-              src={`https://openweathermap.org/img/wn/${weather.icon}.png`}
-              alt=""
-              width="40"
-              height="40"
-            />
+            <span className="local-now__icon" aria-hidden="true">
+              {weatherEmoji(weather.condition)}
+            </span>
             <strong>{weather.tempC}°C</strong>
             <span className="local-now__desc">{weather.description}</span>
-            {weather.place ? <span className="local-now__place">· {weather.place}</span> : null}
+            <span className="local-now__attribution">MET Norway</span>
           </div>
         ) : null}
 
@@ -414,6 +410,19 @@ export default async function HomePage() {
       </div>
     </>
   );
+}
+
+/** A small emoji for a met.no condition base code, so no external icon host is needed. */
+function weatherEmoji(condition: string): string {
+  if (condition.includes('thunder')) return '⛈️';
+  if (condition.includes('snow') || condition.includes('sleet')) return '❄️';
+  if (condition.includes('rain') || condition.includes('shower')) return '🌧️';
+  if (condition.includes('fog')) return '🌫️';
+  if (condition === 'cloudy') return '☁️';
+  if (condition.includes('partlycloudy')) return '⛅';
+  if (condition === 'fair') return '🌤️';
+  if (condition.includes('clearsky')) return '☀️';
+  return '🌡️';
 }
 
 function localisedCategoryName(category: Category, locale: string): string {

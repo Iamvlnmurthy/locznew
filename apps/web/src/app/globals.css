@@ -16825,3 +16825,14 @@ body {
   color: var(--locz-text-muted);
   margin-top: 2px;
 }
+
+.local-now__icon {
+  font-size: 1.25rem;
+  line-height: 1;
+}
+.local-now__attribution {
+  font-size: 0.68rem;
+  color: var(--locz-text-muted);
+  margin-left: auto;
+  padding-left: var(--locz-space-2);
+}
