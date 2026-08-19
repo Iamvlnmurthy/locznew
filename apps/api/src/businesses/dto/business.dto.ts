@@ -23,6 +23,7 @@ import {
   ValidateNested,
 } from 'class-validator';
 import { PaginationQueryDto } from '../../common/dto/pagination.dto';
+import { RADIUS_PRESETS_KM } from '../../geo/dto/geo.dto';
 
 const INDIAN_PHONE = /^\+91[6-9]\d{9}$/;
 
@@ -156,6 +157,25 @@ export class CreateBusinessDto {
 
 export class UpdateBusinessDto extends PartialType(CreateBusinessDto) {}
 
+export class BusinessNearbyQueryDto extends PaginationQueryDto {
+  @ApiProperty() @Type(() => Number) @IsLatitude() latitude!: number;
+  @ApiProperty() @Type(() => Number) @IsLongitude() longitude!: number;
+
+  @ApiPropertyOptional({ enum: RADIUS_PRESETS_KM, default: 25 })
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  radiusKm?: number;
+
+  @ApiPropertyOptional({ example: '500081' })
+  @IsOptional()
+  @Matches(/^\d{6}$/, { message: 'A pincode is exactly six digits' })
+  pincode?: string;
+
+  @ApiPropertyOptional() @IsOptional() @IsUUID() categoryId?: string;
+  @ApiPropertyOptional() @IsOptional() @IsString() @MaxLength(120) q?: string;
+}
+
 export class AddStaffDto {
   @ApiProperty({
     example: '+919876543210',
@@ -177,6 +197,8 @@ export class BusinessSummaryDto {
   @ApiProperty() categoryName!: string;
   @ApiProperty() cityName!: string;
   @ApiPropertyOptional() pincode!: string | null;
+  @ApiPropertyOptional({ description: 'Present only for nearby (geo) queries' })
+  distanceMeters?: number;
   @ApiPropertyOptional() logoUrl!: string | null;
   @ApiProperty({ enum: VerificationStatus }) verificationStatus!: VerificationStatus;
   @ApiProperty() listingCount!: number;

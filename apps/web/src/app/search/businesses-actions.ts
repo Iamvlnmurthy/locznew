@@ -9,6 +9,7 @@ export interface NearbyBusiness {
   categoryName: string;
   cityName: string | null;
   pincode: string | null;
+  distanceMeters?: number;
   verificationStatus: string;
 }
 
@@ -25,22 +26,37 @@ export interface BusinessPage {
 }
 
 /**
- * One page of businesses scoped to a pincode (or city), 20 at a time. Runs on the server so
- * the httpOnly session cookie can reach the API — the browser never calls the API directly.
- * The client component calls this on scroll to append the next page.
+ * One page of businesses, 20 at a time, scoped to the viewer's location. When coordinates are
+ * present it hits the geo endpoint (nearest first, exact distance on each); otherwise it falls
+ * back to the pincode list. Runs on the server so the httpOnly session cookie reaches the API —
+ * the browser never calls the API directly. The client calls this on scroll to append a page.
  */
 export async function loadNearbyBusinesses(args: {
   q?: string;
   pincode?: string;
   cityId?: string;
+  latitude?: number;
+  longitude?: number;
+  radiusKm?: number;
   page: number;
 }): Promise<BusinessPage> {
-  const query = new URLSearchParams({ page: String(args.page), limit: '20', sort: 'recommended' });
+  const query = new URLSearchParams({ page: String(args.page), limit: '20' });
   if (args.q) query.set('q', args.q);
   if (args.pincode) query.set('pincode', args.pincode);
-  if (args.cityId) query.set('cityId', args.cityId);
 
-  const result = await apiSafe<ApiPage>(`/businesses?${query.toString()}`, { auth: true });
+  let path: string;
+  if (args.latitude !== undefined && args.longitude !== undefined) {
+    query.set('latitude', String(args.latitude));
+    query.set('longitude', String(args.longitude));
+    query.set('radiusKm', String(args.radiusKm ?? 25));
+    path = `/businesses/nearby?${query.toString()}`;
+  } else {
+    if (args.cityId) query.set('cityId', args.cityId);
+    query.set('sort', 'recommended');
+    path = `/businesses?${query.toString()}`;
+  }
+
+  const result = await apiSafe<ApiPage>(path, { auth: true });
   return {
     items: result?.items ?? [],
     page: result?.meta.page ?? args.page,

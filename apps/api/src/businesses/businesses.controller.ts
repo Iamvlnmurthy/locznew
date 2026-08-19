@@ -19,6 +19,7 @@ import { BusinessesService } from './businesses.service';
 import {
   AddStaffDto,
   BusinessDetailDto,
+  BusinessNearbyQueryDto,
   BusinessSearchQueryDto,
   BusinessStaffDto,
   BusinessSummaryDto,
@@ -37,6 +38,24 @@ export class BusinessesController {
   @ApiResponse({ status: 200, type: [BusinessSummaryDto] })
   listPublic(@Query() query: BusinessSearchQueryDto): Promise<PaginatedDto<BusinessSummaryDto>> {
     return this.businesses.listPublic(query);
+  }
+
+  @Public()
+  @Get('nearby')
+  @ApiOperation({ summary: 'Businesses nearest to a point, with an exact distance on each' })
+  @ApiResponse({ status: 200, type: [BusinessSummaryDto] })
+  nearby(@Query() query: BusinessNearbyQueryDto): Promise<PaginatedDto<BusinessSummaryDto>> {
+    return this.businesses.nearby({
+      latitude: query.latitude,
+      longitude: query.longitude,
+      radiusKm: query.radiusKm,
+      pincode: query.pincode,
+      categoryId: query.categoryId,
+      q: query.q,
+      page: query.page,
+      limit: query.limit,
+      skip: query.skip,
+    });
   }
 
   @Post()

@@ -118,6 +118,69 @@ export class BusinessesService {
   }
 
   /**
+   * Businesses near a point, nearest first, with an exact distance on each — the geo variant
+   * of listPublic used by the Home "Businesses near you" surface. Uses the PostGIS GiST index
+   * (ST_DWithin to filter, KNN `<->` to order), paginated 20 at a time.
+   */
+  async nearby(query: {
+    latitude: number;
+    longitude: number;
+    radiusKm?: number;
+    pincode?: string;
+    categoryId?: string;
+    q?: string;
+    page: number;
+    limit: number;
+    skip: number;
+  }): Promise<PaginatedDto<BusinessSummaryDto>> {
+    const radiusMeters = (query.radiusKm ?? 25) * 1000;
+    const point = Prisma.sql`ST_SetSRID(ST_MakePoint(${query.longitude}::double precision, ${query.latitude}::double precision), 4326)::geography`;
+    const term = query.q?.trim();
+    const where = Prisma.join(
+      [
+        Prisma.sql`b."deletedAt" IS NULL`,
+        Prisma.sql`b."isActive"`,
+        Prisma.sql`b."geo" IS NOT NULL`,
+        Prisma.sql`ST_DWithin(b."geo", ${point}, ${radiusMeters})`,
+        query.pincode ? Prisma.sql`b."pincodeCode" = ${query.pincode}` : Prisma.sql`TRUE`,
+        query.categoryId
+          ? Prisma.sql`b."categoryId" = ${query.categoryId}::uuid`
+          : Prisma.sql`TRUE`,
+        term
+          ? Prisma.sql`(b."name" ILIKE ${`%${term}%`} OR b."description" ILIKE ${`%${term}%`})`
+          : Prisma.sql`TRUE`,
+      ],
+      ' AND ',
+    );
+
+    const [rows, countRows] = await Promise.all([
+      this.prisma.$queryRaw<Array<{ id: string; distanceMeters: number }>>(
+        Prisma.sql`SELECT b."id", ST_Distance(b."geo", ${point}) AS "distanceMeters"
+                   FROM "businesses" b WHERE ${where}
+                   ORDER BY b."geo" <-> ${point}
+                   LIMIT ${query.limit} OFFSET ${query.skip}`,
+      ),
+      this.prisma.$queryRaw<Array<{ total: bigint }>>(
+        Prisma.sql`SELECT count(*)::bigint AS total FROM "businesses" b WHERE ${where}`,
+      ),
+    ]);
+
+    const total = Number(countRows[0]?.total ?? 0);
+    if (rows.length === 0) return paginate([], total, query.page, query.limit);
+
+    const distanceById = new Map(rows.map((r) => [r.id, Number(r.distanceMeters)]));
+    const businesses = await this.prisma.business.findMany({
+      where: { id: { in: rows.map((r) => r.id) } },
+      include: BUSINESS_INCLUDE,
+    });
+    const order = new Map(rows.map((r, index) => [r.id, index]));
+    const items = businesses
+      .sort((a, b) => (order.get(a.id) ?? 0) - (order.get(b.id) ?? 0))
+      .map((business) => this.toSummary(business, distanceById.get(business.id)));
+    return paginate(items, total, query.page, query.limit);
+  }
+
+  /**
    * Cleans the terms a business claims to sell, and refuses the ones it may not.
    *
    * These go straight into the search index, so an unchecked field is a way to make a shop
@@ -632,7 +695,7 @@ export class BusinessesService {
     return `${base}-${Date.now().toString(36)}`;
   }
 
-  private toSummary(business: BusinessRow): BusinessSummaryDto {
+  private toSummary(business: BusinessRow, distanceMeters?: number): BusinessSummaryDto {
     return {
       id: business.id,
       name: business.name,
@@ -641,6 +704,7 @@ export class BusinessesService {
       categoryName: business.category.name,
       cityName: business.city.name,
       pincode: business.pincodeCode ?? null,
+      ...(distanceMeters !== undefined ? { distanceMeters: Math.round(distanceMeters) } : {}),
       logoUrl: business.logoMediaId ? this.storage.publicUrl(business.logoMediaId) : null,
       verificationStatus: business.verificationStatus,
       listingCount: business._count.listings,

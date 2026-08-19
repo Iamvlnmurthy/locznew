@@ -2,8 +2,10 @@ import Link from 'next/link';
 import type { Category, ListingSummary } from '@locz/shared-types';
 import { ListingCard } from '@/components/listing-card';
 import { Icon, categoryImageName } from '@/components/icons';
-import { getTranslator } from '@/i18n';
+import { getTranslator, getMessageGroup } from '@/i18n';
 import { apiSafe } from '@/lib/api';
+import { NearbyBusinesses } from './search/nearby-businesses';
+import { loadNearbyBusinesses } from './search/businesses-actions';
 import {
   RADIUS_OPTIONS_KM,
   getCurrentUser,
@@ -87,6 +89,22 @@ export default async function HomePage() {
     });
     return items;
   })();
+
+  // Businesses near you — the cold-start payoff: even with no listings yet, the imported
+  // directory (millions of geocoded businesses) gives a new user real nearby places on Home.
+  const searchLabels = getMessageGroup(locale, 'searchUi');
+  const homeBusinesses =
+    city?.latitude !== undefined && city?.longitude !== undefined
+      ? await loadNearbyBusinesses({
+          latitude: city.latitude,
+          longitude: city.longitude,
+          radiusKm,
+          pincode: city.pincode,
+          page: 1,
+        })
+      : city?.pincode
+        ? await loadNearbyBusinesses({ pincode: city.pincode, page: 1 })
+        : { items: [], total: 0, page: 1, hasNextPage: false };
 
   return (
     <>
@@ -228,6 +246,29 @@ export default async function HomePage() {
             </aside>
           </>
         )}
+
+        {homeBusinesses.items.length > 0 ? (
+          <section className="search-businesses" aria-labelledby="home-businesses-title">
+            <div className="search-businesses__head">
+              <div>
+                <span className="section-kicker">{searchLabels.businessesKicker}</span>
+                <h2 id="home-businesses-title">{searchLabels.businessesTitle}</h2>
+              </div>
+            </div>
+            <NearbyBusinesses
+              pincode={city?.pincode}
+              latitude={city?.latitude}
+              longitude={city?.longitude}
+              radiusKm={radiusKm}
+              initial={homeBusinesses.items}
+              initialHasMore={homeBusinesses.hasNextPage}
+              verifiedLabel={searchLabels.businessVerified}
+              nearYou={searchLabels.nearYou}
+              loadingLabel={searchLabels.loadingMoreBusinesses}
+              kmLabel={t('common.km')}
+            />
+          </section>
+        ) : null}
 
         {/* Discovery first: the marketing intents and the full category grid sit BELOW the
             live "around you" feed, so a returning user sees real nearby inventory first. */}

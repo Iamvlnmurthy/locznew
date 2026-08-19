@@ -105,11 +105,22 @@ export default async function SearchPage({
   const activeFilters = buildActiveFilters(rawParams, categories, s, locale);
   const resultCount = result?.total ?? 0;
   const visibleResultCount = result?.items.length ?? 0;
-  // "Places nearby" is now a paginated, infinite-scroll list scoped to the pincode/city —
-  // 20 at a time, pulled as the user scrolls, rather than a fixed preview.
+  // "Places nearby" is a paginated, infinite-scroll list — 20 at a time, pulled as the user
+  // scrolls. With coordinates it uses the geo endpoint so each card shows an exact distance.
+  const bizLat = city?.latitude;
+  const bizLon = city?.longitude;
+  const bizRadiusKm = params.radiusKm ? Number(params.radiusKm) : undefined;
   const businessPage =
-    pincode || cityId
-      ? await loadNearbyBusinesses({ q: params.q, pincode, cityId, page: 1 })
+    (bizLat !== undefined && bizLon !== undefined) || pincode || cityId
+      ? await loadNearbyBusinesses({
+          q: params.q,
+          pincode,
+          cityId,
+          latitude: bizLat,
+          longitude: bizLon,
+          radiusKm: bizRadiusKm,
+          page: 1,
+        })
       : { items: [], total: 0, page: 1, hasNextPage: false };
   const businessTotal = businessPage.total;
   const isSparse = visibleResultCount > 0 && visibleResultCount <= 2;
@@ -226,11 +237,15 @@ export default async function SearchPage({
                   q={params.q}
                   pincode={pincode}
                   cityId={cityId}
+                  latitude={bizLat}
+                  longitude={bizLon}
+                  radiusKm={bizRadiusKm}
                   initial={businessPage.items}
                   initialHasMore={businessPage.hasNextPage}
                   verifiedLabel={s.businessVerified}
                   nearYou={s.nearYou}
                   loadingLabel={s.loadingMoreBusinesses}
+                  kmLabel={t('common.km')}
                 />
               </section>
             ) : null}
