@@ -82,15 +82,25 @@ export default async function DiscoveryAreaPage({ params }: { params: Promise<{ 
   const areaLabels = getMessageGroup(locale, 'discoveryAreas');
   const searchLabels = getMessageGroup(locale, 'searchUi');
   const d = getMessageGroup(locale, 'discoverUi');
-  const cityName = city?.name ?? t('home.yourCity');
+  // Fall back to the default launched city so the page (and crawlers) still get real Hyderabad
+  // content instead of an empty "Your city" — an empty discovery page is thin content and a poor
+  // first visit. Coordinates from the cookie win; otherwise the default city's centroid is used.
+  const defaultCity = city
+    ? null
+    : ((await apiSafe<Array<{ id: string; name: string; latitude?: number; longitude?: number }>>(
+        '/locations/cities?launchedOnly=true&limit=1',
+        { revalidate: 3600 },
+      )) ?? [])[0];
+  const place = city ?? defaultCity ?? null;
+  const cityName = place?.name ?? t('home.yourCity');
   const title = areaLabels[area] ?? area;
 
   const feedQuery = new URLSearchParams({ limit: '30' });
-  if (city?.id) feedQuery.set('cityId', city.id);
+  if (place?.id) feedQuery.set('cityId', place.id);
   if (city?.pincode) feedQuery.set('pincode', city.pincode);
-  if (city?.latitude !== undefined && city.longitude !== undefined) {
-    feedQuery.set('latitude', String(city.latitude));
-    feedQuery.set('longitude', String(city.longitude));
+  if (place?.latitude !== undefined && place.longitude !== undefined) {
+    feedQuery.set('latitude', String(place.latitude));
+    feedQuery.set('longitude', String(place.longitude));
     feedQuery.set('radiusKm', String(radiusKm));
   }
 
@@ -100,7 +110,7 @@ export default async function DiscoveryAreaPage({ params }: { params: Promise<{ 
   const showJobs = area === 'jobs';
   const showBusinesses = area === 'businesses';
   const alertQuery = new URLSearchParams({ q: cityName });
-  if (city?.id) alertQuery.set('cityId', city.id);
+  if (place?.id) alertQuery.set('cityId', place.id);
 
   const [feed, weatherResponse, newsResponse, alertResponse, jobsResponse, businesses] =
     await Promise.all([
@@ -122,17 +132,19 @@ export default async function DiscoveryAreaPage({ params }: { params: Promise<{ 
         ? apiSafe<{ jobs: JobPosting[] }>(`/local-now/jobs?q=${encodeURIComponent(cityName)}`)
         : Promise.resolve(null),
       showBusinesses
-        ? city?.latitude !== undefined && city.longitude !== undefined
+        ? place?.latitude !== undefined && place.longitude !== undefined
           ? loadNearbyBusinesses({
-              latitude: city.latitude,
-              longitude: city.longitude,
+              latitude: place.latitude,
+              longitude: place.longitude,
               radiusKm,
-              pincode: city.pincode,
+              pincode: city?.pincode,
               page: 1,
             })
           : city?.pincode
             ? loadNearbyBusinesses({ pincode: city.pincode, page: 1 })
-            : Promise.resolve({ items: [], total: 0, page: 1, hasNextPage: false })
+            : place?.id
+              ? loadNearbyBusinesses({ cityId: place.id, page: 1 })
+              : Promise.resolve({ items: [], total: 0, page: 1, hasNextPage: false })
         : Promise.resolve({ items: [], total: 0, page: 1, hasNextPage: false }),
     ]);
 
@@ -305,9 +317,9 @@ export default async function DiscoveryAreaPage({ params }: { params: Promise<{ 
               </div>
               <NearbyBusinesses
                 pincode={city?.pincode}
-                cityId={city?.id ?? feed?.cityId}
-                latitude={city?.latitude}
-                longitude={city?.longitude}
+                cityId={place?.id ?? feed?.cityId}
+                latitude={place?.latitude}
+                longitude={place?.longitude}
                 radiusKm={radiusKm}
                 initial={businesses.items}
                 initialHasMore={businesses.hasNextPage}
