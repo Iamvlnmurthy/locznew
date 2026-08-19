@@ -118,7 +118,7 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.text('Good finds, right around you'), findsOneWidget);
+    expect(find.text("What's near you?"), findsOneWidget);
 
     // The home is one vertical "Around you now" feed now, not horizontal rails.
     final scrollable = find.byType(Scrollable).first;

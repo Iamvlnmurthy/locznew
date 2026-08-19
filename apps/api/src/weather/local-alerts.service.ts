@@ -26,6 +26,24 @@ function tag(block: string, name: string): string | null {
   return m ? decode(m[1] ?? '') : null;
 }
 
+/**
+ * Make an official CAP title readable without rewording the warning. IMD titles list affected
+ * areas as cryptic internal district CODES ("...over ADL, BDDK, WRGL districts of Telangana...")
+ * and append an issuer code ("by TGiCCC") — meaningless to a resident. We collapse the code list
+ * to the state it already names and drop the issuer suffix; the hazard, timeframe and place are
+ * left exactly as issued.
+ */
+export function cleanAlertTitle(title: string): string {
+  return title
+    .replace(
+      /over\s+[A-Z][A-Z., ]*\s+districts?\s+of\s+([A-Za-z& ]+?)(?=\s+in\b|\s+by\b|[.,]|$)/i,
+      'over $1',
+    )
+    .replace(/\s+by\s+[A-Za-z]+\.?\s*$/i, '')
+    .replace(/\s{2,}/g, ' ')
+    .trim();
+}
+
 /** Parse the NDMA SACHET all-India CAP RSS into alerts. Pure — tested without a network call. */
 export function parseAlertsRss(xml: string): LocalAlert[] {
   const items = xml.match(/<item>([\s\S]*?)<\/item>/g) ?? [];
@@ -39,7 +57,7 @@ export function parseAlertsRss(xml: string): LocalAlert[] {
       const parsed = new Date(pubDate);
       if (!Number.isNaN(parsed.getTime())) publishedAt = parsed.toISOString();
     }
-    alerts.push({ title, category: tag(item, 'category'), publishedAt });
+    alerts.push({ title: cleanAlertTitle(title), category: tag(item, 'category'), publishedAt });
   }
   return alerts;
 }

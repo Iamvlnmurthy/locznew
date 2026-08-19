@@ -16962,6 +16962,14 @@ body {
   padding-left: var(--locz-space-2);
 }
 
+/* Telugu gets a dedicated, professional Telugu face (Anek Telugu) instead of the OS default —
+   lighter, cleaner strokes. Latin/digits inside Telugu pages still fall back to the sans stack. */
+:lang(te) {
+  font-family:
+    var(--font-locz-telugu), var(--font-locz-sans), system-ui, sans-serif;
+  letter-spacing: 0;
+}
+
 /* "Local alerts" — official NDMA SACHET public-safety warnings, verbatim. Coral-accented. */
 .local-alerts {
   margin: 16px 0 8px;
@@ -17081,6 +17089,306 @@ body {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+/* ---------- Focused Explore → Feed home experience ---------- */
+
+html {
+  scroll-behavior: smooth;
+}
+
+.home-hero--discovery {
+  min-height: calc(100dvh - var(--header-height, 76px));
+  display: grid;
+  align-items: center;
+  padding-block: clamp(28px, 5vh, 64px);
+  background:
+    radial-gradient(circle at 82% 18%, rgba(236, 106, 82, 0.1), transparent 29%),
+    linear-gradient(
+      135deg,
+      var(--locz-canvas),
+      color-mix(in srgb, var(--locz-primary) 5%, var(--locz-canvas))
+    );
+}
+
+.home-hero--discovery::before {
+  opacity: 0.35;
+}
+
+.home-hero--discovery .home-hero__inner {
+  grid-template-columns: minmax(300px, 0.82fr) minmax(560px, 1.18fr);
+  gap: clamp(40px, 6vw, 88px);
+  align-items: center;
+}
+
+.home-hero--discovery .home-hero__copy {
+  max-width: 540px;
+}
+
+.home-hero--discovery .home-hero__copy h1 {
+  max-width: 10ch;
+  margin: 14px 0 26px;
+  font-size: clamp(3rem, 5.4vw, 5.5rem);
+  line-height: 0.94;
+  letter-spacing: -0.065em;
+}
+
+.home-discovery__location {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 38px;
+  padding: 8px 13px;
+  border: 1px solid var(--locz-border);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--locz-surface) 88%, transparent);
+  color: var(--locz-primary);
+  font-size: 0.82rem;
+  font-weight: 750;
+}
+
+.home-discovery__location svg {
+  width: 16px;
+  height: 16px;
+}
+
+.home-discovery {
+  padding: clamp(18px, 2.4vw, 28px);
+  border: 1px solid color-mix(in srgb, var(--locz-border) 86%, white);
+  border-radius: 30px;
+  background: color-mix(in srgb, var(--locz-surface) 94%, transparent);
+  box-shadow: 0 28px 70px rgba(16, 47, 40, 0.12);
+  backdrop-filter: blur(18px);
+}
+
+.home-discovery__head,
+.home-feed-toolbar {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 18px;
+}
+
+.home-discovery__head {
+  margin-bottom: 18px;
+}
+
+.home-discovery__head h2 {
+  margin: 4px 0 0;
+  font-size: clamp(1.45rem, 2vw, 2rem);
+  letter-spacing: -0.035em;
+}
+
+.home-discovery__head > a {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: var(--locz-primary);
+  font-weight: 750;
+}
+
+.home-discovery__head > a svg {
+  width: 15px;
+}
+
+.home-discovery__grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.home-discovery__grid > a {
+  min-width: 0;
+  min-height: 132px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 12px 8px 10px;
+  border: 1px solid var(--locz-border);
+  border-radius: 19px;
+  background: var(--locz-surface);
+  color: var(--locz-text);
+  text-align: center;
+  transition:
+    transform 160ms ease,
+    border-color 160ms ease,
+    box-shadow 160ms ease;
+}
+
+.home-discovery__grid > a:hover,
+.home-discovery__grid > a.is-active {
+  transform: translateY(-3px);
+  border-color: color-mix(in srgb, var(--locz-primary) 58%, var(--locz-border));
+  box-shadow: 0 12px 24px rgba(15, 67, 58, 0.12);
+}
+
+.home-discovery__grid > a.is-active {
+  background: color-mix(in srgb, var(--locz-primary) 9%, var(--locz-surface));
+}
+
+.home-discovery__grid > a > span {
+  width: 58px;
+  height: 58px;
+  margin-bottom: 7px;
+  border-radius: 16px;
+  background: color-mix(in srgb, var(--locz-primary) 8%, var(--locz-surface));
+}
+
+.home-discovery__grid img {
+  width: 58px;
+  height: 58px;
+  object-fit: contain;
+}
+
+.home-discovery__grid strong,
+.home-discovery__grid small {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.home-discovery__grid strong {
+  font-size: 0.78rem;
+  font-weight: 780;
+}
+
+.home-discovery__grid small {
+  margin-top: 2px;
+  color: var(--locz-text-secondary);
+  font-size: 0.68rem;
+}
+
+.home-feed-toolbar {
+  position: sticky;
+  z-index: 12;
+  top: var(--header-height, 76px);
+  margin: 0 -12px 18px;
+  padding: 18px 12px 14px;
+  border-bottom: 1px solid var(--locz-border);
+  background: color-mix(in srgb, var(--locz-canvas) 91%, transparent);
+  backdrop-filter: blur(18px);
+}
+
+.home-feed-toolbar h2 {
+  margin: 4px 0 0;
+  font-size: clamp(1.55rem, 2.3vw, 2.35rem);
+  letter-spacing: -0.045em;
+}
+
+.home-feed-toolbar__back {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  color: var(--locz-primary);
+  font-size: 0.78rem;
+  font-weight: 780;
+}
+
+.home-feed-toolbar__back svg {
+  width: 15px;
+  transform: rotate(180deg);
+}
+
+.home-feed-toolbar__filters {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.home-feed-toolbar__filters > a {
+  min-height: 38px;
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 13px;
+  border: 1px solid var(--locz-border);
+  border-radius: 999px;
+  background: var(--locz-surface);
+  color: var(--locz-text-secondary);
+  font-size: 0.76rem;
+  font-weight: 730;
+}
+
+.home-feed-toolbar__filters > a.is-active {
+  border-color: var(--locz-primary);
+  background: var(--locz-primary);
+  color: var(--locz-on-primary);
+}
+
+.home-feed-toolbar__filters svg {
+  width: 15px;
+}
+
+.home-feed-grid {
+  max-width: 760px;
+  grid-template-columns: 1fr;
+  margin-inline: auto;
+}
+
+@media (max-width: 980px) {
+  .home-hero--discovery {
+    min-height: auto;
+    padding-block: 24px 34px;
+  }
+
+  .home-hero--discovery .home-hero__inner {
+    grid-template-columns: 1fr;
+    gap: 24px;
+  }
+
+  .home-hero--discovery .home-hero__copy {
+    max-width: none;
+  }
+
+  .home-hero--discovery .home-hero__copy h1 {
+    max-width: 12ch;
+    font-size: clamp(2.4rem, 8vw, 4.25rem);
+  }
+}
+
+@media (max-width: 600px) {
+  .home-hero--discovery {
+    min-height: calc(100dvh - 68px);
+    align-items: start;
+    padding-block: 16px 24px;
+  }
+
+  .home-hero--discovery .home-hero__copy h1 {
+    margin: 10px 0 16px;
+    font-size: 2.35rem;
+  }
+
+  .home-discovery {
+    padding: 15px;
+    border-radius: 24px;
+  }
+
+  .home-discovery__grid {
+    gap: 8px;
+  }
+
+  .home-discovery__grid > a {
+    min-height: 105px;
+    border-radius: 16px;
+  }
+
+  .home-discovery__grid > a > span,
+  .home-discovery__grid img {
+    width: 46px;
+    height: 46px;
+  }
+
+  .home-feed-toolbar {
+    top: 64px;
+    align-items: stretch;
+    flex-direction: column;
+    margin-inline: -4px;
+  }
 }
 
 /* "Local Now" news — live headlines pulled on demand, linking back to the publisher. */

@@ -8,13 +8,7 @@ import { apiSafe } from '@/lib/api';
 import { premiumCategoryArtwork, premiumDiscoveryArtwork } from '@/lib/premium-icon-catalog';
 import { NearbyBusinesses } from './search/nearby-businesses';
 import { loadNearbyBusinesses } from './search/businesses-actions';
-import {
-  RADIUS_OPTIONS_KM,
-  getCurrentUser,
-  getLocale,
-  getSelectedCity,
-  getSelectedRadius,
-} from '@/lib/session';
+import { RADIUS_OPTIONS_KM, getLocale, getSelectedCity, getSelectedRadius } from '@/lib/session';
 import { RadiusSelector } from '@/components/radius-selector';
 
 interface LocalWeather {
@@ -92,11 +86,15 @@ interface Feed {
 // so it is rendered per request rather than cached.
 export const dynamic = 'force-dynamic';
 
-export default async function HomePage() {
-  const [locale, city, user, radiusKm] = await Promise.all([
+export default async function HomePage({
+  searchParams,
+}: {
+  searchParams: Promise<{ area?: string; sort?: string }>;
+}) {
+  const { area: selectedArea, sort = 'nearest' } = await searchParams;
+  const [locale, city, radiusKm] = await Promise.all([
     getLocale(),
     getSelectedCity(),
-    getCurrentUser(),
     getSelectedRadius(),
   ]);
   const t = getTranslator(locale);
@@ -119,10 +117,6 @@ export default async function HomePage() {
 
   const topCategories = (categories ?? []).slice(0, 12);
   const feedCity = feed?.cityName ?? city?.name ?? t('home.yourCity');
-  const uniqueListings = feed
-    ? new Set(feed.sections.flatMap((section) => section.items.map((item) => item.id))).size
-    : 0;
-  const firstName = user?.displayName.split(' ')[0];
 
   // One merged, proximity-sorted "Around You Now" column instead of horizontal rails — the
   // same vertical feed the mobile app uses, so results scroll like a normal feed, not sideways.
@@ -148,6 +142,28 @@ export default async function HomePage() {
     });
     return items;
   })();
+  const areaTypes: Readonly<Record<string, ReadonlySet<ListingSummary['type']>>> = {
+    deals: new Set(['OFFER']),
+    jobs: new Set(['JOB']),
+    rentals: new Set(['RENTAL']),
+    services: new Set(['SERVICE']),
+    shopping: new Set(['PRODUCT', 'CLASSIFIED']),
+    marketplace: new Set(['PRODUCT', 'CLASSIFIED']),
+    events: new Set(['EVENT']),
+    'happening-nearby': new Set(['EVENT']),
+    'local-requests': new Set(['BUYER_REQUIREMENT']),
+    businesses: new Set(['BUSINESS_LISTING']),
+    property: new Set(['RENTAL']),
+  };
+  const selectedTypes = selectedArea ? areaTypes[selectedArea] : undefined;
+  const visibleFeedItems = selectedTypes
+    ? feedItems.filter((item) => selectedTypes.has(item.type))
+    : [...feedItems];
+  if (sort === 'latest') {
+    visibleFeedItems.sort(
+      (a, b) => new Date(b.publishedAt ?? 0).getTime() - new Date(a.publishedAt ?? 0).getTime(),
+    );
+  }
 
   // Businesses near you — the cold-start payoff: even with no listings yet, the imported
   // directory (millions of geocoded businesses) gives a new user real nearby places on Home.
@@ -230,15 +246,13 @@ export default async function HomePage() {
 
   return (
     <>
-      <section className="home-hero">
+      <section className="home-hero home-hero--discovery" id="home-top">
         <div className="container home-hero__inner">
           <div className="home-hero__copy">
-            <span className="eyebrow">
-              {/* Generic, not name-injected: an all-caps first name like "Info" read as broken. */}
-              <i /> {t('home.eyebrow')}
+            <span className="home-discovery__location">
+              <Icon name="location" /> {feedCity}
             </span>
-            <h1>{t('home.title')}</h1>
-            <p>{firstName ? t('home.personalSubtitle', { city: feedCity }) : t('home.subtitle')}</p>
+            <h1>{t('home.exploreTitle', { city: feedCity })}</h1>
             <RadiusSelector
               options={[...RADIUS_OPTIONS_KM]}
               selected={radiusKm}
@@ -262,42 +276,33 @@ export default async function HomePage() {
                 {t('search.submit')} <Icon name="arrow" width="17" height="17" />
               </button>
             </form>
-
-            <div className="hero-popular" aria-label={t('home.popularAria')}>
-              <span>{t('home.popularNow')}</span>
-              <Link href="/search?q=iPhone">iPhone</Link>
-              <Link href="/search?type=JOB">{t('home.popularJobs')}</Link>
-              <Link href="/search?type=RENTAL">{t('home.popularRooms')}</Link>
-              <Link href="/search?type=SERVICE&q=electrician">{t('home.popularElectrician')}</Link>
-            </div>
-
-            <div className="hero-trust" aria-label={t('home.trustLabel')}>
-              <span>
-                <Icon name="shield" /> {t('home.trustSafe')}
-              </span>
-              <span>
-                <Icon name="plus" /> {t('home.trustFree')}
-              </span>
-              <span>
-                <Icon name="location" /> {t('home.trustLocal')}
-              </span>
-            </div>
           </div>
 
-          <div className="home-hero__scene" aria-hidden="true">
-            <picture>
-              <source
-                media="(max-width: 900px)"
-                srcSet="/illustrations/hero-neighbourhood-mobile.webp"
-              />
-              <img
-                src="/illustrations/hero-neighbourhood.webp"
-                alt=""
-                width="1800"
-                height="900"
-                fetchPriority="high"
-              />
-            </picture>
+          <div className="home-discovery" aria-labelledby="home-discovery-title">
+            <div className="home-discovery__head">
+              <div>
+                <span className="section-kicker">{t('home.exploreKicker')}</span>
+                <h2 id="home-discovery-title">{t('home.explore')}</h2>
+              </div>
+              <Link href="/search">
+                {t('feed.seeAll')} <Icon name="arrow" />
+              </Link>
+            </div>
+            <div className="home-discovery__grid">
+              {areaSummary.areas.slice(0, 8).map(({ area, count }) => (
+                <Link
+                  key={area}
+                  href={`/?area=${encodeURIComponent(area)}#local-feed`}
+                  className={selectedArea === area ? 'is-active' : ''}
+                >
+                  <span aria-hidden="true">
+                    <Image src={premiumDiscoveryArtwork(area)} alt="" width={58} height={58} />
+                  </span>
+                  <strong>{areaLabels[area] ?? area}</strong>
+                  <small>{count.toLocaleString('en-IN')}</small>
+                </Link>
+              ))}
+            </div>
           </div>
         </div>
       </section>
@@ -334,33 +339,6 @@ export default async function HomePage() {
             </ul>
             {/* NDMA SACHET is an official source name — identical in every language. */}
             <p className="local-alerts__attribution">{'NDMA SACHET'}</p>
-          </section>
-        ) : null}
-
-        {areaSummary.areas.length > 0 ? (
-          <section className="area-summary" aria-labelledby="area-summary-title">
-            <div className="area-summary__head">
-              <span className="section-kicker">{t('home.exploreKicker')}</span>
-              <h2 id="area-summary-title">{t('home.exploreTitle', { city: feedCity })}</h2>
-            </div>
-            <div className="area-summary__grid">
-              {areaSummary.areas.map(({ area, count }) => (
-                <Link
-                  key={area}
-                  href={`/search?${countScope.toString()}`}
-                  className="area-chip"
-                  data-area={area}
-                >
-                  <span className="area-chip__icon" aria-hidden="true">
-                    <Image src={premiumDiscoveryArtwork(area)} alt="" width={44} height={44} />
-                  </span>
-                  <span className="area-chip__body">
-                    <strong>{count.toLocaleString('en-IN')}</strong>
-                    <span>{areaLabels[area] ?? area}</span>
-                  </span>
-                </Link>
-              ))}
-            </div>
           </section>
         ) : null}
 
@@ -455,35 +433,42 @@ export default async function HomePage() {
           </div>
         ) : (
           <>
-            <section className="home-feed-intro">
+            <section className="home-feed-toolbar" id="local-feed">
               <div>
-                <span className="section-kicker">{t('home.feedKicker')}</span>
-                <h2>{t('home.feedTitle', { city: feed.cityName })}</h2>
-                <p>
-                  {feed.radiusWidened
-                    ? t('home.radiusWidened', { radius: radiusKm })
-                    : t('home.feedBody')}
-                </p>
+                {selectedArea ? (
+                  <Link href="/#home-top" className="home-feed-toolbar__back">
+                    <Icon name="arrow" /> {t('home.explore')}
+                  </Link>
+                ) : (
+                  <span className="section-kicker">{t('home.feedKicker')}</span>
+                )}
+                <h2>
+                  {selectedArea
+                    ? (areaLabels[selectedArea] ?? selectedArea)
+                    : t('home.feedTitle', { city: feed.cityName })}
+                </h2>
               </div>
-              <div className="home-feed-intro__pulse" aria-label={t('home.activityAria')}>
-                <span>
-                  <strong>{uniqueListings}</strong>
-                  {t('home.freshFinds')}
-                </span>
-                <i aria-hidden="true" />
-                <span>
-                  <strong>{feed.sections.length}</strong>
-                  {t('home.usefulCollections')}
-                </span>
-                <Link href="/location">
-                  <Icon name="location" />
-                  {t('home.changeArea')}
+              <div className="home-feed-toolbar__filters" aria-label={searchLabels.filters}>
+                <Link
+                  href={`/?${selectedArea ? `area=${encodeURIComponent(selectedArea)}&` : ''}sort=nearest#local-feed`}
+                  className={sort !== 'latest' ? 'is-active' : ''}
+                >
+                  {searchLabels.nearestFirst}
+                </Link>
+                <Link
+                  href={`/?${selectedArea ? `area=${encodeURIComponent(selectedArea)}&` : ''}sort=latest#local-feed`}
+                  className={sort === 'latest' ? 'is-active' : ''}
+                >
+                  {searchLabels.latestFirst}
+                </Link>
+                <Link href="/search">
+                  <Icon name="sliders" /> {searchLabels.filters}
                 </Link>
               </div>
             </section>
 
-            <div className="card-grid">
-              {feedItems.map((listing) => (
+            <div className="card-grid home-feed-grid">
+              {visibleFeedItems.map((listing) => (
                 <ListingCard key={listing.id} listing={listing} t={t} />
               ))}
             </div>

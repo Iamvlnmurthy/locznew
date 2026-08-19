@@ -1,4 +1,22 @@
-import { filterAlertsByArea, parseAlertsRss } from './local-alerts.service';
+import { cleanAlertTitle, filterAlertsByArea, parseAlertsRss } from './local-alerts.service';
+
+describe('cleanAlertTitle', () => {
+  it('collapses the district-code list to the state and drops the issuer suffix', () => {
+    const raw =
+      'Thunderstorm accompanied with Lightning and Gusty winds (30-40 kmph) is very likely to ' +
+      'occur at isolated places over ADL, BDDK, HNM, JGTL, WRGL districts of Telangana in next ' +
+      '24 hours by TGiCCC.';
+    expect(cleanAlertTitle(raw)).toBe(
+      'Thunderstorm accompanied with Lightning and Gusty winds (30-40 kmph) is very likely to ' +
+        'occur at isolated places over Telangana in next 24 hours',
+    );
+  });
+
+  it('leaves a title with no district codes untouched', () => {
+    const raw = 'Heavy rain very likely over Telangana in the next 3 hours';
+    expect(cleanAlertTitle(raw)).toBe(raw);
+  });
+});
 
 const SAMPLE = `<rss><channel>
   <item>

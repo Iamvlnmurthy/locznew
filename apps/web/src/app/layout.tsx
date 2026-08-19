@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from 'next';
 import Link from 'next/link';
 import localFont from 'next/font/local';
+import { Anek_Telugu } from 'next/font/google';
 import Script from 'next/script';
 import { Header } from '@/components/header';
 import { getTranslator } from '@/i18n';
@@ -17,6 +18,15 @@ const loczSans = localFont({
     { path: '../../../mobile/assets/fonts/Inter-Bold.ttf', weight: '700', style: 'normal' },
   ],
   variable: '--font-locz-sans',
+  display: 'swap',
+});
+
+// A modern, professional Telugu face — clean low-contrast strokes and light weights, far more
+// refined than the OS default. Applied to Telugu text via :lang(te) in globals.css.
+const loczTelugu = Anek_Telugu({
+  subsets: ['telugu'],
+  weight: ['300', '400', '500', '600', '700'],
+  variable: '--font-locz-telugu',
   display: 'swap',
 });
 
@@ -77,7 +87,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
     // correctly instead of reading them as accented English.
     <html
       lang={locale}
-      className={loczSans.variable}
+      className={`${loczSans.variable} ${loczTelugu.variable}`}
       data-scroll-behavior="smooth"
       suppressHydrationWarning
     >

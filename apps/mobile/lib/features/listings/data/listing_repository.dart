@@ -248,6 +248,28 @@ class ListingRepository {
     ];
   }
 
+  /// Official public-safety alerts (NDMA SACHET) naming the viewer's area. Display-only, verbatim.
+  /// Passing cityId widens the match to the city's district/state. Empty on failure.
+  Future<List<({String title, String? category, String? publishedAt})>> localAlerts(
+    String query, {
+    String? cityId,
+  }) async {
+    if (query.trim().isEmpty) return const [];
+    final json = await _api.get<Map<String, dynamic>>(
+      '/local-now/alerts',
+      query: {'q': query, if (cityId != null) 'cityId': cityId},
+    );
+    final alerts = (json['alerts'] as List<dynamic>? ?? []);
+    return [
+      for (final entry in alerts)
+        (
+          title: (entry as Map<String, dynamic>)['title'] as String? ?? '',
+          category: entry['category'] as String?,
+          publishedAt: entry['publishedAt'] as String?,
+        ),
+    ];
+  }
+
   /// Live local job openings (Adzuna), pulled on demand (never stored). Display-only: title,
   /// company, location + a link back to the posting. Empty when unconfigured or on failure.
   Future<List<({String title, String? company, String? location, String url, String? postedAt})>>

@@ -15,11 +15,65 @@ import '../../listings/presentation/widgets/listing_card.dart';
 /// The home experience begins with intent, then proves that LocZ has useful local
 /// inventory. API feed sections remain the source of truth, but no longer dictate
 /// the information architecture a person has to understand.
-class HomeScreen extends ConsumerWidget {
+class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<HomeScreen> createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends ConsumerState<HomeScreen> {
+  final _scrollController = ScrollController();
+  final _feedAnchor = GlobalKey();
+  String? _selectedArea;
+  bool _latestFirst = false;
+
+  static const _areaTypes = <String, Set<String>>{
+    'deals': {'OFFER'},
+    'jobs': {'JOB'},
+    'rentals': {'RENTAL'},
+    'services': {'SERVICE'},
+    'shopping': {'PRODUCT', 'CLASSIFIED'},
+    'marketplace': {'PRODUCT', 'CLASSIFIED'},
+    'events': {'EVENT'},
+    'happening-nearby': {'EVENT'},
+    'local-requests': {'BUYER_REQUIREMENT'},
+    'businesses': {'BUSINESS_LISTING'},
+    'property': {'RENTAL'},
+  };
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  void _selectArea(String area) {
+    setState(() => _selectedArea = area);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final context = _feedAnchor.currentContext;
+      if (context != null) {
+        Scrollable.ensureVisible(
+          context,
+          duration: LoczMotion.standard,
+          curve: Curves.easeOutCubic,
+          alignment: 0,
+        );
+      }
+    });
+  }
+
+  void _returnToExplore() {
+    setState(() => _selectedArea = null);
+    _scrollController.animateTo(
+      0,
+      duration: LoczMotion.standard,
+      curve: Curves.easeOutCubic,
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final strings = Strings.of(context);
     final feed = ref.watch(feedProvider);
     final city = ref.watch(selectedCityProvider);
@@ -75,8 +129,20 @@ class HomeScreen extends ConsumerWidget {
               if (db == null) return -1;
               return da.compareTo(db);
             });
+            final selectedTypes = _selectedArea == null ? null : _areaTypes[_selectedArea];
+            final visibleItems = selectedTypes == null
+                ? [...feedItems]
+                : feedItems.where((item) => selectedTypes.contains(item.type)).toList();
+            if (_latestFirst) {
+              visibleItems.sort(
+                (a, b) => (b.publishedAt ?? DateTime.fromMillisecondsSinceEpoch(0)).compareTo(
+                  a.publishedAt ?? DateTime.fromMillisecondsSinceEpoch(0),
+                ),
+              );
+            }
 
             return CustomScrollView(
+              controller: _scrollController,
               physics: const AlwaysScrollableScrollPhysics(),
               slivers: [
                 SliverPadding(
@@ -90,45 +156,37 @@ class HomeScreen extends ConsumerWidget {
                             ref.read(selectedRadiusProvider.notifier).select(value),
                         kmLabel: strings('common.km'),
                       ),
-                      const SizedBox(height: 14),
-                      LoczEntrance(
-                        child: _DiscoveryIntro(
-                          eyebrow: strings('feed.heroEyebrow'),
-                          title: strings('feed.heroTitle'),
-                          hint: strings('feed.heroHint'),
-                          liveLabel: strings('feed.localPulse', {'city': location}),
-                          countLabel: strings(
-                            'feed.localPulseHint',
-                            {'count': uniqueItems},
-                          ),
-                          actionLabel: strings('feed.browseAll'),
-                          onAction: () => context.go('/search'),
-                        ),
-                      ),
                       const SizedBox(height: 18),
-                      LoczEntrance(
-                        delay: const Duration(milliseconds: 70),
-                        child: _IntentDeck(
-                          strings: strings,
-                          onBuy: () => context.push('/search?type=PRODUCT'),
-                          onSell: () => context.push('/post'),
-                          onJobs: () => context.push('/search?type=JOB'),
-                          onServices: () => context.push('/search?type=SERVICE'),
-                        ),
-                      ),
-                      const SizedBox(height: 18),
-                      LoczEntrance(
-                        delay: const Duration(milliseconds: 110),
-                        child: _QuickAccess(strings: strings),
+                      _DiscoveryHeading(
+                        city: location,
+                        resultCount: uniqueItems,
+                        onViewAll: () => context.go('/explore'),
                       ),
                     ],
                   ),
                 ),
-                const SliverToBoxAdapter(child: _WeatherStrip()),
-                const SliverToBoxAdapter(child: _AroundYouSection()),
-                const SliverToBoxAdapter(child: _LocalNewsSection()),
-                const SliverToBoxAdapter(child: _LocalJobsSection()),
-                if (feedItems.isEmpty)
+                SliverToBoxAdapter(
+                  child: _AroundYouSection(
+                    selectedArea: _selectedArea,
+                    onSelect: _selectArea,
+                  ),
+                ),
+                SliverToBoxAdapter(
+                  child: SizedBox(key: _feedAnchor, height: 18),
+                ),
+                SliverPersistentHeader(
+                  pinned: true,
+                  delegate: _FeedToolbarDelegate(
+                    title: _selectedArea == null
+                        ? strings('feed.aroundYou')
+                        : strings('area.${_selectedArea!}'),
+                    selectedArea: _selectedArea,
+                    latestFirst: _latestFirst,
+                    onExplore: _returnToExplore,
+                    onSortChanged: (latest) => setState(() => _latestFirst = latest),
+                  ),
+                ),
+                if (visibleItems.isEmpty)
                   SliverFillRemaining(
                     hasScrollBody: false,
                     child: _EmptyFeed(
@@ -139,25 +197,11 @@ class HomeScreen extends ConsumerWidget {
                   )
                 else ...[
                   SliverPadding(
-                    padding: const EdgeInsets.fromLTRB(16, 26, 16, 8),
-                    sliver: SliverToBoxAdapter(
-                      child: _SectionHeader(
-                        title: strings('feed.aroundYou'),
-                        hint: data.radiusWidened
-                            ? strings(
-                                'feed.radiusWidened',
-                                {'radius': '$radiusKm'},
-                              )
-                            : strings('feed.aroundYouHint'),
-                      ),
-                    ),
-                  ),
-                  SliverPadding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    padding: const EdgeInsets.fromLTRB(16, 10, 16, 0),
                     sliver: SliverList.builder(
-                      itemCount: feedItems.length,
+                      itemCount: visibleItems.length,
                       itemBuilder: (context, index) {
-                        final listing = feedItems[index];
+                        final listing = visibleItems[index];
                         final tag = 'home-feed-${listing.id}';
                         return Padding(
                           padding: const EdgeInsets.only(bottom: 14),
@@ -178,13 +222,21 @@ class HomeScreen extends ConsumerWidget {
                     ),
                   ),
                 ],
-                const SliverToBoxAdapter(child: _NearbyBusinessesSection()),
+                if (_selectedArea == null || _selectedArea == 'businesses')
+                  const SliverToBoxAdapter(child: _NearbyBusinessesSection()),
                 const SliverToBoxAdapter(child: SizedBox(height: 32)),
               ],
             );
           },
         ),
       ),
+      floatingActionButton: _selectedArea == null
+          ? null
+          : FloatingActionButton.extended(
+              onPressed: _returnToExplore,
+              icon: const Icon(Icons.arrow_upward_rounded),
+              label: Text(strings('feed.backToExplore')),
+            ),
     );
   }
 }
@@ -639,6 +691,8 @@ class _AmbientRings extends StatelessWidget {
       );
 }
 
+// Retained while the Explore screen is migrated to the same interaction model.
+// ignore: unused_element
 class _IntentDeck extends StatelessWidget {
   const _IntentDeck({
     required this.strings,
@@ -850,6 +904,8 @@ class _RadiusSelector extends StatelessWidget {
 }
 
 /// Quick access — 6–8 high-value shortcuts; "More" opens Explore (prompt §10).
+// Retained while the Explore screen is migrated to the same interaction model.
+// ignore: unused_element
 class _QuickAccess extends StatelessWidget {
   const _QuickAccess({required this.strings});
 
@@ -947,8 +1003,64 @@ class _QuickTile extends StatelessWidget {
 /// nearest first with a distance and OLX-style band headers. Tapping opens the business.
 /// "Around you" — discovery-area counts rolled up from the POIs LocZ already holds, so a
 /// brand-new area reads as alive before anyone posts. Mirrors the web Home strip.
+class _DiscoveryHeading extends StatelessWidget {
+  const _DiscoveryHeading({
+    required this.city,
+    required this.resultCount,
+    required this.onViewAll,
+  });
+
+  final String city;
+  final int resultCount;
+  final VoidCallback onViewAll;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final strings = Strings.of(context);
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.end,
+      children: [
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                strings('feed.whatsNearYou'),
+                style: theme.textTheme.headlineSmall?.copyWith(
+                  fontWeight: FontWeight.w800,
+                  letterSpacing: -0.6,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                strings(
+                  'feed.discoverySummary',
+                  {'count': '$resultCount', 'city': city},
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
+              ),
+            ],
+          ),
+        ),
+        TextButton(onPressed: onViewAll, child: Text(strings('feed.viewAll'))),
+      ],
+    );
+  }
+}
+
 class _AroundYouSection extends ConsumerStatefulWidget {
-  const _AroundYouSection();
+  const _AroundYouSection({
+    required this.selectedArea,
+    required this.onSelect,
+  });
+
+  final String? selectedArea;
+  final ValueChanged<String> onSelect;
 
   @override
   ConsumerState<_AroundYouSection> createState() => _AroundYouSectionState();
@@ -1001,40 +1113,132 @@ class _AroundYouSectionState extends ConsumerState<_AroundYouSection> {
   Widget build(BuildContext context) {
     if (_loading || _areas.isEmpty) return const SizedBox.shrink();
     final strings = Strings.of(context);
-    final city = ref.watch(selectedCityProvider);
-    final cityName = (city?.name.isEmpty ?? true) ? strings('feed.nearby') : city!.name;
+    final visibleAreas = _areas.take(8).toList();
 
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 24, 16, 0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          _SectionHeader(
-            title: strings('area.title', {'city': cityName}),
-            hint: strings('area.kicker'),
-          ),
-          const SizedBox(height: 10),
-          SizedBox(
-            height: 96,
-            child: ListView.separated(
-              scrollDirection: Axis.horizontal,
-              itemCount: _areas.length,
-              separatorBuilder: (_, __) => const SizedBox(width: 10),
-              itemBuilder: (context, index) {
-                final entry = _areas[index];
-                return _AreaChip(
-                  asset: discoveryAreaAsset(entry.area),
-                  count: _formatCount(entry.count),
-                  label: strings('area.${entry.area}'),
-                  onTap: () => context.push('/search'),
-                );
-              },
-            ),
-          ),
-        ],
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+      child: GridView.builder(
+        shrinkWrap: true,
+        physics: const NeverScrollableScrollPhysics(),
+        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+          crossAxisCount: 4,
+          mainAxisSpacing: 10,
+          crossAxisSpacing: 10,
+          childAspectRatio: 0.88,
+        ),
+        itemCount: visibleAreas.length,
+        itemBuilder: (context, index) {
+          final entry = visibleAreas[index];
+          return _AreaChip(
+            asset: discoveryAreaAsset(entry.area),
+            count: _formatCount(entry.count),
+            label: strings('area.${entry.area}'),
+            selected: widget.selectedArea == entry.area,
+            onTap: () => widget.onSelect(entry.area),
+          );
+        },
       ),
     );
   }
+}
+
+class _FeedToolbarDelegate extends SliverPersistentHeaderDelegate {
+  _FeedToolbarDelegate({
+    required this.title,
+    required this.selectedArea,
+    required this.latestFirst,
+    required this.onExplore,
+    required this.onSortChanged,
+  });
+
+  final String title;
+  final String? selectedArea;
+  final bool latestFirst;
+  final VoidCallback onExplore;
+  final ValueChanged<bool> onSortChanged;
+
+  @override
+  double get minExtent => 102;
+
+  @override
+  double get maxExtent => 102;
+
+  @override
+  Widget build(
+    BuildContext context,
+    double shrinkOffset,
+    bool overlapsContent,
+  ) {
+    final theme = Theme.of(context);
+    final strings = Strings.of(context);
+    return Material(
+      color: theme.colorScheme.surface.withValues(alpha: 0.97),
+      elevation: overlapsContent ? 2 : 0,
+      shadowColor: theme.colorScheme.shadow.withValues(alpha: 0.12),
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(16, 10, 16, 8),
+        child: Column(
+          children: [
+            Row(
+              children: [
+                if (selectedArea != null)
+                  IconButton(
+                    onPressed: onExplore,
+                    icon: const Icon(Icons.arrow_back_rounded),
+                    tooltip: strings('feed.backToExplore'),
+                    visualDensity: VisualDensity.compact,
+                  ),
+                Expanded(
+                  child: Text(
+                    title,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w800),
+                  ),
+                ),
+                IconButton(
+                  onPressed: () => context.push('/search'),
+                  icon: const Icon(Icons.tune_rounded),
+                  tooltip: strings('feed.filters'),
+                ),
+              ],
+            ),
+            SizedBox(
+              height: 34,
+              child: ListView(
+                scrollDirection: Axis.horizontal,
+                children: [
+                  ChoiceChip(
+                    label: Text(strings('feed.nearest')),
+                    selected: !latestFirst,
+                    onSelected: (_) => onSortChanged(false),
+                  ),
+                  const SizedBox(width: 8),
+                  ChoiceChip(
+                    label: Text(strings('feed.latest')),
+                    selected: latestFirst,
+                    onSelected: (_) => onSortChanged(true),
+                  ),
+                  const SizedBox(width: 8),
+                  ActionChip(
+                    avatar: const Icon(Icons.verified_outlined, size: 16),
+                    label: Text(strings('feed.verified')),
+                    onPressed: () => context.push('/search?verified=true'),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  @override
+  bool shouldRebuild(covariant _FeedToolbarDelegate oldDelegate) =>
+      title != oldDelegate.title ||
+      selectedArea != oldDelegate.selectedArea ||
+      latestFirst != oldDelegate.latestFirst;
 }
 
 class _AreaChip extends StatelessWidget {
@@ -1042,58 +1246,75 @@ class _AreaChip extends StatelessWidget {
     required this.asset,
     required this.count,
     required this.label,
+    required this.selected,
     required this.onTap,
   });
 
   final String asset;
   final String count;
   final String label;
+  final bool selected;
   final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
     return Material(
-      color: theme.colorScheme.surface,
-      borderRadius: BorderRadius.circular(16),
+      color: selected ? scheme.primaryContainer : scheme.surface,
+      borderRadius: BorderRadius.circular(18),
       child: InkWell(
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(18),
         onTap: onTap,
-        child: Container(
-          width: 130,
-          padding: const EdgeInsets.all(12),
+        child: AnimatedContainer(
+          duration: LoczMotion.quick,
+          padding: const EdgeInsets.fromLTRB(8, 8, 8, 7),
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: theme.colorScheme.outlineVariant),
+            borderRadius: BorderRadius.circular(18),
+            border: Border.all(
+              color: selected ? scheme.primary : scheme.outlineVariant,
+              width: selected ? 1.5 : 1,
+            ),
+            boxShadow: selected
+                ? [
+                    BoxShadow(
+                      color: scheme.primary.withValues(alpha: 0.14),
+                      blurRadius: 16,
+                      offset: const Offset(0, 6),
+                    ),
+                  ]
+                : null,
           ),
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Container(
-                width: 34,
-                height: 34,
+                width: 44,
+                height: 44,
                 decoration: BoxDecoration(
-                  color: theme.colorScheme.primary.withValues(alpha: 0.10),
-                  borderRadius: BorderRadius.circular(10),
+                  color: scheme.primary.withValues(alpha: selected ? 0.14 : 0.08),
+                  borderRadius: BorderRadius.circular(13),
                 ),
-                child: Image.asset(asset, fit: BoxFit.contain),
+                child: Padding(
+                  padding: const EdgeInsets.all(3),
+                  child: Image.asset(asset, fit: BoxFit.contain),
+                ),
               ),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    count,
-                    style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800),
-                  ),
-                  Text(
-                    label,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: theme.textTheme.labelSmall
-                        ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
-                  ),
-                ],
+              const SizedBox(height: 6),
+              Text(
+                label,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                textAlign: TextAlign.center,
+                style: theme.textTheme.labelMedium?.copyWith(fontWeight: FontWeight.w700),
+              ),
+              Text(
+                count,
+                maxLines: 1,
+                style: theme.textTheme.labelSmall?.copyWith(
+                  color: scheme.onSurfaceVariant,
+                  fontSize: 10,
+                ),
               ),
             ],
           ),
@@ -1195,6 +1416,95 @@ class _WeatherStripState extends ConsumerState<_WeatherStrip> {
             ),
             Text(
               'MET Norway',
+              style:
+                  theme.textTheme.labelSmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// "Local alerts" — official NDMA SACHET public-safety warnings for the viewer's area, verbatim.
+/// Coral-accented, display-only. Hidden when there is nothing (or on error). Mirrors web.
+class _LocalAlertsSection extends ConsumerStatefulWidget {
+  const _LocalAlertsSection();
+
+  @override
+  ConsumerState<_LocalAlertsSection> createState() => _LocalAlertsSectionState();
+}
+
+class _LocalAlertsSectionState extends ConsumerState<_LocalAlertsSection> {
+  List<({String title, String? category, String? publishedAt})> _items = const [];
+  bool _loading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _load();
+  }
+
+  Future<void> _load() async {
+    final city = ref.read(selectedCityProvider);
+    final query = (city?.name.isEmpty ?? true) ? '' : city!.name;
+    try {
+      final items = await ref.read(listingRepositoryProvider).localAlerts(
+            query,
+            cityId: (city?.id.isEmpty ?? true) ? null : city!.id,
+          );
+      if (mounted) {
+        setState(() {
+          _items = items;
+          _loading = false;
+        });
+      }
+    } catch (_) {
+      if (mounted) setState(() => _loading = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_loading || _items.isEmpty) return const SizedBox.shrink();
+    final strings = Strings.of(context);
+    final theme = Theme.of(context);
+    final coral = theme.colorScheme.tertiary;
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+      child: Container(
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: coral.withValues(alpha: 0.08),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: coral.withValues(alpha: 0.4)),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(Icons.warning_amber_rounded, size: 20, color: coral),
+                const SizedBox(width: 8),
+                Text(
+                  strings('alerts.localTitle'),
+                  style: theme.textTheme.titleSmall
+                      ?.copyWith(fontWeight: FontWeight.w700, color: coral),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            for (final alert in _items)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 6),
+                child: Text(
+                  alert.title,
+                  style: theme.textTheme.bodyMedium,
+                ),
+              ),
+            Text(
+              'NDMA SACHET',
               style:
                   theme.textTheme.labelSmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
             ),
@@ -1405,7 +1715,10 @@ class _LocalJobsSectionState extends ConsumerState<_LocalJobsSection> {
                 borderRadius: BorderRadius.circular(14),
                 child: InkWell(
                   borderRadius: BorderRadius.circular(14),
-                  onTap: () => launchUrl(Uri.parse(job.url), mode: LaunchMode.externalApplication),
+                  onTap: () => launchUrl(
+                    Uri.parse(job.url),
+                    mode: LaunchMode.externalApplication,
+                  ),
                   child: Padding(
                     padding: const EdgeInsets.all(12),
                     child: Row(
@@ -1417,8 +1730,11 @@ class _LocalJobsSectionState extends ConsumerState<_LocalJobsSection> {
                             color: theme.colorScheme.primary.withValues(alpha: 0.10),
                             borderRadius: BorderRadius.circular(11),
                           ),
-                          child:
-                              Icon(Icons.work_outline, size: 18, color: theme.colorScheme.primary),
+                          child: Icon(
+                            Icons.work_outline,
+                            size: 18,
+                            color: theme.colorScheme.primary,
+                          ),
                         ),
                         const SizedBox(width: 12),
                         Expanded(
@@ -1439,13 +1755,18 @@ class _LocalJobsSectionState extends ConsumerState<_LocalJobsSection> {
                                     .join(' · '),
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
-                                style: theme.textTheme.labelSmall
-                                    ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+                                style: theme.textTheme.labelSmall?.copyWith(
+                                  color: theme.colorScheme.onSurfaceVariant,
+                                ),
                               ),
                             ],
                           ),
                         ),
-                        Icon(Icons.north_east, size: 16, color: theme.colorScheme.onSurfaceVariant),
+                        Icon(
+                          Icons.north_east,
+                          size: 16,
+                          color: theme.colorScheme.onSurfaceVariant,
+                        ),
                       ],
                     ),
                   ),

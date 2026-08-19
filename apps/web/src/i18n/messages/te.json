@@ -68,12 +68,12 @@
     "usefulCollections": "ఉపయోగకరమైన సేకరణలు",
     "yourCity": "మీ నగరం",
     "exploreKicker": "మీ చుట్టూ",
-    "exploreTitle": "{city}లో మీ దగ్గర ఏముంది",
+    "exploreTitle": "{city}లో మీ చుట్టూ ఏముంది",
     "localNewsKicker": "లోకల్ నౌ",
-    "localNewsTitle": "{city} చుట్టూ తాజా వార్తలు",
-    "jobsKicker": "సమీపంలో ఉద్యోగాలు",
-    "jobsTitle": "{city}లో ఉద్యోగాలు",
-    "alertsTitle": "స్థానిక హెచ్చరికలు"
+    "localNewsTitle": "{city}లో లేటెస్ట్",
+    "jobsKicker": "దగ్గర్లో జాబ్స్",
+    "jobsTitle": "{city}లో జాబ్స్",
+    "alertsTitle": "లోకల్ అలర్ట్స్"
   },
   "nav": {
     "home": "హోమ్",
@@ -928,9 +928,9 @@
     "businessesKicker": "సమీపంలోని ప్రదేశాలు",
     "loadingMoreBusinesses": "సమీపంలోని మరిన్ని వ్యాపారాలను లోడ్ చేస్తోంది…",
     "businessesTitle": "మీ దగ్గరలోని వ్యాపారాలు",
-    "businessVerified": "ధృవీకరించబడింది",
-    "businessClaim": "దీన్ని క్లెయిమ్ చేయండి",
-    "directions": "దిశలు",
+    "businessVerified": "వెరిఫైడ్",
+    "businessClaim": "క్లెయిమ్ చేయండి",
+    "directions": "డైరెక్షన్స్",
     "viewProfile": "ప్రొఫైల్ చూడండి",
     "listingCount": "{count} ప్రకటనలు",
     "saveSearch": "ఈ శోధనను సేవ్ చేయండి",
@@ -1009,7 +1009,7 @@
     "viewAllBusinesses": "అన్ని వ్యాపారాలు చూడండి",
     "widenSearch": "శోధనను విస్తరించండి",
     "withinKm": "{km} కి.మీ. లోపల",
-    "noBusinessesMatch": "ఈ ఫిల్టర్‌లకు సరిపోయే వ్యాపారాలు ఇంకా లేవు."
+    "noBusinessesMatch": "ఈ ఫిల్టర్‌లకు బిజినెస్‌లు లేవు."
   },
   "safetyPage": {
     "advanceBody": "ఇది అత్యంత సాధారణ మోసం. వస్తువును చూడకముందే డిపాజిట్, బుకింగ్ ఫీజు, రిజిస్ట్రేషన్ ఛార్జీ లేదా “తిరిగి ఇచ్చే” చెల్లింపు అడిగేవారు దాదాపు మిమ్మల్ని మోసం చేయాలనుకుంటున్నారు. నిజమైన అమ్మేవారికి కలిసినప్పుడు చెల్లిస్తారు. ఉద్యోగాల్లో కూడా నిజమైన యజమాని దరఖాస్తుకు డబ్బు అడగరు.",
@@ -1641,18 +1641,18 @@
     "phoneAction": "మొబైల్ నంబర్ ధృవీకరించండి"
   },
   "discoveryAreas": {
-    "food": "ఆహారం",
-    "health": "ఆరోగ్యం",
-    "services": "సేవలు",
+    "food": "ఫుడ్",
+    "health": "హెల్త్",
+    "services": "సర్వీసెస్",
     "shopping": "షాపింగ్",
-    "mobility": "రవాణా",
-    "home": "ఇల్లు & మరమ్మతు",
-    "jobs": "ఉద్యోగాలు",
-    "events": "కార్యక్రమాలు",
-    "rentals": "అద్దెలు",
-    "deals": "ఆఫర్లు",
-    "businesses": "వ్యాపారాలు",
-    "play": "ఆట",
-    "pets": "పెంపుడు జంతువులు"
+    "mobility": "వెహికల్స్",
+    "home": "హోమ్ & రిపేర్",
+    "jobs": "జాబ్స్",
+    "events": "ఈవెంట్స్",
+    "rentals": "రెంటల్స్",
+    "deals": "డీల్స్",
+    "businesses": "బిజినెస్‌లు",
+    "play": "స్పోర్ట్స్",
+    "pets": "పెట్స్"
   }
 }
