@@ -396,314 +396,336 @@ export default async function HomePage({
       </section>
 
       <div className="container home-desktop-content">
-        {weather ? (
-          <div className="local-now" role="status">
-            <span className="local-now__icon" aria-hidden="true">
-              {weatherEmoji(weather.condition)}
-            </span>
-            <strong>{weather.tempC}°C</strong>
-            <span className="local-now__desc">{weather.description}</span>
-            {/* Required MET Norway attribution — a brand name, identical in every language. */}
-            <span className="local-now__attribution">{'MET Norway'}</span>
-          </div>
-        ) : null}
-
-        {alerts.length > 0 ? (
-          <section className="local-alerts" aria-labelledby="local-alerts-title" role="alert">
-            <div className="local-alerts__head">
-              <Icon name="alert" />
-              <h2 id="local-alerts-title">{t('home.alertsTitle')}</h2>
+        <div className="home-status-rail">
+          {weather ? (
+            <div className="local-now" role="status">
+              <span className="local-now__icon" aria-hidden="true">
+                {weatherEmoji(weather.condition)}
+              </span>
+              <span className="local-now__body">
+                <span className="local-now__eyebrow">{t('home.heroWeather')}</span>
+                <span className="local-now__reading">
+                  <strong>{weather.tempC}°C</strong>
+                  <span className="local-now__desc">{weather.description}</span>
+                </span>
+              </span>
+              {/* Required MET Norway attribution — a brand name, identical in every language. */}
+              <span className="local-now__attribution">{'MET Norway'}</span>
             </div>
-            <ul className="local-alerts__list">
-              {alerts.map((alert) => {
-                const when = relativeTime(alert.publishedAt, locale);
-                return (
-                  <li key={alert.title}>
-                    <span>{alert.title}</span>
-                    {when ? <time>{when}</time> : null}
-                  </li>
-                );
-              })}
-            </ul>
-            {/* NDMA SACHET is an official source name — identical in every language. */}
-            <p className="local-alerts__attribution">{'NDMA SACHET'}</p>
-          </section>
-        ) : null}
+          ) : null}
 
-        {newsHeadlines.length > 0 ? (
-          <section className="local-news" aria-labelledby="local-news-title">
-            <div className="local-news__head">
-              <span className="section-kicker">{t('home.localNewsKicker')}</span>
-              <h2 id="local-news-title">{t('home.localNewsTitle', { city: feedCity })}</h2>
-            </div>
-            <ul className="local-news__list">
-              {newsHeadlines.slice(0, 5).map((item) => {
-                const when = relativeTime(item.publishedAt, locale);
-                return (
-                  <li key={item.url}>
-                    <a href={item.url} target="_blank" rel="noopener noreferrer">
-                      <span className="local-news__dot" aria-hidden="true" />
-                      <span className="local-news__body">
-                        <strong>{item.title}</strong>
-                        <span className="local-news__meta">
-                          {item.source}
-                          {when ? ` · ${when}` : ''}
+          {alerts.length > 0 ? (
+            <section className="local-alerts" aria-labelledby="local-alerts-title" role="alert">
+              <div className="local-alerts__head">
+                <Icon name="alert" />
+                <h2 id="local-alerts-title">{t('home.alertsTitle')}</h2>
+              </div>
+              <ul className="local-alerts__list">
+                {alerts.map((alert) => {
+                  const when = relativeTime(alert.publishedAt, locale);
+                  return (
+                    <li key={alert.title}>
+                      <span>{alert.title}</span>
+                      {when ? <time>{when}</time> : null}
+                    </li>
+                  );
+                })}
+              </ul>
+              {/* NDMA SACHET is an official source name — identical in every language. */}
+              <p className="local-alerts__attribution">{'NDMA SACHET'}</p>
+            </section>
+          ) : null}
+        </div>
+
+        <div className="home-content-shell">
+          {newsHeadlines.length > 0 ? (
+            <section className="local-news" aria-labelledby="local-news-title">
+              <div className="local-news__head">
+                <div>
+                  <span className="section-kicker">{t('home.localNewsKicker')}</span>
+                  <h2 id="local-news-title">{t('home.localNewsTitle', { city: feedCity })}</h2>
+                </div>
+                <Link href="/discover/local-now" className="local-city-panel__action">
+                  {t('feed.seeAll')} <Icon name="arrow" />
+                </Link>
+              </div>
+              <ul className="local-news__list">
+                {newsHeadlines.slice(0, 5).map((item) => {
+                  const when = relativeTime(item.publishedAt, locale);
+                  return (
+                    <li key={item.url}>
+                      <a href={item.url} target="_blank" rel="noopener noreferrer">
+                        <span className="local-news__dot" aria-hidden="true" />
+                        <span className="local-news__body">
+                          <strong>{item.title}</strong>
+                          <span className="local-news__meta">
+                            {item.source}
+                            {when ? ` · ${when}` : ''}
+                          </span>
                         </span>
+                        <Icon name="arrow" />
+                      </a>
+                    </li>
+                  );
+                })}
+              </ul>
+              {/* Google News is a brand name — identical in every language. */}
+              <p className="local-news__attribution">{'Google News'}</p>
+            </section>
+          ) : null}
+
+          <main className="home-main-column">
+            {!feed || feed.sections.length === 0 ? (
+              <div className="empty-state">
+                <img
+                  className="empty-state__art"
+                  src="/illustrations/empty-neighbourhood.webp"
+                  alt=""
+                  width="280"
+                  height="230"
+                />
+                <h1 className="page-title">{t('brand.tagline')}</h1>
+                <p>{t('feed.empty')}</p>
+                <Link href="/post" className="btn btn--primary" style={{ marginTop: 16 }}>
+                  <Icon name="plus" width="18" height="18" /> {t('nav.post')}
+                </Link>
+              </div>
+            ) : (
+              <>
+                <section className="home-feed-toolbar" id="local-feed">
+                  <div>
+                    {selectedArea ? (
+                      <Link href="/#home-top" className="home-feed-toolbar__back">
+                        <Icon name="arrow" /> {t('home.explore')}
+                      </Link>
+                    ) : (
+                      <span className="section-kicker">{t('home.feedKicker')}</span>
+                    )}
+                    <h2>
+                      {selectedArea
+                        ? (areaLabels[selectedArea] ?? selectedArea)
+                        : t('home.feedTitle', { city: feed.cityName })}
+                    </h2>
+                  </div>
+                  <div className="home-feed-toolbar__filters" aria-label={searchLabels.filters}>
+                    <Link
+                      href={`/?${selectedArea ? `area=${encodeURIComponent(selectedArea)}&` : ''}sort=nearest#local-feed`}
+                      className={sort !== 'latest' ? 'is-active' : ''}
+                    >
+                      {searchLabels.nearestFirst}
+                    </Link>
+                    <Link
+                      href={`/?${selectedArea ? `area=${encodeURIComponent(selectedArea)}&` : ''}sort=latest#local-feed`}
+                      className={sort === 'latest' ? 'is-active' : ''}
+                    >
+                      {searchLabels.latestFirst}
+                    </Link>
+                    <Link href="/search">
+                      <Icon name="sliders" /> {searchLabels.filters}
+                    </Link>
+                  </div>
+                </section>
+
+                <div className="card-grid home-feed-grid">
+                  {visibleFeedItems.slice(0, 6).map((listing) => (
+                    <ListingCard key={listing.id} listing={listing} t={t} />
+                  ))}
+                </div>
+
+                <aside className="home-post-invitation">
+                  <span className="home-post-invitation__icon">
+                    <Icon name="plus" />
+                  </span>
+                  <div>
+                    <span className="section-kicker">{t('home.postKicker')}</span>
+                    <h2>{t('home.postTitle')}</h2>
+                    <p>{t('home.postBody')}</p>
+                  </div>
+                  <Link href="/post" className="btn btn--primary">
+                    {t('home.postFree')} <Icon name="arrow" />
+                  </Link>
+                </aside>
+              </>
+            )}
+
+            {homeBusinesses.items.length > 0 ? (
+              <section className="search-businesses" aria-labelledby="home-businesses-title">
+                <div className="search-businesses__head">
+                  <div>
+                    <span className="section-kicker">{searchLabels.businessesKicker}</span>
+                    <h2 id="home-businesses-title">{searchLabels.businessesTitle}</h2>
+                  </div>
+                  <Link href="/business">
+                    {t('feed.seeAll')} <Icon name="arrow" />
+                  </Link>
+                </div>
+                <NearbyBusinesses
+                  pincode={city?.pincode}
+                  cityId={city?.id ?? feed?.cityId}
+                  latitude={city?.latitude}
+                  longitude={city?.longitude}
+                  radiusKm={radiusKm}
+                  initial={homeBusinesses.items.slice(0, 9)}
+                  initialHasMore={false}
+                  verifiedLabel={searchLabels.businessVerified}
+                  claimLabel={searchLabels.businessClaim}
+                  directionsLabel={searchLabels.directions}
+                  viewProfileLabel={searchLabels.viewProfile}
+                  listingsLabel={searchLabels.listingCount}
+                  nearYou={searchLabels.nearYou}
+                  loadingLabel={searchLabels.loadingMoreBusinesses}
+                  kmLabel={t('common.km')}
+                  withinKm={searchLabels.withinKm}
+                  areaOptions={areaSummary.areas.map(({ area }) => ({
+                    key: area,
+                    label: areaLabels[area] ?? area,
+                  }))}
+                  allCategoriesLabel={searchLabels.allCategories}
+                  verifiedOnlyLabel={searchLabels.verifiedOnly}
+                  emptyLabel={searchLabels.noBusinessesMatch}
+                />
+              </section>
+            ) : null}
+
+            {/* Discovery first: the marketing intents and the full category grid sit BELOW the
+            live "around you" feed, so a returning user sees real nearby inventory first. */}
+            {topCategories.length > 0 ? (
+              <section className="category-section">
+                <div className="section__head">
+                  <div>
+                    <span className="section-kicker">{t('home.explore')}</span>
+                    <h2>{t('feed.browseCategories')}</h2>
+                  </div>
+                  <Link href="/search" className="section-link">
+                    {t('feed.seeAll')} <Icon name="arrow" />
+                  </Link>
+                </div>
+                <nav className="category-strip" aria-label={t('feed.browseCategories')}>
+                  {topCategories.map((category, index) => (
+                    <Link
+                      key={category.id}
+                      href={`/c/${category.slug}`}
+                      className={`category-chip category-chip--${(index % 6) + 1}`}
+                    >
+                      <span className="category-chip__icon" aria-hidden="true">
+                        <Image
+                          src={premiumCategoryArtwork({ slug: category.slug, name: category.name })}
+                          alt=""
+                          width={64}
+                          height={64}
+                        />
+                      </span>
+                      <span>
+                        {localisedCategoryName(category, locale)}
+                        {countByCategory.get(category.id) ? (
+                          <small className="category-chip__count">
+                            {countByCategory.get(category.id)!.toLocaleString()}{' '}
+                            {t('home.countNearby')}
+                          </small>
+                        ) : null}
+                      </span>
+                      <i aria-hidden="true">→</i>
+                    </Link>
+                  ))}
+                </nav>
+              </section>
+            ) : null}
+
+            <section className="home-intents" aria-labelledby="home-intents-title">
+              <div className="home-intents__intro">
+                <span className="section-kicker">{t('home.intentsKicker')}</span>
+                <h2 id="home-intents-title">{t('home.intentsTitle')}</h2>
+              </div>
+              <div className="home-intents__grid">
+                {[
+                  {
+                    href: '/search?type=PRODUCT',
+                    icon: 'tag',
+                    title: t('home.intentFindTitle'),
+                    text: t('home.intentFindBody'),
+                  },
+                  {
+                    href: '/post',
+                    icon: 'plus',
+                    title: t('home.intentSellTitle'),
+                    text: t('home.intentSellBody'),
+                  },
+                  {
+                    href: '/search?type=JOB',
+                    icon: 'briefcase',
+                    title: t('home.intentWorkTitle'),
+                    text: t('home.intentWorkBody'),
+                  },
+                  {
+                    href: '/business',
+                    icon: 'tools',
+                    title: t('home.intentHelpTitle'),
+                    text: t('home.intentHelpBody'),
+                  },
+                ].map((intent) => (
+                  <Link key={intent.title} href={intent.href} className="home-intent">
+                    <span>
+                      <Icon name={intent.icon} />
+                    </span>
+                    <div>
+                      <strong>{intent.title}</strong>
+                      <p>{intent.text}</p>
+                    </div>
+                    <Icon name="arrow" />
+                  </Link>
+                ))}
+              </div>
+            </section>
+          </main>
+
+          {jobs.length > 0 ? (
+            <section className="local-jobs" aria-labelledby="local-jobs-title">
+              <div className="local-jobs__head">
+                <div>
+                  <span className="section-kicker">{t('home.jobsKicker')}</span>
+                  <h2 id="local-jobs-title">{t('home.jobsTitle', { city: feedCity })}</h2>
+                </div>
+                <Link href="/discover/jobs" className="local-city-panel__action">
+                  {t('feed.seeAll')} <Icon name="arrow" />
+                </Link>
+              </div>
+              <div className="local-jobs__list">
+                {jobs.slice(0, 5).map((job) => {
+                  const salary = formatSalary(job.salaryMin, job.salaryMax);
+                  const when = relativeTime(job.postedAt, locale);
+                  return (
+                    <a
+                      key={job.url}
+                      href={job.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="local-jobs__card"
+                    >
+                      <span className="local-jobs__icon" aria-hidden="true">
+                        <Icon name="briefcase" />
+                      </span>
+                      <span className="local-jobs__body">
+                        <strong>{job.title}</strong>
+                        <span className="local-jobs__meta">
+                          {[job.company, job.location].filter(Boolean).join(' · ')}
+                        </span>
+                        {salary || when ? (
+                          <span className="local-jobs__tags">
+                            {salary ? <span className="local-jobs__salary">{salary}</span> : null}
+                            {when ? <span>{when}</span> : null}
+                          </span>
+                        ) : null}
                       </span>
                       <Icon name="arrow" />
                     </a>
-                  </li>
-                );
-              })}
-            </ul>
-            {/* Google News is a brand name — identical in every language. */}
-            <p className="local-news__attribution">{'Google News'}</p>
-          </section>
-        ) : null}
-
-        {jobs.length > 0 ? (
-          <section className="local-jobs" aria-labelledby="local-jobs-title">
-            <div className="local-jobs__head">
-              <span className="section-kicker">{t('home.jobsKicker')}</span>
-              <h2 id="local-jobs-title">{t('home.jobsTitle', { city: feedCity })}</h2>
-            </div>
-            <div className="local-jobs__list">
-              {jobs.slice(0, 5).map((job) => {
-                const salary = formatSalary(job.salaryMin, job.salaryMax);
-                const when = relativeTime(job.postedAt, locale);
-                return (
-                  <a
-                    key={job.url}
-                    href={job.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="local-jobs__card"
-                  >
-                    <span className="local-jobs__icon" aria-hidden="true">
-                      <Icon name="briefcase" />
-                    </span>
-                    <span className="local-jobs__body">
-                      <strong>{job.title}</strong>
-                      <span className="local-jobs__meta">
-                        {[job.company, job.location].filter(Boolean).join(' · ')}
-                      </span>
-                      {salary || when ? (
-                        <span className="local-jobs__tags">
-                          {salary ? <span className="local-jobs__salary">{salary}</span> : null}
-                          {when ? <span>{when}</span> : null}
-                        </span>
-                      ) : null}
-                    </span>
-                    <Icon name="arrow" />
-                  </a>
-                );
-              })}
-            </div>
-            {/* Adzuna is a brand name — identical in every language. */}
-            <p className="local-jobs__attribution">{'Adzuna'}</p>
-          </section>
-        ) : null}
-
-        {!feed || feed.sections.length === 0 ? (
-          <div className="empty-state">
-            <img
-              className="empty-state__art"
-              src="/illustrations/empty-neighbourhood.webp"
-              alt=""
-              width="280"
-              height="230"
-            />
-            <h1 className="page-title">{t('brand.tagline')}</h1>
-            <p>{t('feed.empty')}</p>
-            <Link href="/post" className="btn btn--primary" style={{ marginTop: 16 }}>
-              <Icon name="plus" width="18" height="18" /> {t('nav.post')}
-            </Link>
-          </div>
-        ) : (
-          <>
-            <section className="home-feed-toolbar" id="local-feed">
-              <div>
-                {selectedArea ? (
-                  <Link href="/#home-top" className="home-feed-toolbar__back">
-                    <Icon name="arrow" /> {t('home.explore')}
-                  </Link>
-                ) : (
-                  <span className="section-kicker">{t('home.feedKicker')}</span>
-                )}
-                <h2>
-                  {selectedArea
-                    ? (areaLabels[selectedArea] ?? selectedArea)
-                    : t('home.feedTitle', { city: feed.cityName })}
-                </h2>
+                  );
+                })}
               </div>
-              <div className="home-feed-toolbar__filters" aria-label={searchLabels.filters}>
-                <Link
-                  href={`/?${selectedArea ? `area=${encodeURIComponent(selectedArea)}&` : ''}sort=nearest#local-feed`}
-                  className={sort !== 'latest' ? 'is-active' : ''}
-                >
-                  {searchLabels.nearestFirst}
-                </Link>
-                <Link
-                  href={`/?${selectedArea ? `area=${encodeURIComponent(selectedArea)}&` : ''}sort=latest#local-feed`}
-                  className={sort === 'latest' ? 'is-active' : ''}
-                >
-                  {searchLabels.latestFirst}
-                </Link>
-                <Link href="/search">
-                  <Icon name="sliders" /> {searchLabels.filters}
-                </Link>
-              </div>
+              {/* Adzuna is a brand name — identical in every language. */}
+              <p className="local-jobs__attribution">{'Adzuna'}</p>
             </section>
-
-            <div className="card-grid home-feed-grid">
-              {visibleFeedItems.slice(0, 6).map((listing) => (
-                <ListingCard key={listing.id} listing={listing} t={t} />
-              ))}
-            </div>
-
-            <aside className="home-post-invitation">
-              <span className="home-post-invitation__icon">
-                <Icon name="plus" />
-              </span>
-              <div>
-                <span className="section-kicker">{t('home.postKicker')}</span>
-                <h2>{t('home.postTitle')}</h2>
-                <p>{t('home.postBody')}</p>
-              </div>
-              <Link href="/post" className="btn btn--primary">
-                {t('home.postFree')} <Icon name="arrow" />
-              </Link>
-            </aside>
-          </>
-        )}
-
-        {homeBusinesses.items.length > 0 ? (
-          <section className="search-businesses" aria-labelledby="home-businesses-title">
-            <div className="search-businesses__head">
-              <div>
-                <span className="section-kicker">{searchLabels.businessesKicker}</span>
-                <h2 id="home-businesses-title">{searchLabels.businessesTitle}</h2>
-              </div>
-              <Link href="/business">
-                {t('feed.seeAll')} <Icon name="arrow" />
-              </Link>
-            </div>
-            <NearbyBusinesses
-              pincode={city?.pincode}
-              cityId={city?.id ?? feed?.cityId}
-              latitude={city?.latitude}
-              longitude={city?.longitude}
-              radiusKm={radiusKm}
-              initial={homeBusinesses.items.slice(0, 9)}
-              initialHasMore={false}
-              verifiedLabel={searchLabels.businessVerified}
-              claimLabel={searchLabels.businessClaim}
-              directionsLabel={searchLabels.directions}
-              viewProfileLabel={searchLabels.viewProfile}
-              listingsLabel={searchLabels.listingCount}
-              nearYou={searchLabels.nearYou}
-              loadingLabel={searchLabels.loadingMoreBusinesses}
-              kmLabel={t('common.km')}
-              withinKm={searchLabels.withinKm}
-              areaOptions={areaSummary.areas.map(({ area }) => ({
-                key: area,
-                label: areaLabels[area] ?? area,
-              }))}
-              allCategoriesLabel={searchLabels.allCategories}
-              verifiedOnlyLabel={searchLabels.verifiedOnly}
-              emptyLabel={searchLabels.noBusinessesMatch}
-            />
-          </section>
-        ) : null}
-
-        {/* Discovery first: the marketing intents and the full category grid sit BELOW the
-            live "around you" feed, so a returning user sees real nearby inventory first. */}
-        {topCategories.length > 0 ? (
-          <section className="category-section">
-            <div className="section__head">
-              <div>
-                <span className="section-kicker">{t('home.explore')}</span>
-                <h2>{t('feed.browseCategories')}</h2>
-              </div>
-              <Link href="/search" className="section-link">
-                {t('feed.seeAll')} <Icon name="arrow" />
-              </Link>
-            </div>
-            <nav className="category-strip" aria-label={t('feed.browseCategories')}>
-              {topCategories.map((category, index) => (
-                <Link
-                  key={category.id}
-                  href={`/c/${category.slug}`}
-                  className={`category-chip category-chip--${(index % 6) + 1}`}
-                >
-                  <span className="category-chip__icon" aria-hidden="true">
-                    <Image
-                      src={premiumCategoryArtwork({ slug: category.slug, name: category.name })}
-                      alt=""
-                      width={64}
-                      height={64}
-                    />
-                  </span>
-                  <span>
-                    {localisedCategoryName(category, locale)}
-                    {countByCategory.get(category.id) ? (
-                      <small className="category-chip__count">
-                        {countByCategory.get(category.id)!.toLocaleString()} {t('home.countNearby')}
-                      </small>
-                    ) : null}
-                  </span>
-                  <i aria-hidden="true">→</i>
-                </Link>
-              ))}
-            </nav>
-          </section>
-        ) : null}
-
-        <section className="home-intents" aria-labelledby="home-intents-title">
-          <div className="home-intents__intro">
-            <span className="section-kicker">{t('home.intentsKicker')}</span>
-            <h2 id="home-intents-title">{t('home.intentsTitle')}</h2>
-          </div>
-          <div className="home-intents__grid">
-            {[
-              {
-                href: '/search?type=PRODUCT',
-                icon: 'tag',
-                title: t('home.intentFindTitle'),
-                text: t('home.intentFindBody'),
-              },
-              {
-                href: '/post',
-                icon: 'plus',
-                title: t('home.intentSellTitle'),
-                text: t('home.intentSellBody'),
-              },
-              {
-                href: '/search?type=JOB',
-                icon: 'briefcase',
-                title: t('home.intentWorkTitle'),
-                text: t('home.intentWorkBody'),
-              },
-              {
-                href: '/business',
-                icon: 'tools',
-                title: t('home.intentHelpTitle'),
-                text: t('home.intentHelpBody'),
-              },
-            ].map((intent) => (
-              <Link key={intent.title} href={intent.href} className="home-intent">
-                <span>
-                  <Icon name={intent.icon} />
-                </span>
-                <div>
-                  <strong>{intent.title}</strong>
-                  <p>{intent.text}</p>
-                </div>
-                <Icon name="arrow" />
-              </Link>
-            ))}
-          </div>
-        </section>
+          ) : null}
+        </div>
       </div>
     </>
   );
