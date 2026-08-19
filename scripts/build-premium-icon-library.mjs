@@ -128,8 +128,27 @@ for (const [index, entry] of catalog.entries()) {
   const cellIndex = index % batchSize;
   const column = cellIndex % gridSize;
   const row = Math.floor(cellIndex / gridSize);
-  const cell = await sharp(normalizedSheets[sheetIndex])
+  const extracted = await sharp(normalizedSheets[sheetIndex])
     .extract({ left: column * cellSize, top: row * cellSize, width: cellSize, height: cellSize })
+    .ensureAlpha()
+    .raw()
+    .toBuffer({ resolveWithObject: true });
+  // GPT occasionally draws a separator stroke close to the conceptual cell boundary.
+  // The prompt keeps artwork inside the central 72%, so clearing the outer 11% is safe.
+  const border = 28;
+  for (let y = 0; y < cellSize; y += 1) {
+    for (let x = 0; x < cellSize; x += 1) {
+      if (x >= border && x < cellSize - border && y >= border && y < cellSize - border) continue;
+      extracted.data[(y * cellSize + x) * extracted.info.channels + 3] = 0;
+    }
+  }
+  const cell = await sharp(extracted.data, {
+    raw: {
+      width: cellSize,
+      height: cellSize,
+      channels: extracted.info.channels,
+    },
+  })
     .png()
     .toBuffer();
   const cropped = await sharp(cell)
@@ -142,7 +161,7 @@ for (const [index, entry] of catalog.entries()) {
       left: 16,
       background: { r: 0, g: 0, b: 0, alpha: 0 },
     })
-    .webp({ quality: 88, alphaQuality: 100, effort: 6 })
+    .webp({ quality: 88, alphaQuality: 100, effort: 4 })
     .toBuffer();
 
   for (const destination of destinations[entry.kind]) {

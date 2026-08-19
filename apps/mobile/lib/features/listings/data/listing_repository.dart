@@ -142,6 +142,8 @@ class ListingRepository {
     int? radiusKm,
     String? pincode,
     String? cityId,
+    String? area,
+    bool verifiedOnly = false,
     int page = 1,
     int limit = 20,
   }) async {
@@ -158,6 +160,8 @@ class ListingRepository {
         },
         if (pincode != null) 'pincode': pincode,
         if (!geo && cityId != null) 'cityId': cityId,
+        if (area != null) 'area': area,
+        if (verifiedOnly) 'verifiedOnly': 'true',
         if (!geo) 'sort': 'recommended',
       },
     );
@@ -203,6 +207,43 @@ class ListingRepository {
         (
           area: (entry as Map<String, dynamic>)['area'] as String,
           count: (entry['count'] as num?)?.toInt() ?? 0,
+        ),
+    ];
+  }
+
+  /// Current weather for a point, for the "Local Now" strip. Null when not configured or on error.
+  Future<({num tempC, String condition, String description})?> localWeather(
+    double latitude,
+    double longitude,
+  ) async {
+    final json = await _api.get<Map<String, dynamic>>(
+      '/local-now/weather',
+      query: {'latitude': latitude, 'longitude': longitude},
+    );
+    final weather = json['weather'] as Map<String, dynamic>?;
+    if (weather == null) return null;
+    return (
+      tempC: (weather['tempC'] as num?) ?? 0,
+      condition: weather['condition'] as String? ?? '',
+      description: weather['description'] as String? ?? '',
+    );
+  }
+
+  /// Live local news headlines for an area, pulled on demand (never stored). Display-only:
+  /// headline + publisher + a link back to the original. Empty on any failure.
+  Future<List<({String title, String url, String source, String? publishedAt})>> localNews(
+    String query,
+  ) async {
+    if (query.trim().isEmpty) return const [];
+    final json = await _api.get<Map<String, dynamic>>('/local-now/news', query: {'q': query});
+    final headlines = (json['headlines'] as List<dynamic>? ?? []);
+    return [
+      for (final entry in headlines)
+        (
+          title: (entry as Map<String, dynamic>)['title'] as String? ?? '',
+          url: entry['url'] as String? ?? '',
+          source: entry['source'] as String? ?? '',
+          publishedAt: entry['publishedAt'] as String?,
         ),
     ];
   }

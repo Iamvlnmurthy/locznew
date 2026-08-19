@@ -124,7 +124,9 @@ class HomeScreen extends ConsumerWidget {
                     ],
                   ),
                 ),
+                const SliverToBoxAdapter(child: _WeatherStrip()),
                 const SliverToBoxAdapter(child: _AroundYouSection()),
+                const SliverToBoxAdapter(child: _LocalNewsSection()),
                 if (feedItems.isEmpty)
                   SliverFillRemaining(
                     hasScrollBody: false,
@@ -1116,6 +1118,234 @@ class _AreaChip extends StatelessWidget {
   }
 }
 
+/// "Local Now" weather — a compact strip (temperature + condition), MET Norway attributed.
+/// Hidden when there is no location or weather is not configured.
+class _WeatherStrip extends ConsumerStatefulWidget {
+  const _WeatherStrip();
+
+  @override
+  ConsumerState<_WeatherStrip> createState() => _WeatherStripState();
+}
+
+class _WeatherStripState extends ConsumerState<_WeatherStrip> {
+  ({num tempC, String condition, String description})? _weather;
+  bool _loading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _load();
+  }
+
+  Future<void> _load() async {
+    final city = ref.read(selectedCityProvider);
+    if (city?.latitude == null || city?.longitude == null) {
+      if (mounted) setState(() => _loading = false);
+      return;
+    }
+    try {
+      final weather =
+          await ref.read(listingRepositoryProvider).localWeather(city!.latitude!, city.longitude!);
+      if (mounted) {
+        setState(() {
+          _weather = weather;
+          _loading = false;
+        });
+      }
+    } catch (_) {
+      if (mounted) setState(() => _loading = false);
+    }
+  }
+
+  IconData _iconFor(String condition) {
+    final value = condition.toLowerCase();
+    if (value.contains('thunder')) return Icons.thunderstorm;
+    if (value.contains('snow') || value.contains('sleet')) return Icons.ac_unit;
+    if (value.contains('rain') || value.contains('drizzle') || value.contains('shower')) {
+      return Icons.water_drop;
+    }
+    if (value.contains('fog') || value.contains('mist')) return Icons.foggy;
+    if (value.contains('cloud')) return Icons.cloud;
+    if (value.contains('clear') || value.contains('sun') || value.contains('fair')) {
+      return Icons.wb_sunny;
+    }
+    return Icons.cloud;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final weather = _weather;
+    if (_loading || weather == null) return const SizedBox.shrink();
+    final theme = Theme.of(context);
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+        decoration: BoxDecoration(
+          color: theme.colorScheme.surface,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: theme.colorScheme.outlineVariant),
+        ),
+        child: Row(
+          children: [
+            Icon(_iconFor(weather.condition), size: 20, color: theme.colorScheme.primary),
+            const SizedBox(width: 10),
+            Text(
+              '${weather.tempC.round()}°C',
+              style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                weather.description,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style:
+                    theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+              ),
+            ),
+            Text(
+              'MET Norway',
+              style:
+                  theme.textTheme.labelSmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// "Local Now" news — live local headlines for the city, pulled on demand, linking back to the
+/// publisher. Mirrors the web Home news strip. Hides itself when there is nothing (or on error).
+class _LocalNewsSection extends ConsumerStatefulWidget {
+  const _LocalNewsSection();
+
+  @override
+  ConsumerState<_LocalNewsSection> createState() => _LocalNewsSectionState();
+}
+
+class _LocalNewsSectionState extends ConsumerState<_LocalNewsSection> {
+  List<({String title, String url, String source, String? publishedAt})> _items = const [];
+  bool _loading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _load();
+  }
+
+  Future<void> _load() async {
+    final city = ref.read(selectedCityProvider);
+    final query = (city?.name.isEmpty ?? true) ? '' : city!.name;
+    try {
+      final items = await ref.read(listingRepositoryProvider).localNews(query);
+      if (mounted) {
+        setState(() {
+          _items = items;
+          _loading = false;
+        });
+      }
+    } catch (_) {
+      if (mounted) setState(() => _loading = false);
+    }
+  }
+
+  String? _relativeTime(String? iso) {
+    if (iso == null) return null;
+    final then = DateTime.tryParse(iso);
+    if (then == null) return null;
+    final diff = DateTime.now().difference(then);
+    if (diff.inMinutes < 60) return '${diff.inMinutes}m';
+    if (diff.inHours < 24) return '${diff.inHours}h';
+    return '${diff.inDays}d';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_loading || _items.isEmpty) return const SizedBox.shrink();
+    final strings = Strings.of(context);
+    final theme = Theme.of(context);
+    final city = ref.watch(selectedCityProvider);
+    final cityName = (city?.name.isEmpty ?? true) ? strings('feed.nearby') : city!.name;
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 24, 16, 0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _SectionHeader(
+            title: strings('news.title', {'city': cityName}),
+            hint: strings('news.kicker'),
+          ),
+          const SizedBox(height: 8),
+          for (final item in _items)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 8),
+              child: Material(
+                color: theme.colorScheme.surface,
+                borderRadius: BorderRadius.circular(14),
+                child: InkWell(
+                  borderRadius: BorderRadius.circular(14),
+                  onTap: () => launchUrl(Uri.parse(item.url), mode: LaunchMode.externalApplication),
+                  child: Padding(
+                    padding: const EdgeInsets.all(12),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Container(
+                          width: 8,
+                          height: 8,
+                          margin: const EdgeInsets.only(top: 5, right: 10),
+                          decoration: BoxDecoration(
+                            color: theme.colorScheme.tertiary,
+                            shape: BoxShape.circle,
+                          ),
+                        ),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                item.title,
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                                style: theme.textTheme.bodyMedium
+                                    ?.copyWith(fontWeight: FontWeight.w600),
+                              ),
+                              const SizedBox(height: 2),
+                              Text(
+                                [item.source, _relativeTime(item.publishedAt)]
+                                    .whereType<String>()
+                                    .where((part) => part.isNotEmpty)
+                                    .join(' · '),
+                                style: theme.textTheme.labelSmall
+                                    ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+                              ),
+                            ],
+                          ),
+                        ),
+                        Icon(Icons.north_east, size: 16, color: theme.colorScheme.onSurfaceVariant),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          Padding(
+            padding: const EdgeInsets.only(top: 4),
+            child: Text(
+              'Google News',
+              style:
+                  theme.textTheme.labelSmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class _NearbyBusinessesSection extends ConsumerStatefulWidget {
   const _NearbyBusinessesSection();
 
@@ -1126,12 +1356,16 @@ class _NearbyBusinessesSection extends ConsumerStatefulWidget {
 class _NearbyBusinessesSectionState extends ConsumerState<_NearbyBusinessesSection> {
   static const _bands = [1000, 3000, 5000, 10000, 25000];
   List<BusinessSummary> _items = const [];
+  List<String> _areaKeys = const [];
+  String? _activeArea;
+  bool _verifiedOnly = false;
   bool _loading = true;
 
   @override
   void initState() {
     super.initState();
     _load();
+    _loadAreas();
   }
 
   Future<void> _load() async {
@@ -1144,6 +1378,8 @@ class _NearbyBusinessesSectionState extends ConsumerState<_NearbyBusinessesSecti
             radiusKm: radius,
             pincode: city?.pincode,
             cityId: (city?.id.isEmpty ?? true) ? null : city!.id,
+            area: _activeArea,
+            verifiedOnly: _verifiedOnly,
             page: 1,
             limit: 12,
           );
@@ -1158,6 +1394,28 @@ class _NearbyBusinessesSectionState extends ConsumerState<_NearbyBusinessesSecti
     }
   }
 
+  Future<void> _loadAreas() async {
+    final city = ref.read(selectedCityProvider);
+    try {
+      final areas = await ref.read(listingRepositoryProvider).areaSummary(
+            cityId: (city?.id.isEmpty ?? true) ? null : city!.id,
+            pincode: city?.pincode,
+          );
+      if (mounted) setState(() => _areaKeys = areas.map((a) => a.area).toList());
+    } catch (_) {
+      /* filters just stay hidden */
+    }
+  }
+
+  void _applyFilter({String? area, bool? verified}) {
+    setState(() {
+      if (area != null) _activeArea = _activeArea == area ? null : area;
+      if (verified != null) _verifiedOnly = verified;
+      _loading = true;
+    });
+    _load();
+  }
+
   int _bandOf(num metres) {
     for (var i = 0; i < _bands.length; i += 1) {
       if (metres < _bands[i]) return i;
@@ -1167,7 +1425,12 @@ class _NearbyBusinessesSectionState extends ConsumerState<_NearbyBusinessesSecti
 
   @override
   Widget build(BuildContext context) {
-    if (_loading || _items.isEmpty) return const SizedBox.shrink();
+    final hasFilter = _activeArea != null || _verifiedOnly;
+    // Hide the whole section only on the first empty load. Once a filter is on, keep the bar
+    // visible (with an empty note) so the user can change or clear it.
+    if (_items.isEmpty && !hasFilter && (_loading || _areaKeys.isEmpty)) {
+      return const SizedBox.shrink();
+    }
     final strings = Strings.of(context);
     final theme = Theme.of(context);
 
@@ -1205,8 +1468,53 @@ class _NearbyBusinessesSectionState extends ConsumerState<_NearbyBusinessesSecti
             title: strings('business.nearbyTitle'),
             hint: strings('business.nearbyHint'),
           ),
+          if (_areaKeys.isNotEmpty) ...[
+            const SizedBox(height: 10),
+            SizedBox(
+              height: 36,
+              child: ListView(
+                scrollDirection: Axis.horizontal,
+                children: [
+                  FilterChip(
+                    label: Text(strings('search.businessVerified')),
+                    avatar: Icon(
+                      Icons.verified,
+                      size: 16,
+                      color: _verifiedOnly ? theme.colorScheme.primary : null,
+                    ),
+                    selected: _verifiedOnly,
+                    onSelected: (value) => _applyFilter(verified: value),
+                  ),
+                  const SizedBox(width: 8),
+                  for (final key in _areaKeys) ...[
+                    FilterChip(
+                      label: Text(strings('area.$key')),
+                      selected: _activeArea == key,
+                      onSelected: (_) => _applyFilter(area: key),
+                    ),
+                    const SizedBox(width: 8),
+                  ],
+                ],
+              ),
+            ),
+          ],
           const SizedBox(height: 8),
-          ...rows,
+          if (_loading)
+            const Padding(
+              padding: EdgeInsets.symmetric(vertical: 24),
+              child: Center(child: CircularProgressIndicator()),
+            )
+          else if (_items.isEmpty)
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 20),
+              child: Text(
+                strings('search.noBusinessesMatch'),
+                style:
+                    theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+              ),
+            )
+          else
+            ...rows,
         ],
       ),
     );

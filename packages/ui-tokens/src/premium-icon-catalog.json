@@ -1,0 +1,1052 @@
+{
+  "version": 1,
+  "categories": [
+    {
+      "kind": "category",
+      "name": "Groceries & Provisions",
+      "slug": "groceries-provisions"
+    },
+    {
+      "kind": "category",
+      "name": "Rice & Grains",
+      "slug": "rice-grains"
+    },
+    {
+      "kind": "category",
+      "name": "Pulses & Dals",
+      "slug": "pulses-dals"
+    },
+    {
+      "kind": "category",
+      "name": "Cooking Oil & Ghee",
+      "slug": "cooking-oil-ghee"
+    },
+    {
+      "kind": "category",
+      "name": "Spices & Masalas",
+      "slug": "spices-masalas"
+    },
+    {
+      "kind": "category",
+      "name": "Tea, Coffee & Beverages",
+      "slug": "tea-coffee-beverages"
+    },
+    {
+      "kind": "category",
+      "name": "Flour & Atta",
+      "slug": "flour-atta"
+    },
+    {
+      "kind": "category",
+      "name": "Sugar, Salt & Jaggery",
+      "slug": "sugar-salt-jaggery"
+    },
+    {
+      "kind": "category",
+      "name": "Dry Fruits & Nuts",
+      "slug": "dry-fruits-nuts"
+    },
+    {
+      "kind": "category",
+      "name": "Snacks & Namkeen",
+      "slug": "snacks-namkeen"
+    },
+    {
+      "kind": "category",
+      "name": "Pickles & Papads",
+      "slug": "pickles-papads"
+    },
+    {
+      "kind": "category",
+      "name": "Ready to Cook & Instant",
+      "slug": "ready-to-cook"
+    },
+    {
+      "kind": "category",
+      "name": "Fruits & Vegetables",
+      "slug": "fruits-vegetables"
+    },
+    {
+      "kind": "category",
+      "name": "Fresh Vegetables",
+      "slug": "fresh-vegetables"
+    },
+    {
+      "kind": "category",
+      "name": "Fresh Fruits",
+      "slug": "fresh-fruits"
+    },
+    {
+      "kind": "category",
+      "name": "Leafy Greens & Herbs",
+      "slug": "leafy-greens"
+    },
+    {
+      "kind": "category",
+      "name": "Organic Produce",
+      "slug": "organic-produce"
+    },
+    {
+      "kind": "category",
+      "name": "Dairy, Bakery & Eggs",
+      "slug": "dairy-bakery-eggs"
+    },
+    {
+      "kind": "category",
+      "name": "Milk, Curd & Butter",
+      "slug": "milk-curd"
+    },
+    {
+      "kind": "category",
+      "name": "Paneer & Cheese",
+      "slug": "paneer-cheese"
+    },
+    {
+      "kind": "category",
+      "name": "Bread & Buns",
+      "slug": "bread-buns"
+    },
+    {
+      "kind": "category",
+      "name": "Cakes & Pastries",
+      "slug": "cakes-pastries"
+    },
+    {
+      "kind": "category",
+      "name": "Sweets & Mithai",
+      "slug": "sweets-mithai"
+    },
+    {
+      "kind": "category",
+      "name": "Eggs",
+      "slug": "eggs"
+    },
+    {
+      "kind": "category",
+      "name": "Meat, Fish & Poultry",
+      "slug": "meat-fish-poultry"
+    },
+    {
+      "kind": "category",
+      "name": "Chicken",
+      "slug": "chicken"
+    },
+    {
+      "kind": "category",
+      "name": "Mutton & Goat",
+      "slug": "mutton"
+    },
+    {
+      "kind": "category",
+      "name": "Fish & Seafood",
+      "slug": "fish-seafood"
+    },
+    {
+      "kind": "category",
+      "name": "Processed & Frozen Meat",
+      "slug": "processed-meat"
+    },
+    {
+      "kind": "category",
+      "name": "Health & Personal Care",
+      "slug": "health-personal-care"
+    },
+    {
+      "kind": "category",
+      "name": "Medicines & Pharmacy",
+      "slug": "medicines-pharmacy"
+    },
+    {
+      "kind": "category",
+      "name": "Ayurveda & Herbal",
+      "slug": "ayurveda-herbal"
+    },
+    {
+      "kind": "category",
+      "name": "Skin Care",
+      "slug": "skin-care"
+    },
+    {
+      "kind": "category",
+      "name": "Hair Care",
+      "slug": "hair-care"
+    },
+    {
+      "kind": "category",
+      "name": "Bath & Body",
+      "slug": "bath-body"
+    },
+    {
+      "kind": "category",
+      "name": "Oral Care",
+      "slug": "oral-care"
+    },
+    {
+      "kind": "category",
+      "name": "Health Devices",
+      "slug": "health-devices"
+    },
+    {
+      "kind": "category",
+      "name": "Supplements & Nutrition",
+      "slug": "supplements"
+    },
+    {
+      "kind": "category",
+      "name": "Sanitary & Hygiene",
+      "slug": "sanitary-hygiene"
+    },
+    {
+      "kind": "category",
+      "name": "Beauty & Cosmetics",
+      "slug": "beauty-cosmetics"
+    },
+    {
+      "kind": "category",
+      "name": "Makeup",
+      "slug": "makeup"
+    },
+    {
+      "kind": "category",
+      "name": "Perfumes & Fragrances",
+      "slug": "fragrances"
+    },
+    {
+      "kind": "category",
+      "name": "Grooming",
+      "slug": "grooming"
+    },
+    {
+      "kind": "category",
+      "name": "Salon & Spa Products",
+      "slug": "salon-supplies"
+    },
+    {
+      "kind": "category",
+      "name": "Clothing & Footwear",
+      "slug": "clothing-footwear"
+    },
+    {
+      "kind": "category",
+      "name": "Mens Clothing",
+      "slug": "mens-clothing"
+    },
+    {
+      "kind": "category",
+      "name": "Womens Clothing",
+      "slug": "womens-clothing"
+    },
+    {
+      "kind": "category",
+      "name": "Sarees & Ethnic Wear",
+      "slug": "sarees-ethnic"
+    },
+    {
+      "kind": "category",
+      "name": "Kids Clothing",
+      "slug": "kids-clothing"
+    },
+    {
+      "kind": "category",
+      "name": "Footwear",
+      "slug": "footwear"
+    },
+    {
+      "kind": "category",
+      "name": "Bags & Luggage",
+      "slug": "bags-luggage"
+    },
+    {
+      "kind": "category",
+      "name": "Watches & Accessories",
+      "slug": "watches-accessories"
+    },
+    {
+      "kind": "category",
+      "name": "Jewellery & Imitation",
+      "slug": "jewellery"
+    },
+    {
+      "kind": "category",
+      "name": "Fabric & Tailoring Material",
+      "slug": "fabric-tailoring"
+    },
+    {
+      "kind": "category",
+      "name": "Home & Kitchen",
+      "slug": "home-kitchen"
+    },
+    {
+      "kind": "category",
+      "name": "Cookware & Utensils",
+      "slug": "cookware-utensils"
+    },
+    {
+      "kind": "category",
+      "name": "Storage & Containers",
+      "slug": "storage-containers"
+    },
+    {
+      "kind": "category",
+      "name": "Cleaning & Detergents",
+      "slug": "cleaning-supplies"
+    },
+    {
+      "kind": "category",
+      "name": "Home Decor",
+      "slug": "home-decor"
+    },
+    {
+      "kind": "category",
+      "name": "Bedding & Curtains",
+      "slug": "bedding-curtains"
+    },
+    {
+      "kind": "category",
+      "name": "Lighting & Electricals",
+      "slug": "lighting-electricals"
+    },
+    {
+      "kind": "category",
+      "name": "Gas Stoves & Cylinders",
+      "slug": "gas-stoves"
+    },
+    {
+      "kind": "category",
+      "name": "Plastic & Steelware",
+      "slug": "plastic-steel-ware"
+    },
+    {
+      "kind": "category",
+      "name": "Books, Stationery & Office",
+      "slug": "books-stationery"
+    },
+    {
+      "kind": "category",
+      "name": "Books",
+      "slug": "books"
+    },
+    {
+      "kind": "category",
+      "name": "School Supplies",
+      "slug": "school-supplies"
+    },
+    {
+      "kind": "category",
+      "name": "Office Stationery",
+      "slug": "office-stationery"
+    },
+    {
+      "kind": "category",
+      "name": "Art & Craft",
+      "slug": "art-craft"
+    },
+    {
+      "kind": "category",
+      "name": "Printing & Xerox Material",
+      "slug": "printing-supplies"
+    },
+    {
+      "kind": "category",
+      "name": "Sports, Fitness & Outdoors",
+      "slug": "sports-fitness"
+    },
+    {
+      "kind": "category",
+      "name": "Sports Equipment",
+      "slug": "sports-equipment"
+    },
+    {
+      "kind": "category",
+      "name": "Fitness & Gym Equipment",
+      "slug": "fitness-gym"
+    },
+    {
+      "kind": "category",
+      "name": "Cycles & Accessories",
+      "slug": "cycles"
+    },
+    {
+      "kind": "category",
+      "name": "Outdoor & Camping",
+      "slug": "outdoor-camping"
+    },
+    {
+      "kind": "category",
+      "name": "Toys, Baby & Kids",
+      "slug": "toys-baby-kids"
+    },
+    {
+      "kind": "category",
+      "name": "Toys & Games",
+      "slug": "toys-games"
+    },
+    {
+      "kind": "category",
+      "name": "Baby Gear",
+      "slug": "baby-gear"
+    },
+    {
+      "kind": "category",
+      "name": "Baby Food & Diapers",
+      "slug": "baby-food-diapers"
+    },
+    {
+      "kind": "category",
+      "name": "Pets & Pet Supplies",
+      "slug": "pets-supplies"
+    },
+    {
+      "kind": "category",
+      "name": "Pet Food",
+      "slug": "pet-food"
+    },
+    {
+      "kind": "category",
+      "name": "Pet Accessories",
+      "slug": "pet-accessories"
+    },
+    {
+      "kind": "category",
+      "name": "Pets & Livestock",
+      "slug": "pets-livestock"
+    },
+    {
+      "kind": "category",
+      "name": "Farm, Garden & Agriculture",
+      "slug": "farm-garden"
+    },
+    {
+      "kind": "category",
+      "name": "Seeds & Saplings",
+      "slug": "seeds-saplings"
+    },
+    {
+      "kind": "category",
+      "name": "Fertilizers & Pesticides",
+      "slug": "fertilizers-pesticides"
+    },
+    {
+      "kind": "category",
+      "name": "Farm Tools & Machinery",
+      "slug": "farm-tools"
+    },
+    {
+      "kind": "category",
+      "name": "Plants & Nursery",
+      "slug": "plants-nursery"
+    },
+    {
+      "kind": "category",
+      "name": "Garden Supplies",
+      "slug": "garden-supplies"
+    },
+    {
+      "kind": "category",
+      "name": "Farm Produce (Bulk)",
+      "slug": "farm-produce-bulk"
+    },
+    {
+      "kind": "category",
+      "name": "Hardware, Tools & Building",
+      "slug": "hardware-tools"
+    },
+    {
+      "kind": "category",
+      "name": "Hand Tools",
+      "slug": "hand-tools"
+    },
+    {
+      "kind": "category",
+      "name": "Power Tools",
+      "slug": "power-tools"
+    },
+    {
+      "kind": "category",
+      "name": "Paints & Finishes",
+      "slug": "paints"
+    },
+    {
+      "kind": "category",
+      "name": "Plumbing & Sanitary",
+      "slug": "plumbing-sanitary"
+    },
+    {
+      "kind": "category",
+      "name": "Cement, Steel & Building Materials",
+      "slug": "building-materials"
+    },
+    {
+      "kind": "category",
+      "name": "Electrical Supplies",
+      "slug": "electrical-supplies"
+    },
+    {
+      "kind": "category",
+      "name": "Industrial & Business Supplies",
+      "slug": "industrial-supplies"
+    },
+    {
+      "kind": "category",
+      "name": "Packaging Material",
+      "slug": "packaging"
+    },
+    {
+      "kind": "category",
+      "name": "Safety Equipment",
+      "slug": "safety-equipment"
+    },
+    {
+      "kind": "category",
+      "name": "Machinery & Equipment",
+      "slug": "machinery"
+    },
+    {
+      "kind": "category",
+      "name": "Hotel & Restaurant Supplies",
+      "slug": "hotel-restaurant-supplies"
+    },
+    {
+      "kind": "category",
+      "name": "Raw Materials",
+      "slug": "raw-materials"
+    },
+    {
+      "kind": "category",
+      "name": "Musical Instruments & Hobby",
+      "slug": "music-hobby"
+    },
+    {
+      "kind": "category",
+      "name": "Musical Instruments",
+      "slug": "musical-instruments"
+    },
+    {
+      "kind": "category",
+      "name": "Handicrafts & Handmade",
+      "slug": "handicrafts"
+    },
+    {
+      "kind": "category",
+      "name": "Collectibles & Antiques",
+      "slug": "collectibles"
+    },
+    {
+      "kind": "category",
+      "name": "Religious & Festive",
+      "slug": "religious-festive"
+    },
+    {
+      "kind": "category",
+      "name": "Pooja Items",
+      "slug": "pooja-items"
+    },
+    {
+      "kind": "category",
+      "name": "Festival Decorations",
+      "slug": "festival-decor"
+    },
+    {
+      "kind": "category",
+      "name": "Gifts & Novelties",
+      "slug": "gifts"
+    },
+    {
+      "kind": "category",
+      "name": "Agricultural supplies",
+      "slug": "agricultural-supplies"
+    },
+    {
+      "kind": "category",
+      "name": "Automobile services",
+      "slug": "automobile-services"
+    },
+    {
+      "kind": "category",
+      "name": "Bakeries & sweets",
+      "slug": "bakeries-and-sweets"
+    },
+    {
+      "kind": "category",
+      "name": "Beauty & wellness",
+      "slug": "beauty-and-wellness"
+    },
+    {
+      "kind": "category",
+      "name": "Bike repair",
+      "slug": "bike-repair"
+    },
+    {
+      "kind": "category",
+      "name": "Car repair",
+      "slug": "car-repair"
+    },
+    {
+      "kind": "category",
+      "name": "Cleaning services",
+      "slug": "cleaning-services"
+    },
+    {
+      "kind": "category",
+      "name": "Clothing stores",
+      "slug": "clothing-stores"
+    },
+    {
+      "kind": "category",
+      "name": "Colleges",
+      "slug": "colleges"
+    },
+    {
+      "kind": "category",
+      "name": "Computer & laptop stores",
+      "slug": "computer-and-laptop-stores"
+    },
+    {
+      "kind": "category",
+      "name": "Courier & parcel",
+      "slug": "courier-and-parcel-services"
+    },
+    {
+      "kind": "category",
+      "name": "Education & training",
+      "slug": "education-and-training"
+    },
+    {
+      "kind": "category",
+      "name": "Electrical services",
+      "slug": "electrical-services"
+    },
+    {
+      "kind": "category",
+      "name": "Electrical stores",
+      "slug": "electrical-stores"
+    },
+    {
+      "kind": "category",
+      "name": "Electronics stores",
+      "slug": "electronics-stores"
+    },
+    {
+      "kind": "category",
+      "name": "EV charging stations",
+      "slug": "ev-charging-stations"
+    },
+    {
+      "kind": "category",
+      "name": "Event services",
+      "slug": "event-services"
+    },
+    {
+      "kind": "category",
+      "name": "Footwear stores",
+      "slug": "footwear-stores"
+    },
+    {
+      "kind": "category",
+      "name": "Furniture stores",
+      "slug": "furniture-stores"
+    },
+    {
+      "kind": "category",
+      "name": "Gift stores",
+      "slug": "gift-stores"
+    },
+    {
+      "kind": "category",
+      "name": "Grocery & kirana",
+      "slug": "grocery-and-kirana"
+    },
+    {
+      "kind": "category",
+      "name": "Hardware stores",
+      "slug": "hardware-stores"
+    },
+    {
+      "kind": "category",
+      "name": "Home services",
+      "slug": "home-services"
+    },
+    {
+      "kind": "category",
+      "name": "Hospitals & clinics",
+      "slug": "hospitals-and-clinics"
+    },
+    {
+      "kind": "category",
+      "name": "Hotels & stays",
+      "slug": "hotels-and-accommodation"
+    },
+    {
+      "kind": "category",
+      "name": "Jewellery stores",
+      "slug": "jewellery-stores"
+    },
+    {
+      "kind": "category",
+      "name": "Local manufacturers",
+      "slug": "local-manufacturers"
+    },
+    {
+      "kind": "category",
+      "name": "Medical stores & pharmacies",
+      "slug": "medical-stores-and-pharmacies"
+    },
+    {
+      "kind": "category",
+      "name": "Mobile stores",
+      "slug": "mobile-stores"
+    },
+    {
+      "kind": "category",
+      "name": "Other local businesses",
+      "slug": "other-local-businesses"
+    },
+    {
+      "kind": "category",
+      "name": "Pet stores & services",
+      "slug": "pet-stores-and-pet-services"
+    },
+    {
+      "kind": "category",
+      "name": "Petrol stations",
+      "slug": "petrol-stations"
+    },
+    {
+      "kind": "category",
+      "name": "Plumbing services",
+      "slug": "plumbing-services"
+    },
+    {
+      "kind": "category",
+      "name": "Printing & stationery",
+      "slug": "printing-and-stationery"
+    },
+    {
+      "kind": "category",
+      "name": "Professional services",
+      "slug": "professional-services"
+    },
+    {
+      "kind": "category",
+      "name": "Property services",
+      "slug": "property-services"
+    },
+    {
+      "kind": "category",
+      "name": "Repair services",
+      "slug": "repair-services"
+    },
+    {
+      "kind": "category",
+      "name": "Restaurants & food",
+      "slug": "restaurants-and-food"
+    },
+    {
+      "kind": "category",
+      "name": "Salons & spas",
+      "slug": "salons-and-spas"
+    },
+    {
+      "kind": "category",
+      "name": "Schools",
+      "slug": "schools"
+    },
+    {
+      "kind": "category",
+      "name": "Tailoring & boutiques",
+      "slug": "tailoring-and-boutiques"
+    },
+    {
+      "kind": "category",
+      "name": "Travel services",
+      "slug": "travel-services"
+    },
+    {
+      "kind": "category",
+      "name": "Tuition & coaching",
+      "slug": "tuition-and-coaching"
+    },
+    {
+      "kind": "category",
+      "name": "Tyre & battery stores",
+      "slug": "tyre-and-battery-stores"
+    },
+    {
+      "kind": "category",
+      "name": "Wholesale businesses",
+      "slug": "wholesale-businesses"
+    },
+    {
+      "kind": "category",
+      "name": "Electronics",
+      "slug": "electronics"
+    },
+    {
+      "kind": "category",
+      "name": "Mobile Phones",
+      "slug": "mobile-phones"
+    },
+    {
+      "kind": "category",
+      "name": "Laptops & Computers",
+      "slug": "laptops-computers"
+    },
+    {
+      "kind": "category",
+      "name": "TV & Appliances",
+      "slug": "tv-appliances"
+    },
+    {
+      "kind": "category",
+      "name": "Vehicles",
+      "slug": "vehicles"
+    },
+    {
+      "kind": "category",
+      "name": "Cars",
+      "slug": "cars"
+    },
+    {
+      "kind": "category",
+      "name": "Motorcycles & Scooters",
+      "slug": "motorcycles-scooters"
+    },
+    {
+      "kind": "category",
+      "name": "Furniture & Home",
+      "slug": "furniture-home"
+    },
+    {
+      "kind": "category",
+      "name": "Jobs",
+      "slug": "jobs"
+    },
+    {
+      "kind": "category",
+      "name": "IT & Software",
+      "slug": "jobs-it-software"
+    },
+    {
+      "kind": "category",
+      "name": "Sales & Marketing",
+      "slug": "jobs-sales-marketing"
+    },
+    {
+      "kind": "category",
+      "name": "Delivery & Driver",
+      "slug": "jobs-delivery-driver"
+    },
+    {
+      "kind": "category",
+      "name": "Retail & Hospitality",
+      "slug": "jobs-retail-hospitality"
+    },
+    {
+      "kind": "category",
+      "name": "Services",
+      "slug": "services"
+    },
+    {
+      "kind": "category",
+      "name": "Home Repair",
+      "slug": "services-home-repair"
+    },
+    {
+      "kind": "category",
+      "name": "Tuition & Classes",
+      "slug": "services-tuition"
+    },
+    {
+      "kind": "category",
+      "name": "Health & Beauty",
+      "slug": "services-health-beauty"
+    },
+    {
+      "kind": "category",
+      "name": "Real Estate & Rentals",
+      "slug": "real-estate-rentals"
+    },
+    {
+      "kind": "category",
+      "name": "Local Offers",
+      "slug": "local-offers"
+    },
+    {
+      "kind": "category",
+      "name": "Restaurants & Food",
+      "slug": "offers-restaurants-food"
+    },
+    {
+      "kind": "category",
+      "name": "Hotels & Stays",
+      "slug": "offers-hotels-stays"
+    },
+    {
+      "kind": "category",
+      "name": "Salons & Spa",
+      "slug": "offers-salons-spa"
+    },
+    {
+      "kind": "category",
+      "name": "Shopping",
+      "slug": "offers-shopping"
+    },
+    {
+      "kind": "category",
+      "name": "Businesses",
+      "slug": "businesses"
+    },
+    {
+      "kind": "category",
+      "name": "Restaurants",
+      "slug": "business-restaurants"
+    },
+    {
+      "kind": "category",
+      "name": "Clinics & Hospitals",
+      "slug": "business-clinics"
+    },
+    {
+      "kind": "category",
+      "name": "Shops & Retail",
+      "slug": "business-shops"
+    },
+    {
+      "kind": "category",
+      "name": "Events",
+      "slug": "events"
+    }
+  ],
+  "discovery": [
+    {
+      "kind": "discovery",
+      "name": "Local Now",
+      "slug": "local-now"
+    },
+    {
+      "kind": "discovery",
+      "name": "Happening Nearby",
+      "slug": "happening-nearby"
+    },
+    {
+      "kind": "discovery",
+      "name": "Deals",
+      "slug": "deals"
+    },
+    {
+      "kind": "discovery",
+      "name": "Food",
+      "slug": "food"
+    },
+    {
+      "kind": "discovery",
+      "name": "Jobs",
+      "slug": "jobs"
+    },
+    {
+      "kind": "discovery",
+      "name": "Rentals",
+      "slug": "rentals"
+    },
+    {
+      "kind": "discovery",
+      "name": "Marketplace",
+      "slug": "marketplace"
+    },
+    {
+      "kind": "discovery",
+      "name": "Services",
+      "slug": "services"
+    },
+    {
+      "kind": "discovery",
+      "name": "Learning",
+      "slug": "learning"
+    },
+    {
+      "kind": "discovery",
+      "name": "Health",
+      "slug": "health"
+    },
+    {
+      "kind": "discovery",
+      "name": "Mobility",
+      "slug": "mobility"
+    },
+    {
+      "kind": "discovery",
+      "name": "Play",
+      "slug": "play"
+    },
+    {
+      "kind": "discovery",
+      "name": "Entertainment",
+      "slug": "entertainment"
+    },
+    {
+      "kind": "discovery",
+      "name": "Pets",
+      "slug": "pets"
+    },
+    {
+      "kind": "discovery",
+      "name": "Community",
+      "slug": "community"
+    },
+    {
+      "kind": "discovery",
+      "name": "Civic",
+      "slug": "civic"
+    },
+    {
+      "kind": "discovery",
+      "name": "Emergency",
+      "slug": "emergency"
+    },
+    {
+      "kind": "discovery",
+      "name": "Businesses",
+      "slug": "businesses"
+    },
+    {
+      "kind": "discovery",
+      "name": "New Nearby",
+      "slug": "new-nearby"
+    },
+    {
+      "kind": "discovery",
+      "name": "Earn Nearby",
+      "slug": "earn-nearby"
+    },
+    {
+      "kind": "discovery",
+      "name": "Free Nearby",
+      "slug": "free-nearby"
+    },
+    {
+      "kind": "discovery",
+      "name": "Local Requests",
+      "slug": "local-requests"
+    },
+    {
+      "kind": "discovery",
+      "name": "Property",
+      "slug": "property"
+    },
+    {
+      "kind": "discovery",
+      "name": "Vehicles",
+      "slug": "vehicles"
+    },
+    {
+      "kind": "discovery",
+      "name": "Local Professionals",
+      "slug": "local-professionals"
+    },
+    {
+      "kind": "discovery",
+      "name": "Home",
+      "slug": "home"
+    }
+  ]
+}
