@@ -1004,6 +1004,69 @@ textarea {
   }
 }
 
+
+.header__primary {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-left: 2px;
+  white-space: nowrap;
+}
+
+.header__primary a {
+  padding: 9px 10px;
+  border-radius: 10px;
+  color: var(--locz-text-secondary);
+  font-size: 0.78rem;
+  font-weight: 680;
+  transition:
+    color 150ms ease,
+    background-color 150ms ease;
+}
+
+.header__primary a:hover {
+  color: var(--locz-primary);
+  background: color-mix(in srgb, var(--locz-primary) 7%, transparent);
+}
+
+.search-business-card__monogram {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  display: grid;
+  width: 26px;
+  height: 26px;
+  place-items: center;
+  border: 1px solid rgb(255 255 255 / 76%);
+  border-radius: 9px;
+  background: color-mix(in srgb, var(--locz-surface) 90%, transparent);
+  color: var(--locz-primary);
+  font-size: 0.68rem;
+  font-weight: 800;
+  box-shadow: 0 4px 12px rgb(18 68 56 / 9%);
+}
+
+@media (max-width: 1180px) {
+  .header__primary a {
+    padding-inline: 7px;
+    font-size: 0.73rem;
+  }
+
+  .header__primary a:last-child {
+    display: none;
+  }
+
+  .header .location-chip {
+    max-width: 170px;
+  }
+}
+
+@media (max-width: 1050px) {
+  .header__primary {
+    display: none;
+  }
+}
+
 .alert {
   padding: var(--locz-space-4);
   border-radius: var(--locz-radius-md);
@@ -18138,15 +18201,53 @@ h4,
   }
 
   .header {
-    height: 0;
-    border: 0;
-    background: transparent;
-    box-shadow: none;
+    position: sticky;
+    top: 0;
+    height: 56px;
+    border-bottom: 1px solid color-mix(in srgb, var(--locz-border) 76%, transparent);
+    background: color-mix(in srgb, var(--locz-surface) 97%, var(--locz-canvas));
+    box-shadow: 0 8px 24px rgb(20 52 44 / 6%);
     backdrop-filter: none;
   }
 
   .header .container.header__row {
-    display: none;
+    display: flex;
+    width: 100%;
+    min-height: 56px;
+    gap: 10px;
+    padding: 5px 14px;
+  }
+
+  .header__brand {
+    min-width: 82px;
+  }
+
+  .header .header__brand .header__logo {
+    width: 82px;
+    height: 39px;
+  }
+
+  .header .location-chip {
+    min-height: 36px;
+    max-width: 148px;
+    margin: 0;
+    padding: 7px 10px;
+    border: 1px solid color-mix(in srgb, var(--locz-border) 74%, transparent);
+    background: color-mix(in srgb, var(--locz-primary) 5%, var(--locz-surface));
+  }
+
+  .header .location-chip > span:first-of-type {
+    display: inline;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .header .theme-toggle--mobile {
+    width: 36px;
+    height: 36px;
+    flex-basis: 36px;
+    margin-left: auto;
   }
 
   .mobile-dock {
@@ -18158,15 +18259,32 @@ h4,
   }
 
   .home-hero--discovery {
-    min-height: calc(100dvh - 68px - env(safe-area-inset-bottom));
+    min-height: calc(100dvh - 56px - 68px - env(safe-area-inset-bottom));
+    padding-block: 0;
   }
 
   .home-hero--discovery .home-hero__inner {
-    padding: 8px 18px 20px;
+    padding: 8px 18px 12px;
+  }
+
+  .home-hero--discovery .home-discovery__location {
+    display: none;
+  }
+
+  .home-hero--discovery .home-discovery {
+    padding: 14px;
+  }
+
+  .home-hero--discovery .home-discovery__head {
+    margin-bottom: 12px;
   }
 
   .home-feed-toolbar {
-    top: 0;
+    top: 56px;
+  }
+
+  .discovery-feed-page {
+    min-height: calc(100dvh - 56px - 68px - env(safe-area-inset-bottom));
   }
 }
 
@@ -19028,5 +19146,254 @@ h4,
   .discovery-text-card {
     min-height: 72px;
     padding: 12px 14px;
+  }
+}
+
+/* Final desktop-home overrides stay last because this stylesheet still contains legacy layers. */
+.footer {
+  margin-top: 32px;
+  padding-block: 52px;
+}
+
+.footer__inner {
+  display: grid;
+  grid-template-columns: minmax(230px, 0.8fr) minmax(0, 1.2fr);
+  gap: clamp(48px, 9vw, 132px);
+  align-items: start;
+}
+
+.footer__brand {
+  display: grid;
+  justify-items: start;
+  gap: 12px;
+}
+
+.footer__brand > img {
+  width: 104px;
+  height: 49px;
+  padding: 4px 7px;
+  border-radius: 12px;
+  background: #fff;
+  object-fit: contain;
+}
+
+.footer__brand p {
+  max-width: 30ch;
+  margin: 0;
+  color: #d5e2dc;
+  font-size: 0.88rem;
+  line-height: 1.55;
+}
+
+.footer__post-link {
+  display: inline-flex;
+  min-height: 40px;
+  align-items: center;
+  gap: 7px;
+  padding: 9px 13px;
+  border: 1px solid rgb(255 255 255 / 18%);
+  border-radius: 999px;
+  background: rgb(255 255 255 / 8%);
+  color: #fff;
+  font-weight: 700;
+}
+
+.footer__post-link svg {
+  width: 16px;
+  height: 16px;
+}
+
+.footer__links {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 28px;
+  margin: 0;
+}
+
+.footer__links > div {
+  display: grid;
+  align-content: start;
+  gap: 10px;
+}
+
+.footer__links strong {
+  margin-bottom: 4px;
+  color: #fff;
+  font-size: 0.78rem;
+}
+
+.footer__links a {
+  width: fit-content;
+  color: #b9cbc3;
+  font-size: 0.78rem;
+}
+
+@media (min-width: 761px) {
+  .home-hero--discovery {
+    background:
+      linear-gradient(
+        90deg,
+        color-mix(in srgb, var(--locz-bg) 88%, transparent) 0%,
+        color-mix(in srgb, var(--locz-bg) 66%, transparent) 48%,
+        color-mix(in srgb, var(--locz-bg) 48%, transparent) 100%
+      ),
+      url('/illustrations/locz-hyderabad-neighbourhood-hero-v1.webp') center / cover no-repeat;
+  }
+
+  .home-hero--discovery .home-hero__copy h1 {
+    max-width: 11.5ch;
+    font-size: clamp(3rem, 4.4vw, 4rem);
+    line-height: 0.98;
+  }
+
+  .home-desktop-content {
+    gap: 20px;
+    padding-block: 26px 52px;
+  }
+
+  .home-desktop-content > aside {
+    grid-column: 1 / -1;
+    min-width: 0;
+  }
+
+  .home-desktop-content > .local-now,
+  .home-desktop-content > .local-alerts {
+    min-height: 96px;
+    margin: 0;
+    padding: 18px 20px;
+    border-radius: 22px;
+  }
+
+  .home-desktop-content > .local-now {
+    display: grid;
+    grid-template-columns: auto auto 1fr auto;
+    align-items: center;
+    gap: 9px;
+  }
+
+  .home-desktop-content > .local-news,
+  .home-desktop-content > .local-jobs {
+    padding: 24px;
+    border-radius: 22px;
+    box-shadow: 0 8px 24px rgb(23 52 44 / 5%);
+  }
+
+  .home-desktop-content > .home-feed-toolbar {
+    position: static;
+    padding: 16px 18px;
+    background: color-mix(in srgb, var(--locz-surface) 94%, transparent);
+  }
+
+  .home-feed-toolbar h2 {
+    font-size: clamp(1.6rem, 2.1vw, 2.1rem);
+  }
+
+  .home-desktop-content > .home-feed-grid {
+    width: 100%;
+    max-width: none;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 18px;
+    margin: 0;
+  }
+
+  .home-feed-grid .listing-card {
+    min-width: 0;
+  }
+
+  .home-desktop-content > .home-post-invitation {
+    width: 100%;
+    min-height: 112px;
+    margin: 0;
+    padding: 24px 28px;
+  }
+
+  .home-desktop-content > .search-businesses {
+    padding: 26px;
+    border-radius: 24px;
+  }
+
+  .search-businesses__head {
+    margin-bottom: 16px;
+  }
+
+  .search-businesses__head h2 {
+    font-size: clamp(1.55rem, 2vw, 2rem);
+  }
+
+  .home-desktop-content .search-businesses__grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 16px;
+  }
+
+  .home-desktop-content .search-business-card {
+    min-height: 164px;
+    grid-template-columns: 102px minmax(0, 1fr);
+    gap: 14px;
+    padding: 12px;
+    border-radius: 19px;
+    box-shadow: 0 5px 18px rgb(23 52 44 / 5%);
+  }
+
+  .home-desktop-content .search-business-card__visual {
+    min-height: 138px;
+    border-radius: 15px;
+  }
+
+  .home-desktop-content .search-business-card__category {
+    font-size: 0.71rem;
+    letter-spacing: 0.02em;
+    text-transform: none;
+  }
+
+  .home-desktop-content .search-business-card__name {
+    font-size: 1.02rem;
+    line-height: 1.28;
+  }
+
+  .home-desktop-content .search-business-card__place,
+  .home-desktop-content .search-business-card__meta {
+    font-size: 0.74rem;
+  }
+
+  .home-desktop-content .search-business-card__profile,
+  .home-desktop-content .search-business-card__directions {
+    min-height: 36px;
+    padding: 7px 10px;
+    font-size: 0.72rem;
+  }
+
+  .home-desktop-content .nearby-businesses__band {
+    grid-column: 1 / -1;
+    margin-block: 6px -2px;
+  }
+
+  .home-desktop-content > .category-section {
+    padding-top: 4px;
+  }
+
+  .home-desktop-content .category-chip {
+    border: 1px solid color-mix(in srgb, var(--locz-border) 58%, transparent);
+    box-shadow: none;
+  }
+
+  .home-desktop-content > .home-intents {
+    box-shadow: 0 8px 24px rgb(23 52 44 / 5%);
+  }
+}
+
+@media (max-width: 760px) {
+  .footer {
+    margin-top: 20px;
+    padding: 34px 0 calc(98px + env(safe-area-inset-bottom));
+  }
+
+  .footer__inner {
+    grid-template-columns: 1fr;
+    gap: 28px;
+  }
+
+  .footer__links {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 26px 20px;
   }
 }

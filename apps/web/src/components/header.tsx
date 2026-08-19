@@ -17,6 +17,7 @@ import { RecentSearchInput } from './recent-search-input';
 export async function Header({ locale }: { locale: Locale }) {
   const t = getTranslator(locale);
   const searchLabels = getMessageGroup(locale, 'searchUi');
+  const discoveryLabels = getMessageGroup(locale, 'discoveryAreas');
   const [user, city] = await Promise.all([getCurrentUser(), getSelectedCity()]);
   const unreadNotifications = user
     ? await apiSafe<{ count: number }>('/notifications/unread-count', { auth: true })
@@ -29,7 +30,6 @@ export async function Header({ locale }: { locale: Locale }) {
       <div className="container header__row">
         <Link href="/" className="header__brand" aria-label={t('brand.name')}>
           <picture>
-            <source media="(max-width: 760px)" srcSet="/brand/locz-mark.png" />
             <img
               src="/brand/locz-logo.webp"
               alt=""
@@ -46,6 +46,13 @@ export async function Header({ locale }: { locale: Locale }) {
           cityName={city?.name || city?.pincode || null}
           changeLabel={t('location.change')}
         />
+
+        <nav className="header__primary" aria-label={t('nav.primary')}>
+          <Link href="/discover/local-now">{discoveryLabels['local-now']}</Link>
+          <Link href="/business">{discoveryLabels.businesses}</Link>
+          <Link href="/discover/jobs">{discoveryLabels.jobs}</Link>
+          <Link href="/discover/services">{discoveryLabels.services}</Link>
+        </nav>
 
         <ThemeToggle label={t('nav.toggleTheme')} className="theme-toggle--mobile" />
 

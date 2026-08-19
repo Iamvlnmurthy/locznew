@@ -263,6 +263,9 @@ export function NearbyBusinesses({
                           width={88}
                           height={88}
                         />
+                        <span className="search-business-card__monogram">
+                          {business.name.trim().charAt(0).toUpperCase()}
+                        </span>
                       </>
                     )}
                   </div>

@@ -1,9 +1,11 @@
 import type { Metadata, Viewport } from 'next';
+import Image from 'next/image';
 import Link from 'next/link';
 import localFont from 'next/font/local';
 import { Anek_Telugu } from 'next/font/google';
 import Script from 'next/script';
 import { Header } from '@/components/header';
+import { Icon } from '@/components/icons';
 import { getTranslator } from '@/i18n';
 import { SITE_URL } from '@/lib/api';
 import { getLocale } from '@/lib/session';
@@ -110,20 +112,33 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         <main id="main">{children}</main>
 
         <footer className="footer">
-          <div className="container">
+          <div className="container footer__inner">
+            <div className="footer__brand">
+              <Image src="/brand/locz-logo.webp" alt="LocZ" width={107} height={51} />
+              <p>{t('brand.tagline')}</p>
+              <Link href="/post" className="footer__post-link">
+                <Icon name="plus" /> {t('footer.postFree')}
+              </Link>
+            </div>
             <nav className="footer__links" aria-label={t('footer.aria')}>
-              <Link href="/business">{t('footer.businesses')}</Link>
-              <Link href="/business/new">{t('nav.listBusiness')}</Link>
-              <Link href="/about">{t('footer.about')}</Link>
-              <Link href="/help">{t('footer.help')}</Link>
-              <Link href="/safety">{t('footer.safety')}</Link>
-              <Link href="/terms">{t('footer.terms')}</Link>
-              <Link href="/privacy">{t('footer.privacy')}</Link>
+              <div>
+                <strong>{t('footer.businesses')}</strong>
+                <Link href="/business">{t('footer.businesses')}</Link>
+                <Link href="/business/new">{t('nav.listBusiness')}</Link>
+                <Link href="/get-app">{t('nav.getApp')}</Link>
+              </div>
+              <div>
+                <strong>{t('footer.about')}</strong>
+                <Link href="/about">{t('footer.about')}</Link>
+                <Link href="/help">{t('footer.help')}</Link>
+                <Link href="/safety">{t('footer.safety')}</Link>
+              </div>
+              <div>
+                <strong>{t('footer.terms')}</strong>
+                <Link href="/terms">{t('footer.terms')}</Link>
+                <Link href="/privacy">{t('footer.privacy')}</Link>
+              </div>
             </nav>
-            <p style={{ margin: '0 0 4px', fontWeight: 600, color: 'var(--locz-text)' }}>
-              {t('brand.tagline')}
-            </p>
-            <p style={{ margin: 0 }}>{t('footer.postFree')}</p>
           </div>
         </footer>
       </body>

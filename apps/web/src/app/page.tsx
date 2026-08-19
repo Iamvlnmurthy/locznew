@@ -430,7 +430,7 @@ export default async function HomePage({
               <h2 id="local-news-title">{t('home.localNewsTitle', { city: feedCity })}</h2>
             </div>
             <ul className="local-news__list">
-              {newsHeadlines.map((item) => {
+              {newsHeadlines.slice(0, 5).map((item) => {
                 const when = relativeTime(item.publishedAt, locale);
                 return (
                   <li key={item.url}>
@@ -461,7 +461,7 @@ export default async function HomePage({
               <h2 id="local-jobs-title">{t('home.jobsTitle', { city: feedCity })}</h2>
             </div>
             <div className="local-jobs__list">
-              {jobs.map((job) => {
+              {jobs.slice(0, 5).map((job) => {
                 const salary = formatSalary(job.salaryMin, job.salaryMax);
                 const when = relativeTime(job.postedAt, locale);
                 return (
@@ -549,7 +549,7 @@ export default async function HomePage({
             </section>
 
             <div className="card-grid home-feed-grid">
-              {visibleFeedItems.map((listing) => (
+              {visibleFeedItems.slice(0, 6).map((listing) => (
                 <ListingCard key={listing.id} listing={listing} t={t} />
               ))}
             </div>
@@ -577,6 +577,9 @@ export default async function HomePage({
                 <span className="section-kicker">{searchLabels.businessesKicker}</span>
                 <h2 id="home-businesses-title">{searchLabels.businessesTitle}</h2>
               </div>
+              <Link href="/business">
+                {t('feed.seeAll')} <Icon name="arrow" />
+              </Link>
             </div>
             <NearbyBusinesses
               pincode={city?.pincode}
@@ -584,8 +587,8 @@ export default async function HomePage({
               latitude={city?.latitude}
               longitude={city?.longitude}
               radiusKm={radiusKm}
-              initial={homeBusinesses.items}
-              initialHasMore={homeBusinesses.hasNextPage}
+              initial={homeBusinesses.items.slice(0, 9)}
+              initialHasMore={false}
               verifiedLabel={searchLabels.businessVerified}
               claimLabel={searchLabels.businessClaim}
               directionsLabel={searchLabels.directions}
