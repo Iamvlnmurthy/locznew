@@ -1035,10 +1035,9 @@ class _BusinessRow extends StatelessWidget {
         : metres < 1000
             ? '${metres.round()} m'
             : '${(metres / 1000).toStringAsFixed(metres < 10000 ? 1 : 0)} ${strings('common.km')}';
-    final place = [distance, business.pincode ?? business.cityName]
-        .whereType<String>()
-        .where((part) => part.trim().isNotEmpty)
-        .join(' · ');
+    // Distance already says "near you"; the repeated pincode is just noise, so fall back to
+    // it only when there is no distance to show. Mirrors the web card.
+    final place = distance ?? business.pincode ?? business.cityName;
 
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
@@ -1079,7 +1078,7 @@ class _BusinessRow extends StatelessWidget {
                         overflow: TextOverflow.ellipsis,
                         style: theme.textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w600),
                       ),
-                      if (place.isNotEmpty)
+                      if (place != null && place.isNotEmpty)
                         Text(
                           place,
                           maxLines: 1,
@@ -1089,11 +1088,58 @@ class _BusinessRow extends StatelessWidget {
                     ],
                   ),
                 ),
+                if (business.isVerified)
+                  _BusinessBadge(
+                    icon: Icons.verified,
+                    label: strings('search.businessVerified'),
+                    color: theme.colorScheme.primary,
+                  )
+                else if (!business.isClaimed)
+                  // An imported listing nobody owns yet — invite its real owner to take it over.
+                  _BusinessBadge(
+                      label: strings('search.businessClaim'), color: theme.colorScheme.tertiary),
+                const SizedBox(width: 6),
                 Icon(Icons.chevron_right, size: 18, color: theme.colorScheme.onSurfaceVariant),
               ],
             ),
           ),
         ),
+      ),
+    );
+  }
+}
+
+/// Small trailing chip on a business row — "Verified" or the "Claim this" invite.
+class _BusinessBadge extends StatelessWidget {
+  const _BusinessBadge({required this.label, required this.color, this.icon});
+
+  final String label;
+  final Color color;
+  final IconData? icon;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(999),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (icon != null) ...[
+            Icon(icon, size: 12, color: color),
+            const SizedBox(width: 4),
+          ],
+          Text(
+            label,
+            style: Theme.of(context)
+                .textTheme
+                .labelSmall
+                ?.copyWith(color: color, fontWeight: FontWeight.w600),
+          ),
+        ],
       ),
     );
   }
