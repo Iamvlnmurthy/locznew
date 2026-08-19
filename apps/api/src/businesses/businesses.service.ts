@@ -145,6 +145,28 @@ export class BusinessesService {
    * of listPublic used by the Home "Businesses near you" surface. Uses the PostGIS GiST index
    * (ST_DWithin to filter, KNN `<->` to order), paginated 20 at a time.
    */
+  /** The given category plus every descendant id — so a top-level filter matches leaf records. */
+  private async categorySubtree(rootId: string): Promise<string[]> {
+    const categories = await this.prisma.category.findMany({
+      select: { id: true, parentId: true },
+    });
+    const childrenOf = new Map<string, string[]>();
+    for (const category of categories) {
+      if (!category.parentId) continue;
+      const siblings = childrenOf.get(category.parentId) ?? [];
+      siblings.push(category.id);
+      childrenOf.set(category.parentId, siblings);
+    }
+    const ids: string[] = [];
+    const stack = [rootId];
+    while (stack.length > 0) {
+      const id = stack.pop()!;
+      ids.push(id);
+      stack.push(...(childrenOf.get(id) ?? []));
+    }
+    return ids;
+  }
+
   async nearby(query: {
     latitude: number;
     longitude: number;
@@ -160,6 +182,12 @@ export class BusinessesService {
     const radiusMeters = (query.radiusKm ?? 25) * 1000;
     const point = Prisma.sql`ST_SetSRID(ST_MakePoint(${query.longitude}::double precision, ${query.latitude}::double precision), 4326)::geography`;
     const term = query.q?.trim();
+
+    // A picked category is usually a top-level one ("Food"), but businesses are filed under leaf
+    // categories ("Bakeries & sweets"). Expand the selection to its whole subtree so the filter
+    // matches, rather than only businesses filed on the exact node.
+    const categoryIds = query.categoryId ? await this.categorySubtree(query.categoryId) : null;
+
     const where = Prisma.join(
       [
         Prisma.sql`b."deletedAt" IS NULL`,
@@ -167,8 +195,10 @@ export class BusinessesService {
         Prisma.sql`b."geo" IS NOT NULL`,
         Prisma.sql`ST_DWithin(b."geo", ${point}, ${radiusMeters})`,
         query.pincode ? Prisma.sql`b."pincodeCode" = ${query.pincode}` : Prisma.sql`TRUE`,
-        query.categoryId
-          ? Prisma.sql`b."categoryId" = ${query.categoryId}::uuid`
+        categoryIds
+          ? Prisma.sql`b."categoryId" IN (${Prisma.join(
+              categoryIds.map((id) => Prisma.sql`${id}::uuid`),
+            )})`
           : Prisma.sql`TRUE`,
         term
           ? Prisma.sql`(b."name" ILIKE ${`%${term}%`} OR b."description" ILIKE ${`%${term}%`})`
