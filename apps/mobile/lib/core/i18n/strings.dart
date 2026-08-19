@@ -99,6 +99,8 @@ class Strings {
       'location.noMatches': 'No city matches that search.',
       'search.placeholder': 'Search phones, jobs, rooms…',
       'business.title': 'Business',
+      'business.nearbyTitle': 'Businesses near you',
+      'business.nearbyHint': 'Local places, closest first',
       'business.claimed': 'Claimed and kept up to date by the owner.',
       'business.unclaimed':
           'From the local directory. Nobody at this business has confirmed these details yet.',

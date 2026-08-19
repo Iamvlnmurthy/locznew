@@ -134,6 +134,59 @@ class ListingRepository {
     );
   }
 
+  /// Businesses near a point (nearest first, with a distance on each) or, without coordinates,
+  /// scoped to a pincode/city. Paginated 20 at a time for infinite scroll on Home.
+  Future<({List<BusinessSummary> items, bool hasNextPage, int total})> nearbyBusinesses({
+    double? latitude,
+    double? longitude,
+    int? radiusKm,
+    String? pincode,
+    String? cityId,
+    int page = 1,
+    int limit = 20,
+  }) async {
+    final geo = latitude != null && longitude != null;
+    final json = await _api.get<Map<String, dynamic>>(
+      geo ? '/businesses/nearby' : '/businesses',
+      query: {
+        'page': page,
+        'limit': limit,
+        if (geo) ...{
+          'latitude': latitude,
+          'longitude': longitude,
+          'radiusKm': radiusKm ?? 25,
+        },
+        if (pincode != null) 'pincode': pincode,
+        if (!geo && cityId != null) 'cityId': cityId,
+        if (!geo) 'sort': 'recommended',
+      },
+    );
+    final meta = (json['meta'] as Map<String, dynamic>?) ?? const {};
+    return (
+      items: (json['items'] as List<dynamic>? ?? const [])
+          .map((entry) => BusinessSummary.fromJson(entry as Map<String, dynamic>))
+          .toList(),
+      hasNextPage: meta['hasNextPage'] as bool? ?? false,
+      total: (meta['total'] as num?)?.toInt() ?? 0,
+    );
+  }
+
+  /// Active-business count per category for an area, for the Explore tiles.
+  Future<Map<String, int>> businessCategoryCounts({String? cityId, String? pincode}) async {
+    final json = await _api.get<List<dynamic>>(
+      '/businesses/category-counts',
+      query: {
+        if (cityId != null) 'cityId': cityId,
+        if (pincode != null) 'pincode': pincode,
+      },
+    );
+    return {
+      for (final entry in json)
+        (entry as Map<String, dynamic>)['categoryId'] as String:
+            (entry['count'] as num?)?.toInt() ?? 0,
+    };
+  }
+
   Future<BusinessDetail> businessDetail(String slug) async {
     final json = await _api.get<Map<String, dynamic>>('/businesses/$slug');
     return BusinessDetail.fromJson(json);

@@ -168,6 +168,7 @@ class HomeScreen extends ConsumerWidget {
                     ),
                   ),
                 ],
+                const SliverToBoxAdapter(child: _NearbyBusinessesSection()),
                 const SliverToBoxAdapter(child: SizedBox(height: 32)),
               ],
             );
@@ -915,6 +916,184 @@ class _QuickTile extends StatelessWidget {
             style: theme.textTheme.labelSmall,
           ),
         ],
+      ),
+    );
+  }
+}
+
+/// "Businesses near you" on Home — the cold-start payoff. Page one of nearby businesses,
+/// nearest first with a distance and OLX-style band headers. Tapping opens the business.
+class _NearbyBusinessesSection extends ConsumerStatefulWidget {
+  const _NearbyBusinessesSection();
+
+  @override
+  ConsumerState<_NearbyBusinessesSection> createState() => _NearbyBusinessesSectionState();
+}
+
+class _NearbyBusinessesSectionState extends ConsumerState<_NearbyBusinessesSection> {
+  static const _bands = [1000, 3000, 5000, 10000, 25000];
+  List<BusinessSummary> _items = const [];
+  bool _loading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _load();
+  }
+
+  Future<void> _load() async {
+    final city = ref.read(selectedCityProvider);
+    final radius = ref.read(selectedRadiusProvider);
+    try {
+      final result = await ref.read(listingRepositoryProvider).nearbyBusinesses(
+            latitude: city?.latitude,
+            longitude: city?.longitude,
+            radiusKm: radius,
+            pincode: city?.pincode,
+            cityId: (city?.id.isEmpty ?? true) ? null : city!.id,
+            page: 1,
+            limit: 12,
+          );
+      if (mounted) {
+        setState(() {
+          _items = result.items;
+          _loading = false;
+        });
+      }
+    } catch (_) {
+      if (mounted) setState(() => _loading = false);
+    }
+  }
+
+  int _bandOf(num metres) {
+    for (var i = 0; i < _bands.length; i += 1) {
+      if (metres < _bands[i]) return i;
+    }
+    return _bands.length;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_loading || _items.isEmpty) return const SizedBox.shrink();
+    final strings = Strings.of(context);
+    final theme = Theme.of(context);
+
+    final rows = <Widget>[];
+    var lastBand = -1;
+    for (final business in _items) {
+      final distance = business.distanceMeters;
+      if (distance != null) {
+        final band = _bandOf(distance);
+        if (band != lastBand) {
+          lastBand = band;
+          final km = (band < _bands.length ? _bands[band] : 25000) ~/ 1000;
+          rows.add(
+            Padding(
+              padding: const EdgeInsets.only(top: 12, bottom: 4),
+              child: Text(
+                band == 0
+                    ? strings('feed.nearby')
+                    : '${strings('feed.within')} $km ${strings('common.km')}',
+                style: theme.textTheme.labelLarge?.copyWith(color: theme.colorScheme.primary),
+              ),
+            ),
+          );
+        }
+      }
+      rows.add(_BusinessRow(business: business, strings: strings));
+    }
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 26, 16, 0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _SectionHeader(
+            title: strings('business.nearbyTitle'),
+            hint: strings('business.nearbyHint'),
+          ),
+          const SizedBox(height: 8),
+          ...rows,
+        ],
+      ),
+    );
+  }
+}
+
+class _BusinessRow extends StatelessWidget {
+  const _BusinessRow({required this.business, required this.strings});
+
+  final BusinessSummary business;
+  final Strings strings;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final metres = business.distanceMeters;
+    final distance = metres == null
+        ? null
+        : metres < 1000
+            ? '${metres.round()} m'
+            : '${(metres / 1000).toStringAsFixed(metres < 10000 ? 1 : 0)} ${strings('common.km')}';
+    final place = [distance, business.pincode ?? business.cityName]
+        .whereType<String>()
+        .where((part) => part.trim().isNotEmpty)
+        .join(' · ');
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Material(
+        color: theme.colorScheme.surface,
+        borderRadius: BorderRadius.circular(14),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(14),
+          onTap: () => context.push('/b/${business.slug}'),
+          child: Padding(
+            padding: const EdgeInsets.all(12),
+            child: Row(
+              children: [
+                CircleAvatar(
+                  radius: 18,
+                  backgroundColor: theme.colorScheme.surfaceContainerHighest,
+                  child: Text(
+                    business.name.isEmpty ? '?' : business.name[0].toUpperCase(),
+                    style: theme.textTheme.titleMedium,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      if (business.categoryName != null)
+                        Text(
+                          business.categoryName!,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: theme.textTheme.labelSmall
+                              ?.copyWith(color: theme.colorScheme.primary),
+                        ),
+                      Text(
+                        business.name,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: theme.textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w600),
+                      ),
+                      if (place.isNotEmpty)
+                        Text(
+                          place,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: theme.textTheme.labelSmall,
+                        ),
+                    ],
+                  ),
+                ),
+                Icon(Icons.chevron_right, size: 18, color: theme.colorScheme.onSurfaceVariant),
+              ],
+            ),
+          ),
+        ),
       ),
     );
   }

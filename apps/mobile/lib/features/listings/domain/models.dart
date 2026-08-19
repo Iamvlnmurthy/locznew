@@ -528,6 +528,8 @@ class BusinessSummary {
     this.categoryName,
     this.localityName,
     this.cityName,
+    this.pincode,
+    this.distanceMeters,
     this.isVerified = false,
     this.isClaimed = false,
   });
@@ -538,6 +540,10 @@ class BusinessSummary {
   final String? categoryName;
   final String? localityName;
   final String? cityName;
+  final String? pincode;
+
+  /// Present only for nearby (geo) results — metres from the viewer.
+  final num? distanceMeters;
 
   /// Someone at LocZ confirmed this record. Not the same as claimed.
   final bool isVerified;
@@ -548,7 +554,7 @@ class BusinessSummary {
   /// "Grocery · Kaimur" — whichever parts exist, joined without empty gaps.
   String get subtitle => [
         categoryName,
-        localityName ?? cityName,
+        localityName ?? pincode ?? cityName,
       ].whereType<String>().where((part) => part.trim().isNotEmpty).join(' · ');
 
   factory BusinessSummary.fromJson(Map<String, dynamic> json) => BusinessSummary(
@@ -558,8 +564,11 @@ class BusinessSummary {
         categoryName: json['categoryName'] as String?,
         localityName: json['localityName'] as String?,
         cityName: json['cityName'] as String?,
-        isVerified: json['isVerified'] as bool? ?? false,
-        isClaimed: json['isClaimed'] as bool? ?? false,
+        pincode: json['pincode'] as String?,
+        distanceMeters: json['distanceMeters'] as num?,
+        // /search/businesses sends isVerified; /businesses(/nearby) sends verificationStatus.
+        isVerified: json['isVerified'] as bool? ?? (json['verificationStatus'] == 'VERIFIED'),
+        isClaimed: json['isClaimed'] as bool? ?? (json['claimStatus'] == 'CLAIMED'),
       );
 }
 

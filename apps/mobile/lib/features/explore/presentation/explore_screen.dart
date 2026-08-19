@@ -37,8 +37,11 @@ const _taxonomy = <_Group>[
   _Group('explore.group.workEarn', [
     _Area('type.JOB', Icons.work_outline, '/search?type=JOB'),
     _Area('explore.earnNearby', Icons.handshake_outlined, '/search?q=gig'),
-    _Area('explore.localRequests', Icons.record_voice_over_outlined,
-        '/search?type=BUYER_REQUIREMENT'),
+    _Area(
+      'explore.localRequests',
+      Icons.record_voice_over_outlined,
+      '/search?type=BUYER_REQUIREMENT',
+    ),
   ]),
   _Group('explore.group.homeProperty', [
     _Area('type.RENTAL', Icons.home_outlined, '/search?type=RENTAL'),
