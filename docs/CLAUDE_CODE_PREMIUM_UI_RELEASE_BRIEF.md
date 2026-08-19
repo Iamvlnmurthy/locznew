@@ -11,6 +11,14 @@ uploads, TLS configuration, and application identifier `com.locz.app`.
 
 The UI release includes:
 
+- a one-viewport Home launcher with Local Now, Businesses, Jobs, News, Alerts, Deals, Services,
+  and Marketplace destinations;
+- dedicated discovery routes instead of filtering or appending user posts below Home;
+- source aggregation by destination: weather, NDMA alerts, Google News, Adzuna jobs, directory
+  businesses, and relevant LocZ community listings;
+- a fixed mobile bottom navigation across Home and discovery screens;
+- a desktop-specific discovery shell with a persistent destination rail, sticky feed controls,
+  and a restrained central reading stream;
 - premium elevation, surface, motion, form, button, empty-state, and card foundations;
 - redesigned nearby-business cards with logo/category artwork, useful metadata, verification,
   listing counts, profile navigation, and directions;

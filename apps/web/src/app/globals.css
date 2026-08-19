@@ -17368,18 +17368,32 @@ html {
   }
 
   .home-discovery__grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 8px;
   }
 
   .home-discovery__grid > a {
-    min-height: 105px;
+    min-height: 68px;
+    flex-direction: row;
+    justify-content: flex-start;
+    gap: 9px;
+    padding: 8px 10px;
     border-radius: 16px;
+    text-align: left;
   }
 
   .home-discovery__grid > a > span,
   .home-discovery__grid img {
-    width: 46px;
-    height: 46px;
+    width: 44px;
+    height: 44px;
+    flex: 0 0 44px;
+    margin: 0;
+    border-radius: 13px;
+  }
+
+  .home-discovery__grid strong {
+    font-size: 0.73rem;
+    white-space: normal;
   }
 
   .home-feed-toolbar {
@@ -18500,6 +18514,10 @@ h4,
   color: var(--locz-text-muted);
 }
 
+.discovery-feed-mobile-back {
+  display: none;
+}
+
 @media (max-width: 900px) {
   .discovery-feed-shell {
     grid-template-columns: minmax(0, 760px);
@@ -18523,6 +18541,15 @@ h4,
 }
 
 @media (max-width: 760px) {
+  .discovery-feed-page {
+    min-height: calc(100dvh - 68px - env(safe-area-inset-bottom));
+  }
+
+  .discovery-feed-hero,
+  .discovery-feed-rail {
+    display: none;
+  }
+
   .discovery-feed-hero__inner {
     gap: 13px;
     padding: 14px 18px 18px;
@@ -18557,8 +18584,8 @@ h4,
   }
 
   .discovery-feed-shell {
-    gap: 12px;
-    padding: 12px 10px 26px;
+    gap: 0;
+    padding: 8px 10px 26px;
   }
 
   .discovery-feed-rail {
@@ -18584,6 +18611,31 @@ h4,
     margin-bottom: 12px;
     padding: 8px 10px 8px 13px;
     border-radius: 15px;
+  }
+
+  .discovery-businesses .search-businesses__head {
+    display: none;
+  }
+
+  .discovery-feed-mobile-back {
+    position: fixed;
+    z-index: 30;
+    right: 16px;
+    bottom: calc(82px + env(safe-area-inset-bottom));
+    display: grid;
+    width: 48px;
+    height: 48px;
+    place-items: center;
+    border: 1px solid rgb(255 255 255 / 62%);
+    border-radius: 17px;
+    color: white;
+    background: var(--locz-primary);
+    box-shadow: 0 14px 30px rgb(15 70 59 / 28%);
+  }
+
+  .discovery-feed-mobile-back svg {
+    width: 19px;
+    transform: rotate(180deg);
   }
 
   .discovery-feed-toolbar nav .is-active {

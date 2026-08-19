@@ -120,6 +120,7 @@ class _DiscoveryFeedScreenState extends ConsumerState<DiscoveryFeedScreen> {
   bool _latestFirst = false;
 
   static const _areaTypes = <String, Set<String>>{
+    'local-now': {'EVENT', 'BUYER_REQUIREMENT', 'RENTAL'},
     'jobs': {'JOB'},
     'deals': {'OFFER'},
     'services': {'SERVICE'},
@@ -127,15 +128,15 @@ class _DiscoveryFeedScreenState extends ConsumerState<DiscoveryFeedScreen> {
     'businesses': {'BUSINESS_LISTING'},
   };
 
-  bool get _showWeather => widget.area == 'local-now';
-  bool get _showAlerts => widget.area == 'local-now' || widget.area == 'alerts';
-  bool get _showNews => widget.area == 'local-now' || widget.area == 'news';
-  bool get _showJobs => widget.area == 'local-now' || widget.area == 'jobs';
-  bool get _showBusinesses =>
+  bool get _showAlerts => widget.area == 'alerts';
+  bool get _showNews => widget.area == 'news';
+  bool get _showJobs => widget.area == 'jobs';
+  bool get _showBusinesses => widget.area == 'businesses';
+  bool get _showCommunityFeed =>
       widget.area == 'local-now' ||
-      widget.area == 'businesses' ||
+      widget.area == 'deals' ||
       widget.area == 'services' ||
-      widget.area == 'deals';
+      widget.area == 'marketplace';
 
   @override
   Widget build(BuildContext context) {
@@ -144,120 +145,97 @@ class _DiscoveryFeedScreenState extends ConsumerState<DiscoveryFeedScreen> {
     final title = strings('area.${widget.area}');
 
     return Scaffold(
-      appBar: AppBar(
-        leading: IconButton(
-          onPressed: () => context.pop(),
-          icon: const Icon(Icons.arrow_back_rounded),
-          tooltip: strings('feed.backToExplore'),
-        ),
-        titleSpacing: 0,
-        title: Row(
-          children: [
-            Container(
-              width: 38,
-              height: 38,
-              padding: const EdgeInsets.all(3),
-              decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.primaryContainer,
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Image.asset(discoveryAreaAsset(widget.area)),
-            ),
-            const SizedBox(width: 10),
-            Expanded(
-              child: Text(title, maxLines: 1, overflow: TextOverflow.ellipsis),
-            ),
-          ],
-        ),
-        actions: [
-          IconButton(
-            onPressed: () => context.push('/search'),
-            icon: const Icon(Icons.search_rounded),
-            tooltip: strings('nav.search'),
-          ),
-        ],
+      floatingActionButton: FloatingActionButton.small(
+        heroTag: 'discovery-back-${widget.area}',
+        onPressed: () => context.pop(),
+        tooltip: strings('feed.backToExplore'),
+        child: const Icon(Icons.grid_view_rounded),
       ),
-      body: RefreshIndicator(
-        onRefresh: () async => ref.invalidate(feedProvider),
-        child: CustomScrollView(
-          physics: const AlwaysScrollableScrollPhysics(),
-          slivers: [
-            SliverPersistentHeader(
-              pinned: true,
-              delegate: _FeedToolbarDelegate(
-                title: title,
-                selectedArea: widget.area,
-                latestFirst: _latestFirst,
-                onExplore: () => context.pop(),
-                onSortChanged: (latest) => setState(() => _latestFirst = latest),
+      body: SafeArea(
+        bottom: false,
+        child: RefreshIndicator(
+          onRefresh: () async => ref.invalidate(feedProvider),
+          child: CustomScrollView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            slivers: [
+              SliverPersistentHeader(
+                pinned: true,
+                delegate: _FeedToolbarDelegate(
+                  title: title,
+                  area: widget.area,
+                  latestFirst: _latestFirst,
+                  onSortChanged: (latest) => setState(() => _latestFirst = latest),
+                ),
               ),
-            ),
-            if (_showWeather) const SliverToBoxAdapter(child: _WeatherStrip()),
-            if (_showAlerts) const SliverToBoxAdapter(child: _LocalAlertsSection()),
-            if (_showNews) const SliverToBoxAdapter(child: _LocalNewsSection()),
-            if (_showJobs) const SliverToBoxAdapter(child: _LocalJobsSection()),
-            if (_showBusinesses) const SliverToBoxAdapter(child: _NearbyBusinessesSection()),
-            feed.when(
-              loading: () => const SliverToBoxAdapter(
-                child: SizedBox(height: 430, child: _FeedLoading()),
-              ),
-              error: (_, __) => const SliverToBoxAdapter(child: SizedBox.shrink()),
-              data: (data) {
-                final types = _areaTypes[widget.area];
-                final seen = <String>{};
-                final items = <ListingSummary>[
-                  for (final section in data.sections)
-                    for (final item in section.items)
-                      if (seen.add(item.id) && (types == null || types.contains(item.type))) item,
-                ];
-                if (_latestFirst) {
-                  items.sort(
-                    (a, b) => (b.publishedAt ?? DateTime.fromMillisecondsSinceEpoch(0)).compareTo(
-                      a.publishedAt ?? DateTime.fromMillisecondsSinceEpoch(0),
-                    ),
-                  );
-                } else {
-                  items.sort((a, b) {
-                    final left = a.distanceMeters;
-                    final right = b.distanceMeters;
-                    if (left == null && right == null) return 0;
-                    if (left == null) return 1;
-                    if (right == null) return -1;
-                    return left.compareTo(right);
-                  });
-                }
-                if (items.isEmpty) {
-                  return const SliverToBoxAdapter(child: SizedBox.shrink());
-                }
-                return SliverPadding(
-                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
-                  sliver: SliverList.builder(
-                    itemCount: items.length,
-                    itemBuilder: (context, index) {
-                      final listing = items[index];
-                      final heroTag = 'discover-${widget.area}-${listing.id}';
-                      return Padding(
-                        padding: const EdgeInsets.only(bottom: 14),
-                        child: ListingCard(
-                          listing: listing,
-                          heroTag: heroTag,
-                          typeLabel: strings('type.${listing.type}'),
-                          onTap: () => context.push(
-                            '/ad/${listing.slug}',
-                            extra: ListingNavigationPreview(
-                              listing: listing,
-                              heroTag: heroTag,
-                            ),
-                          ),
+              if (_showAlerts) const SliverToBoxAdapter(child: _LocalAlertsSection()),
+              if (_showNews) const SliverToBoxAdapter(child: _LocalNewsSection()),
+              if (_showJobs) const SliverToBoxAdapter(child: _LocalJobsSection()),
+              if (_showBusinesses) const SliverToBoxAdapter(child: _NearbyBusinessesSection()),
+              if (_showCommunityFeed)
+                feed.when(
+                  loading: () => const SliverToBoxAdapter(
+                    child: SizedBox(height: 430, child: _FeedLoading()),
+                  ),
+                  error: (_, __) => const SliverToBoxAdapter(child: SizedBox.shrink()),
+                  data: (data) {
+                    final types = _areaTypes[widget.area];
+                    final seen = <String>{};
+                    final items = <ListingSummary>[
+                      for (final section in data.sections)
+                        for (final item in section.items)
+                          if (seen.add(item.id) && (types == null || types.contains(item.type)))
+                            item,
+                    ];
+                    if (_latestFirst) {
+                      items.sort(
+                        (a, b) =>
+                            (b.publishedAt ?? DateTime.fromMillisecondsSinceEpoch(0)).compareTo(
+                          a.publishedAt ?? DateTime.fromMillisecondsSinceEpoch(0),
                         ),
                       );
-                    },
-                  ),
-                );
-              },
-            ),
-            const SliverToBoxAdapter(child: SizedBox(height: 24)),
-          ],
+                    } else {
+                      items.sort((a, b) {
+                        final left = a.distanceMeters;
+                        final right = b.distanceMeters;
+                        if (left == null && right == null) return 0;
+                        if (left == null) return 1;
+                        if (right == null) return -1;
+                        return left.compareTo(right);
+                      });
+                    }
+                    if (items.isEmpty) {
+                      return const SliverToBoxAdapter(child: SizedBox.shrink());
+                    }
+                    return SliverPadding(
+                      padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
+                      sliver: SliverList.builder(
+                        itemCount: items.length,
+                        itemBuilder: (context, index) {
+                          final listing = items[index];
+                          final heroTag = 'discover-${widget.area}-${listing.id}';
+                          return Padding(
+                            padding: const EdgeInsets.only(bottom: 14),
+                            child: ListingCard(
+                              listing: listing,
+                              heroTag: heroTag,
+                              typeLabel: strings('type.${listing.type}'),
+                              onTap: () => context.push(
+                                '/ad/${listing.slug}',
+                                extra: ListingNavigationPreview(
+                                  listing: listing,
+                                  heroTag: heroTag,
+                                ),
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                    );
+                  },
+                ),
+              const SliverToBoxAdapter(child: SizedBox(height: 24)),
+            ],
+          ),
         ),
       ),
     );
@@ -1177,23 +1155,21 @@ class _AroundYouSectionState extends ConsumerState<_AroundYouSection> {
 class _FeedToolbarDelegate extends SliverPersistentHeaderDelegate {
   _FeedToolbarDelegate({
     required this.title,
-    required this.selectedArea,
+    required this.area,
     required this.latestFirst,
-    required this.onExplore,
     required this.onSortChanged,
   });
 
   final String title;
-  final String? selectedArea;
+  final String area;
   final bool latestFirst;
-  final VoidCallback onExplore;
   final ValueChanged<bool> onSortChanged;
 
   @override
-  double get minExtent => 102;
+  double get minExtent => 64;
 
   @override
-  double get maxExtent => 102;
+  double get maxExtent => 64;
 
   @override
   Widget build(
@@ -1208,57 +1184,42 @@ class _FeedToolbarDelegate extends SliverPersistentHeaderDelegate {
       elevation: overlapsContent ? 2 : 0,
       shadowColor: theme.colorScheme.shadow.withValues(alpha: 0.12),
       child: Padding(
-        padding: const EdgeInsets.fromLTRB(16, 10, 16, 8),
-        child: Column(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        child: Row(
           children: [
-            Row(
-              children: [
-                if (selectedArea != null)
-                  IconButton(
-                    onPressed: onExplore,
-                    icon: const Icon(Icons.arrow_back_rounded),
-                    tooltip: strings('feed.backToExplore'),
-                    visualDensity: VisualDensity.compact,
-                  ),
-                Expanded(
-                  child: Text(
-                    title,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w800),
-                  ),
-                ),
-                IconButton(
-                  onPressed: () => context.push('/search'),
-                  icon: const Icon(Icons.tune_rounded),
-                  tooltip: strings('feed.filters'),
-                ),
-              ],
-            ),
-            SizedBox(
-              height: 34,
-              child: ListView(
-                scrollDirection: Axis.horizontal,
-                children: [
-                  ChoiceChip(
-                    label: Text(strings('feed.nearest')),
-                    selected: !latestFirst,
-                    onSelected: (_) => onSortChanged(false),
-                  ),
-                  const SizedBox(width: 8),
-                  ChoiceChip(
-                    label: Text(strings('feed.latest')),
-                    selected: latestFirst,
-                    onSelected: (_) => onSortChanged(true),
-                  ),
-                  const SizedBox(width: 8),
-                  ActionChip(
-                    avatar: const Icon(Icons.verified_outlined, size: 16),
-                    label: Text(strings('feed.verified')),
-                    onPressed: () => context.push('/search?verified=true'),
-                  ),
-                ],
+            Container(
+              width: 42,
+              height: 42,
+              padding: const EdgeInsets.all(4),
+              decoration: BoxDecoration(
+                color: theme.colorScheme.primaryContainer,
+                borderRadius: BorderRadius.circular(13),
               ),
+              child: Image.asset(discoveryAreaAsset(area)),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Text(
+                title,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w800),
+              ),
+            ),
+            TextButton.icon(
+              onPressed: () => onSortChanged(!latestFirst),
+              icon: Icon(
+                latestFirst ? Icons.schedule_rounded : Icons.near_me_outlined,
+                size: 17,
+              ),
+              label: Text(
+                strings(latestFirst ? 'feed.latest' : 'feed.nearest'),
+              ),
+            ),
+            IconButton(
+              onPressed: () => context.push('/search'),
+              icon: const Icon(Icons.tune_rounded),
+              tooltip: strings('feed.filters'),
             ),
           ],
         ),
@@ -1269,7 +1230,7 @@ class _FeedToolbarDelegate extends SliverPersistentHeaderDelegate {
   @override
   bool shouldRebuild(covariant _FeedToolbarDelegate oldDelegate) =>
       title != oldDelegate.title ||
-      selectedArea != oldDelegate.selectedArea ||
+      area != oldDelegate.area ||
       latestFirst != oldDelegate.latestFirst;
 }
 

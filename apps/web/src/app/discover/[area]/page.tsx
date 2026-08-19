@@ -58,6 +58,7 @@ const destinations = [
 type Destination = (typeof destinations)[number];
 
 const listingTypes: Partial<Record<Destination, ReadonlySet<ListingSummary['type']>>> = {
+  'local-now': new Set(['EVENT', 'BUYER_REQUIREMENT', 'RENTAL']),
   businesses: new Set(['BUSINESS_LISTING']),
   jobs: new Set(['JOB']),
   deals: new Set(['OFFER']),
@@ -93,11 +94,11 @@ export default async function DiscoveryAreaPage({ params }: { params: Promise<{ 
     feedQuery.set('radiusKm', String(radiusKm));
   }
 
-  const showWeather = area === 'local-now';
-  const showAlerts = area === 'local-now' || area === 'alerts';
-  const showNews = area === 'local-now' || area === 'news';
-  const showJobs = area === 'local-now' || area === 'jobs';
-  const showBusinesses = ['local-now', 'businesses', 'services', 'deals'].includes(area);
+  const showWeather = false;
+  const showAlerts = area === 'alerts';
+  const showNews = area === 'news';
+  const showJobs = area === 'jobs';
+  const showBusinesses = area === 'businesses';
   const alertQuery = new URLSearchParams({ q: cityName });
   if (city?.id) alertQuery.set('cityId', city.id);
 
@@ -344,6 +345,9 @@ export default async function DiscoveryAreaPage({ params }: { params: Promise<{ 
           ) : null}
         </div>
       </div>
+      <Link href="/" className="discovery-feed-mobile-back" aria-label={t('home.explore')}>
+        <Icon name="arrow" />
+      </Link>
     </main>
   );
 }
