@@ -41,6 +41,16 @@ export class BusinessesController {
   }
 
   @Public()
+  @Get('category-counts')
+  @ApiOperation({ summary: 'Active business count per category for an area (for tile badges)' })
+  categoryCounts(
+    @Query('cityId') cityId?: string,
+    @Query('pincode') pincode?: string,
+  ): Promise<Array<{ categoryId: string; count: number }>> {
+    return this.businesses.categoryCounts({ cityId, pincode });
+  }
+
+  @Public()
   @Get('nearby')
   @ApiOperation({ summary: 'Businesses nearest to a point, with an exact distance on each' })
   @ApiResponse({ status: 200, type: [BusinessSummaryDto] })

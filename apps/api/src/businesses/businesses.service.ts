@@ -118,6 +118,29 @@ export class BusinessesService {
   }
 
   /**
+   * How many active businesses sit in each category for an area — powers the "Food · 12,400
+   * nearby" counts on the category tiles, so it's obvious which areas are populated. Scoped by
+   * city or pincode (the indexed columns) so it stays cheap.
+   */
+  async categoryCounts(scope: {
+    cityId?: string;
+    pincode?: string;
+  }): Promise<Array<{ categoryId: string; count: number }>> {
+    const where: Prisma.BusinessWhereInput = {
+      deletedAt: null,
+      isActive: true,
+      ...(scope.cityId ? { cityId: scope.cityId } : {}),
+      ...(scope.pincode ? { pincodeCode: scope.pincode } : {}),
+    };
+    const groups = await this.prisma.business.groupBy({
+      by: ['categoryId'],
+      where,
+      _count: { _all: true },
+    });
+    return groups.map((g) => ({ categoryId: g.categoryId, count: g._count._all }));
+  }
+
+  /**
    * Businesses near a point, nearest first, with an exact distance on each — the geo variant
    * of listPublic used by the Home "Businesses near you" surface. Uses the PostGIS GiST index
    * (ST_DWithin to filter, KNN `<->` to order), paginated 20 at a time.

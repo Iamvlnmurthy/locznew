@@ -16817,3 +16817,11 @@ body {
 .local-now__place {
   color: var(--locz-text-muted);
 }
+
+.category-chip__count {
+  display: block;
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: var(--locz-text-muted);
+  margin-top: 2px;
+}

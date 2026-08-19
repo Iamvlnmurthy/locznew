@@ -118,6 +118,19 @@ export default async function HomePage() {
             await loadNearbyBusinesses({ cityId: feed.cityId, page: 1 })
           : { items: [], total: 0, page: 1, hasNextPage: false };
 
+  // Live nearby business counts per category → "Food · 12,400" on the tiles, so it's obvious
+  // which local areas are actually populated.
+  const countScope = new URLSearchParams();
+  const countCityId = city?.id ?? feed?.cityId;
+  if (countCityId) countScope.set('cityId', countCityId);
+  if (city?.pincode) countScope.set('pincode', city.pincode);
+  const categoryCounts = countCityId
+    ? await apiSafe<Array<{ categoryId: string; count: number }>>(
+        `/businesses/category-counts?${countScope.toString()}`,
+      )
+    : [];
+  const countByCategory = new Map((categoryCounts ?? []).map((c) => [c.categoryId, c.count]));
+
   // "Local Now" weather — display-only, and null unless OPENWEATHER_API_KEY is configured.
   const weather =
     city?.latitude !== undefined && city?.longitude !== undefined
@@ -338,7 +351,14 @@ export default async function HomePage() {
                       loading="lazy"
                     />
                   </span>
-                  <span>{localisedCategoryName(category, locale)}</span>
+                  <span>
+                    {localisedCategoryName(category, locale)}
+                    {countByCategory.get(category.id) ? (
+                      <small className="category-chip__count">
+                        {countByCategory.get(category.id)!.toLocaleString()} {t('home.countNearby')}
+                      </small>
+                    ) : null}
+                  </span>
                   <i aria-hidden="true">→</i>
                 </Link>
               ))}
