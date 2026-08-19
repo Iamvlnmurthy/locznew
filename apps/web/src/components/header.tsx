@@ -9,7 +9,6 @@ import { LocaleSwitcher } from './locale-switcher';
 import { Icon } from './icons';
 import { AccountMenu } from './account-menu';
 import { ThemeToggle } from './theme-toggle';
-import { RecentSearchInput } from './recent-search-input';
 
 /**
  * Site header. Search and location are the two controls that matter on a location-first
@@ -17,7 +16,6 @@ import { RecentSearchInput } from './recent-search-input';
  */
 export async function Header({ locale }: { locale: Locale }) {
   const t = getTranslator(locale);
-  const searchLabels = getMessageGroup(locale, 'searchUi');
   const discoveryLabels = getMessageGroup(locale, 'discoveryAreas');
   const [user, city] = await Promise.all([getCurrentUser(), getSelectedCity()]);
   const unreadNotifications = user
@@ -69,24 +67,8 @@ export async function Header({ locale }: { locale: Locale }) {
 
           <ThemeToggle label={t('nav.toggleTheme')} className="theme-toggle--mobile" />
 
-          {!isHome && (
-            <form className="searchbar" action="/search" method="get" role="search">
-              <label htmlFor="site-search" className="sr-only">
-                {t('search.submit')}
-              </label>
-              <Icon name="search" className="searchbar__icon" width="19" height="19" />
-              <RecentSearchInput
-                id="site-search"
-                placeholder={t('search.placeholder')}
-                recentLabel={searchLabels.recentSearches}
-                clearLabel={searchLabels.clearRecent}
-              />
-              <button type="submit">
-                <span>{t('search.submit')}</span>
-                <Icon name="arrow" width="17" height="17" />
-              </button>
-            </form>
-          )}
+          {/* No header search box: the home hero owns search, and inner pages reach it via the
+              nav / the mobile Search tab. Removed deliberately (kept cramping the navbar). */}
 
           <div className="header__actions">
             <ThemeToggle label={t('nav.toggleTheme')} />
