@@ -1653,6 +1653,22 @@
     "deals": "Deals",
     "businesses": "Businesses",
     "play": "Play",
-    "pets": "Pets"
+    "pets": "Pets",
+    "local-now": "Local Now",
+    "marketplace": "Marketplace",
+    "news": "News",
+    "alerts": "Alerts"
+  },
+  "discoverUi": {
+    "tagline": "Everything useful from LocZ and trusted local sources, together.",
+    "localWeather": "Local weather",
+    "officialAlerts": "Official alerts",
+    "localAdvisory": "Local advisory",
+    "localNews": "Local news",
+    "workNearby": "Work nearby",
+    "fromCommunity": "From your community",
+    "emptyTitle": "Nothing nearby yet",
+    "emptyBody": "Try a wider radius or check again shortly.",
+    "searchCta": "Search LocZ"
   }
 }

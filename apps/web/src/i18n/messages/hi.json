@@ -1653,6 +1653,22 @@
     "deals": "ऑफर",
     "businesses": "व्यवसाय",
     "play": "खेल",
-    "pets": "पालतू"
+    "pets": "पालतू",
+    "local-now": "लोकल नाउ",
+    "marketplace": "मार्केटप्लेस",
+    "news": "समाचार",
+    "alerts": "अलर्ट"
+  },
+  "discoverUi": {
+    "tagline": "LocZ और भरोसेमंद लोकल सोर्स से सब कुछ उपयोगी, एक जगह।",
+    "localWeather": "लोकल मौसम",
+    "officialAlerts": "आधिकारिक अलर्ट",
+    "localAdvisory": "लोकल सूचना",
+    "localNews": "लोकल न्यूज़",
+    "workNearby": "आसपास काम",
+    "fromCommunity": "आपके समुदाय से",
+    "emptyTitle": "अभी आसपास कुछ नहीं",
+    "emptyBody": "बड़ा दायरा आज़माएं या थोड़ी देर में फिर देखें।",
+    "searchCta": "LocZ में खोजें"
   }
 }

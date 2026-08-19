@@ -80,13 +80,9 @@ export default async function DiscoveryAreaPage({ params }: { params: Promise<{ 
   const t = getTranslator(locale);
   const areaLabels = getMessageGroup(locale, 'discoveryAreas');
   const searchLabels = getMessageGroup(locale, 'searchUi');
+  const d = getMessageGroup(locale, 'discoverUi');
   const cityName = city?.name ?? t('home.yourCity');
-  const title =
-    area === 'news'
-      ? t('home.localNewsKicker')
-      : area === 'alerts'
-        ? t('home.alertsTitle')
-        : (areaLabels[area] ?? area);
+  const title = areaLabels[area] ?? area;
 
   const feedQuery = new URLSearchParams({ limit: '30' });
   if (city?.id) feedQuery.set('cityId', city.id);
@@ -167,7 +163,7 @@ export default async function DiscoveryAreaPage({ params }: { params: Promise<{ 
             <div>
               <small>{cityName}</small>
               <h1>{title}</h1>
-              <p>Everything useful from LocZ and trusted local sources, together.</p>
+              <p>{d.tagline}</p>
             </div>
           </div>
         </div>
@@ -182,13 +178,7 @@ export default async function DiscoveryAreaPage({ params }: { params: Promise<{ 
               className={destination === area ? 'is-active' : ''}
             >
               <Image src={premiumDiscoveryArtwork(destination)} alt="" width={38} height={38} />
-              <span>
-                {destination === 'news'
-                  ? t('home.localNewsKicker')
-                  : destination === 'alerts'
-                    ? t('home.alertsTitle')
-                    : (areaLabels[destination] ?? destination)}
-              </span>
+              <span>{areaLabels[destination] ?? destination}</span>
             </Link>
           ))}
         </aside>
@@ -208,20 +198,20 @@ export default async function DiscoveryAreaPage({ params }: { params: Promise<{ 
             <section className="discovery-source-card discovery-source-card--weather">
               <span>☀️</span>
               <div>
-                <small>Local weather</small>
+                <small>{d.localWeather}</small>
                 <strong>
                   {weather.tempC}°C · {weather.description}
                 </strong>
               </div>
-              <i>MET Norway</i>
+              <i>{'MET Norway'}</i>
             </section>
           ) : null}
 
           {alerts.length > 0 ? (
             <section className="discovery-source-section">
               <div className="discovery-source-section__head">
-                <span>Official alerts</span>
-                <small>NDMA SACHET</small>
+                <span>{d.officialAlerts}</span>
+                <small>{'NDMA SACHET'}</small>
               </div>
               {alerts.map((alert) => (
                 <article
@@ -231,7 +221,7 @@ export default async function DiscoveryAreaPage({ params }: { params: Promise<{ 
                   <Icon name="alert" />
                   <div>
                     <strong>{alert.title}</strong>
-                    <small>{alert.category ?? 'Local advisory'}</small>
+                    <small>{alert.category ?? d.localAdvisory}</small>
                   </div>
                 </article>
               ))}
@@ -241,8 +231,8 @@ export default async function DiscoveryAreaPage({ params }: { params: Promise<{ 
           {news.length > 0 ? (
             <section className="discovery-source-section">
               <div className="discovery-source-section__head">
-                <span>Local news</span>
-                <small>Google News</small>
+                <span>{d.localNews}</span>
+                <small>{'Google News'}</small>
               </div>
               {news.map((item) => (
                 <a
@@ -266,8 +256,8 @@ export default async function DiscoveryAreaPage({ params }: { params: Promise<{ 
           {jobs.length > 0 ? (
             <section className="discovery-source-section">
               <div className="discovery-source-section__head">
-                <span>Work nearby</span>
-                <small>Adzuna</small>
+                <span>{d.workNearby}</span>
+                <small>{'Adzuna'}</small>
               </div>
               {jobs.map((job) => (
                 <a
@@ -293,8 +283,8 @@ export default async function DiscoveryAreaPage({ params }: { params: Promise<{ 
           {listings.length > 0 ? (
             <section className="discovery-source-section">
               <div className="discovery-source-section__head">
-                <span>From your community</span>
-                <small>LocZ</small>
+                <span>{d.fromCommunity}</span>
+                <small>{'LocZ'}</small>
               </div>
               <div className="discovery-listing-feed">
                 {listings.map((listing) => (
@@ -345,10 +335,10 @@ export default async function DiscoveryAreaPage({ params }: { params: Promise<{ 
           businesses.items.length === 0 ? (
             <div className="discovery-feed-empty">
               <Image src={premiumDiscoveryArtwork(area)} alt="" width={92} height={92} />
-              <h2>Nothing nearby yet</h2>
-              <p>Try a wider radius or check again shortly.</p>
+              <h2>{d.emptyTitle}</h2>
+              <p>{d.emptyBody}</p>
               <Link href="/search" className="btn btn--primary">
-                Search LocZ
+                {d.searchCta}
               </Link>
             </div>
           ) : null}

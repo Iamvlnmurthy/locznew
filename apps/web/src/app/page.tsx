@@ -306,14 +306,8 @@ export default async function HomePage({
                   <span aria-hidden="true">
                     <Image src={premiumDiscoveryArtwork(area)} alt="" width={58} height={58} />
                   </span>
-                  <strong>
-                    {area === 'news'
-                      ? t('home.localNewsKicker')
-                      : area === 'alerts'
-                        ? t('home.alertsTitle')
-                        : (areaLabels[area] ?? area)}
-                  </strong>
-                  <small>{count > 0 ? count.toLocaleString('en-IN') : t('home.explore')}</small>
+                  <strong>{areaLabels[area] ?? area}</strong>
+                  {count > 0 ? <small>{count.toLocaleString('en-IN')}</small> : null}
                 </Link>
               ))}
             </div>
