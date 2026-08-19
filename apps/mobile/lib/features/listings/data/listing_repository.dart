@@ -187,6 +187,26 @@ class ListingRepository {
     };
   }
 
+  /// "Around you" — how many known places sit in each discovery area, rolled up from the POIs
+  /// LocZ already holds. Makes a brand-new area look alive before anyone posts. Ordered by count.
+  Future<List<({String area, int count})>> areaSummary({String? cityId, String? pincode}) async {
+    final json = await _api.get<Map<String, dynamic>>(
+      '/local-now/area-summary',
+      query: {
+        if (cityId != null) 'cityId': cityId,
+        if (pincode != null) 'pincode': pincode,
+      },
+    );
+    final areas = (json['areas'] as List<dynamic>? ?? []);
+    return [
+      for (final entry in areas)
+        (
+          area: (entry as Map<String, dynamic>)['area'] as String,
+          count: (entry['count'] as num?)?.toInt() ?? 0,
+        ),
+    ];
+  }
+
   Future<BusinessDetail> businessDetail(String slug) async {
     final json = await _api.get<Map<String, dynamic>>('/businesses/$slug');
     return BusinessDetail.fromJson(json);

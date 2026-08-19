@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../core/theme/tokens.g.dart';
+import 'business_category_art.dart';
 
 /// A shopfront for a business that has never uploaded a photograph.
 ///
@@ -10,9 +11,8 @@ import '../../../core/theme/tokens.g.dart';
 /// the initials come from its name. The same shop looks the same on every screen, forever,
 /// and nothing is stored or served to achieve it.
 ///
-/// The glyph is drawn from SVG path data rather than an asset. No image file, no network
-/// request, and the same eight shapes the website uses — they come from one shared token
-/// source, so the app and the site cannot disagree about what a pharmacy looks like.
+/// A category-specific premium image supplies the focal artwork. It is bundled locally,
+/// needs no network request, and uses the same filenames as the website artwork.
 class BusinessStorefront extends StatelessWidget {
   const BusinessStorefront({
     required this.businessId,
@@ -56,7 +56,6 @@ class BusinessStorefront extends StatelessWidget {
   Widget build(BuildContext context) {
     final brightness = Theme.of(context).brightness;
     final palette = LoczBusinessGraphics.paletteFor(businessId);
-    final glyph = LoczBusinessGraphics.glyphFor(categoryName);
 
     final background = palette.background(brightness);
     final foreground = palette.foreground(brightness);
@@ -108,12 +107,9 @@ class BusinessStorefront extends StatelessWidget {
                       shape: BoxShape.circle,
                       border: Border.all(color: foreground.withValues(alpha: 0.1)),
                     ),
-                    child: CustomPaint(
-                      painter: _GlyphPainter(
-                        glyph: glyph,
-                        color: accent.withValues(alpha: 0.72),
-                        strokeWidth: compact ? 1.35 : 1.15,
-                      ),
+                    child: Image.asset(
+                      businessCategoryAsset(categoryName),
+                      fit: BoxFit.contain,
                     ),
                   ),
                 ),
@@ -136,12 +132,9 @@ class BusinessStorefront extends StatelessWidget {
                                 color: foreground.withValues(alpha: 0.18),
                               ),
                             ),
-                            child: CustomPaint(
-                              painter: _GlyphPainter(
-                                glyph: glyph,
-                                color: foreground,
-                                strokeWidth: 1.7,
-                              ),
+                            child: Image.asset(
+                              businessCategoryAsset(categoryName),
+                              fit: BoxFit.contain,
                             ),
                           ),
                           const Spacer(),
@@ -249,6 +242,8 @@ class _StorefrontBackdropPainter extends CustomPainter {
 /// larger surface; this reads exactly the shapes in the token file and nothing else. If a
 /// future glyph uses something unsupported it will simply not draw that segment, which is
 /// visible immediately rather than silently wrong.
+// Kept as a lightweight fallback renderer for deployments that omit image assets.
+// ignore: unused_element
 class _GlyphPainter extends CustomPainter {
   const _GlyphPainter({
     required this.glyph,

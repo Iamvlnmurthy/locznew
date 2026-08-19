@@ -48,3 +48,5 @@ next-env.d.ts
 .ui-preview/
 .preview-server.log
 .preview-server.err.log
+.premium-preview.log
+.premium-preview.err.log

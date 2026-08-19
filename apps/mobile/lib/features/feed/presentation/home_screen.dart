@@ -8,6 +8,7 @@ import '../../../core/i18n/strings.dart';
 import '../../../core/motion/locz_motion.dart';
 import '../../../core/providers.dart';
 import '../../listings/domain/models.dart';
+import '../../listings/presentation/business_category_art.dart';
 import '../../listings/presentation/listing_navigation.dart';
 import '../../listings/presentation/widgets/listing_card.dart';
 
@@ -123,6 +124,7 @@ class HomeScreen extends ConsumerWidget {
                     ],
                   ),
                 ),
+                const SliverToBoxAdapter(child: _AroundYouSection()),
                 if (feedItems.isEmpty)
                   SliverFillRemaining(
                     hasScrollBody: false,
@@ -940,6 +942,180 @@ class _QuickTile extends StatelessWidget {
 
 /// "Businesses near you" on Home — the cold-start payoff. Page one of nearby businesses,
 /// nearest first with a distance and OLX-style band headers. Tapping opens the business.
+/// "Around you" — discovery-area counts rolled up from the POIs LocZ already holds, so a
+/// brand-new area reads as alive before anyone posts. Mirrors the web Home strip.
+class _AroundYouSection extends ConsumerStatefulWidget {
+  const _AroundYouSection();
+
+  @override
+  ConsumerState<_AroundYouSection> createState() => _AroundYouSectionState();
+}
+
+class _AroundYouSectionState extends ConsumerState<_AroundYouSection> {
+  static const _icons = <String, IconData>{
+    'food': Icons.restaurant,
+    'health': Icons.medical_services_outlined,
+    'services': Icons.build_outlined,
+    'shopping': Icons.shopping_bag_outlined,
+    'mobility': Icons.directions_car_outlined,
+    'home': Icons.home_repair_service_outlined,
+    'jobs': Icons.work_outline,
+    'events': Icons.event_outlined,
+    'rentals': Icons.bed_outlined,
+    'deals': Icons.local_offer_outlined,
+    'businesses': Icons.storefront_outlined,
+    'play': Icons.sports_soccer_outlined,
+    'pets': Icons.pets_outlined,
+  };
+
+  List<({String area, int count})> _areas = const [];
+  bool _loading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _load();
+  }
+
+  Future<void> _load() async {
+    final city = ref.read(selectedCityProvider);
+    try {
+      final result = await ref.read(listingRepositoryProvider).areaSummary(
+            cityId: (city?.id.isEmpty ?? true) ? null : city!.id,
+            pincode: city?.pincode,
+          );
+      if (mounted) {
+        setState(() {
+          _areas = result;
+          _loading = false;
+        });
+      }
+    } catch (_) {
+      if (mounted) setState(() => _loading = false);
+    }
+  }
+
+  String _formatCount(int count) {
+    // Indian grouping: 12,781 rather than 12781.
+    final digits = count.toString();
+    if (digits.length <= 3) return digits;
+    final head = digits.substring(0, digits.length - 3);
+    final tail = digits.substring(digits.length - 3);
+    final buffer = StringBuffer();
+    for (var i = 0; i < head.length; i += 1) {
+      final fromEnd = head.length - i;
+      buffer.write(head[i]);
+      if (fromEnd > 1 && fromEnd.isOdd) buffer.write(',');
+    }
+    return '$buffer,$tail';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_loading || _areas.isEmpty) return const SizedBox.shrink();
+    final strings = Strings.of(context);
+    final city = ref.watch(selectedCityProvider);
+    final cityName = (city?.name.isEmpty ?? true) ? strings('feed.nearby') : city!.name;
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 24, 16, 0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _SectionHeader(
+            title: strings('area.title', {'city': cityName}),
+            hint: strings('area.kicker'),
+          ),
+          const SizedBox(height: 10),
+          SizedBox(
+            height: 96,
+            child: ListView.separated(
+              scrollDirection: Axis.horizontal,
+              itemCount: _areas.length,
+              separatorBuilder: (_, __) => const SizedBox(width: 10),
+              itemBuilder: (context, index) {
+                final entry = _areas[index];
+                return _AreaChip(
+                  icon: _icons[entry.area] ?? Icons.place_outlined,
+                  count: _formatCount(entry.count),
+                  label: strings('area.${entry.area}'),
+                  onTap: () => context.push('/search'),
+                );
+              },
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _AreaChip extends StatelessWidget {
+  const _AreaChip({
+    required this.icon,
+    required this.count,
+    required this.label,
+    required this.onTap,
+  });
+
+  final IconData icon;
+  final String count;
+  final String label;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Material(
+      color: theme.colorScheme.surface,
+      borderRadius: BorderRadius.circular(16),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(16),
+        onTap: onTap,
+        child: Container(
+          width: 130,
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: theme.colorScheme.outlineVariant),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Container(
+                width: 34,
+                height: 34,
+                decoration: BoxDecoration(
+                  color: theme.colorScheme.primary.withValues(alpha: 0.10),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Icon(icon, size: 18, color: theme.colorScheme.primary),
+              ),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    count,
+                    style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800),
+                  ),
+                  Text(
+                    label,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: theme.textTheme.labelSmall
+                        ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 class _NearbyBusinessesSection extends ConsumerStatefulWidget {
   const _NearbyBusinessesSection();
 
@@ -1096,16 +1272,20 @@ class _BusinessRow extends StatelessWidget {
                           ? CachedNetworkImage(
                               imageUrl: business.logoUrl!,
                               fit: BoxFit.cover,
-                              errorWidget: (_, __, ___) => Icon(
-                                Icons.storefront_rounded,
-                                color: scheme.primary,
-                                size: 30,
+                              errorWidget: (_, __, ___) => Padding(
+                                padding: const EdgeInsets.all(5),
+                                child: Image.asset(
+                                  businessCategoryAsset(business.categoryName),
+                                  fit: BoxFit.contain,
+                                ),
                               ),
                             )
-                          : Icon(
-                              Icons.storefront_rounded,
-                              color: scheme.primary,
-                              size: 30,
+                          : Padding(
+                              padding: const EdgeInsets.all(5),
+                              child: Image.asset(
+                                businessCategoryAsset(business.categoryName),
+                                fit: BoxFit.contain,
+                              ),
                             ),
                     ),
                     const SizedBox(width: 12),
@@ -1288,7 +1468,10 @@ class _BusinessMeta extends StatelessWidget {
       children: [
         Icon(icon, size: 13, color: theme.colorScheme.primary),
         const SizedBox(width: 4),
-        Text(label, style: theme.textTheme.labelSmall?.copyWith(fontSize: 11.5)),
+        Text(
+          label,
+          style: theme.textTheme.labelSmall?.copyWith(fontSize: 11.5),
+        ),
       ],
     );
   }

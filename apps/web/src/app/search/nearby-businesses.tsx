@@ -158,6 +158,7 @@ export function NearbyBusinesses({
                   <div className="search-business-card__visual" aria-hidden="true">
                     {business.logoUrl ? (
                       <Image
+                        className="search-business-card__logo"
                         src={business.logoUrl}
                         alt=""
                         width={112}
@@ -167,12 +168,12 @@ export function NearbyBusinesses({
                     ) : (
                       <>
                         <Image
-                          src={`/icons/categories/${businessArtwork(business.categoryName)}.webp`}
+                          className="search-business-card__art"
+                          src={`/icons/categories/${businessArtwork(business.categoryName)}-premium.webp`}
                           alt=""
                           width={88}
                           height={88}
                         />
-                        <span>{business.name.slice(0, 1).toUpperCase()}</span>
                       </>
                     )}
                   </div>
