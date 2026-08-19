@@ -73,7 +73,20 @@
     "localNewsTitle": "{city}లో లేటెస్ట్",
     "jobsKicker": "దగ్గర్లో జాబ్స్",
     "jobsTitle": "{city}లో జాబ్స్",
-    "alertsTitle": "లోకల్ అలర్ట్స్"
+    "alertsTitle": "లోకల్ అలర్ట్స్",
+    "heroEyebrow": "మీ పరిసరాలు, లైవ్‌గా",
+    "heroSubtitle": "{city} చుట్టూ వ్యాపారాలు, అప్‌డేట్లు, ఉద్యోగాలు మరియు స్థానిక అవకాశాలు.",
+    "heroNearby": "దగ్గరలో {count}",
+    "heroOpenings": "{count} ఉద్యోగాలు",
+    "heroUpdates": "{count} తాజా అప్‌డేట్లు",
+    "heroActive": "{count} యాక్టివ్",
+    "heroContext": "లైవ్ స్థానిక సమాచారం",
+    "heroWeather": "స్థానిక వాతావరణం",
+    "heroLive": "లైవ్",
+    "heroUpdatedNow": "ఇప్పుడే అప్‌డేట్",
+    "heroExplore": "దగ్గరలో చూడండి",
+    "heroBrowse": "డైరెక్టరీ చూడండి",
+    "heroNoAlerts": "యాక్టివ్ అలర్ట్స్ లేవు"
   },
   "nav": {
     "home": "హోమ్",

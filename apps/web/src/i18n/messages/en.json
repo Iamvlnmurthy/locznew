@@ -73,7 +73,20 @@
     "localNewsTitle": "Latest around {city}",
     "jobsKicker": "Work nearby",
     "jobsTitle": "Jobs in {city}",
-    "alertsTitle": "Local alerts"
+    "alertsTitle": "Local alerts",
+    "heroEyebrow": "Your neighbourhood, live",
+    "heroSubtitle": "Businesses, updates, work and local opportunities around {city}.",
+    "heroNearby": "{count} nearby",
+    "heroOpenings": "{count} openings",
+    "heroUpdates": "{count} fresh updates",
+    "heroActive": "{count} active",
+    "heroContext": "Live neighbourhood context",
+    "heroWeather": "Local weather",
+    "heroLive": "Live",
+    "heroUpdatedNow": "Updated now",
+    "heroExplore": "Explore nearby",
+    "heroBrowse": "Browse directory",
+    "heroNoAlerts": "No active alerts"
   },
   "nav": {
     "home": "Home",

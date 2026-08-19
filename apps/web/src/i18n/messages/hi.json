@@ -73,7 +73,20 @@
     "localNewsTitle": "{city} के आसपास ताज़ा",
     "jobsKicker": "आसपास काम",
     "jobsTitle": "{city} में नौकरियां",
-    "alertsTitle": "स्थानीय अलर्ट"
+    "alertsTitle": "स्थानीय अलर्ट",
+    "heroEyebrow": "आपका पड़ोस, लाइव",
+    "heroSubtitle": "{city} के आसपास व्यवसाय, अपडेट, काम और स्थानीय अवसर।",
+    "heroNearby": "पास में {count}",
+    "heroOpenings": "{count} नौकरियां",
+    "heroUpdates": "{count} नए अपडेट",
+    "heroActive": "{count} सक्रिय",
+    "heroContext": "लाइव स्थानीय जानकारी",
+    "heroWeather": "स्थानीय मौसम",
+    "heroLive": "लाइव",
+    "heroUpdatedNow": "अभी अपडेट हुआ",
+    "heroExplore": "आसपास देखें",
+    "heroBrowse": "डायरेक्टरी देखें",
+    "heroNoAlerts": "कोई सक्रिय अलर्ट नहीं"
   },
   "nav": {
     "home": "होम",

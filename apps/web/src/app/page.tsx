@@ -256,15 +256,43 @@ export default async function HomePage({
         ?.jobs ?? [])
     : [];
 
+  const heroMetrics: Record<string, string> = {
+    'local-now': newsHeadlines.length
+      ? t('home.heroUpdates', { count: newsHeadlines.length })
+      : t('home.heroUpdatedNow'),
+    businesses: homeBusinesses.total
+      ? t('home.heroNearby', { count: homeBusinesses.total })
+      : t('home.heroBrowse'),
+    jobs: jobs.length ? t('home.heroOpenings', { count: jobs.length }) : t('home.heroExplore'),
+    news: newsHeadlines.length
+      ? t('home.heroUpdates', { count: newsHeadlines.length })
+      : t('home.heroExplore'),
+    alerts: alerts.length ? t('home.heroActive', { count: alerts.length }) : t('home.heroNoAlerts'),
+    deals:
+      (areaCountByKey.get('deals') ?? 0)
+        ? t('home.heroNearby', { count: areaCountByKey.get('deals') ?? 0 })
+        : t('home.heroExplore'),
+    services:
+      (areaCountByKey.get('services') ?? 0)
+        ? t('home.heroNearby', { count: areaCountByKey.get('services') ?? 0 })
+        : t('home.heroExplore'),
+    marketplace:
+      (areaCountByKey.get('marketplace') ?? 0)
+        ? t('home.heroNearby', { count: areaCountByKey.get('marketplace') ?? 0 })
+        : t('home.heroExplore'),
+  };
+
   return (
     <>
       <section className="home-hero home-hero--discovery" id="home-top">
         <div className="container home-hero__inner">
           <div className="home-hero__copy">
+            <span className="home-hero__eyebrow">{t('home.heroEyebrow')}</span>
             <span className="home-discovery__location">
               <Icon name="location" /> {feedCity}
             </span>
             <h1>{t('home.exploreTitle', { city: feedCity })}</h1>
+            <p className="home-hero__subtitle">{t('home.heroSubtitle', { city: feedCity })}</p>
             <RadiusSelector
               options={[...RADIUS_OPTIONS_KM]}
               selected={radiusKm}
@@ -288,9 +316,19 @@ export default async function HomePage({
                 {t('search.submit')} <Icon name="arrow" width="17" height="17" />
               </button>
             </form>
+            <nav className="home-hero__quick-links" aria-label={t('home.popularAria')}>
+              <span>{t('home.popularNow')}</span>
+              <Link href="/search?q=iPhone">iPhone</Link>
+              <Link href="/discover/jobs">{t('home.popularJobs')}</Link>
+              <Link href="/search?q=rooms">{t('home.popularRooms')}</Link>
+              <Link href="/search?q=electrician">{t('home.popularElectrician')}</Link>
+            </nav>
           </div>
 
-          <div className="home-discovery" aria-labelledby="home-discovery-title">
+          <div
+            className="home-discovery home-discovery--bento"
+            aria-labelledby="home-discovery-title"
+          >
             <div className="home-discovery__head">
               <div>
                 <span className="section-kicker">{t('home.exploreKicker')}</span>
@@ -300,22 +338,57 @@ export default async function HomePage({
                 {t('feed.seeAll')} <Icon name="arrow" />
               </Link>
             </div>
-            <div className="home-discovery__grid">
+            <div className="home-discovery__grid home-discovery__grid--bento">
               {heroAreas.map(({ area, count }) => (
-                <Link key={area} href={`/discover/${encodeURIComponent(area)}`}>
-                  <span aria-hidden="true">
-                    <Image src={premiumDiscoveryArtwork(area)} alt="" width={58} height={58} />
+                <Link
+                  key={area}
+                  href={`/discover/${encodeURIComponent(area)}`}
+                  className={`home-discovery-card home-discovery-card--${area}`}
+                >
+                  <span className="home-discovery-card__art" aria-hidden="true">
+                    <Image
+                      src={premiumDiscoveryArtwork(area)}
+                      alt=""
+                      width={72}
+                      height={72}
+                      sizes="72px"
+                    />
                   </span>
-                  <strong>{areaLabels[area] ?? area}</strong>
-                  {count > 0 ? <small>{count.toLocaleString('en-IN')}</small> : null}
+                  <span className="home-discovery-card__body">
+                    <strong>{areaLabels[area] ?? area}</strong>
+                    <small>{heroMetrics[area] ?? count.toLocaleString('en-IN')}</small>
+                  </span>
+                  <Icon name="arrow" className="home-discovery-card__arrow" />
                 </Link>
               ))}
+            </div>
+            <div className="home-discovery__context" aria-label={t('home.heroContext')}>
+              <span>
+                <i aria-hidden="true">{weather ? weatherEmoji(weather.condition) : '◌'}</i>
+                <b>{weather ? `${weather.tempC}°C` : '—'}</b>
+                <small>{weather?.description ?? t('home.heroWeather')}</small>
+              </span>
+              <span>
+                <Icon name="alert" />
+                <b>{alerts.length}</b>
+                <small>{t('home.alertsTitle')}</small>
+              </span>
+              <span>
+                <Icon name="location" />
+                <b>{homeBusinesses.total.toLocaleString('en-IN')}</b>
+                <small>{areaLabels.businesses}</small>
+              </span>
+              <span>
+                <Icon name="sparkles" />
+                <b>{t('home.heroLive')}</b>
+                <small>{t('home.heroUpdatedNow')}</small>
+              </span>
             </div>
           </div>
         </div>
       </section>
 
-      <div className="container" hidden>
+      <div className="container home-desktop-content">
         {weather ? (
           <div className="local-now" role="status">
             <span className="local-now__icon" aria-hidden="true">

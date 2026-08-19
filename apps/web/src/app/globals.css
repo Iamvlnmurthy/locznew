@@ -18518,6 +18518,353 @@ h4,
   display: none;
 }
 
+/* Desktop Home restores the full useful dashboard below a compact launcher hero. */
+@media (min-width: 761px) {
+  .home-hero--discovery {
+    min-height: 0;
+    margin: 0;
+    padding-block: 28px;
+    background:
+      linear-gradient(
+        90deg,
+        color-mix(in srgb, var(--locz-bg) 91%, transparent) 0%,
+        color-mix(in srgb, var(--locz-bg) 79%, transparent) 48%,
+        color-mix(in srgb, var(--locz-bg) 70%, transparent) 100%
+      ),
+      url('/illustrations/locz-hyderabad-neighbourhood-hero-v1.webp') center / cover no-repeat;
+  }
+
+  .home-hero--discovery::before {
+    opacity: 0.16;
+  }
+
+  .home-hero--discovery .home-hero__inner {
+    min-height: 0;
+    grid-template-columns: minmax(0, 0.82fr) minmax(560px, 1.18fr);
+    gap: clamp(44px, 5vw, 82px);
+    padding-block: 0;
+  }
+
+  .home-hero--discovery .home-hero__copy h1 {
+    max-width: 10ch;
+    margin-block: 14px 20px;
+    font-size: clamp(3rem, 4vw, 4.25rem);
+    line-height: 0.96;
+  }
+
+  .home-discovery {
+    padding: 24px;
+    border-radius: 26px;
+  }
+
+  .home-hero__eyebrow {
+    display: block;
+    margin-bottom: 10px;
+    color: var(--locz-coral);
+    font-size: 0.72rem;
+    font-weight: 800;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+  }
+
+  .home-hero__subtitle {
+    max-width: 500px;
+    margin: -8px 0 20px;
+    color: var(--locz-text-muted);
+    font-size: 1rem;
+    line-height: 1.55;
+  }
+
+  .home-hero__quick-links {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 7px;
+    margin-top: 12px;
+  }
+
+  .home-hero__quick-links span {
+    margin-right: 2px;
+    color: var(--locz-text-muted);
+    font-size: 0.68rem;
+    font-weight: 700;
+  }
+
+  .home-hero__quick-links a {
+    padding: 5px 9px;
+    border: 1px solid color-mix(in srgb, var(--locz-border) 86%, transparent);
+    border-radius: 999px;
+    color: var(--locz-text-muted);
+    background: color-mix(in srgb, var(--locz-surface) 78%, transparent);
+    font-size: 0.68rem;
+    font-weight: 650;
+    transition: 160ms ease;
+  }
+
+  .home-hero__quick-links a:hover {
+    border-color: color-mix(in srgb, var(--locz-primary) 34%, var(--locz-border));
+    color: var(--locz-primary);
+    background: var(--locz-surface);
+  }
+
+  .home-discovery--bento {
+    position: relative;
+    overflow: hidden;
+    background:
+      radial-gradient(circle at 86% 0%, rgb(235 105 79 / 10%), transparent 18rem),
+      color-mix(in srgb, var(--locz-surface) 89%, transparent);
+    backdrop-filter: blur(16px) saturate(112%);
+  }
+
+  .home-discovery--bento::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background-image: radial-gradient(rgb(16 101 83 / 10%) 0.7px, transparent 0.7px);
+    background-size: 17px 17px;
+    mask-image: linear-gradient(135deg, transparent 20%, #000 90%);
+  }
+
+  .home-discovery--bento > * {
+    position: relative;
+  }
+
+  .home-discovery__grid--bento {
+    grid-template-columns: repeat(12, minmax(0, 1fr));
+    grid-template-rows: 98px 98px 84px;
+    gap: 9px;
+  }
+
+  .home-discovery__grid--bento > .home-discovery-card {
+    min-height: 0;
+    flex-direction: row;
+    justify-content: flex-start;
+    gap: 10px;
+    padding: 10px 12px;
+    border-radius: 17px;
+    text-align: left;
+  }
+
+  .home-discovery-card--local-now {
+    grid-column: 1 / 6;
+    grid-row: 1 / 3;
+    align-items: flex-end !important;
+    padding: 18px !important;
+    background:
+      linear-gradient(155deg, rgb(255 255 255 / 36%), transparent 55%),
+      color-mix(in srgb, var(--locz-primary) 11%, var(--locz-surface)) !important;
+  }
+
+  .home-discovery-card--businesses {
+    grid-column: 6 / 10;
+    grid-row: 1;
+  }
+
+  .home-discovery-card--jobs {
+    grid-column: 10 / 13;
+    grid-row: 1;
+  }
+
+  .home-discovery-card--news {
+    grid-column: 6 / 10;
+    grid-row: 2;
+  }
+
+  .home-discovery-card--alerts {
+    grid-column: 10 / 13;
+    grid-row: 2;
+  }
+
+  .home-discovery-card--deals {
+    grid-column: 1 / 5;
+    grid-row: 3;
+  }
+
+  .home-discovery-card--services {
+    grid-column: 5 / 9;
+    grid-row: 3;
+  }
+
+  .home-discovery-card--marketplace {
+    grid-column: 9 / 13;
+    grid-row: 3;
+  }
+
+  .home-discovery__grid--bento > a > .home-discovery-card__art {
+    display: grid;
+    width: 48px;
+    height: 48px;
+    flex: 0 0 48px;
+    margin: 0;
+    place-items: center;
+    border-radius: 14px;
+    background: color-mix(in srgb, var(--locz-primary) 7%, white);
+  }
+
+  .home-discovery-card--local-now > .home-discovery-card__art {
+    width: 86px !important;
+    height: 86px !important;
+    flex-basis: 86px !important;
+    border-radius: 24px !important;
+    box-shadow: 0 15px 32px rgb(21 78 64 / 12%);
+  }
+
+  .home-discovery__grid--bento .home-discovery-card__art img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+  }
+
+  .home-discovery__grid--bento > a > .home-discovery-card__body {
+    display: grid;
+    width: auto;
+    height: auto;
+    min-width: 0;
+    flex: 1;
+    gap: 3px;
+    margin: 0;
+    border-radius: 0;
+    background: transparent;
+  }
+
+  .home-discovery-card__body strong {
+    font-size: 0.76rem;
+    line-height: 1.2;
+  }
+
+  .home-discovery-card--local-now .home-discovery-card__body strong {
+    font-size: 1.1rem;
+  }
+
+  .home-discovery-card__body small {
+    margin: 0;
+    color: var(--locz-text-muted);
+    font-size: 0.62rem;
+  }
+
+  .home-discovery-card__arrow {
+    width: 14px;
+    flex: 0 0 14px;
+    color: var(--locz-text-muted);
+    opacity: 0;
+    transform: translateX(-4px);
+    transition: 160ms ease;
+  }
+
+  .home-discovery-card:hover .home-discovery-card__arrow {
+    opacity: 1;
+    transform: translateX(0);
+  }
+
+  .home-discovery__context {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 1px;
+    margin-top: 12px;
+    overflow: hidden;
+    border: 1px solid color-mix(in srgb, var(--locz-border) 82%, transparent);
+    border-radius: 16px;
+    background: color-mix(in srgb, var(--locz-border) 72%, transparent);
+  }
+
+  .home-discovery__context > span {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    grid-template-rows: auto auto;
+    align-items: center;
+    column-gap: 7px;
+    padding: 9px 11px;
+    background: color-mix(in srgb, var(--locz-surface) 96%, transparent);
+  }
+
+  .home-discovery__context i,
+  .home-discovery__context svg {
+    grid-row: 1 / 3;
+    width: 17px;
+    color: var(--locz-primary);
+    font-style: normal;
+  }
+
+  .home-discovery__context b {
+    overflow: hidden;
+    font-size: 0.7rem;
+    line-height: 1.15;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .home-discovery__context small {
+    overflow: hidden;
+    color: var(--locz-text-muted);
+    font-size: 0.56rem;
+    line-height: 1.2;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .home-discovery__grid > a {
+    min-height: 112px;
+  }
+
+  .home-discovery__grid > a > span,
+  .home-discovery__grid img {
+    width: 52px;
+    height: 52px;
+  }
+
+  .home-desktop-content {
+    display: grid;
+    grid-template-columns: repeat(12, minmax(0, 1fr));
+    align-items: start;
+    gap: 22px;
+    padding-block: 28px 84px;
+  }
+
+  .home-desktop-content > .local-now,
+  .home-desktop-content > .local-alerts,
+  .home-desktop-content > .local-news,
+  .home-desktop-content > .local-jobs,
+  .home-desktop-content > .home-feed-intro,
+  .home-desktop-content > .home-feed-section,
+  .home-desktop-content > .home-feed-toolbar,
+  .home-desktop-content > .empty-state,
+  .home-desktop-content > .search-businesses,
+  .home-desktop-content > section,
+  .home-desktop-content > div {
+    grid-column: 1 / -1;
+    min-width: 0;
+    margin-block: 0;
+  }
+
+  .home-desktop-content > .local-now {
+    grid-column: span 4;
+    align-self: stretch;
+  }
+
+  .home-desktop-content > .local-alerts {
+    grid-column: span 8;
+  }
+
+  .home-desktop-content > .local-news,
+  .home-desktop-content > .local-jobs {
+    grid-column: span 6;
+    align-self: stretch;
+    padding: 22px;
+    border: 1px solid color-mix(in srgb, var(--locz-border) 84%, transparent);
+    border-radius: 24px;
+    background: var(--locz-surface);
+    box-shadow: var(--locz-shadow-sm);
+  }
+
+  .home-desktop-content > .home-feed-toolbar {
+    top: 76px;
+    margin-top: 10px;
+    border: 1px solid color-mix(in srgb, var(--locz-border) 82%, transparent);
+    border-radius: 18px;
+  }
+}
+
 @media (max-width: 900px) {
   .discovery-feed-shell {
     grid-template-columns: minmax(0, 760px);
@@ -18541,6 +18888,34 @@ h4,
 }
 
 @media (max-width: 760px) {
+  .home-hero__eyebrow,
+  .home-hero__subtitle,
+  .home-hero__quick-links,
+  .home-discovery__context,
+  .home-discovery-card__arrow {
+    display: none;
+  }
+
+  .home-discovery__grid > a > .home-discovery-card__body {
+    display: grid;
+    width: auto;
+    height: auto;
+    min-width: 0;
+    flex: 1;
+    gap: 2px;
+    margin: 0;
+    border-radius: 0;
+    background: transparent;
+  }
+
+  .home-discovery-card__body small {
+    display: none;
+  }
+
+  .home-desktop-content {
+    display: none;
+  }
+
   .discovery-feed-page {
     min-height: calc(100dvh - 68px - env(safe-area-inset-bottom));
   }
