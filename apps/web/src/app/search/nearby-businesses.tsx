@@ -1,5 +1,6 @@
 'use client';
 
+import Image from 'next/image';
 import Link from 'next/link';
 import { Fragment, useCallback, useEffect, useRef, useState } from 'react';
 import { Icon } from '@/components/icons';
@@ -30,7 +31,10 @@ function bandIndex(meters: number): number {
  */
 function directionsHref(business: NearbyBusiness): string {
   const destination =
-    business.latitude != null && business.longitude != null
+    business.latitude !== null &&
+    business.latitude !== undefined &&
+    business.longitude !== null &&
+    business.longitude !== undefined
       ? `${business.latitude},${business.longitude}`
       : encodeURIComponent([business.name, business.cityName].filter(Boolean).join(', '));
   return `https://www.google.com/maps/dir/?api=1&destination=${destination}`;
@@ -48,6 +52,8 @@ export function NearbyBusinesses({
   verifiedLabel,
   claimLabel,
   directionsLabel,
+  viewProfileLabel,
+  listingsLabel,
   nearYou,
   loadingLabel,
   kmLabel,
@@ -64,6 +70,8 @@ export function NearbyBusinesses({
   verifiedLabel: string;
   claimLabel: string;
   directionsLabel: string;
+  viewProfileLabel: string;
+  listingsLabel: string;
   nearYou: string;
   loadingLabel: string;
   kmLabel: string;
@@ -123,17 +131,19 @@ export function NearbyBusinesses({
     <>
       <div className="search-businesses__grid">
         {(() => {
-          let lastBand = -1;
-          return items.map((business) => {
+          return items.map((business, index) => {
             const hasDistance = business.distanceMeters !== undefined;
             const band = hasDistance ? bandIndex(business.distanceMeters!) : -1;
-            const showBand = hasDistance && band !== lastBand;
-            if (showBand) lastBand = band;
+            const previousDistance = index > 0 ? items[index - 1]?.distanceMeters : undefined;
+            const previousBand = previousDistance === undefined ? -1 : bandIndex(previousDistance);
+            const showBand = hasDistance && band !== previousBand;
             // Distance already says "near you"; the repeated pincode is just noise, so show it
             // only when there's no distance to show.
-            const place = hasDistance
-              ? formatDistance(business.distanceMeters!, kmLabel)
-              : (business.pincode ?? business.cityName ?? nearYou);
+            const distance = hasDistance ? formatDistance(business.distanceMeters!, kmLabel) : null;
+            const place =
+              [business.addressLine, business.cityName].filter(Boolean).join(', ') ||
+              business.pincode ||
+              nearYou;
             return (
               <Fragment key={business.id}>
                 {showBand ? <h3 className="nearby-businesses__band">{bandLabel(band)}</h3> : null}
@@ -145,33 +155,72 @@ export function NearbyBusinesses({
                     className="search-business-card__link"
                     aria-label={business.name}
                   />
-                  <div className="search-business-card__head">
-                    <span className="search-business-card__mark" aria-hidden="true">
-                      {business.name.slice(0, 1).toUpperCase()}
-                    </span>
-                    {business.verificationStatus === 'VERIFIED' ? (
-                      <span className="search-business-card__verified">
-                        <Icon name="shield" /> {verifiedLabel}
-                      </span>
-                    ) : business.claimStatus === 'UNCLAIMED' ? (
-                      <span className="search-business-card__claim">{claimLabel}</span>
-                    ) : null}
+                  <div className="search-business-card__visual" aria-hidden="true">
+                    {business.logoUrl ? (
+                      <Image
+                        src={business.logoUrl}
+                        alt=""
+                        width={112}
+                        height={112}
+                        sizes="(max-width: 640px) 88px, 112px"
+                      />
+                    ) : (
+                      <>
+                        <Image
+                          src={`/icons/categories/${businessArtwork(business.categoryName)}.webp`}
+                          alt=""
+                          width={88}
+                          height={88}
+                        />
+                        <span>{business.name.slice(0, 1).toUpperCase()}</span>
+                      </>
+                    )}
                   </div>
-                  <div className="search-business-card__body">
-                    <span className="search-business-card__category">{business.categoryName}</span>
+
+                  <div className="search-business-card__content">
+                    <div className="search-business-card__head">
+                      <span className="search-business-card__category">
+                        {business.categoryName}
+                      </span>
+                      {business.verificationStatus === 'VERIFIED' ? (
+                        <span className="search-business-card__verified">
+                          <Icon name="shield" /> {verifiedLabel}
+                        </span>
+                      ) : business.claimStatus === 'UNCLAIMED' ? (
+                        <span className="search-business-card__claim">{claimLabel}</span>
+                      ) : null}
+                    </div>
                     <strong className="search-business-card__name">{business.name}</strong>
                     <span className="search-business-card__place">
                       <Icon name="location" /> {place}
                     </span>
+                    <div className="search-business-card__meta">
+                      {distance ? (
+                        <span>
+                          <Icon name="navigation" /> {distance}
+                        </span>
+                      ) : null}
+                      {business.listingCount ? (
+                        <span>
+                          <Icon name="tag" />{' '}
+                          {listingsLabel.replace('{count}', String(business.listingCount))}
+                        </span>
+                      ) : null}
+                    </div>
+                    <div className="search-business-card__actions">
+                      <span className="search-business-card__profile">
+                        {viewProfileLabel} <Icon name="arrow" />
+                      </span>
+                      <a
+                        href={directionsHref(business)}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="search-business-card__directions"
+                      >
+                        <Icon name="navigation" /> {directionsLabel}
+                      </a>
+                    </div>
                   </div>
-                  <a
-                    href={directionsHref(business)}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="search-business-card__directions"
-                  >
-                    <Icon name="navigation" /> {directionsLabel}
-                  </a>
                 </article>
               </Fragment>
             );
@@ -186,4 +235,17 @@ export function NearbyBusinesses({
       {hasMore ? <div ref={sentinel} aria-hidden="true" style={{ height: 1 }} /> : null}
     </>
   );
+}
+
+function businessArtwork(category: string): string {
+  const value = category.toLowerCase();
+  if (/food|hotel|restaurant|cafe|bakery/.test(value)) return 'food';
+  if (/phone|mobile|computer|laptop|electronic|electrical/.test(value)) return 'phones';
+  if (/home|rental|property|real estate/.test(value)) return 'rentals';
+  if (/vehicle|auto|car|bike/.test(value)) return 'vehicles';
+  if (/school|education|training|tuition/.test(value)) return 'education';
+  if (/event|wedding|party/.test(value)) return 'events';
+  if (/service|repair|professional|finance/.test(value)) return 'services';
+  if (/job|recruit|career/.test(value)) return 'jobs';
+  return 'business';
 }

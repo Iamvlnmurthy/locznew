@@ -7,7 +7,8 @@
 
 :root {
   --locz-font-sans:
-    'Inter', 'Noto Sans', 'Noto Sans Telugu', 'Noto Sans Devanagari', system-ui, sans-serif;
+    var(--font-locz-sans), 'Noto Sans', 'Noto Sans Telugu', 'Noto Sans Devanagari', system-ui,
+    sans-serif;
   --locz-font-mono: 'JetBrains Mono', ui-monospace, monospace;
 
   --locz-primary: #125b4c;
@@ -22,6 +23,7 @@
 
   --locz-bg: #f7f4ed;
   --locz-surface: #ffffff;
+  --locz-surface-elevated: #fffefa;
   --locz-surface-muted: #f0ede6;
   --locz-border: #e7e1d6;
   --locz-border-strong: #d2cabd;
@@ -55,9 +57,9 @@
   --locz-radius-xl: 28px;
   --locz-radius-full: 9999px;
 
-  --locz-shadow-sm: 0 1px 2px rgba(24, 36, 31, 0.06);
-  --locz-shadow-md: 0 8px 24px rgba(24, 36, 31, 0.08);
-  --locz-shadow-lg: 0 22px 60px rgba(24, 36, 31, 0.13);
+  --locz-shadow-sm: 0 1px 2px rgba(24, 36, 31, 0.04), 0 8px 24px rgba(24, 36, 31, 0.045);
+  --locz-shadow-md: 0 2px 5px rgba(24, 36, 31, 0.04), 0 16px 38px rgba(24, 36, 31, 0.075);
+  --locz-shadow-lg: 0 5px 14px rgba(24, 36, 31, 0.06), 0 28px 72px rgba(24, 36, 31, 0.12);
   --locz-shadow-focus: 0 0 0 4px rgba(18, 91, 76, 0.18);
 
   /* Line heights sized for Telugu and Devanagari, which are taller than Latin. */
@@ -78,6 +80,7 @@
 
   --locz-bg: #141a1a;
   --locz-surface: #222929;
+  --locz-surface-elevated: #293130;
   --locz-surface-muted: #374040;
   --locz-border: #374040;
   --locz-border-strong: #4d5757;
@@ -113,6 +116,7 @@
 
     --locz-bg: #141a1a;
     --locz-surface: #222929;
+    --locz-surface-elevated: #293130;
     --locz-surface-muted: #374040;
     --locz-border: #374040;
     --locz-border-strong: #4d5757;

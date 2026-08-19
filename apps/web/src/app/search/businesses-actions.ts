@@ -9,6 +9,11 @@ export interface NearbyBusiness {
   categoryName: string;
   cityName: string | null;
   pincode: string | null;
+  logoUrl?: string | null;
+  addressLine?: string | null;
+  description?: string | null;
+  listingCount?: number;
+  viewCount?: number;
   distanceMeters?: number;
   verificationStatus: string;
   claimStatus: string;

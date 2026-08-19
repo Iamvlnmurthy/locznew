@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:go_router/go_router.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -138,7 +139,10 @@ class HomeScreen extends ConsumerWidget {
                       child: _SectionHeader(
                         title: strings('feed.aroundYou'),
                         hint: data.radiusWidened
-                            ? strings('feed.radiusWidened', {'radius': '$radiusKm'})
+                            ? strings(
+                                'feed.radiusWidened',
+                                {'radius': '$radiusKm'},
+                              )
                             : strings('feed.aroundYouHint'),
                       ),
                     ),
@@ -876,7 +880,11 @@ class _QuickAccess extends StatelessWidget {
           childAspectRatio: 0.86,
           children: [
             for (final (icon, label, route) in items)
-              _QuickTile(icon: icon, label: label, onTap: () => context.push(route)),
+              _QuickTile(
+                icon: icon,
+                label: label,
+                onTap: () => context.push(route),
+              ),
           ],
         ),
       ],
@@ -885,7 +893,11 @@ class _QuickAccess extends StatelessWidget {
 }
 
 class _QuickTile extends StatelessWidget {
-  const _QuickTile({required this.icon, required this.label, required this.onTap});
+  const _QuickTile({
+    required this.icon,
+    required this.label,
+    required this.onTap,
+  });
 
   final IconData icon;
   final String label;
@@ -907,7 +919,11 @@ class _QuickTile extends StatelessWidget {
               color: theme.colorScheme.primaryContainer,
               borderRadius: BorderRadius.circular(14),
             ),
-            child: Icon(icon, size: 22, color: theme.colorScheme.onPrimaryContainer),
+            child: Icon(
+              icon,
+              size: 22,
+              color: theme.colorScheme.onPrimaryContainer,
+            ),
           ),
           const SizedBox(height: 6),
           Text(
@@ -1030,99 +1046,250 @@ class _BusinessRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
     final metres = business.distanceMeters;
     final distance = metres == null
         ? null
         : metres < 1000
             ? '${metres.round()} m'
             : '${(metres / 1000).toStringAsFixed(metres < 10000 ? 1 : 0)} ${strings('common.km')}';
-    // Distance already says "near you"; the repeated pincode is just noise, so fall back to
-    // it only when there is no distance to show. Mirrors the web card.
-    final place = distance ?? business.pincode ?? business.cityName;
+    final place = business.addressLine ?? business.pincode ?? business.cityName;
 
     return Padding(
-      padding: const EdgeInsets.only(bottom: 8),
+      padding: const EdgeInsets.only(bottom: 10),
       child: Material(
-        color: theme.colorScheme.surface,
-        borderRadius: BorderRadius.circular(14),
+        color: scheme.surface,
+        elevation: Theme.of(context).brightness == Brightness.dark ? 0 : 1,
+        shadowColor: scheme.onSurface.withValues(alpha: 0.08),
+        clipBehavior: Clip.antiAlias,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+          side: BorderSide(color: scheme.outlineVariant.withValues(alpha: 0.75)),
+        ),
         child: InkWell(
-          borderRadius: BorderRadius.circular(14),
+          borderRadius: BorderRadius.circular(20),
           onTap: () => context.push('/b/${business.slug}'),
           child: Padding(
             padding: const EdgeInsets.all(12),
-            child: Row(
+            child: Column(
               children: [
-                CircleAvatar(
-                  radius: 18,
-                  backgroundColor: theme.colorScheme.surfaceContainerHighest,
-                  child: Text(
-                    business.name.isEmpty ? '?' : business.name[0].toUpperCase(),
-                    style: theme.textTheme.titleMedium,
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      if (business.categoryName != null)
-                        Text(
-                          business.categoryName!,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: theme.textTheme.labelSmall
-                              ?.copyWith(color: theme.colorScheme.primary),
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Container(
+                      width: 76,
+                      height: 86,
+                      clipBehavior: Clip.antiAlias,
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(16),
+                        gradient: LinearGradient(
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                          colors: [
+                            scheme.primaryContainer,
+                            scheme.secondaryContainer,
+                          ],
                         ),
-                      Text(
-                        business.name,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: theme.textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w600),
+                        border: Border.all(color: scheme.outlineVariant),
                       ),
-                      if (place != null && place.isNotEmpty)
-                        Text(
-                          place,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: theme.textTheme.labelSmall,
-                        ),
-                    ],
-                  ),
-                ),
-                if (business.isVerified)
-                  _BusinessBadge(
-                    icon: Icons.verified,
-                    label: strings('search.businessVerified'),
-                    color: theme.colorScheme.primary,
-                  )
-                else if (!business.isClaimed)
-                  // An imported listing nobody owns yet — invite its real owner to take it over.
-                  _BusinessBadge(
-                    label: strings('search.businessClaim'),
-                    color: theme.colorScheme.tertiary,
-                  ),
-                const SizedBox(width: 4),
-                if (business.latitude != null && business.longitude != null)
-                  IconButton(
-                    icon: const Icon(Icons.directions_outlined, size: 20),
-                    color: theme.colorScheme.primary,
-                    tooltip: strings('business.directions'),
-                    constraints: const BoxConstraints(minWidth: 44, minHeight: 44),
-                    onPressed: () => launchUrl(
-                      Uri.parse(
-                        'https://www.google.com/maps/dir/?api=1&destination='
-                        '${business.latitude},${business.longitude}',
-                      ),
-                      mode: LaunchMode.externalApplication,
+                      child: business.logoUrl?.isNotEmpty == true
+                          ? CachedNetworkImage(
+                              imageUrl: business.logoUrl!,
+                              fit: BoxFit.cover,
+                              errorWidget: (_, __, ___) => Icon(
+                                Icons.storefront_rounded,
+                                color: scheme.primary,
+                                size: 30,
+                              ),
+                            )
+                          : Icon(
+                              Icons.storefront_rounded,
+                              color: scheme.primary,
+                              size: 30,
+                            ),
                     ),
-                  )
-                else
-                  Icon(Icons.chevron_right, size: 18, color: theme.colorScheme.onSurfaceVariant),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              if (business.categoryName != null)
+                                Expanded(
+                                  child: Text(
+                                    business.categoryName!,
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: theme.textTheme.labelSmall?.copyWith(
+                                      color: scheme.primary,
+                                      fontSize: 11.5,
+                                      fontWeight: FontWeight.w600,
+                                      letterSpacing: 0.05,
+                                    ),
+                                  ),
+                                ),
+                              if (business.isVerified)
+                                _BusinessBadge(
+                                  icon: Icons.verified_rounded,
+                                  label: strings('search.businessVerified'),
+                                  color: scheme.primary,
+                                )
+                              else if (!business.isClaimed)
+                                _BusinessBadge(
+                                  label: strings('search.businessClaim'),
+                                  color: scheme.tertiary,
+                                ),
+                            ],
+                          ),
+                          const SizedBox(height: 5),
+                          Text(
+                            business.name,
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            style: theme.textTheme.titleMedium?.copyWith(
+                              fontSize: 16,
+                              height: 1.28,
+                              letterSpacing: -0.25,
+                            ),
+                          ),
+                          if (place != null && place.isNotEmpty) ...[
+                            const SizedBox(height: 5),
+                            Row(
+                              children: [
+                                Icon(
+                                  Icons.location_on_outlined,
+                                  size: 14,
+                                  color: scheme.primary,
+                                ),
+                                const SizedBox(width: 3),
+                                Expanded(
+                                  child: Text(
+                                    place,
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: theme.textTheme.labelSmall,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                          const SizedBox(height: 6),
+                          Wrap(
+                            spacing: 12,
+                            runSpacing: 4,
+                            children: [
+                              if (distance != null)
+                                _BusinessMeta(
+                                  icon: Icons.near_me_outlined,
+                                  label: distance,
+                                ),
+                              if (business.listingCount > 0)
+                                _BusinessMeta(
+                                  icon: Icons.sell_outlined,
+                                  label: strings('search.listingCount').replaceFirst(
+                                    '{count}',
+                                    '${business.listingCount}',
+                                  ),
+                                ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 10),
+                Divider(color: scheme.outlineVariant),
+                const SizedBox(height: 8),
+                Row(
+                  children: [
+                    Expanded(
+                      child: Row(
+                        children: [
+                          Text(
+                            strings('search.viewProfile'),
+                            style: theme.textTheme.labelLarge?.copyWith(color: scheme.primary),
+                          ),
+                          const SizedBox(width: 5),
+                          Icon(
+                            Icons.arrow_forward_rounded,
+                            size: 16,
+                            color: scheme.primary,
+                          ),
+                        ],
+                      ),
+                    ),
+                    if (business.latitude != null && business.longitude != null)
+                      Semantics(
+                        button: true,
+                        label: strings('business.directions'),
+                        child: InkWell(
+                          borderRadius: BorderRadius.circular(999),
+                          onTap: () => launchUrl(
+                            Uri.parse(
+                              'https://www.google.com/maps/dir/?api=1&destination='
+                              '${business.latitude},${business.longitude}',
+                            ),
+                            mode: LaunchMode.externalApplication,
+                          ),
+                          child: Container(
+                            constraints: const BoxConstraints(minHeight: 40),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 8,
+                            ),
+                            decoration: BoxDecoration(
+                              color: scheme.primaryContainer,
+                              borderRadius: BorderRadius.circular(999),
+                            ),
+                            child: Row(
+                              children: [
+                                Icon(
+                                  Icons.near_me_outlined,
+                                  size: 16,
+                                  color: scheme.primary,
+                                ),
+                                const SizedBox(width: 6),
+                                Text(
+                                  strings('business.directions'),
+                                  style: theme.textTheme.labelMedium?.copyWith(
+                                    color: scheme.primary,
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
               ],
             ),
           ),
         ),
       ),
+    );
+  }
+}
+
+class _BusinessMeta extends StatelessWidget {
+  const _BusinessMeta({required this.icon, required this.label});
+
+  final IconData icon;
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(icon, size: 13, color: theme.colorScheme.primary),
+        const SizedBox(width: 4),
+        Text(label, style: theme.textTheme.labelSmall?.copyWith(fontSize: 11.5)),
+      ],
     );
   }
 }

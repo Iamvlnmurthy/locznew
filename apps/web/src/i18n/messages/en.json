@@ -956,6 +956,8 @@
     "businessVerified": "Verified",
     "businessClaim": "Claim this",
     "directions": "Directions",
+    "viewProfile": "View profile",
+    "listingCount": "{count} listings",
     "saveSearch": "Save this search",
     "saveSearchHint": "Get alerted when new matches appear",
     "saveSearchPlaceholder": "Name this search",

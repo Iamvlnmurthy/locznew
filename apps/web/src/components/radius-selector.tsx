@@ -28,6 +28,8 @@ export function RadiusSelector({
 
   function choose(km: number) {
     if (km === selected) return;
+    // `document.cookie` is an imperative browser setter, not a React-owned value.
+    // eslint-disable-next-line react-hooks/immutability
     document.cookie = `${RADIUS_COOKIE}=${km}; path=/; max-age=${60 * 60 * 24 * 365}; samesite=lax`;
     startTransition(() => router.refresh());
   }

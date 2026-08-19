@@ -43,3 +43,8 @@ apps/mobile/**/GeneratedPluginRegistrant.*
 # the immutability check it runs alongside them would fail. Nothing needs it committed: the
 # typecheck passes without it and every build recreates it.
 next-env.d.ts
+
+# Local UI preview artifacts
+.ui-preview/
+.preview-server.log
+.preview-server.err.log

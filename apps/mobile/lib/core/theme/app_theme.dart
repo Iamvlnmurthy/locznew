@@ -61,7 +61,7 @@ class AppTheme {
       colorScheme: scheme,
       scaffoldBackgroundColor: isDark ? darkCanvas : LoczColors.neutral50,
       fontFamily: LoczTypography.fontFamily,
-      visualDensity: VisualDensity.compact,
+      visualDensity: VisualDensity.standard,
       splashFactory: InkSparkle.splashFactory,
       textTheme: TextTheme(
         displaySmall: TextStyle(
@@ -142,11 +142,11 @@ class AppTheme {
       ),
       cardTheme: CardThemeData(
         color: scheme.surface,
-        elevation: isDark ? 0.5 : 0.5,
-        shadowColor: LoczColors.neutral900.withValues(alpha: 0.08),
+        elevation: isDark ? 0 : 1,
+        shadowColor: LoczColors.neutral900.withValues(alpha: 0.07),
         margin: EdgeInsets.zero,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(20),
           side: BorderSide(
             color: isDark ? scheme.outlineVariant : scheme.outline.withValues(alpha: 0.42),
           ),
@@ -187,7 +187,9 @@ class AppTheme {
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: isDark ? scheme.outlineVariant : scheme.outline),
+          borderSide: BorderSide(
+            color: isDark ? scheme.outlineVariant : scheme.outline,
+          ),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
@@ -202,7 +204,9 @@ class AppTheme {
         backgroundColor: isDark ? scheme.surfaceContainerHigh : scheme.surface,
         selectedColor: scheme.primaryContainer,
         disabledColor: scheme.surfaceContainerLow,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(LoczRadius.full)),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(LoczRadius.full),
+        ),
         side: BorderSide(color: isDark ? scheme.outlineVariant : scheme.outline),
         // Chip labels do not reliably inherit onSurface across Material states.
         // An explicit foreground keeps ActionChip/FilterChip copy visible in both themes.

@@ -924,6 +924,8 @@
     "businessVerified": "सत्यापित",
     "businessClaim": "इसे क्लेम करें",
     "directions": "दिशा-निर्देश",
+    "viewProfile": "प्रोफ़ाइल देखें",
+    "listingCount": "{count} लिस्टिंग",
     "saveSearch": "यह खोज सहेजें",
     "saveSearchHint": "नए मिलान आने पर सूचना पाएं",
     "saveSearchPlaceholder": "इस खोज को नाम दें",

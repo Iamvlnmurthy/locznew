@@ -313,6 +313,8 @@ export default async function HomePage() {
               verifiedLabel={searchLabels.businessVerified}
               claimLabel={searchLabels.businessClaim}
               directionsLabel={searchLabels.directions}
+              viewProfileLabel={searchLabels.viewProfile}
+              listingsLabel={searchLabels.listingCount}
               nearYou={searchLabels.nearYou}
               loadingLabel={searchLabels.loadingMoreBusinesses}
               kmLabel={t('common.km')}

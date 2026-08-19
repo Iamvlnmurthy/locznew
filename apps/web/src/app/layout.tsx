@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from 'next';
 import Link from 'next/link';
+import localFont from 'next/font/local';
 import Script from 'next/script';
 import { Header } from '@/components/header';
 import { getTranslator } from '@/i18n';
@@ -7,6 +8,17 @@ import { SITE_URL } from '@/lib/api';
 import { getLocale } from '@/lib/session';
 import './globals.css';
 import './theme-overrides.css';
+
+const loczSans = localFont({
+  src: [
+    { path: '../../../mobile/assets/fonts/Inter-Regular.ttf', weight: '400', style: 'normal' },
+    { path: '../../../mobile/assets/fonts/Inter-Medium.ttf', weight: '500', style: 'normal' },
+    { path: '../../../mobile/assets/fonts/Inter-SemiBold.ttf', weight: '600', style: 'normal' },
+    { path: '../../../mobile/assets/fonts/Inter-Bold.ttf', weight: '700', style: 'normal' },
+  ],
+  variable: '--font-locz-sans',
+  display: 'swap',
+});
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
@@ -32,8 +44,7 @@ export const metadata: Metadata = {
     type: 'website',
     siteName: 'LocZ',
     title: 'LocZ — Find it here.. Deal it near..',
-    description:
-      'Classifieds, local jobs, nearby offers and services in your city.',
+    description: 'Classifieds, local jobs, nearby offers and services in your city.',
     locale: 'en_IN',
     images: [
       {
@@ -66,7 +77,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
     // correctly instead of reading them as accented English.
     <html
       lang={locale}
-      data-density="compact"
+      className={loczSans.variable}
       data-scroll-behavior="smooth"
       suppressHydrationWarning
     >

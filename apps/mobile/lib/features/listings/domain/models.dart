@@ -529,6 +529,9 @@ class BusinessSummary {
     this.localityName,
     this.cityName,
     this.pincode,
+    this.logoUrl,
+    this.addressLine,
+    this.listingCount = 0,
     this.distanceMeters,
     this.latitude,
     this.longitude,
@@ -543,6 +546,9 @@ class BusinessSummary {
   final String? localityName;
   final String? cityName;
   final String? pincode;
+  final String? logoUrl;
+  final String? addressLine;
+  final int listingCount;
 
   /// Present only for nearby (geo) results — metres from the viewer.
   final num? distanceMeters;
@@ -571,6 +577,9 @@ class BusinessSummary {
         localityName: json['localityName'] as String?,
         cityName: json['cityName'] as String?,
         pincode: json['pincode'] as String?,
+        logoUrl: json['logoUrl'] as String?,
+        addressLine: json['addressLine'] as String?,
+        listingCount: json['listingCount'] as int? ?? 0,
         distanceMeters: json['distanceMeters'] as num?,
         latitude: (json['latitude'] as num?)?.toDouble(),
         longitude: (json['longitude'] as num?)?.toDouble(),
@@ -706,7 +715,9 @@ class BusinessDetail {
         whatsappNumber: json['whatsappNumber'] as String?,
         website: json['website'] as String?,
         hours: (json['hours'] as List<dynamic>? ?? const [])
-            .map((entry) => BusinessHour.fromJson(entry as Map<String, dynamic>))
+            .map(
+              (entry) => BusinessHour.fromJson(entry as Map<String, dynamic>),
+            )
             .toList(),
         latitude: (json['latitude'] as num?)?.toDouble(),
         longitude: (json['longitude'] as num?)?.toDouble(),
