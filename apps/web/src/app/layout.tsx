@@ -8,7 +8,8 @@ import { Header } from '@/components/header';
 import { Icon } from '@/components/icons';
 import { getTranslator } from '@/i18n';
 import { SITE_URL } from '@/lib/api';
-import { getLocale } from '@/lib/session';
+import { getLocale, getSelectedCity } from '@/lib/session';
+import { LocationPrompt } from '@/components/location-prompt';
 import './globals.css';
 import './theme-overrides.css';
 
@@ -81,7 +82,7 @@ export const viewport: Viewport = {
 };
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
-  const locale = await getLocale();
+  const [locale, selectedCity] = await Promise.all([getLocale(), getSelectedCity()]);
   const t = getTranslator(locale);
 
   return (
@@ -109,6 +110,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
       </head>
       <body>
         <Header locale={locale} />
+        <LocationPrompt hasLocation={Boolean(selectedCity)} />
         <main id="main">{children}</main>
 
         <footer className="footer">

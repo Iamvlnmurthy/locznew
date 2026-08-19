@@ -155,11 +155,33 @@ export default async function BusinessPage({ params }: { params: Promise<{ slug:
       })),
   };
 
+  // Breadcrumb trail (Home › category › city › business) — mirrors the visible nav and earns
+  // breadcrumb rich results / sitelinks in search.
+  const breadcrumbLd = {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      { '@type': 'ListItem', position: 1, name: 'LocZ', item: SITE_URL },
+      {
+        '@type': 'ListItem',
+        position: 2,
+        name: business.categoryName,
+        item: `${SITE_URL}/search?q=${encodeURIComponent(business.categoryName)}`,
+      },
+      { '@type': 'ListItem', position: 3, name: business.cityName },
+      { '@type': 'ListItem', position: 4, name: business.name },
+    ],
+  };
+
   return (
     <div className="business-profile">
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd).replace(/</g, '\\u003c') }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbLd).replace(/</g, '\\u003c') }}
       />
 
       <section className="business-profile-hero">

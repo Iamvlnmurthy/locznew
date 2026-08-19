@@ -193,12 +193,38 @@ export default async function ListingPage({ params }: { params: Promise<{ slug: 
       : {}),
   };
 
+  const breadcrumbLd = {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      { '@type': 'ListItem', position: 1, name: 'LocZ', item: SITE_URL },
+      {
+        '@type': 'ListItem',
+        position: 2,
+        name: listing.categoryName,
+        item: `${SITE_URL}/search?q=${encodeURIComponent(listing.categoryName)}`,
+      },
+      {
+        '@type': 'ListItem',
+        position: 3,
+        name: listing.localityName
+          ? `${listing.localityName}, ${listing.cityName}`
+          : listing.cityName,
+      },
+      { '@type': 'ListItem', position: 4, name: listing.title },
+    ],
+  };
+
   return (
     <div className="container listing-window">
       <script
         type="application/ld+json"
         // Values come from JSON.stringify of server-built data, not from raw user HTML.
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd).replace(/</g, '\\u003c') }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbLd).replace(/</g, '\\u003c') }}
       />
 
       <nav className="breadcrumbs listing-window__breadcrumbs" aria-label={t('listing.breadcrumb')}>
