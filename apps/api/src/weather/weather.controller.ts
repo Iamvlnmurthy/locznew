@@ -26,6 +26,11 @@ class NewsQueryDto {
   @IsString() @MaxLength(80) q!: string;
 }
 
+class AlertsQueryDto {
+  @IsString() @MaxLength(80) q!: string;
+  @IsOptional() @IsString() cityId?: string;
+}
+
 @ApiTags('local-now')
 @Controller('local-now')
 export class WeatherController {
@@ -68,8 +73,10 @@ export class WeatherController {
   @Public()
   @Get('alerts')
   @ApiOperation({ summary: 'Official public-safety alerts (NDMA SACHET) naming the viewer area' })
-  async alerts(@Query() query: NewsQueryDto): Promise<{ alerts: LocalAlert[] }> {
-    // `q` may carry comma-separated area terms (city, state) to widen the match.
-    return { alerts: await this.localAlerts.forArea(query.q.split(',')) };
+  async alerts(@Query() query: AlertsQueryDto): Promise<{ alerts: LocalAlert[] }> {
+    // With a cityId we widen the match to the city's district and state (CAP warnings are usually
+    // state-level); otherwise fall back to the raw query term.
+    const terms = await this.localAlerts.areaTermsForCity(query.cityId, query.q);
+    return { alerts: await this.localAlerts.forArea(terms) };
   }
 }

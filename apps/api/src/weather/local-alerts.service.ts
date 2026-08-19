@@ -1,4 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
+import { PrismaService } from '../prisma/prisma.service';
 import { RedisService } from '../redis/redis.service';
 
 /** One official public-safety alert, verbatim from the source, display-only. */
@@ -77,7 +78,28 @@ export class LocalAlertsService {
     'https://sachet.ndma.gov.in/cap_public_website/rss/rss_india.xml';
   private static readonly USER_AGENT = 'LocZ/1.0 (https://locz.in; support@locz.in)';
 
-  constructor(private readonly redis: RedisService) {}
+  constructor(
+    private readonly redis: RedisService,
+    private readonly prisma: PrismaService,
+  ) {}
+
+  /** The area terms for a city — its own name plus its district and state, so a state-level CAP
+   * warning ("over Telangana") reaches a Hyderabad viewer. Falls back to just the given name. */
+  async areaTermsForCity(cityId: string | undefined, fallbackName: string): Promise<string[]> {
+    if (!cityId) return [fallbackName];
+    const city = await this.prisma.city.findUnique({
+      where: { id: cityId },
+      select: {
+        name: true,
+        state: { select: { name: true } },
+        district: { select: { name: true } },
+      },
+    });
+    if (!city) return [fallbackName];
+    return [city.name, city.district?.name, city.state?.name].filter(
+      (value): value is string => !!value,
+    );
+  }
 
   private async allIndia(): Promise<LocalAlert[]> {
     const key = 'alerts:india';

@@ -214,12 +214,11 @@ export default async function HomePage() {
 
   // "Local Now" alerts — official NDMA SACHET public-safety warnings naming the area. Verbatim,
   // display-only, hidden when there is nothing.
+  const alertQuery = new URLSearchParams({ q: feedCity });
+  if (countCityId) alertQuery.set('cityId', countCityId);
   const alerts = feedCity
-    ? ((
-        await apiSafe<{ alerts: LocalAlert[] }>(
-          `/local-now/alerts?q=${encodeURIComponent(feedCity)}`,
-        )
-      )?.alerts ?? [])
+    ? ((await apiSafe<{ alerts: LocalAlert[] }>(`/local-now/alerts?${alertQuery.toString()}`))
+        ?.alerts ?? [])
     : [];
 
   // "Local Now" jobs — live local openings (Adzuna), pulled on demand, cached, never stored.
