@@ -8,7 +8,7 @@ import { Icon } from '@/components/icons';
 import { getTranslator } from '@/i18n';
 import { ApiError, api, apiSafe } from '@/lib/api';
 import { premiumCategoryArtwork } from '@/lib/premium-icon-catalog';
-import { getLocale } from '@/lib/session';
+import { getLocale, localizedAlternates } from '@/lib/session';
 
 async function loadCity(slug: string): Promise<City | null> {
   try {
@@ -46,7 +46,7 @@ export async function generateMetadata({
   return {
     title,
     description,
-    alternates: { canonical: `/in/${city.slug}` },
+    alternates: await localizedAlternates(`/in/${city.slug}`),
     openGraph: { title, description, type: 'website', locale: `${locale}_IN` },
   };
 }

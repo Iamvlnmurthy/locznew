@@ -19,8 +19,28 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
   const now = new Date();
 
+  // hreflang for the sitemap: every indexable path also exists at /te and /hi. Declaring the
+  // alternates here is how Google discovers the language cluster and treats each as its own URL.
+  const langs = (path: string): { languages: Record<string, string> } => {
+    const base = path === '/' ? '' : path;
+    return {
+      languages: {
+        en: `${SITE_URL}${path}`,
+        te: `${SITE_URL}/te${base}`,
+        hi: `${SITE_URL}/hi${base}`,
+        'x-default': `${SITE_URL}${path}`,
+      },
+    };
+  };
+
   const entries: MetadataRoute.Sitemap = [
-    { url: SITE_URL, lastModified: now, changeFrequency: 'hourly', priority: 1 },
+    {
+      url: SITE_URL,
+      lastModified: now,
+      changeFrequency: 'hourly',
+      priority: 1,
+      alternates: langs('/'),
+    },
   ];
 
   // Information pages. Low priority but genuinely indexable — "is locz safe" is a real
@@ -39,6 +59,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       lastModified: now,
       changeFrequency: 'monthly',
       priority: 0.3,
+      alternates: langs(path),
     });
   }
 
@@ -48,6 +69,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       lastModified: now,
       changeFrequency: 'hourly',
       priority: 0.9,
+      alternates: langs(`/in/${city.slug}`),
     });
   }
 
@@ -60,6 +82,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       lastModified: now,
       changeFrequency: 'daily',
       priority: category.parentId ? 0.6 : 0.8,
+      alternates: langs(`/c/${category.slug}`),
     });
   }
 

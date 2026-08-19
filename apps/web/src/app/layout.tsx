@@ -8,7 +8,8 @@ import { Header } from '@/components/header';
 import { Icon } from '@/components/icons';
 import { getTranslator } from '@/i18n';
 import { SITE_URL } from '@/lib/api';
-import { getLocale, getSelectedCity } from '@/lib/session';
+import { headers } from 'next/headers';
+import { getLocale, getSelectedCity, localizedAlternates } from '@/lib/session';
 import { LocationPrompt } from '@/components/location-prompt';
 import './globals.css';
 import './theme-overrides.css';
@@ -33,7 +34,15 @@ const loczTelugu = Anek_Telugu({
   display: 'swap',
 });
 
-export const metadata: Metadata = {
+export async function generateMetadata(): Promise<Metadata> {
+  // hreflang + a locale-aware canonical for whatever path is being served, so English/Telugu/Hindi
+  // versions are each indexed as their own URL. Pages that set their own `alternates` build these
+  // the same way, so they don't drop the language links.
+  const pathname = (await headers()).get('x-pathname') ?? '/';
+  return { ...baseMetadata, alternates: await localizedAlternates(pathname) };
+}
+
+const baseMetadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   title: {
     default: 'LocZ — Find it here.. Deal it near..',
@@ -69,7 +78,6 @@ export const metadata: Metadata = {
     ],
   },
   twitter: { card: 'summary_large_image', images: ['/brand/og-locz.jpg'] },
-  alternates: { canonical: '/' },
 };
 
 export const viewport: Viewport = {

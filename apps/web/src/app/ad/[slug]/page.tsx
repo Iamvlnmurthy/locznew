@@ -3,7 +3,7 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { ApiError, SITE_URL, api, apiSafe } from '@/lib/api';
 import { getMessageGroup, getTranslator, type Translator } from '@/i18n';
-import { getCurrentUser, getLocale } from '@/lib/session';
+import { getCurrentUser, getLocale, localizedAlternates } from '@/lib/session';
 import { formatPrice, ListingCard } from '@/components/listing-card';
 import { Icon } from '@/components/icons';
 import type { ListingSummary } from '@locz/shared-types';
@@ -112,7 +112,7 @@ export async function generateMetadata({
   return {
     title,
     description,
-    alternates: { canonical: `/ad/${listing.slug}` },
+    alternates: await localizedAlternates(`/ad/${listing.slug}`),
     robots: indexable ? undefined : { index: false, follow: true },
     openGraph: {
       title,

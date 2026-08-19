@@ -8,7 +8,7 @@ import { Icon } from '@/components/icons';
 import { getTranslator } from '@/i18n';
 import { ApiError, api, apiSafe } from '@/lib/api';
 import { premiumCategoryArtwork } from '@/lib/premium-icon-catalog';
-import { getLocale, getSelectedCity } from '@/lib/session';
+import { getLocale, getSelectedCity, localizedAlternates } from '@/lib/session';
 
 interface CategoryDetail extends Category {
   attributes: CategoryAttribute[];
@@ -56,7 +56,7 @@ export async function generateMetadata({
   return {
     title,
     description,
-    alternates: { canonical: `/c/${category.slug}` },
+    alternates: await localizedAlternates(`/c/${category.slug}`),
     openGraph: { title, description, type: 'website' },
   };
 }

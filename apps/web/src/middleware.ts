@@ -33,10 +33,25 @@ export function middleware(request: NextRequest) {
     headers.set(name, parts[0]);
   }
 
-  // Expose the path to server components (the Header hides its own search on the home
-  // page, where the hero already owns search). Server components cannot read the route
-  // otherwise.
-  headers.set('x-pathname', request.nextUrl.pathname);
+  // Locale-addressable URLs for search: /te/... and /hi/... render the same routes in that
+  // language (English stays unprefixed). We rewrite (not redirect) so the URL a crawler sees
+  // stays /te/..., set x-locale for getLocale, and expose the un-prefixed path as x-pathname so
+  // the page renders its normal route and its hreflang/canonical are built from the real path.
+  const pathname = request.nextUrl.pathname;
+  const firstSegment = pathname.split('/')[1];
+
+  if (firstSegment === 'te' || firstSegment === 'hi') {
+    const strippedPath = pathname.slice(firstSegment.length + 1) || '/';
+    headers.set('x-locale', firstSegment);
+    headers.set('x-pathname', strippedPath);
+    const url = request.nextUrl.clone();
+    url.pathname = strippedPath;
+    return NextResponse.rewrite(url, { request: { headers } });
+  }
+
+  // Expose the path to server components (hreflang, and the header hiding its own search on the
+  // home page). Server components cannot read the route otherwise.
+  headers.set('x-pathname', pathname);
   return NextResponse.next({ request: { headers } });
 }
 

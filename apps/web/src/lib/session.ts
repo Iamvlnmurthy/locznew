@@ -7,8 +7,10 @@ import {
   LOCALE_COOKIE,
   RADIUS_COOKIE,
   REFRESH_COOKIE,
+  SITE_URL,
   USER_COOKIE,
 } from './api';
+import type { Metadata } from 'next';
 import { DEFAULT_LOCALE, isLocale, negotiateLocale, type Locale } from '@/i18n';
 
 const secure = process.env.NODE_ENV === 'production';
@@ -118,7 +120,34 @@ export async function setSelectedCity(city: SelectedCity): Promise<void> {
  * Explicit choice wins; otherwise the browser's Accept-Language decides. A Telugu
  * speaker in Hyderabad should land on Telugu without hunting for a switcher.
  */
+/**
+ * `alternates` for a page's metadata that make each language a first-class, indexable URL:
+ * a self-referential canonical for whichever locale is being served (/b/x for English,
+ * /te/b/x for Telugu) plus reciprocal hreflang links across en/te/hi and an x-default. Pass the
+ * un-prefixed path; the served locale is read from the request. Use on every indexable page so a
+ * page that sets its own `alternates` does not drop hreflang.
+ */
+export async function localizedAlternates(path: string): Promise<Metadata['alternates']> {
+  const forced = (await headers()).get('x-locale');
+  const base = path === '/' ? '' : path;
+  const canonical = forced === 'te' || forced === 'hi' ? `/${forced}${base}` : path;
+  return {
+    canonical,
+    languages: {
+      en: `${SITE_URL}${path}`,
+      te: `${SITE_URL}/te${base}`,
+      hi: `${SITE_URL}/hi${base}`,
+      'x-default': `${SITE_URL}${path}`,
+    },
+  };
+}
+
 export async function getLocale(): Promise<Locale> {
+  // A locale-prefixed URL (/te, /hi) is an explicit, indexable language choice and wins over the
+  // cookie — this is how a crawler reads each language version.
+  const forced = (await headers()).get('x-locale') ?? undefined;
+  if (isLocale(forced)) return forced;
+
   const stored = (await cookies()).get(LOCALE_COOKIE)?.value;
   if (isLocale(stored)) return stored;
 
