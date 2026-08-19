@@ -758,3 +758,71 @@
   border-color: #315048;
   background: #172722;
 }
+
+/* The dock is a sibling of the header so it always anchors to the viewport. Keep these
+   shell rules last: route-level responsive CSS must never turn the dock into a top bar. */
+@media (max-width: 760px) {
+  body {
+    padding-bottom: calc(76px + env(safe-area-inset-bottom));
+  }
+
+  .header {
+    position: sticky;
+    z-index: 250;
+    top: 0;
+    height: auto;
+    min-height: 56px;
+  }
+
+  .header .container.header__row {
+    display: flex;
+    min-height: 56px;
+    padding: 6px 14px;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .header .header__brand {
+    display: grid;
+    width: 82px;
+    min-width: 82px;
+    height: 42px;
+    place-items: center;
+  }
+
+  .header .header__brand .header__logo {
+    display: block;
+    width: 82px;
+    height: auto;
+  }
+
+  .header .location-chip {
+    min-width: 0;
+    max-width: min(148px, calc(100vw - 154px));
+    margin: 0;
+  }
+
+  .header .theme-toggle--mobile {
+    display: inline-grid;
+    width: 36px;
+    height: 36px;
+    margin-left: auto;
+    flex: 0 0 36px;
+  }
+
+  .mobile-dock {
+    position: fixed;
+    z-index: 400;
+    top: auto;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    display: grid;
+    width: 100%;
+    height: calc(68px + env(safe-area-inset-bottom));
+    margin: 0;
+    padding: 8px 8px env(safe-area-inset-bottom);
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    transform: none;
+  }
+}

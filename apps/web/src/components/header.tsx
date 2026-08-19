@@ -34,116 +34,117 @@ export async function Header({ locale }: { locale: Locale }) {
   ];
 
   return (
-    <header className="header">
-      <div className="container header__row">
-        <Link href="/" className="header__brand" aria-label={t('brand.name')}>
-          <Image
-            src="/brand/locz-logo.webp"
-            alt=""
-            width={214}
-            height={102}
-            priority
-            className="header__logo"
-          />
-        </Link>
-
-        {/* Prefer the readable city name; fall back to the pincode only when that is all
-            we have. A bare pincode was being squeezed to an unreadable "50…" in the chip. */}
-        <LocationChip
-          cityName={city?.name || city?.pincode || null}
-          changeLabel={t('location.change')}
-        />
-
-        <nav className="header__primary" aria-label={t('nav.primary')}>
-          {primaryLinks.map((item) => (
-            <Link
-              key={item.href}
-              href={item.href}
-              className={pathname.startsWith(item.href) ? 'is-active' : undefined}
-            >
-              {item.label}
-            </Link>
-          ))}
-        </nav>
-
-        <ThemeToggle label={t('nav.toggleTheme')} className="theme-toggle--mobile" />
-
-        {!isHome && (
-          <form className="searchbar" action="/search" method="get" role="search">
-            <label htmlFor="site-search" className="sr-only">
-              {t('search.submit')}
-            </label>
-            <Icon name="search" className="searchbar__icon" width="19" height="19" />
-            <RecentSearchInput
-              id="site-search"
-              placeholder={t('search.placeholder')}
-              recentLabel={searchLabels.recentSearches}
-              clearLabel={searchLabels.clearRecent}
+    <>
+      <header className="header">
+        <div className="container header__row">
+          <Link href="/" className="header__brand" aria-label={t('brand.name')}>
+            <Image
+              src="/brand/locz-logo.webp"
+              alt=""
+              width={214}
+              height={102}
+              priority
+              className="header__logo"
             />
-            <button type="submit">
-              <span>{t('search.submit')}</span>
-              <Icon name="arrow" width="17" height="17" />
-            </button>
-          </form>
-        )}
+          </Link>
 
-        <div className="header__actions">
-          <ThemeToggle label={t('nav.toggleTheme')} />
-          <LocaleSwitcher current={locale} label={t('nav.language')} />
+          {/* Prefer the readable city name; fall back to the pincode only when that is all
+            we have. A bare pincode was being squeezed to an unreadable "50…" in the chip. */}
+          <LocationChip
+            cityName={city?.name || city?.pincode || null}
+            changeLabel={t('location.change')}
+          />
 
-          {user ? (
-            <>
+          <nav className="header__primary" aria-label={t('nav.primary')}>
+            {primaryLinks.map((item) => (
               <Link
-                href="/notifications"
-                className="header__notification"
-                aria-label={
-                  unreadNotifications?.count
-                    ? `${unreadNotifications.count} unread notifications`
-                    : 'Notifications'
-                }
+                key={item.href}
+                href={item.href}
+                className={pathname.startsWith(item.href) ? 'is-active' : undefined}
               >
-                <Icon name="bell" />
-                {unreadNotifications?.count ? (
-                  <strong>
-                    {unreadNotifications.count > 9 ? '9+' : unreadNotifications.count}
-                  </strong>
-                ) : null}
+                {item.label}
               </Link>
-              <AccountMenu
-                displayName={user.displayName}
-                labels={{
-                  account: t('nav.account'),
-                  profile: t('nav.profile'),
-                  myAds: t('nav.myAds'),
-                  messages: t('nav.messages'),
-                  saved: t('nav.saved'),
-                  businesses: t('nav.businesses'),
-                  directory: t('nav.directory'),
-                  verifyPhone: t('nav.verifyPhone'),
-                  location: t('nav.location'),
-                  signOut: t('nav.signOut'),
-                  signedInAs: t('nav.signedInAs'),
-                }}
+            ))}
+          </nav>
+
+          <ThemeToggle label={t('nav.toggleTheme')} className="theme-toggle--mobile" />
+
+          {!isHome && (
+            <form className="searchbar" action="/search" method="get" role="search">
+              <label htmlFor="site-search" className="sr-only">
+                {t('search.submit')}
+              </label>
+              <Icon name="search" className="searchbar__icon" width="19" height="19" />
+              <RecentSearchInput
+                id="site-search"
+                placeholder={t('search.placeholder')}
+                recentLabel={searchLabels.recentSearches}
+                clearLabel={searchLabels.clearRecent}
               />
-            </>
-          ) : (
-            <Link href="/signin" className="btn btn--ghost">
-              {t('nav.signIn')}
-            </Link>
+              <button type="submit">
+                <span>{t('search.submit')}</span>
+                <Icon name="arrow" width="17" height="17" />
+              </button>
+            </form>
           )}
 
-          {/* LocZ is sideloaded rather than on the Play Store, so the download has to be
+          <div className="header__actions">
+            <ThemeToggle label={t('nav.toggleTheme')} />
+            <LocaleSwitcher current={locale} label={t('nav.language')} />
+
+            {user ? (
+              <>
+                <Link
+                  href="/notifications"
+                  className="header__notification"
+                  aria-label={
+                    unreadNotifications?.count
+                      ? `${unreadNotifications.count} unread notifications`
+                      : 'Notifications'
+                  }
+                >
+                  <Icon name="bell" />
+                  {unreadNotifications?.count ? (
+                    <strong>
+                      {unreadNotifications.count > 9 ? '9+' : unreadNotifications.count}
+                    </strong>
+                  ) : null}
+                </Link>
+                <AccountMenu
+                  displayName={user.displayName}
+                  labels={{
+                    account: t('nav.account'),
+                    profile: t('nav.profile'),
+                    myAds: t('nav.myAds'),
+                    messages: t('nav.messages'),
+                    saved: t('nav.saved'),
+                    businesses: t('nav.businesses'),
+                    directory: t('nav.directory'),
+                    verifyPhone: t('nav.verifyPhone'),
+                    location: t('nav.location'),
+                    signOut: t('nav.signOut'),
+                    signedInAs: t('nav.signedInAs'),
+                  }}
+                />
+              </>
+            ) : (
+              <Link href="/signin" className="btn btn--ghost">
+                {t('nav.signIn')}
+              </Link>
+            )}
+
+            {/* LocZ is sideloaded rather than on the Play Store, so the download has to be
               findable from the site itself. */}
-          <Link href="/get-app" className="btn btn--ghost header__get-app">
-            <Icon name="phone" width="17" height="17" /> {t('nav.getApp')}
-          </Link>
+            <Link href="/get-app" className="btn btn--ghost header__get-app">
+              <Icon name="phone" width="17" height="17" /> {t('nav.getApp')}
+            </Link>
 
-          <Link href="/post" className="btn btn--primary">
-            <Icon name="plus" width="18" height="18" /> {t('nav.post')}
-          </Link>
+            <Link href="/post" className="btn btn--primary">
+              <Icon name="plus" width="18" height="18" /> {t('nav.post')}
+            </Link>
+          </div>
         </div>
-      </div>
-
+      </header>
       <nav className="mobile-dock" aria-label={t('nav.primary')}>
         <Link href="/">
           <Icon name="home" />
@@ -171,6 +172,6 @@ export async function Header({ locale }: { locale: Locale }) {
           <span>{user ? 'Alerts' : t('nav.signIn')}</span>
         </Link>
       </nav>
-    </header>
+    </>
   );
 }
