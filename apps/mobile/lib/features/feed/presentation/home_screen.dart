@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../../core/i18n/strings.dart';
 import '../../../core/motion/locz_motion.dart';
@@ -1097,9 +1098,26 @@ class _BusinessRow extends StatelessWidget {
                 else if (!business.isClaimed)
                   // An imported listing nobody owns yet — invite its real owner to take it over.
                   _BusinessBadge(
-                      label: strings('search.businessClaim'), color: theme.colorScheme.tertiary),
-                const SizedBox(width: 6),
-                Icon(Icons.chevron_right, size: 18, color: theme.colorScheme.onSurfaceVariant),
+                    label: strings('search.businessClaim'),
+                    color: theme.colorScheme.tertiary,
+                  ),
+                const SizedBox(width: 4),
+                if (business.latitude != null && business.longitude != null)
+                  IconButton(
+                    icon: const Icon(Icons.directions_outlined, size: 20),
+                    color: theme.colorScheme.primary,
+                    tooltip: strings('business.directions'),
+                    constraints: const BoxConstraints(minWidth: 44, minHeight: 44),
+                    onPressed: () => launchUrl(
+                      Uri.parse(
+                        'https://www.google.com/maps/dir/?api=1&destination='
+                        '${business.latitude},${business.longitude}',
+                      ),
+                      mode: LaunchMode.externalApplication,
+                    ),
+                  )
+                else
+                  Icon(Icons.chevron_right, size: 18, color: theme.colorScheme.onSurfaceVariant),
               ],
             ),
           ),

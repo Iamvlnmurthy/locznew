@@ -3629,7 +3629,8 @@ textarea {
   align-self: flex-start;
   align-items: center;
   gap: 6px;
-  padding: 8px 14px;
+  min-height: 40px;
+  padding: 9px 16px;
   border: 1px solid color-mix(in srgb, var(--locz-primary) 28%, var(--locz-border));
   border-radius: var(--locz-radius-full);
   color: var(--locz-primary);

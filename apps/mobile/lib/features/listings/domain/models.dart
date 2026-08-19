@@ -530,6 +530,8 @@ class BusinessSummary {
     this.cityName,
     this.pincode,
     this.distanceMeters,
+    this.latitude,
+    this.longitude,
     this.isVerified = false,
     this.isClaimed = false,
   });
@@ -544,6 +546,10 @@ class BusinessSummary {
 
   /// Present only for nearby (geo) results — metres from the viewer.
   final num? distanceMeters;
+
+  /// For a one-tap directions link on the card; null for records without a fixed point.
+  final double? latitude;
+  final double? longitude;
 
   /// Someone at LocZ confirmed this record. Not the same as claimed.
   final bool isVerified;
@@ -566,6 +572,8 @@ class BusinessSummary {
         cityName: json['cityName'] as String?,
         pincode: json['pincode'] as String?,
         distanceMeters: json['distanceMeters'] as num?,
+        latitude: (json['latitude'] as num?)?.toDouble(),
+        longitude: (json['longitude'] as num?)?.toDouble(),
         // /search/businesses sends isVerified; /businesses(/nearby) sends verificationStatus.
         isVerified: json['isVerified'] as bool? ?? (json['verificationStatus'] == 'VERIFIED'),
         isClaimed: json['isClaimed'] as bool? ?? (json['claimStatus'] == 'CLAIMED'),
