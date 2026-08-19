@@ -72,7 +72,8 @@
     "localNewsKicker": "लोकल नाउ",
     "localNewsTitle": "{city} के आसपास ताज़ा",
     "jobsKicker": "आसपास काम",
-    "jobsTitle": "{city} में नौकरियां"
+    "jobsTitle": "{city} में नौकरियां",
+    "alertsTitle": "स्थानीय अलर्ट"
   },
   "nav": {
     "home": "होम",

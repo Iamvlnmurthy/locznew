@@ -72,7 +72,8 @@
     "localNewsKicker": "లోకల్ నౌ",
     "localNewsTitle": "{city} చుట్టూ తాజా వార్తలు",
     "jobsKicker": "సమీపంలో ఉద్యోగాలు",
-    "jobsTitle": "{city}లో ఉద్యోగాలు"
+    "jobsTitle": "{city}లో ఉద్యోగాలు",
+    "alertsTitle": "స్థానిక హెచ్చరికలు"
   },
   "nav": {
     "home": "హోమ్",

@@ -16962,6 +16962,60 @@ body {
   padding-left: var(--locz-space-2);
 }
 
+/* "Local alerts" — official NDMA SACHET public-safety warnings, verbatim. Coral-accented. */
+.local-alerts {
+  margin: 16px 0 8px;
+  padding: 14px 16px;
+  border: 1px solid color-mix(in srgb, var(--locz-coral) 40%, var(--locz-border));
+  border-radius: 16px;
+  background: color-mix(in srgb, var(--locz-coral) 8%, var(--locz-surface));
+}
+.local-alerts__head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+.local-alerts__head svg {
+  width: 20px;
+  height: 20px;
+  flex: 0 0 auto;
+  color: var(--locz-coral);
+}
+.local-alerts__head h2 {
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 750;
+  color: var(--locz-coral);
+}
+.local-alerts__list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.local-alerts__list li {
+  display: flex;
+  gap: 10px;
+  align-items: baseline;
+  justify-content: space-between;
+  font-size: 0.84rem;
+  line-height: 1.35;
+  color: var(--locz-text);
+}
+.local-alerts__list time {
+  flex: 0 0 auto;
+  font-size: 0.72rem;
+  color: var(--locz-text-secondary);
+}
+.local-alerts__attribution {
+  margin: 8px 0 0;
+  font-size: 0.68rem;
+  color: var(--locz-text-muted);
+}
+
 /* "Around you" — discovery-area counts rolled up from the POIs we already hold. */
 .area-summary {
   margin: 22px 0 8px;

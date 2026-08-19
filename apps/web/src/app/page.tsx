@@ -42,6 +42,12 @@ interface JobPosting {
   salaryMax: number | null;
 }
 
+interface LocalAlert {
+  title: string;
+  category: string | null;
+  publishedAt: string | null;
+}
+
 /** Indian annual salary in lakhs — "₹18L–25L", "₹18L+", or null when unknown. */
 function formatSalary(min: number | null, max: number | null): string | null {
   const lakh = (value: number): string => {
@@ -206,6 +212,16 @@ export default async function HomePage() {
       )?.headlines ?? [])
     : [];
 
+  // "Local Now" alerts — official NDMA SACHET public-safety warnings naming the area. Verbatim,
+  // display-only, hidden when there is nothing.
+  const alerts = feedCity
+    ? ((
+        await apiSafe<{ alerts: LocalAlert[] }>(
+          `/local-now/alerts?q=${encodeURIComponent(feedCity)}`,
+        )
+      )?.alerts ?? [])
+    : [];
+
   // "Local Now" jobs — live local openings (Adzuna), pulled on demand, cached, never stored.
   // Empty (section hidden) when the Adzuna credentials are not configured.
   const jobs = feedCity
@@ -298,6 +314,28 @@ export default async function HomePage() {
             {/* Required MET Norway attribution — a brand name, identical in every language. */}
             <span className="local-now__attribution">{'MET Norway'}</span>
           </div>
+        ) : null}
+
+        {alerts.length > 0 ? (
+          <section className="local-alerts" aria-labelledby="local-alerts-title" role="alert">
+            <div className="local-alerts__head">
+              <Icon name="alert" />
+              <h2 id="local-alerts-title">{t('home.alertsTitle')}</h2>
+            </div>
+            <ul className="local-alerts__list">
+              {alerts.map((alert) => {
+                const when = relativeTime(alert.publishedAt, locale);
+                return (
+                  <li key={alert.title}>
+                    <span>{alert.title}</span>
+                    {when ? <time>{when}</time> : null}
+                  </li>
+                );
+              })}
+            </ul>
+            {/* NDMA SACHET is an official source name — identical in every language. */}
+            <p className="local-alerts__attribution">{'NDMA SACHET'}</p>
+          </section>
         ) : null}
 
         {areaSummary.areas.length > 0 ? (

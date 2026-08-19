@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { RedisModule } from '../redis/redis.module';
+import { LocalAlertsService } from './local-alerts.service';
 import { LocalAreaService } from './local-area.service';
 import { LocalJobsService } from './local-jobs.service';
 import { LocalNewsService } from './local-news.service';
@@ -14,7 +15,19 @@ import { WeatherService } from './weather.service';
 @Module({
   imports: [RedisModule],
   controllers: [WeatherController],
-  providers: [WeatherService, LocalAreaService, LocalNewsService, LocalJobsService],
-  exports: [WeatherService, LocalAreaService, LocalNewsService, LocalJobsService],
+  providers: [
+    WeatherService,
+    LocalAreaService,
+    LocalNewsService,
+    LocalJobsService,
+    LocalAlertsService,
+  ],
+  exports: [
+    WeatherService,
+    LocalAreaService,
+    LocalNewsService,
+    LocalJobsService,
+    LocalAlertsService,
+  ],
 })
 export class WeatherModule {}

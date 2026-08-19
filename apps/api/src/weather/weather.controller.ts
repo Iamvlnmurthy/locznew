@@ -3,6 +3,7 @@ import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
 import { IsLatitude, IsLongitude, IsOptional, IsString, Matches, MaxLength } from 'class-validator';
 import { Public } from '../rbac/rbac.decorators';
+import { LocalAlert, LocalAlertsService } from './local-alerts.service';
 import { AreaCount, LocalAreaService } from './local-area.service';
 import { JobPosting, LocalJobsService } from './local-jobs.service';
 import { LocalNewsService, NewsHeadline } from './local-news.service';
@@ -33,6 +34,7 @@ export class WeatherController {
     private readonly localArea: LocalAreaService,
     private readonly localNews: LocalNewsService,
     private readonly localJobs: LocalJobsService,
+    private readonly localAlerts: LocalAlertsService,
   ) {}
 
   @Public()
@@ -61,5 +63,13 @@ export class WeatherController {
   @ApiOperation({ summary: 'Live local job openings for an area (empty when not configured)' })
   async jobs(@Query() query: NewsQueryDto): Promise<{ jobs: JobPosting[] }> {
     return { jobs: await this.localJobs.nearby(query.q) };
+  }
+
+  @Public()
+  @Get('alerts')
+  @ApiOperation({ summary: 'Official public-safety alerts (NDMA SACHET) naming the viewer area' })
+  async alerts(@Query() query: NewsQueryDto): Promise<{ alerts: LocalAlert[] }> {
+    // `q` may carry comma-separated area terms (city, state) to widen the match.
+    return { alerts: await this.localAlerts.forArea(query.q.split(',')) };
   }
 }

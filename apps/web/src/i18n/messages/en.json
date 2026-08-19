@@ -72,7 +72,8 @@
     "localNewsKicker": "Local now",
     "localNewsTitle": "Latest around {city}",
     "jobsKicker": "Work nearby",
-    "jobsTitle": "Jobs in {city}"
+    "jobsTitle": "Jobs in {city}",
+    "alertsTitle": "Local alerts"
   },
   "nav": {
     "home": "Home",
