@@ -19397,3 +19397,296 @@ h4,
     gap: 26px 20px;
   }
 }
+
+/* ---------- Premium cinematic home hero v2 ---------- */
+@media (min-width: 761px) {
+  .home-hero--discovery {
+    position: relative;
+    isolation: isolate;
+    min-height: 630px;
+    overflow: hidden;
+    padding-block: 42px;
+    background:
+      linear-gradient(
+        90deg,
+        rgb(7 42 35 / 94%) 0%,
+        rgb(7 42 35 / 78%) 29%,
+        rgb(7 42 35 / 36%) 55%,
+        rgb(7 29 25 / 24%) 74%,
+        rgb(7 29 25 / 42%) 100%
+      ),
+      url('/illustrations/locz-hyderabad-premium-hero-v2.webp') center / cover no-repeat;
+    box-shadow: inset 0 -1px rgb(255 255 255 / 18%);
+  }
+
+  .home-hero--discovery::before {
+    content: '';
+    position: absolute;
+    z-index: -1;
+    inset: 0;
+    opacity: 1;
+    background:
+      radial-gradient(circle at 18% 16%, rgb(255 255 255 / 10%), transparent 25rem),
+      linear-gradient(180deg, transparent 58%, rgb(3 28 23 / 30%) 100%);
+    pointer-events: none;
+  }
+
+  .home-hero--discovery::after {
+    content: '';
+    position: absolute;
+    z-index: -1;
+    right: -9rem;
+    bottom: -13rem;
+    width: 38rem;
+    height: 38rem;
+    border: 1px solid rgb(255 255 255 / 12%);
+    border-radius: 50%;
+    box-shadow:
+      0 0 0 4rem rgb(255 255 255 / 2%),
+      0 0 0 9rem rgb(255 255 255 / 2%);
+    pointer-events: none;
+  }
+
+  .home-hero--discovery .home-hero__inner {
+    grid-template-columns: minmax(390px, 0.78fr) minmax(650px, 1.22fr);
+    gap: clamp(46px, 5vw, 78px);
+  }
+
+  .home-hero--discovery .home-hero__copy {
+    position: relative;
+    max-width: 560px;
+    padding: 12px 0 8px;
+  }
+
+  .home-hero--discovery .home-hero__eyebrow {
+    margin-bottom: 12px;
+    color: #ff9a88;
+    text-shadow: 0 1px 14px rgb(0 0 0 / 22%);
+  }
+
+  .home-hero--discovery .home-discovery__location {
+    min-height: 36px;
+    padding: 7px 12px;
+    border-color: rgb(255 255 255 / 24%);
+    background: rgb(255 255 255 / 11%);
+    color: #fff;
+    box-shadow: inset 0 1px rgb(255 255 255 / 12%);
+    backdrop-filter: blur(12px);
+  }
+
+  .home-hero--discovery .home-hero__copy h1 {
+    max-width: 10.5ch;
+    margin: 16px 0 20px;
+    color: #fffdf8;
+    font-size: clamp(3.75rem, 4.8vw, 4.8rem);
+    font-weight: 700;
+    line-height: 0.94;
+    letter-spacing: -0.072em;
+    text-wrap: balance;
+    text-shadow: 0 8px 38px rgb(0 0 0 / 24%);
+  }
+
+  .home-hero--discovery .home-hero__subtitle {
+    max-width: 500px;
+    margin: 0 0 20px;
+    color: rgb(247 250 246 / 76%);
+    font-size: 1.02rem;
+    line-height: 1.58;
+    text-shadow: 0 2px 16px rgb(0 0 0 / 18%);
+  }
+
+  .home-hero--discovery .radius-selector {
+    margin-bottom: 20px;
+  }
+
+  .home-hero--discovery .radius-selector__label {
+    color: rgb(255 255 255 / 62%);
+  }
+
+  .home-hero--discovery .radius-selector a,
+  .home-hero--discovery .radius-selector button {
+    border-color: rgb(255 255 255 / 24%);
+    background: rgb(255 255 255 / 11%);
+    color: rgb(255 255 255 / 88%);
+    box-shadow: inset 0 1px rgb(255 255 255 / 10%);
+    backdrop-filter: blur(10px);
+  }
+
+  .home-hero--discovery .radius-selector a:hover,
+  .home-hero--discovery .radius-selector button:hover {
+    border-color: rgb(255 255 255 / 46%);
+    background: rgb(255 255 255 / 18%);
+    color: #fff;
+  }
+
+  .home-hero--discovery .radius-chip[data-active='true'],
+  .home-hero--discovery .radius-chip[aria-pressed='true'] {
+    border-color: #ff7b65;
+    background: #ff705a;
+    color: #fff;
+    box-shadow: 0 9px 22px rgb(0 0 0 / 18%);
+  }
+
+  .home-hero--discovery .hero-search {
+    height: 64px;
+    border: 1px solid rgb(255 255 255 / 54%);
+    border-radius: 20px;
+    background: rgb(255 255 255 / 94%);
+    box-shadow:
+      0 22px 48px rgb(0 24 20 / 28%),
+      inset 0 1px #fff;
+  }
+
+  .home-hero--discovery .hero-search:focus-within {
+    border-color: #ff9b88;
+    box-shadow:
+      0 24px 52px rgb(0 24 20 / 32%),
+      0 0 0 4px rgb(255 135 112 / 16%);
+  }
+
+  .home-hero--discovery .hero-search button {
+    height: 52px;
+    margin-right: 5px;
+    padding-inline: 22px;
+    border-radius: 15px;
+    background: linear-gradient(135deg, #ff705a, #e85645);
+    box-shadow: 0 10px 24px rgb(188 64 45 / 24%);
+  }
+
+  .home-hero--discovery .home-hero__quick-links {
+    margin-top: 13px;
+  }
+
+  .home-hero--discovery .home-hero__quick-links span {
+    color: rgb(255 255 255 / 55%);
+  }
+
+  .home-hero--discovery .home-hero__quick-links a {
+    border-color: rgb(255 255 255 / 18%);
+    background: rgb(255 255 255 / 10%);
+    color: rgb(255 255 255 / 78%);
+    backdrop-filter: blur(8px);
+  }
+
+  .home-hero--discovery .home-hero__quick-links a:hover {
+    border-color: rgb(255 255 255 / 38%);
+    background: rgb(255 255 255 / 17%);
+    color: #fff;
+  }
+
+  .home-hero--discovery .home-discovery--bento {
+    padding: 26px;
+    border: 1px solid rgb(255 255 255 / 58%);
+    border-radius: 32px;
+    background:
+      linear-gradient(145deg, rgb(255 255 255 / 90%), rgb(250 247 241 / 78%)),
+      rgb(255 255 255 / 78%);
+    box-shadow:
+      0 36px 90px rgb(0 24 20 / 34%),
+      inset 0 1px rgb(255 255 255 / 88%);
+    backdrop-filter: blur(28px) saturate(125%);
+    transform: translateY(6px);
+  }
+
+  .home-hero--discovery .home-discovery--bento::before {
+    opacity: 0.62;
+    background-image:
+      radial-gradient(rgb(16 101 83 / 11%) 0.7px, transparent 0.7px),
+      radial-gradient(circle at 90% 4%, rgb(255 112 90 / 13%), transparent 14rem);
+  }
+
+  .home-hero--discovery .home-discovery__head {
+    align-items: center;
+    margin-bottom: 20px;
+  }
+
+  .home-hero--discovery .home-discovery__head h2 {
+    margin-top: 5px;
+    font-size: 2rem;
+  }
+
+  .home-hero--discovery .home-discovery__head > a {
+    min-height: 38px;
+    padding: 8px 11px;
+    border-radius: 999px;
+    background: rgb(10 87 72 / 7%);
+  }
+
+  .home-hero--discovery .home-discovery__grid--bento {
+    grid-template-rows: 100px 100px 86px;
+    gap: 10px;
+  }
+
+  .home-hero--discovery .home-discovery__grid--bento > .home-discovery-card {
+    border-color: rgb(22 69 58 / 12%);
+    background: rgb(255 255 255 / 68%);
+    box-shadow: inset 0 1px rgb(255 255 255 / 78%);
+  }
+
+  .home-hero--discovery .home-discovery__grid--bento > .home-discovery-card:hover {
+    border-color: rgb(20 101 82 / 28%);
+    background: rgb(255 255 255 / 92%);
+    box-shadow: 0 14px 28px rgb(7 55 45 / 12%);
+  }
+
+  .home-hero--discovery .home-discovery-card--local-now {
+    align-items: flex-end !important;
+    border-color: rgb(255 255 255 / 16%) !important;
+    background:
+      radial-gradient(circle at 12% 4%, rgb(255 255 255 / 14%), transparent 12rem),
+      linear-gradient(145deg, #176d5b, #0c493e) !important;
+    color: #fff;
+    box-shadow: 0 18px 34px rgb(8 62 51 / 22%) !important;
+  }
+
+  .home-hero--discovery .home-discovery-card--local-now .home-discovery-card__art {
+    background: rgb(255 255 255 / 10%);
+    box-shadow: inset 0 1px rgb(255 255 255 / 14%);
+  }
+
+  .home-hero--discovery .home-discovery-card--local-now strong {
+    color: #fff;
+  }
+
+  .home-hero--discovery .home-discovery-card--local-now small {
+    color: rgb(255 255 255 / 66%);
+  }
+
+  .home-hero--discovery .home-discovery__context {
+    margin-top: 13px;
+    border-color: rgb(22 69 58 / 12%);
+    background: rgb(22 69 58 / 10%);
+  }
+
+  .home-hero--discovery .home-discovery__context > span {
+    padding: 10px 11px;
+    background: rgb(255 255 255 / 72%);
+  }
+
+  .home-hero--discovery .home-discovery__context b {
+    font-size: 0.73rem;
+  }
+
+  .home-hero--discovery .home-discovery__context small {
+    font-size: 0.6rem;
+  }
+}
+
+@media (min-width: 761px) and (max-width: 1120px) {
+  .home-hero--discovery {
+    min-height: auto;
+  }
+
+  .home-hero--discovery .home-hero__inner {
+    grid-template-columns: minmax(330px, 0.8fr) minmax(540px, 1.2fr);
+    gap: 30px;
+  }
+
+  .home-hero--discovery .home-hero__copy h1 {
+    font-size: clamp(3.2rem, 5.8vw, 4rem);
+  }
+
+  .home-hero--discovery .home-discovery--bento {
+    padding: 22px;
+  }
+}
