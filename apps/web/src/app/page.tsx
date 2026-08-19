@@ -41,7 +41,7 @@ interface Feed {
 const AREA_ICON: Record<string, string> = {
   food: 'utensils',
   health: 'stethoscope',
-  services: 'wrench',
+  services: 'tools',
   shopping: 'bag',
   mobility: 'car',
   home: 'homeCategory',

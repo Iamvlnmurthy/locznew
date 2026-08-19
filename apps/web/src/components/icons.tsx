@@ -11,6 +11,31 @@ const paths: Record<string, React.ReactNode> = {
     </>
   ),
   navigation: <path d="M3 11 21 3l-8 18-2.5-7.5L3 11Z" />,
+  utensils: (
+    <>
+      <path d="M5 3v6a2 2 0 0 0 2 2 2 2 0 0 0 2-2V3M7 11v10" />
+      <path d="M17 3c-1.7 0-3 2-3 5s1.3 4 3 4m0-9v18" />
+    </>
+  ),
+  stethoscope: (
+    <>
+      <path d="M6 3v5a4 4 0 0 0 8 0V3" />
+      <path d="M10 16a5 5 0 0 0 5 5 4 4 0 0 0 4-4v-3" />
+      <circle cx="19" cy="10" r="2" />
+    </>
+  ),
+  bag: (
+    <>
+      <path d="M6 8h12l1 12H5L6 8Z" />
+      <path d="M9 8a3 3 0 0 1 6 0" />
+    </>
+  ),
+  bed: (
+    <>
+      <path d="M3 8v11M3 13h18v6M21 13v-1a3 3 0 0 0-3-3H9v4" />
+      <circle cx="6.5" cy="11" r="1.5" />
+    </>
+  ),
   home: (
     <>
       <path d="m3 11 9-8 9 8" />
