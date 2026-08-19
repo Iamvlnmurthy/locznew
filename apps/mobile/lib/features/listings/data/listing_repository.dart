@@ -248,6 +248,25 @@ class ListingRepository {
     ];
   }
 
+  /// Live local job openings (Adzuna), pulled on demand (never stored). Display-only: title,
+  /// company, location + a link back to the posting. Empty when unconfigured or on failure.
+  Future<List<({String title, String? company, String? location, String url, String? postedAt})>>
+      localJobs(String query) async {
+    if (query.trim().isEmpty) return const [];
+    final json = await _api.get<Map<String, dynamic>>('/local-now/jobs', query: {'q': query});
+    final jobs = (json['jobs'] as List<dynamic>? ?? []);
+    return [
+      for (final entry in jobs)
+        (
+          title: (entry as Map<String, dynamic>)['title'] as String? ?? '',
+          company: entry['company'] as String?,
+          location: entry['location'] as String?,
+          url: entry['url'] as String? ?? '',
+          postedAt: entry['postedAt'] as String?,
+        ),
+    ];
+  }
+
   Future<BusinessDetail> businessDetail(String slug) async {
     final json = await _api.get<Map<String, dynamic>>('/businesses/$slug');
     return BusinessDetail.fromJson(json);

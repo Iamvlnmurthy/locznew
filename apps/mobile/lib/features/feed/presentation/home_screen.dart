@@ -127,6 +127,7 @@ class HomeScreen extends ConsumerWidget {
                 const SliverToBoxAdapter(child: _WeatherStrip()),
                 const SliverToBoxAdapter(child: _AroundYouSection()),
                 const SliverToBoxAdapter(child: _LocalNewsSection()),
+                const SliverToBoxAdapter(child: _LocalJobsSection()),
                 if (feedItems.isEmpty)
                   SliverFillRemaining(
                     hasScrollBody: false,
@@ -1332,6 +1333,129 @@ class _LocalNewsSectionState extends ConsumerState<_LocalNewsSection> {
             padding: const EdgeInsets.only(top: 4),
             child: Text(
               'Google News',
+              style:
+                  theme.textTheme.labelSmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// "Local Now" jobs — live openings for the city (Adzuna), linking back to the posting.
+/// Mirrors the web Home jobs strip. Hidden when there is nothing (or on error).
+class _LocalJobsSection extends ConsumerStatefulWidget {
+  const _LocalJobsSection();
+
+  @override
+  ConsumerState<_LocalJobsSection> createState() => _LocalJobsSectionState();
+}
+
+class _LocalJobsSectionState extends ConsumerState<_LocalJobsSection> {
+  List<({String title, String? company, String? location, String url, String? postedAt})> _items =
+      const [];
+  bool _loading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _load();
+  }
+
+  Future<void> _load() async {
+    final city = ref.read(selectedCityProvider);
+    final query = (city?.name.isEmpty ?? true) ? '' : city!.name;
+    try {
+      final items = await ref.read(listingRepositoryProvider).localJobs(query);
+      if (mounted) {
+        setState(() {
+          _items = items;
+          _loading = false;
+        });
+      }
+    } catch (_) {
+      if (mounted) setState(() => _loading = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_loading || _items.isEmpty) return const SizedBox.shrink();
+    final strings = Strings.of(context);
+    final theme = Theme.of(context);
+    final city = ref.watch(selectedCityProvider);
+    final cityName = (city?.name.isEmpty ?? true) ? strings('feed.nearby') : city!.name;
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 24, 16, 0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _SectionHeader(
+            title: strings('jobs.title', {'city': cityName}),
+            hint: strings('jobs.kicker'),
+          ),
+          const SizedBox(height: 8),
+          for (final job in _items)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 8),
+              child: Material(
+                color: theme.colorScheme.surface,
+                borderRadius: BorderRadius.circular(14),
+                child: InkWell(
+                  borderRadius: BorderRadius.circular(14),
+                  onTap: () => launchUrl(Uri.parse(job.url), mode: LaunchMode.externalApplication),
+                  child: Padding(
+                    padding: const EdgeInsets.all(12),
+                    child: Row(
+                      children: [
+                        Container(
+                          width: 38,
+                          height: 38,
+                          decoration: BoxDecoration(
+                            color: theme.colorScheme.primary.withValues(alpha: 0.10),
+                            borderRadius: BorderRadius.circular(11),
+                          ),
+                          child:
+                              Icon(Icons.work_outline, size: 18, color: theme.colorScheme.primary),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                job.title,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: theme.textTheme.bodyMedium
+                                    ?.copyWith(fontWeight: FontWeight.w600),
+                              ),
+                              Text(
+                                [job.company, job.location]
+                                    .whereType<String>()
+                                    .where((part) => part.isNotEmpty)
+                                    .join(' · '),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: theme.textTheme.labelSmall
+                                    ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+                              ),
+                            ],
+                          ),
+                        ),
+                        Icon(Icons.north_east, size: 16, color: theme.colorScheme.onSurfaceVariant),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          Padding(
+            padding: const EdgeInsets.only(top: 4),
+            child: Text(
+              'Adzuna',
               style:
                   theme.textTheme.labelSmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
             ),
