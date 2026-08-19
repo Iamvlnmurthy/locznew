@@ -61,6 +61,9 @@ class AppTheme {
       colorScheme: scheme,
       scaffoldBackgroundColor: isDark ? darkCanvas : LoczColors.neutral50,
       fontFamily: LoczTypography.fontFamily,
+      // Inter carries no Telugu glyphs, so Telugu text falls back to Anek Telugu (a clean,
+      // professional Telugu face) while Latin/digits stay on Inter.
+      fontFamilyFallback: const ['AnekTelugu'],
       visualDensity: VisualDensity.standard,
       splashFactory: InkSparkle.splashFactory,
       textTheme: TextTheme(

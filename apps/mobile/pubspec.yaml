@@ -103,3 +103,8 @@ flutter:
           weight: 600
         - asset: assets/fonts/Inter-Bold.ttf
           weight: 700
+    # Telugu face — Inter has no Telugu glyphs, so this is used as a fallback for Telugu text
+    # (variable font; Flutter picks the nearest weight). Keeps Latin on Inter, Telugu on Anek.
+    - family: AnekTelugu
+      fonts:
+        - asset: assets/fonts/AnekTelugu.ttf
