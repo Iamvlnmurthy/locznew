@@ -217,6 +217,18 @@ export default async function HomePage({
       )) ?? { areas: [] })
     : { areas: [] };
   const areaLabels = getMessageGroup(locale, 'discoveryAreas');
+  const primaryAreas = [
+    'local-now',
+    'businesses',
+    'jobs',
+    'news',
+    'alerts',
+    'deals',
+    'services',
+    'marketplace',
+  ];
+  const areaCountByKey = new Map(areaSummary.areas.map(({ area, count }) => [area, count]));
+  const heroAreas = primaryAreas.map((area) => ({ area, count: areaCountByKey.get(area) ?? 0 }));
 
   // "Local Now" news — live local headlines for the area, pulled on demand and cached server-side
   // (never stored). Display-only: headline + publisher + a link back to the original.
@@ -289,17 +301,19 @@ export default async function HomePage({
               </Link>
             </div>
             <div className="home-discovery__grid">
-              {areaSummary.areas.slice(0, 8).map(({ area, count }) => (
-                <Link
-                  key={area}
-                  href={`/?area=${encodeURIComponent(area)}#local-feed`}
-                  className={selectedArea === area ? 'is-active' : ''}
-                >
+              {heroAreas.map(({ area, count }) => (
+                <Link key={area} href={`/discover/${encodeURIComponent(area)}`}>
                   <span aria-hidden="true">
                     <Image src={premiumDiscoveryArtwork(area)} alt="" width={58} height={58} />
                   </span>
-                  <strong>{areaLabels[area] ?? area}</strong>
-                  <small>{count.toLocaleString('en-IN')}</small>
+                  <strong>
+                    {area === 'news'
+                      ? t('home.localNewsKicker')
+                      : area === 'alerts'
+                        ? t('home.alertsTitle')
+                        : (areaLabels[area] ?? area)}
+                  </strong>
+                  <small>{count > 0 ? count.toLocaleString('en-IN') : t('home.explore')}</small>
                 </Link>
               ))}
             </div>
@@ -307,7 +321,7 @@ export default async function HomePage({
         </div>
       </section>
 
-      <div className="container">
+      <div className="container" hidden>
         {weather ? (
           <div className="local-now" role="status">
             <span className="local-now__icon" aria-hidden="true">

@@ -62,16 +62,28 @@ final routerProvider = Provider<GoRouter>((ref) {
           StatefulShellBranch(
             routes: [
               GoRoute(path: '/', builder: (_, __) => const HomeScreen()),
+              GoRoute(
+                path: '/discover/:area',
+                builder: (_, state) => DiscoveryFeedScreen(
+                  area: state.pathParameters['area'] ?? 'local-now',
+                ),
+              ),
             ],
           ),
           StatefulShellBranch(
             routes: [
-              GoRoute(path: '/explore', builder: (_, __) => const ExploreScreen()),
+              GoRoute(
+                path: '/explore',
+                builder: (_, __) => const ExploreScreen(),
+              ),
             ],
           ),
           StatefulShellBranch(
             routes: [
-              GoRoute(path: '/alerts', builder: (_, __) => const AlertsScreen()),
+              GoRoute(
+                path: '/alerts',
+                builder: (_, __) => const AlertsScreen(),
+              ),
             ],
           ),
           StatefulShellBranch(

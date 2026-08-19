@@ -195,6 +195,8 @@ String discoveryAreaAsset(String area) {
   final slug = switch (area) {
     'shopping' => 'marketplace',
     'events' => 'happening-nearby',
+    'news' => 'local-now',
+    'alerts' => 'emergency',
     _ => area,
   };
   return 'assets/discovery/$slug.webp';

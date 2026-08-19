@@ -62,7 +62,7 @@ void main() {
     });
   }
 
-  testWidgets('discovery feed stays composed at 320px in dark mode', (
+  testWidgets('home stays a focused discovery launcher at 320px in dark mode', (
     tester,
   ) async {
     SharedPreferences.setMockInitialValues({});
@@ -120,21 +120,14 @@ void main() {
 
     expect(find.text("What's near you?"), findsOneWidget);
 
-    // The home is one vertical "Around you now" feed now, not horizontal rails.
-    final scrollable = find.byType(Scrollable).first;
-    await tester.scrollUntilVisible(find.text('Around you now'), 300, scrollable: scrollable);
+    await tester.drag(find.byType(CustomScrollView), const Offset(0, -420));
     await tester.pumpAndSettle();
-    expect(find.text('Around you now'), findsOneWidget);
-
-    await tester.scrollUntilVisible(find.text('₹32,900'), 300, scrollable: scrollable);
-    await tester.pumpAndSettle();
-    expect(find.text('₹32,900'), findsOneWidget);
-    // Each card in the merged feed is tagged with its content type (scoped to the card, since
-    // "Marketplace" now also appears as a Quick Access shortcut).
-    expect(
-      find.descendant(of: find.byType(ListingCard), matching: find.text('Marketplace')),
-      findsOneWidget,
-    );
+    expect(find.text('Local Now'), findsOneWidget);
+    expect(find.text('Businesses'), findsOneWidget);
+    expect(find.text('Jobs'), findsOneWidget);
+    expect(find.text('News'), findsOneWidget);
+    expect(find.byType(ListingCard), findsNothing);
+    expect(find.text('₹32,900'), findsNothing);
     expect(tester.takeException(), isNull);
   });
 }

@@ -201,6 +201,8 @@ export function premiumCategoryArtwork({
 const discoveryAliases: Readonly<Record<string, string>> = {
   shopping: 'marketplace',
   events: 'happening-nearby',
+  news: 'local-now',
+  alerts: 'emergency',
 };
 
 export function premiumDiscoveryArtwork(area: string): string {

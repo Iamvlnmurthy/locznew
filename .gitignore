@@ -50,3 +50,5 @@ next-env.d.ts
 .preview-server.err.log
 .premium-preview.log
 .premium-preview.err.log
+.ui-preview-server.err.log
+.ui-preview-server.out.log
