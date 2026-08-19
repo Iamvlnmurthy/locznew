@@ -1315,3 +1315,58 @@
     color: #eff7f4;
   }
 }
+
+/* ---------- Mineral-white light palette trial ----------
+   Intentionally isolated so the whole colour experiment can be reverted as one block. */
+:root:not([data-theme='dark']) {
+  --locz-primary: #0f6654;
+  --locz-primary-hover: #0a5143;
+  --locz-primary-soft: #e8f2ee;
+  --locz-accent: #e7b95f;
+  --locz-accent-soft: #fff4de;
+  --locz-coral: #f26752;
+  --locz-coral-soft: #ffeae5;
+  --locz-bg: #f4f3ed;
+  --locz-surface: #ffffff;
+  --locz-surface-elevated: #fafaf7;
+  --locz-surface-muted: #f0f5f1;
+  --locz-border: #dde3dc;
+  --locz-border-strong: #c9d3cb;
+  --locz-text: #172a24;
+  --locz-text-secondary: #4b5f57;
+  --locz-text-muted: #72827b;
+  --locz-text-inverse: #ffffff;
+  --locz-premium-border: #dfe5df;
+  --locz-shadow-sm: 0 1px 2px rgb(23 42 36 / 3%), 0 8px 24px rgb(23 68 55 / 5%);
+  --locz-shadow-md: 0 2px 6px rgb(23 42 36 / 4%), 0 18px 42px rgb(23 68 55 / 8%);
+  --locz-shadow-lg: 0 5px 16px rgb(23 42 36 / 5%), 0 30px 76px rgb(23 68 55 / 12%);
+  --locz-shadow-focus: 0 0 0 4px rgb(15 102 84 / 17%);
+}
+
+:root:not([data-theme='dark']) body {
+  background:
+    radial-gradient(circle at 50% 0%, rgb(24 112 88 / 5.5%), transparent 34rem),
+    linear-gradient(180deg, #faf9f5 0%, #f4f3ed 42%, #f1f2ec 100%);
+}
+
+:root:not([data-theme='dark']) .home-content-shell > .local-news,
+:root:not([data-theme='dark']) .home-content-shell > .local-jobs {
+  border-color: #dfe5df;
+  background: rgb(250 250 247 / 95%);
+}
+
+:root:not([data-theme='dark']) .home-feed-toolbar,
+:root:not([data-theme='dark']) .discovery-feed-toolbar {
+  border-color: #dfe5df;
+  background: rgb(255 255 255 / 94%);
+}
+
+:root:not([data-theme='dark']) .home-status-rail > .local-now {
+  border-color: #d9e5dd;
+  background: linear-gradient(135deg, #ffffff, #f0f5f1);
+}
+
+:root:not([data-theme='dark']) .home-status-rail > .local-alerts {
+  border-color: #f3c4ba;
+  background: linear-gradient(135deg, #fffdfa, #fff2ef);
+}
