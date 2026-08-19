@@ -12,14 +12,19 @@ const SHARD_SIZE = 50000;
 
 interface SlugPage {
   slugs: Array<{ slug: string; updatedAt: string }>;
-  total: number;
 }
+
+const loadTotal = unstable_cache(
+  async (): Promise<number> =>
+    (await apiSafe<{ total: number }>('/businesses/sitemap-count', { revalidate }))?.total ?? 0,
+  ['business-sitemap-count'],
+  { revalidate: 86400 },
+);
 
 const loadSlugPage = unstable_cache(
   async (page: number): Promise<SlugPage> =>
     (await apiSafe<SlugPage>(`/businesses/sitemap-slugs?page=${page}`, { revalidate })) ?? {
       slugs: [],
-      total: 0,
     },
   ['business-sitemap-page'],
   { revalidate: 86400 },
@@ -39,7 +44,7 @@ export async function GET(request: Request): Promise<Response> {
 
   // Index: one <sitemap> per shard.
   if (pageParam === null) {
-    const total = (await loadSlugPage(0)).total;
+    const total = await loadTotal();
     const shards = Math.max(1, Math.ceil(total / SHARD_SIZE));
     const items = Array.from(
       { length: shards },

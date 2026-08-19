@@ -148,31 +148,42 @@ export class BusinessesService {
    * caller shards `total` into 50k-URL sitemap files. Cached hard by the route, so the count runs
    * at most once a day.
    */
+  private static readonly SITEMAP_WHERE: Prisma.BusinessWhereInput = {
+    deletedAt: null,
+    isActive: true,
+    OR: [
+      { claimStatus: 'CLAIMED' },
+      { verificationStatus: 'VERIFIED' },
+      { primaryPhone: { not: null } },
+      { description: { not: null } },
+    ],
+  };
+  // The curated total barely moves and its count is a multi-second scan, so it is memoised in
+  // process for a day — the sitemap index reads it without re-counting on every crawler fetch.
+  private sitemapTotalCache: { value: number; at: number } | null = null;
+
+  async sitemapCount(): Promise<number> {
+    const now = Date.now();
+    if (this.sitemapTotalCache && now - this.sitemapTotalCache.at < 86_400_000) {
+      return this.sitemapTotalCache.value;
+    }
+    const value = await this.prisma.business.count({ where: BusinessesService.SITEMAP_WHERE });
+    this.sitemapTotalCache = { value, at: now };
+    return value;
+  }
+
   async sitemapSlugs(
     page: number,
     pageSize: number,
-  ): Promise<{ slugs: Array<{ slug: string; updatedAt: Date }>; total: number }> {
-    const where: Prisma.BusinessWhereInput = {
-      deletedAt: null,
-      isActive: true,
-      OR: [
-        { claimStatus: 'CLAIMED' },
-        { verificationStatus: 'VERIFIED' },
-        { primaryPhone: { not: null } },
-        { description: { not: null } },
-      ],
-    };
-    const [slugs, total] = await Promise.all([
-      this.prisma.business.findMany({
-        where,
-        select: { slug: true, updatedAt: true },
-        orderBy: { id: 'asc' },
-        skip: page * pageSize,
-        take: pageSize,
-      }),
-      page === 0 ? this.prisma.business.count({ where }) : Promise.resolve(-1),
-    ]);
-    return { slugs, total };
+  ): Promise<{ slugs: Array<{ slug: string; updatedAt: Date }> }> {
+    const slugs = await this.prisma.business.findMany({
+      where: BusinessesService.SITEMAP_WHERE,
+      select: { slug: true, updatedAt: true },
+      orderBy: { id: 'asc' },
+      skip: page * pageSize,
+      take: pageSize,
+    });
+    return { slugs };
   }
 
   /**
