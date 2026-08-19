@@ -16798,3 +16798,22 @@ body {
 .nearby-businesses__band:first-child {
   margin-top: 0;
 }
+
+.local-now {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--locz-space-2);
+  margin: var(--locz-space-4) 0 0;
+  padding: 6px 12px 6px 6px;
+  border: 1px solid var(--locz-border-strong);
+  border-radius: var(--locz-radius-full);
+  background: var(--locz-surface);
+  font-size: 0.9rem;
+}
+.local-now__desc {
+  color: var(--locz-text-muted);
+  text-transform: capitalize;
+}
+.local-now__place {
+  color: var(--locz-text-muted);
+}

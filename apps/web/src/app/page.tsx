@@ -15,6 +15,14 @@ import {
 } from '@/lib/session';
 import { RadiusSelector } from '@/components/radius-selector';
 
+interface LocalWeather {
+  tempC: number;
+  condition: string;
+  description: string;
+  icon: string;
+  place: string | null;
+}
+
 interface FeedSection {
   key: string;
   title: string;
@@ -110,6 +118,16 @@ export default async function HomePage() {
             await loadNearbyBusinesses({ cityId: feed.cityId, page: 1 })
           : { items: [], total: 0, page: 1, hasNextPage: false };
 
+  // "Local Now" weather — display-only, and null unless OPENWEATHER_API_KEY is configured.
+  const weather =
+    city?.latitude !== undefined && city?.longitude !== undefined
+      ? ((
+          await apiSafe<{ weather: LocalWeather | null }>(
+            `/local-now/weather?latitude=${city.latitude}&longitude=${city.longitude}`,
+          )
+        )?.weather ?? null)
+      : null;
+
   return (
     <>
       <section className="home-hero">
@@ -185,6 +203,21 @@ export default async function HomePage() {
       </section>
 
       <div className="container">
+        {weather ? (
+          <div className="local-now" role="status">
+            <img
+              className="local-now__icon"
+              src={`https://openweathermap.org/img/wn/${weather.icon}.png`}
+              alt=""
+              width="40"
+              height="40"
+            />
+            <strong>{weather.tempC}°C</strong>
+            <span className="local-now__desc">{weather.description}</span>
+            {weather.place ? <span className="local-now__place">· {weather.place}</span> : null}
+          </div>
+        ) : null}
+
         {!feed || feed.sections.length === 0 ? (
           <div className="empty-state">
             <img
