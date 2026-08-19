@@ -1,9 +1,10 @@
 import { Controller, Get, Query } from '@nestjs/common';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
-import { IsLatitude, IsLongitude, IsOptional, IsString, Matches } from 'class-validator';
+import { IsLatitude, IsLongitude, IsOptional, IsString, Matches, MaxLength } from 'class-validator';
 import { Public } from '../rbac/rbac.decorators';
 import { AreaCount, LocalAreaService } from './local-area.service';
+import { LocalNewsService, NewsHeadline } from './local-news.service';
 import { LocalWeather } from './weather.mapper';
 import { WeatherService } from './weather.service';
 
@@ -19,12 +20,17 @@ class AreaSummaryQueryDto {
   pincode?: string;
 }
 
+class NewsQueryDto {
+  @IsString() @MaxLength(80) q!: string;
+}
+
 @ApiTags('local-now')
 @Controller('local-now')
 export class WeatherController {
   constructor(
     private readonly weather: WeatherService,
     private readonly localArea: LocalAreaService,
+    private readonly localNews: LocalNewsService,
   ) {}
 
   @Public()
@@ -39,5 +45,12 @@ export class WeatherController {
   @ApiOperation({ summary: 'How many known places fall in each discovery area near the viewer' })
   async areaSummary(@Query() query: AreaSummaryQueryDto): Promise<{ areas: AreaCount[] }> {
     return { areas: await this.localArea.summary(query) };
+  }
+
+  @Public()
+  @Get('news')
+  @ApiOperation({ summary: 'Live local news headlines for an area (empty when none / on failure)' })
+  async news(@Query() query: NewsQueryDto): Promise<{ headlines: NewsHeadline[] }> {
+    return { headlines: await this.localNews.headlines(query.q) };
   }
 }

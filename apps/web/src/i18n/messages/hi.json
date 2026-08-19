@@ -68,7 +68,9 @@
     "usefulCollections": "काम के संग्रह",
     "yourCity": "आपका शहर",
     "exploreKicker": "आपके आसपास",
-    "exploreTitle": "{city} में आपके पास क्या है"
+    "exploreTitle": "{city} में आपके पास क्या है",
+    "localNewsKicker": "लोकल नाउ",
+    "localNewsTitle": "{city} के आसपास ताज़ा"
   },
   "nav": {
     "home": "होम",

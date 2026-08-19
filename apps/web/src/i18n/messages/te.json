@@ -68,7 +68,9 @@
     "usefulCollections": "ఉపయోగకరమైన సేకరణలు",
     "yourCity": "మీ నగరం",
     "exploreKicker": "మీ చుట్టూ",
-    "exploreTitle": "{city}లో మీ దగ్గర ఏముంది"
+    "exploreTitle": "{city}లో మీ దగ్గర ఏముంది",
+    "localNewsKicker": "లోకల్ నౌ",
+    "localNewsTitle": "{city} చుట్టూ తాజా వార్తలు"
   },
   "nav": {
     "home": "హోమ్",

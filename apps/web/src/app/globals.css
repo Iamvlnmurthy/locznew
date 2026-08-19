@@ -16960,6 +16960,79 @@ body {
   white-space: nowrap;
 }
 
+/* "Local Now" news — live headlines pulled on demand, linking back to the publisher. */
+.local-news {
+  margin: 22px 0 8px;
+}
+.local-news__head {
+  margin-bottom: 12px;
+}
+.local-news__list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.local-news__list a {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  padding: 13px 14px;
+  border: 1px solid var(--locz-border);
+  border-radius: 14px;
+  background: var(--locz-surface-elevated, var(--locz-surface));
+  color: var(--locz-text);
+  transition:
+    border-color 160ms ease,
+    transform 160ms ease,
+    box-shadow 160ms ease;
+}
+.local-news__list a:hover {
+  border-color: color-mix(in srgb, var(--locz-primary) 36%, var(--locz-border));
+  box-shadow: var(--locz-shadow-sm);
+  transform: translateY(-1px);
+}
+.local-news__dot {
+  width: 8px;
+  height: 8px;
+  flex: 0 0 auto;
+  border-radius: 50%;
+  background: var(--locz-coral);
+}
+.local-news__body {
+  display: flex;
+  min-width: 0;
+  flex: 1 1 auto;
+  flex-direction: column;
+  gap: 3px;
+}
+.local-news__body strong {
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  font-size: 0.86rem;
+  font-weight: 650;
+  line-height: 1.3;
+}
+.local-news__meta {
+  font-size: 0.72rem;
+  color: var(--locz-text-secondary);
+}
+.local-news__list a > svg {
+  width: 14px;
+  height: 14px;
+  flex: 0 0 auto;
+  color: var(--locz-text-secondary);
+}
+.local-news__attribution {
+  margin: 8px 0 0;
+  font-size: 0.68rem;
+  color: var(--locz-text-muted);
+}
+
 /* "Save this search" — an alert opt-in that sits under the results search box. */
 .save-search__trigger {
   display: inline-flex;

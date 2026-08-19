@@ -23,6 +23,27 @@ interface LocalWeather {
   place: string | null;
 }
 
+interface NewsHeadline {
+  title: string;
+  url: string;
+  source: string;
+  publishedAt: string | null;
+}
+
+/** Localised "2 hours ago" without any translation keys — Intl handles the language. */
+function relativeTime(iso: string | null, locale: string): string | null {
+  if (!iso) return null;
+  const then = new Date(iso).getTime();
+  if (Number.isNaN(then)) return null;
+  const diffMs = then - Date.now();
+  const rtf = new Intl.RelativeTimeFormat(locale, { numeric: 'auto' });
+  const minutes = Math.round(diffMs / 60000);
+  if (Math.abs(minutes) < 60) return rtf.format(minutes, 'minute');
+  const hours = Math.round(minutes / 60);
+  if (Math.abs(hours) < 24) return rtf.format(hours, 'hour');
+  return rtf.format(Math.round(hours / 24), 'day');
+}
+
 interface FeedSection {
   key: string;
   title: string;
@@ -168,6 +189,16 @@ export default async function HomePage() {
     : { areas: [] };
   const areaLabels = getMessageGroup(locale, 'discoveryAreas');
 
+  // "Local Now" news — live local headlines for the area, pulled on demand and cached server-side
+  // (never stored). Display-only: headline + publisher + a link back to the original.
+  const newsHeadlines = feedCity
+    ? ((
+        await apiSafe<{ headlines: NewsHeadline[] }>(
+          `/local-now/news?q=${encodeURIComponent(feedCity)}`,
+        )
+      )?.headlines ?? [])
+    : [];
+
   return (
     <>
       <section className="home-hero">
@@ -279,6 +310,37 @@ export default async function HomePage() {
                 </Link>
               ))}
             </div>
+          </section>
+        ) : null}
+
+        {newsHeadlines.length > 0 ? (
+          <section className="local-news" aria-labelledby="local-news-title">
+            <div className="local-news__head">
+              <span className="section-kicker">{t('home.localNewsKicker')}</span>
+              <h2 id="local-news-title">{t('home.localNewsTitle', { city: feedCity })}</h2>
+            </div>
+            <ul className="local-news__list">
+              {newsHeadlines.map((item) => {
+                const when = relativeTime(item.publishedAt, locale);
+                return (
+                  <li key={item.url}>
+                    <a href={item.url} target="_blank" rel="noopener noreferrer">
+                      <span className="local-news__dot" aria-hidden="true" />
+                      <span className="local-news__body">
+                        <strong>{item.title}</strong>
+                        <span className="local-news__meta">
+                          {item.source}
+                          {when ? ` · ${when}` : ''}
+                        </span>
+                      </span>
+                      <Icon name="arrow" />
+                    </a>
+                  </li>
+                );
+              })}
+            </ul>
+            {/* Google News is a brand name — identical in every language. */}
+            <p className="local-news__attribution">{'Google News'}</p>
           </section>
         ) : null}
 

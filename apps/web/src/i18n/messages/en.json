@@ -68,7 +68,9 @@
     "usefulCollections": "useful collections",
     "yourCity": "your city",
     "exploreKicker": "Around you",
-    "exploreTitle": "What's near you in {city}"
+    "exploreTitle": "What's near you in {city}",
+    "localNewsKicker": "Local now",
+    "localNewsTitle": "Latest around {city}"
   },
   "nav": {
     "home": "Home",
