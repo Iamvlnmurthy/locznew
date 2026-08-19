@@ -66,7 +66,9 @@
     "sectionServicesBody": "People offering useful skills around your area.",
     "sectionServicesKicker": "Help is nearby",
     "usefulCollections": "useful collections",
-    "yourCity": "your city"
+    "yourCity": "your city",
+    "exploreKicker": "Around you",
+    "exploreTitle": "What's near you in {city}"
   },
   "nav": {
     "home": "Home",
@@ -1631,5 +1633,20 @@
     "phoneTitle": "Mobile number",
     "phoneConfirmed": "confirmed",
     "phoneAction": "Confirm a mobile number"
+  },
+  "discoveryAreas": {
+    "food": "Food",
+    "health": "Health",
+    "services": "Services",
+    "shopping": "Shopping",
+    "mobility": "Mobility",
+    "home": "Home & repair",
+    "jobs": "Jobs",
+    "events": "Events",
+    "rentals": "Rentals",
+    "deals": "Deals",
+    "businesses": "Businesses",
+    "play": "Play",
+    "pets": "Pets"
   }
 }

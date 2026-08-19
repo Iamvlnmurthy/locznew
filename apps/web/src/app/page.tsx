@@ -37,6 +37,23 @@ interface Feed {
   sections: FeedSection[];
 }
 
+// Discovery area → the SVG icon on its "Around you" chip. Keys match the API's area keys.
+const AREA_ICON: Record<string, string> = {
+  food: 'utensils',
+  health: 'stethoscope',
+  services: 'wrench',
+  shopping: 'bag',
+  mobility: 'car',
+  home: 'homeCategory',
+  jobs: 'briefcase',
+  events: 'calendar',
+  rentals: 'bed',
+  deals: 'tag',
+  businesses: 'store',
+  play: 'heart',
+  pets: 'heart',
+};
+
 // The feed is personalised for signed-in users and location-dependent for everyone,
 // so it is rendered per request rather than cached.
 export const dynamic = 'force-dynamic';
@@ -141,6 +158,16 @@ export default async function HomePage() {
         )?.weather ?? null)
       : null;
 
+  // "Around you" — how many known places sit in each discovery area, rolled up from the POIs we
+  // already hold. This is the cold-start payoff: even before anyone posts, a new area reads as
+  // alive ("1,240 food · 380 health · 920 services nearby").
+  const areaSummary = countCityId
+    ? ((await apiSafe<{ areas: Array<{ area: string; count: number }> }>(
+        `/local-now/area-summary?${countScope.toString()}`,
+      )) ?? { areas: [] })
+    : { areas: [] };
+  const areaLabels = getMessageGroup(locale, 'discoveryAreas');
+
   return (
     <>
       <section className="home-hero">
@@ -226,6 +253,33 @@ export default async function HomePage() {
             {/* Required MET Norway attribution — a brand name, identical in every language. */}
             <span className="local-now__attribution">{'MET Norway'}</span>
           </div>
+        ) : null}
+
+        {areaSummary.areas.length > 0 ? (
+          <section className="area-summary" aria-labelledby="area-summary-title">
+            <div className="area-summary__head">
+              <span className="section-kicker">{t('home.exploreKicker')}</span>
+              <h2 id="area-summary-title">{t('home.exploreTitle', { city: feedCity })}</h2>
+            </div>
+            <div className="area-summary__grid">
+              {areaSummary.areas.map(({ area, count }) => (
+                <Link
+                  key={area}
+                  href={`/search?${countScope.toString()}`}
+                  className="area-chip"
+                  data-area={area}
+                >
+                  <span className="area-chip__icon" aria-hidden="true">
+                    <Icon name={AREA_ICON[area] ?? 'store'} />
+                  </span>
+                  <span className="area-chip__body">
+                    <strong>{count.toLocaleString('en-IN')}</strong>
+                    <span>{areaLabels[area] ?? area}</span>
+                  </span>
+                </Link>
+              ))}
+            </div>
+          </section>
         ) : null}
 
         {!feed || feed.sections.length === 0 ? (

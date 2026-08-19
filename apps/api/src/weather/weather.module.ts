@@ -1,16 +1,18 @@
 import { Module } from '@nestjs/common';
 import { RedisModule } from '../redis/redis.module';
+import { LocalAreaService } from './local-area.service';
 import { WeatherController } from './weather.controller';
 import { WeatherService } from './weather.service';
 
 /**
- * "Local Now" weather — display-only, cached, and entirely optional (off without an API key).
- * See docs/DATA_ENGINE_PLAN.md (weather = highly time-sensitive, never stored).
+ * "Local Now" — the live, low-persistence local layer. Weather is fetched + cached (never stored);
+ * the area summary is a cached rollup of the POIs LocZ already holds, so a brand-new area looks
+ * alive from day one. See docs/LIVE_LOCAL_DATA_PLAN.md and docs/DATA_ENGINE_PLAN.md.
  */
 @Module({
   imports: [RedisModule],
   controllers: [WeatherController],
-  providers: [WeatherService],
-  exports: [WeatherService],
+  providers: [WeatherService, LocalAreaService],
+  exports: [WeatherService, LocalAreaService],
 })
 export class WeatherModule {}

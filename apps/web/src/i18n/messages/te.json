@@ -66,7 +66,9 @@
     "sectionServicesBody": "మీ ప్రాంతంలో ఉపయోగకరమైన నైపుణ్యాలు అందించే వారు.",
     "sectionServicesKicker": "సహాయం దగ్గరలోనే ఉంది",
     "usefulCollections": "ఉపయోగకరమైన సేకరణలు",
-    "yourCity": "మీ నగరం"
+    "yourCity": "మీ నగరం",
+    "exploreKicker": "మీ చుట్టూ",
+    "exploreTitle": "{city}లో మీ దగ్గర ఏముంది"
   },
   "nav": {
     "home": "హోమ్",
@@ -1631,5 +1633,20 @@
     "phoneTitle": "మొబైల్ నంబర్",
     "phoneConfirmed": "ధృవీకరించబడింది",
     "phoneAction": "మొబైల్ నంబర్ ధృవీకరించండి"
+  },
+  "discoveryAreas": {
+    "food": "ఆహారం",
+    "health": "ఆరోగ్యం",
+    "services": "సేవలు",
+    "shopping": "షాపింగ్",
+    "mobility": "రవాణా",
+    "home": "ఇల్లు & మరమ్మతు",
+    "jobs": "ఉద్యోగాలు",
+    "events": "కార్యక్రమాలు",
+    "rentals": "అద్దెలు",
+    "deals": "ఆఫర్లు",
+    "businesses": "వ్యాపారాలు",
+    "play": "ఆట",
+    "pets": "పెంపుడు జంతువులు"
   }
 }

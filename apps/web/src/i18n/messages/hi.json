@@ -66,7 +66,9 @@
     "sectionServicesBody": "आपके इलाके के हुनरमंद लोग।",
     "sectionServicesKicker": "मदद पास में है",
     "usefulCollections": "काम के संग्रह",
-    "yourCity": "आपका शहर"
+    "yourCity": "आपका शहर",
+    "exploreKicker": "आपके आसपास",
+    "exploreTitle": "{city} में आपके पास क्या है"
   },
   "nav": {
     "home": "होम",
@@ -1631,5 +1633,20 @@
     "phoneTitle": "मोबाइल नंबर",
     "phoneConfirmed": "पुष्ट",
     "phoneAction": "मोबाइल नंबर पुष्ट करें"
+  },
+  "discoveryAreas": {
+    "food": "खाना",
+    "health": "स्वास्थ्य",
+    "services": "सेवाएं",
+    "shopping": "शॉपिंग",
+    "mobility": "परिवहन",
+    "home": "घर व मरम्मत",
+    "jobs": "नौकरियां",
+    "events": "आयोजन",
+    "rentals": "किराया",
+    "deals": "ऑफर",
+    "businesses": "व्यवसाय",
+    "play": "खेल",
+    "pets": "पालतू"
   }
 }

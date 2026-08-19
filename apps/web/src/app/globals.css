@@ -680,131 +680,6 @@ img {
   }
 }
 
-/* ---------- Premium typography ---------- */
-
-html {
-  font-size: 16px;
-}
-
-body {
-  letter-spacing: -0.002em;
-  font-feature-settings:
-    'cv02' 1,
-    'cv03' 1,
-    'cv04' 1,
-    'cv11' 1;
-}
-
-h1,
-h2,
-h3,
-.page-title,
-.search-business-card__name,
-.listing-card__price {
-  letter-spacing: -0.032em;
-  text-wrap: balance;
-}
-
-p,
-.listing-card__title,
-.search-business-card__place {
-  text-wrap: pretty;
-}
-
-.section-kicker,
-.eyebrow {
-  font-size: 0.72rem;
-  letter-spacing: 0.075em;
-  line-height: 1.35;
-}
-
-.search-businesses__head h2 {
-  margin-top: 5px;
-  font-size: 1.3rem;
-  font-weight: 700;
-  letter-spacing: -0.035em;
-  line-height: 1.22;
-}
-
-.search-businesses__head p {
-  margin-top: 6px;
-  font-size: 0.82rem;
-  line-height: 1.5;
-}
-
-.search-business-card__category {
-  font-size: 0.73rem;
-  font-weight: 600;
-  letter-spacing: 0.005em;
-  line-height: 1.35;
-  text-transform: none;
-}
-
-.search-business-card__name {
-  margin-top: 5px;
-  font-size: 1.06rem;
-  font-weight: 700;
-  line-height: 1.28;
-}
-
-.search-business-card__place {
-  margin-top: 8px;
-  font-size: 0.77rem;
-  font-weight: 400;
-  letter-spacing: -0.005em;
-  line-height: 1.45;
-}
-
-.search-business-card__meta {
-  margin-top: 9px;
-  font-size: 0.73rem;
-  font-weight: 500;
-  letter-spacing: -0.005em;
-  line-height: 1.4;
-}
-
-.search-business-card__verified,
-.search-business-card__claim {
-  font-size: 0.65rem;
-  font-weight: 600;
-  letter-spacing: 0;
-}
-
-.search-business-card__profile,
-.search-business-card__directions {
-  font-size: 0.74rem;
-  font-weight: 600;
-  letter-spacing: -0.005em;
-}
-
-@media (max-width: 640px) {
-  .search-businesses__head h2 {
-    font-size: 1.2rem;
-  }
-
-  .search-business-card__category {
-    font-size: 0.69rem;
-  }
-
-  .search-business-card__name {
-    font-size: 0.98rem;
-    line-height: 1.3;
-  }
-
-  .search-business-card__place {
-    font-size: 0.71rem;
-  }
-
-  .search-business-card__meta {
-    font-size: 0.69rem;
-  }
-
-  .search-business-card__profile,
-  .search-business-card__directions {
-    font-size: 0.69rem;
-  }
-}
-
 /* ---------- Compact density and user-selectable colour theme ---------- */
 
 :root[data-density='compact'] {
@@ -17020,6 +16895,71 @@ body {
   padding-left: var(--locz-space-2);
 }
 
+/* "Around you" — discovery-area counts rolled up from the POIs we already hold. */
+.area-summary {
+  margin: 22px 0 8px;
+}
+.area-summary__head {
+  margin-bottom: 12px;
+}
+.area-summary__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 10px;
+}
+.area-chip {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  min-height: 60px;
+  padding: 12px 14px;
+  border: 1px solid var(--locz-border);
+  border-radius: 16px;
+  background: var(--locz-surface-elevated, var(--locz-surface));
+  color: var(--locz-text);
+  transition:
+    border-color 160ms ease,
+    transform 160ms ease,
+    box-shadow 160ms ease;
+}
+.area-chip:hover {
+  border-color: color-mix(in srgb, var(--locz-primary) 36%, var(--locz-border));
+  box-shadow: var(--locz-shadow-sm);
+  transform: translateY(-2px);
+}
+.area-chip__icon {
+  display: grid;
+  width: 40px;
+  height: 40px;
+  flex: 0 0 auto;
+  place-items: center;
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--locz-primary) 12%, var(--locz-surface));
+  color: var(--locz-primary);
+}
+.area-chip__icon svg {
+  width: 20px;
+  height: 20px;
+}
+.area-chip__body {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  line-height: 1.2;
+}
+.area-chip__body strong {
+  font-size: 1.05rem;
+  font-weight: 800;
+  font-family: var(--font-display);
+}
+.area-chip__body span {
+  font-size: 0.74rem;
+  color: var(--locz-text-secondary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 /* "Save this search" — an alert opt-in that sits under the results search box. */
 .save-search__trigger {
   display: inline-flex;
@@ -17464,5 +17404,106 @@ body {
   .listing-card__media img,
   .search-business-card {
     transition: none;
+  }
+}
+
+/* Premium typography — kept last so the type scale wins the legacy cascade. */
+html {
+  font-size: 16px;
+}
+
+body {
+  font-family: var(--locz-font-sans);
+  font-feature-settings:
+    'cv02' 1,
+    'cv03' 1,
+    'cv04' 1,
+    'cv11' 1;
+  font-kerning: normal;
+  text-rendering: optimizeLegibility;
+}
+
+h1,
+h2,
+h3,
+h4,
+.page-title,
+.section-title {
+  letter-spacing: -0.025em;
+  text-wrap: balance;
+}
+
+.search-business-card__category {
+  font-size: 0.73rem;
+  font-weight: 600;
+  line-height: 1.35;
+  letter-spacing: 0.01em;
+  text-transform: none;
+}
+
+.search-business-card__name {
+  font-size: 1.06rem;
+  font-weight: 700;
+  line-height: 1.25;
+  letter-spacing: -0.022em;
+}
+
+.search-business-card__place {
+  font-size: 0.77rem;
+  font-weight: 400;
+  line-height: 1.45;
+  letter-spacing: -0.005em;
+}
+
+.search-business-card__meta {
+  font-size: 0.73rem;
+  font-weight: 500;
+  line-height: 1.35;
+  letter-spacing: 0;
+}
+
+.search-business-card__badge,
+.search-business-card__claim {
+  font-size: 0.65rem;
+  font-weight: 600;
+  letter-spacing: 0.005em;
+}
+
+.search-business-card__profile,
+.search-business-card__directions {
+  font-size: 0.74rem;
+  font-weight: 600;
+  line-height: 1.2;
+  letter-spacing: -0.005em;
+  white-space: nowrap;
+}
+
+@media (max-width: 640px) {
+  .search-business-card__category {
+    font-size: 0.69rem;
+  }
+
+  .search-business-card__name {
+    font-size: 0.98rem;
+    line-height: 1.28;
+  }
+
+  .search-business-card__place {
+    font-size: 0.71rem;
+  }
+
+  .search-business-card__meta,
+  .search-business-card__profile,
+  .search-business-card__directions {
+    font-size: 0.69rem;
+  }
+
+  .search-business-card__actions {
+    gap: 5px;
+  }
+
+  .search-business-card__profile,
+  .search-business-card__directions {
+    padding-inline: 8px;
   }
 }
