@@ -61,6 +61,7 @@ export class BusinessesController {
       radiusKm: query.radiusKm,
       pincode: query.pincode,
       categoryId: query.categoryId,
+      area: query.area,
       q: query.q,
       verifiedOnly: query.verifiedOnly,
       page: query.page,

@@ -47,6 +47,7 @@ export async function loadNearbyBusinesses(args: {
   longitude?: number;
   radiusKm?: number;
   categoryId?: string;
+  area?: string;
   verifiedOnly?: boolean;
   page: number;
 }): Promise<BusinessPage> {
@@ -54,6 +55,7 @@ export async function loadNearbyBusinesses(args: {
   if (args.q) query.set('q', args.q);
   if (args.pincode) query.set('pincode', args.pincode);
   if (args.categoryId) query.set('categoryId', args.categoryId);
+  if (args.area) query.set('area', args.area);
   if (args.verifiedOnly) query.set('verifiedOnly', 'true');
 
   let path: string;

@@ -1,4 +1,4 @@
-import { categoryNameToArea } from './local-area.service';
+import { categoryNameToArea } from '../common/utils/discovery-areas';
 
 describe('categoryNameToArea', () => {
   it.each([

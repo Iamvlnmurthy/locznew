@@ -16,6 +16,7 @@ import { v7 as uuid } from 'uuid';
 import { AuditService } from '../audit/audit.service';
 import { paginate, PaginatedDto } from '../common/dto/pagination.dto';
 import { slugify } from '../common/utils/slug.util';
+import { categoryNameToArea } from '../common/utils/discovery-areas';
 import { attributionFor, describeBusiness } from './business-description';
 import { matchesKeyword } from '../moderation/rule-based-moderation.provider';
 import { PrismaService } from '../prisma/prisma.service';
@@ -145,26 +146,25 @@ export class BusinessesService {
    * of listPublic used by the Home "Businesses near you" surface. Uses the PostGIS GiST index
    * (ST_DWithin to filter, KNN `<->` to order), paginated 20 at a time.
    */
-  /** The given category plus every descendant id — so a top-level filter matches leaf records. */
-  private async categorySubtree(rootId: string): Promise<string[]> {
+  /**
+   * The category ids that belong to a discovery area. Businesses use an import taxonomy distinct
+   * from the marketplace tree, so each category is classified by the name of its root ancestor
+   * (the same rule that powers the "Around you" counts), then kept if that maps to `area`.
+   */
+  private async categoryIdsForArea(area: string): Promise<string[]> {
     const categories = await this.prisma.category.findMany({
-      select: { id: true, parentId: true },
+      select: { id: true, parentId: true, name: true },
     });
-    const childrenOf = new Map<string, string[]>();
-    for (const category of categories) {
-      if (!category.parentId) continue;
-      const siblings = childrenOf.get(category.parentId) ?? [];
-      siblings.push(category.id);
-      childrenOf.set(category.parentId, siblings);
-    }
-    const ids: string[] = [];
-    const stack = [rootId];
-    while (stack.length > 0) {
-      const id = stack.pop()!;
-      ids.push(id);
-      stack.push(...(childrenOf.get(id) ?? []));
-    }
-    return ids;
+    const byId = new Map(categories.map((category) => [category.id, category]));
+    const rootName = (id: string): string => {
+      let current = byId.get(id);
+      for (let hops = 0; current?.parentId && hops < 12; hops += 1) {
+        current = byId.get(current.parentId) ?? current;
+        if (!current.parentId) break;
+      }
+      return current?.name ?? '';
+    };
+    return categories.filter((c) => categoryNameToArea(rootName(c.id)) === area).map((c) => c.id);
   }
 
   async nearby(query: {
@@ -173,6 +173,7 @@ export class BusinessesService {
     radiusKm?: number;
     pincode?: string;
     categoryId?: string;
+    area?: string;
     q?: string;
     verifiedOnly?: boolean;
     page: number;
@@ -183,10 +184,12 @@ export class BusinessesService {
     const point = Prisma.sql`ST_SetSRID(ST_MakePoint(${query.longitude}::double precision, ${query.latitude}::double precision), 4326)::geography`;
     const term = query.q?.trim();
 
-    // A picked category is usually a top-level one ("Food"), but businesses are filed under leaf
-    // categories ("Bakeries & sweets"). Expand the selection to its whole subtree so the filter
-    // matches, rather than only businesses filed on the exact node.
-    const categoryIds = query.categoryId ? await this.categorySubtree(query.categoryId) : null;
+    // The business filter is by discovery area ("Food"), since businesses use an import taxonomy
+    // distinct from the marketplace category tree. An explicit categoryId is still honoured for
+    // callers that pass a real business categoryId directly.
+    let categoryIds: string[] | null = null;
+    if (query.area) categoryIds = await this.categoryIdsForArea(query.area);
+    else if (query.categoryId) categoryIds = [query.categoryId];
 
     const where = Prisma.join(
       [
@@ -196,9 +199,11 @@ export class BusinessesService {
         Prisma.sql`ST_DWithin(b."geo", ${point}, ${radiusMeters})`,
         query.pincode ? Prisma.sql`b."pincodeCode" = ${query.pincode}` : Prisma.sql`TRUE`,
         categoryIds
-          ? Prisma.sql`b."categoryId" IN (${Prisma.join(
-              categoryIds.map((id) => Prisma.sql`${id}::uuid`),
-            )})`
+          ? categoryIds.length > 0
+            ? Prisma.sql`b."categoryId" IN (${Prisma.join(
+                categoryIds.map((id) => Prisma.sql`${id}::uuid`),
+              )})`
+            : Prisma.sql`FALSE`
           : Prisma.sql`TRUE`,
         term
           ? Prisma.sql`(b."name" ILIKE ${`%${term}%`} OR b."description" ILIKE ${`%${term}%`})`

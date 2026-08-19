@@ -58,7 +58,7 @@ export function NearbyBusinesses({
   loadingLabel,
   kmLabel,
   withinKm,
-  categories = [],
+  areaOptions = [],
   allCategoriesLabel,
   verifiedOnlyLabel,
   emptyLabel,
@@ -80,7 +80,7 @@ export function NearbyBusinesses({
   loadingLabel: string;
   kmLabel: string;
   withinKm: string;
-  categories?: Array<{ id: string; name: string }>;
+  areaOptions?: Array<{ key: string; label: string }>;
   allCategoriesLabel: string;
   verifiedOnlyLabel: string;
   emptyLabel: string;
@@ -96,7 +96,7 @@ export function NearbyBusinesses({
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(initialHasMore);
   const [loading, setLoading] = useState(false);
-  const [categoryId, setCategoryId] = useState('');
+  const [area, setArea] = useState('');
   const [verifiedOnly, setVerifiedOnly] = useState(false);
   const sentinel = useRef<HTMLDivElement>(null);
 
@@ -111,7 +111,7 @@ export function NearbyBusinesses({
         latitude,
         longitude,
         radiusKm,
-        categoryId: categoryId || undefined,
+        area: area || undefined,
         verifiedOnly: verifiedOnly || undefined,
         page: page + 1,
       });
@@ -134,7 +134,7 @@ export function NearbyBusinesses({
     latitude,
     longitude,
     radiusKm,
-    categoryId,
+    area,
     verifiedOnly,
   ]);
 
@@ -168,7 +168,7 @@ export function NearbyBusinesses({
       latitude,
       longitude,
       radiusKm,
-      categoryId: categoryId || undefined,
+      area: area || undefined,
       verifiedOnly: verifiedOnly || undefined,
       page: 1,
     })
@@ -186,23 +186,23 @@ export function NearbyBusinesses({
     };
     // Only filter changes drive a reset; scope inputs (q/pincode/…) are fixed per mount.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [categoryId, verifiedOnly]);
+  }, [area, verifiedOnly]);
 
   return (
     <>
-      {categories.length > 0 ? (
+      {areaOptions.length > 0 ? (
         <div className="business-filters" role="group" aria-label={allCategoriesLabel}>
           <label className="business-filters__category">
             <Icon name="sliders" />
             <select
-              value={categoryId}
-              onChange={(event) => setCategoryId(event.target.value)}
+              value={area}
+              onChange={(event) => setArea(event.target.value)}
               aria-label={allCategoriesLabel}
             >
               <option value="">{allCategoriesLabel}</option>
-              {categories.map((category) => (
-                <option key={category.id} value={category.id}>
-                  {category.name}
+              {areaOptions.map((option) => (
+                <option key={option.key} value={option.key}>
+                  {option.label}
                 </option>
               ))}
             </select>

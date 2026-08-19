@@ -148,6 +148,17 @@ export default async function SearchPage({
         })
       : { items: [], total: 0, page: 1, hasNextPage: false };
   const businessTotal = businessPage.total;
+  // Discovery-area options for the business filter — only the areas actually present nearby.
+  const areaScope = new URLSearchParams();
+  if (cityId) areaScope.set('cityId', cityId);
+  if (pincode) areaScope.set('pincode', pincode);
+  const areaSummary =
+    cityId || pincode
+      ? ((await apiSafe<{ areas: Array<{ area: string; count: number }> }>(
+          `/local-now/area-summary?${areaScope.toString()}`,
+        )) ?? { areas: [] })
+      : { areas: [] };
+  const areaLabels = getMessageGroup(locale, 'discoveryAreas');
   const isSparse = visibleResultCount > 0 && visibleResultCount <= 2;
   const resultHeading = params.q
     ? (resultCount === 1 ? s.resultForOne : s.resultsForMany)
@@ -292,9 +303,9 @@ export default async function SearchPage({
                   loadingLabel={s.loadingMoreBusinesses}
                   kmLabel={t('common.km')}
                   withinKm={s.withinKm}
-                  categories={categories.map((category) => ({
-                    id: category.id,
-                    name: category.name,
+                  areaOptions={areaSummary.areas.map(({ area }) => ({
+                    key: area,
+                    label: areaLabels[area] ?? area,
                   }))}
                   allCategoriesLabel={s.allCategories}
                   verifiedOnlyLabel={s.verifiedOnly}

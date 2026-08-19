@@ -7,6 +7,7 @@ import {
   VerificationStatus,
 } from '@prisma/client';
 import { Transform, Type } from 'class-transformer';
+import { DISCOVERY_AREAS } from '../../common/utils/discovery-areas';
 import {
   ArrayMaxSize,
   IsArray,
@@ -179,6 +180,12 @@ export class BusinessNearbyQueryDto extends PaginationQueryDto {
   pincode?: string;
 
   @ApiPropertyOptional() @IsOptional() @IsUUID() categoryId?: string;
+
+  @ApiPropertyOptional({ enum: DISCOVERY_AREAS, description: 'Filter by discovery area' })
+  @IsOptional()
+  @IsIn(DISCOVERY_AREAS as unknown as string[])
+  area?: string;
+
   @ApiPropertyOptional() @IsOptional() @IsString() @MaxLength(120) q?: string;
 
   @ApiPropertyOptional({ description: 'Only businesses LocZ has verified' })

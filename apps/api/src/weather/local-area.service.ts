@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
+import { categoryNameToArea } from '../common/utils/discovery-areas';
 import { PrismaService } from '../prisma/prisma.service';
 import { RedisService } from '../redis/redis.service';
 
@@ -7,35 +8,6 @@ import { RedisService } from '../redis/redis.service';
 export interface AreaCount {
   area: string;
   count: number;
-}
-
-/**
- * Maps a top-level catalog category name to one of the LocZ discovery areas. Regex on the name
- * (not the id/slug) keeps it robust to exact slug values and to new leaf categories — the same
- * approach the web card uses to pick artwork. Order matters: specific buckets before generic.
- */
-export function categoryNameToArea(name: string): string | null {
-  const value = name.toLowerCase();
-  if (/grocer|fruit|vegetable|dairy|bakery|meat|fish|poultry|food/.test(value)) return 'food';
-  if (/health|beauty|cosmetic|personal care|pharma|medical|clinic/.test(value)) return 'health';
-  if (/vehicle|auto|car|bike|motor/.test(value)) return 'mobility';
-  if (/sport|fitness|outdoor|gym/.test(value)) return 'play';
-  if (/\bpet/.test(value)) return 'pets';
-  if (/job|recruit|career|hiring/.test(value)) return 'jobs';
-  if (/event|wedding/.test(value)) return 'events';
-  if (/real estate|rental|property/.test(value)) return 'rentals';
-  if (/offer|deal/.test(value)) return 'deals';
-  if (/hardware|tool|building|farm|garden|agricultur|industrial|business suppl/.test(value))
-    return 'home';
-  if (
-    /electronic|clothing|footwear|furniture|kitchen|toys|book|station|musical|hobby|religious|festive/.test(
-      value,
-    )
-  )
-    return 'shopping';
-  if (/service/.test(value)) return 'services';
-  if (/business/.test(value)) return 'businesses';
-  return null;
 }
 
 /**
