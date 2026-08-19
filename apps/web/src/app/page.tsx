@@ -312,6 +312,7 @@ export default async function HomePage() {
               initialHasMore={homeBusinesses.hasNextPage}
               verifiedLabel={searchLabels.businessVerified}
               claimLabel={searchLabels.businessClaim}
+              directionsLabel={searchLabels.directions}
               nearYou={searchLabels.nearYou}
               loadingLabel={searchLabels.loadingMoreBusinesses}
               kmLabel={t('common.km')}

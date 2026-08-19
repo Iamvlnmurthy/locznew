@@ -12,6 +12,8 @@ export interface NearbyBusiness {
   distanceMeters?: number;
   verificationStatus: string;
   claimStatus: string;
+  latitude?: number | null;
+  longitude?: number | null;
 }
 
 interface ApiPage {

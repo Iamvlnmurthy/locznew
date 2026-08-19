@@ -23,6 +23,19 @@ function bandIndex(meters: number): number {
   return BAND_METRES.length;
 }
 
+/**
+ * A Google Maps directions link to the place — exact coordinates when the record has them,
+ * otherwise a name+city query Maps can resolve. Opens the Maps app on mobile, a new tab on
+ * desktop; `api=1` is the documented, key-free deep-link form.
+ */
+function directionsHref(business: NearbyBusiness): string {
+  const destination =
+    business.latitude != null && business.longitude != null
+      ? `${business.latitude},${business.longitude}`
+      : encodeURIComponent([business.name, business.cityName].filter(Boolean).join(', '));
+  return `https://www.google.com/maps/dir/?api=1&destination=${destination}`;
+}
+
 export function NearbyBusinesses({
   q,
   pincode,
@@ -34,6 +47,7 @@ export function NearbyBusinesses({
   initialHasMore,
   verifiedLabel,
   claimLabel,
+  directionsLabel,
   nearYou,
   loadingLabel,
   kmLabel,
@@ -49,6 +63,7 @@ export function NearbyBusinesses({
   initialHasMore: boolean;
   verifiedLabel: string;
   claimLabel: string;
+  directionsLabel: string;
   nearYou: string;
   loadingLabel: string;
   kmLabel: string;
@@ -122,26 +137,42 @@ export function NearbyBusinesses({
             return (
               <Fragment key={business.id}>
                 {showBand ? <h3 className="nearby-businesses__band">{bandLabel(band)}</h3> : null}
-                <Link href={`/b/${business.slug}`} className="search-business-card">
-                  <span className="search-business-card__mark" aria-hidden="true">
-                    {business.name.slice(0, 1).toUpperCase()}
-                  </span>
-                  <span className="search-business-card__body">
+                <article className="search-business-card">
+                  {/* Stretched link: covers the whole tile so it opens the profile, while the
+                      Directions button below sits above it (z-index) as a separate action. */}
+                  <Link
+                    href={`/b/${business.slug}`}
+                    className="search-business-card__link"
+                    aria-label={business.name}
+                  />
+                  <div className="search-business-card__head">
+                    <span className="search-business-card__mark" aria-hidden="true">
+                      {business.name.slice(0, 1).toUpperCase()}
+                    </span>
+                    {business.verificationStatus === 'VERIFIED' ? (
+                      <span className="search-business-card__verified">
+                        <Icon name="shield" /> {verifiedLabel}
+                      </span>
+                    ) : business.claimStatus === 'UNCLAIMED' ? (
+                      <span className="search-business-card__claim">{claimLabel}</span>
+                    ) : null}
+                  </div>
+                  <div className="search-business-card__body">
                     <span className="search-business-card__category">{business.categoryName}</span>
-                    <strong>{business.name}</strong>
+                    <strong className="search-business-card__name">{business.name}</strong>
                     <span className="search-business-card__place">
                       <Icon name="location" /> {place}
                     </span>
-                  </span>
-                  {business.verificationStatus === 'VERIFIED' ? (
-                    <span className="search-business-card__verified">
-                      <Icon name="shield" /> {verifiedLabel}
-                    </span>
-                  ) : business.claimStatus === 'UNCLAIMED' ? (
-                    <span className="search-business-card__claim">{claimLabel}</span>
-                  ) : null}
-                  <Icon name="arrow" />
-                </Link>
+                  </div>
+                  <a
+                    href={directionsHref(business)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="search-business-card__directions"
+                  >
+                    <Icon name="navigation" /> {directionsLabel}
+                  </a>
+                </article>
               </Fragment>
             );
           });

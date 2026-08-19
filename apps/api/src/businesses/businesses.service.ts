@@ -735,6 +735,8 @@ export class BusinessesService {
       viewCount: business.viewCount,
       description: business.description,
       addressLine: business.address?.line1 ?? null,
+      latitude: business.latitude ? Number(business.latitude) : null,
+      longitude: business.longitude ? Number(business.longitude) : null,
       hours: business.hours.map((hour) => ({
         dayOfWeek: hour.dayOfWeek,
         opensAt: hour.opensAt,

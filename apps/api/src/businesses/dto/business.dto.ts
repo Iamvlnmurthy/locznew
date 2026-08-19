@@ -212,6 +212,9 @@ export class BusinessSummaryDto {
   @ApiProperty() viewCount!: number;
   @ApiPropertyOptional() description!: string | null;
   @ApiPropertyOptional() addressLine!: string | null;
+  @ApiPropertyOptional({ description: 'For a one-tap Directions link on the card' })
+  latitude?: number | null;
+  @ApiPropertyOptional() longitude?: number | null;
   @ApiProperty({ type: [BusinessHourDto] }) hours!: BusinessHourDto[];
 }
 
@@ -295,8 +298,7 @@ export class BusinessDetailDto extends BusinessSummaryDto {
   })
   attribution!: string | null;
 
-  @ApiPropertyOptional() latitude!: number | null;
-  @ApiPropertyOptional() longitude!: number | null;
+  // latitude/longitude are inherited from BusinessSummaryDto.
   @ApiPropertyOptional() primaryPhone!: string | null;
   @ApiPropertyOptional() whatsappNumber!: string | null;
   @ApiPropertyOptional() email!: string | null;

@@ -10,6 +10,7 @@ const paths: Record<string, React.ReactNode> = {
       <circle cx="12" cy="10" r="2.5" />
     </>
   ),
+  navigation: <path d="M3 11 21 3l-8 18-2.5-7.5L3 11Z" />,
   home: (
     <>
       <path d="m3 11 9-8 9 8" />
