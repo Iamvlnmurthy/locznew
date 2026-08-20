@@ -155,6 +155,14 @@ export class BusinessesService {
    * caller shards `total` into 50k-URL sitemap files. Cached hard by the route, so the count runs
    * at most once a day.
    */
+  /**
+   * Case-insensitive POSIX pattern matching the imported rows that are not businesses — civic and
+   * government points (health sub-centres, anganwadis, panchayat offices, PHCs, ration/fair-price
+   * shops) and placeholder names. Used to keep them out of search results.
+   */
+  private static readonly JUNK_NAME_RE =
+    '(sub ?centre|anganwadi|panchayat|primary health|fair price|ration shop|milk collection|^unnamed|^unknown|^n/?a$|^null$|^test$)';
+
   private static readonly SITEMAP_WHERE: Prisma.BusinessWhereInput = {
     deletedAt: null,
     isActive: true,
@@ -277,7 +285,15 @@ export class BusinessesService {
     skip: number;
   }): Promise<PaginatedDto<BusinessSummaryDto>> {
     const radiusMeters = (query.radiusKm ?? 25) * 1000;
-    const point = Prisma.sql`ST_SetSRID(ST_MakePoint(${query.longitude}::double precision, ${query.latitude}::double precision), 4326)::geography`;
+    // The `pincodes` table's lat/lng is a coarse district centroid that can be ~18km from the
+    // pincode's real businesses, so for a pincode search we measure distance from the centroid of
+    // that pincode's own businesses instead — honest distances and a meaningful nearest-first.
+    // A plain "near me" query keeps the caller's coordinates.
+    const point = query.pincode
+      ? Prisma.sql`(SELECT ST_SetSRID(ST_MakePoint(avg(longitude), avg(latitude)), 4326)::geography
+                    FROM "businesses"
+                    WHERE "pincodeCode" = ${query.pincode} AND "deletedAt" IS NULL AND "geo" IS NOT NULL)`
+      : Prisma.sql`ST_SetSRID(ST_MakePoint(${query.longitude}::double precision, ${query.latitude}::double precision), 4326)::geography`;
     const term = query.q?.trim();
 
     // The business filter is by discovery area ("Food"), since businesses use an import taxonomy
@@ -300,6 +316,11 @@ export class BusinessesService {
         query.pincode
           ? Prisma.sql`b."pincodeCode" = ${query.pincode}`
           : Prisma.sql`ST_DWithin(b."geo", ${point}, ${radiusMeters})`,
+        // Hide the imported non-businesses — government sub-centres, anganwadis, ration shops and
+        // unnamed/placeholder rows — so real shops surface instead of civic POIs. Passed as a bound
+        // parameter, so no regex escaping games.
+        Prisma.sql`b."name" !~* ${BusinessesService.JUNK_NAME_RE}`,
+        Prisma.sql`char_length(btrim(b."name")) > 2`,
         categoryIds
           ? categoryIds.length > 0
             ? Prisma.sql`b."categoryId" IN (${Prisma.join(
