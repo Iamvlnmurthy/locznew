@@ -17198,12 +17198,42 @@ body {
   font-size: 0.75rem;
 }
 
+/* Every claim turns an imported stub into a page an owner keeps current — the single biggest
+   lever on this directory's quality — so the prompt is a real callout, not a footnote. */
 .business-profile-unclaimed {
-  margin: 1rem 0 0;
-  padding: 0.75rem 1rem;
-  border: 1px solid var(--hairline, #e3e8e5);
-  border-radius: 10px;
-  font-size: 0.9rem;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 14px;
+  margin: 16px 0 0;
+  padding: 14px 18px;
+  border: 1px solid var(--locz-primary);
+  border-left-width: 4px;
+  border-radius: 14px;
+  background: var(--locz-primary-soft);
+  color: var(--locz-text-primary);
+  font-size: 0.78rem;
+  line-height: 1.5;
+}
+
+.business-profile-unclaimed a {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  margin-left: auto;
+  padding: 8px 16px;
+  min-height: 40px;
+  border-radius: 999px;
+  background: var(--locz-primary);
+  color: #fff;
+  font-size: 0.72rem;
+  font-weight: 720;
+  white-space: nowrap;
+  transition: filter 0.18s ease;
+}
+
+.business-profile-unclaimed a:hover {
+  filter: brightness(0.94);
 }
 
 /* ---------- Business ownership claim ---------- */
