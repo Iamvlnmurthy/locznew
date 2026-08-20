@@ -58,14 +58,27 @@ export class BusinessesController {
   }
 
   @Public()
+  @Get('sitemap-shard-cursors')
+  @ApiOperation({ summary: 'First id of each XML sitemap shard, for keyset pagination' })
+  async sitemapShardCursors(
+    @Query('shardSize') shardSize?: string,
+  ): Promise<{ cursors: string[] }> {
+    const size = Math.min(50000, Math.max(1, Number(shardSize) || 10000));
+    return { cursors: await this.businesses.sitemapShardCursors(size) };
+  }
+
+  @Public()
   @Get('sitemap-slugs')
   @ApiOperation({ summary: 'A page of business slugs for the XML sitemap (curated set)' })
   sitemapSlugs(
     @Query('page') page?: string,
     @Query('pageSize') pageSize?: string,
+    @Query('from') from?: string,
   ): Promise<{ slugs: Array<{ slug: string; updatedAt: Date }> }> {
-    const p = Math.max(0, Number(page) || 0);
     const size = Math.min(50000, Math.max(1, Number(pageSize) || 50000));
+    // Keyset (`from`) is O(shard size) at any depth; OFFSET (`page`) is kept for back-compat.
+    if (from) return this.businesses.sitemapSlugsFrom(from, size);
+    const p = Math.max(0, Number(page) || 0);
     return this.businesses.sitemapSlugs(p, size);
   }
 

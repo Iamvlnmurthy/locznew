@@ -186,6 +186,50 @@ export class BusinessesService {
     return { slugs };
   }
 
+  private sitemapCursorCache: { value: string[]; at: number } | null = null;
+
+  /**
+   * The first `id` of every sitemap shard, so shards can be fetched by keyset (`id >= cursor`)
+   * instead of OFFSET. OFFSET re-scans from the start on every shard, so a deep shard skips
+   * millions of rows and blows past a crawler's fetch timeout; keyset is O(shard size) at any
+   * depth. Computed with one index-only scan of the covering sitemap index and memoised for a day
+   * (the curated set barely moves), so a crawler pays for it at most once per day.
+   */
+  async sitemapShardCursors(shardSize: number): Promise<string[]> {
+    const now = Date.now();
+    if (this.sitemapCursorCache && now - this.sitemapCursorCache.at < 86_400_000) {
+      return this.sitemapCursorCache.value;
+    }
+    const rows = await this.prisma.$queryRaw<Array<{ id: string }>>`
+      SELECT id FROM (
+        SELECT id, row_number() OVER (ORDER BY id) AS rn
+        FROM businesses
+        WHERE "deletedAt" IS NULL AND "isActive"
+          AND ("claimStatus" = 'CLAIMED' OR "verificationStatus" = 'VERIFIED'
+            OR "primaryPhone" IS NOT NULL OR description IS NOT NULL)
+      ) t
+      WHERE (rn - 1) % ${shardSize} = 0
+      ORDER BY id
+    `;
+    const value = rows.map((r) => r.id);
+    this.sitemapCursorCache = { value, at: now };
+    return value;
+  }
+
+  /** One shard's URLs by keyset: the curated businesses from `fromId` onward. */
+  async sitemapSlugsFrom(
+    fromId: string,
+    limit: number,
+  ): Promise<{ slugs: Array<{ slug: string; updatedAt: Date }> }> {
+    const slugs = await this.prisma.business.findMany({
+      where: { ...BusinessesService.SITEMAP_WHERE, id: { gte: fromId } },
+      select: { slug: true, updatedAt: true },
+      orderBy: { id: 'asc' },
+      take: limit,
+    });
+    return { slugs };
+  }
+
   /**
    * Businesses near a point, nearest first, with an exact distance on each — the geo variant
    * of listPublic used by the Home "Businesses near you" surface. Uses the PostGIS GiST index
