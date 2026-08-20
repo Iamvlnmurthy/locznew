@@ -62,7 +62,7 @@ class _AnimatedLaunchScreenState extends State<AnimatedLaunchScreen>
     );
 
     return Scaffold(
-      backgroundColor: isDark ? theme.scaffoldBackgroundColor : const Color(0xFFF7F3EA),
+      backgroundColor: isDark ? theme.scaffoldBackgroundColor : const Color(0xFFF3F7F5),
       body: Semantics(
         label: 'LocZ. ${widget.tagline}',
         image: true,

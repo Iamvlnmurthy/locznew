@@ -619,8 +619,9 @@
   --storefront-line: rgb(20 63 52 / 12%);
   --storefront-shadow: 0 22px 65px rgb(24 54 45 / 9%);
   background:
-    radial-gradient(circle at 8% 9%, rgb(218 235 226 / 58%), transparent 30rem),
-    linear-gradient(180deg, #f7f8f4 0%, #f4f2ec 100%);
+    radial-gradient(circle at 8% 9%, rgb(203 230 217 / 62%), transparent 30rem),
+    radial-gradient(circle at 92% 4%, rgb(242 103 82 / 3%), transparent 24rem),
+    linear-gradient(180deg, #f8fbf9 0%, #eef5f1 100%);
 }
 
 .business-profile-hero {

@@ -25,10 +25,10 @@ class LoczColors {
   static const Color accent500 = Color(0xFFDC8616);
   static const Color accent600 = Color(0xFFAD670A);
   static const Color neutral0 = Color(0xFFFFFFFF);
-  static const Color neutral50 = Color(0xFFF7F4ED);
-  static const Color neutral100 = Color(0xFFF0EDE6);
-  static const Color neutral200 = Color(0xFFE7E1D6);
-  static const Color neutral300 = Color(0xFFD2CABD);
+  static const Color neutral50 = Color(0xFFF3F7F5);
+  static const Color neutral100 = Color(0xFFEAF2EE);
+  static const Color neutral200 = Color(0xFFDCE7E1);
+  static const Color neutral300 = Color(0xFFC7D6CF);
   static const Color neutral400 = Color(0xFF9AA59F);
   static const Color neutral500 = Color(0xFF718078);
   static const Color neutral600 = Color(0xFF4C5B54);

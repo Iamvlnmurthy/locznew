@@ -33,10 +33,10 @@ export const color = {
 
   // Neutrals
   neutral0: '#ffffff',
-  neutral50: '#f7f4ed',
-  neutral100: '#f0ede6',
-  neutral200: '#e7e1d6',
-  neutral300: '#d2cabd',
+  neutral50: '#f3f7f5',
+  neutral100: '#eaf2ee',
+  neutral200: '#dce7e1',
+  neutral300: '#c7d6cf',
   neutral400: '#9aa59f',
   neutral500: '#718078',
   neutral600: '#4c5b54',

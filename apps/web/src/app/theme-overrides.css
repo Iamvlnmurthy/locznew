@@ -1405,15 +1405,15 @@
   --locz-accent-soft: #fff4de;
   --locz-coral: #f26752;
   --locz-coral-soft: #ffeae5;
-  --locz-bg: #f4f3ed;
+  --locz-bg: #f3f7f5;
   --locz-surface: #ffffff;
-  --locz-surface-elevated: #fafaf7;
-  --locz-surface-muted: #f0f5f1;
-  --locz-border: #dde3dc;
-  --locz-border-strong: #c9d3cb;
-  --locz-text: #172a24;
-  --locz-text-secondary: #4b5f57;
-  --locz-text-muted: #72827b;
+  --locz-surface-elevated: #f8fbf9;
+  --locz-surface-muted: #eaf2ee;
+  --locz-border: #d8e4de;
+  --locz-border-strong: #c5d5cd;
+  --locz-text: #132b24;
+  --locz-text-secondary: #4b6259;
+  --locz-text-muted: #74877f;
   --locz-text-inverse: #ffffff;
   --locz-premium-border: #dfe5df;
   --locz-shadow-sm: 0 1px 2px rgb(23 42 36 / 3%), 0 8px 24px rgb(23 68 55 / 5%);
@@ -1424,14 +1424,15 @@
 
 :root:not([data-theme='dark']) body {
   background:
-    radial-gradient(circle at 50% 0%, rgb(24 112 88 / 5.5%), transparent 34rem),
-    linear-gradient(180deg, #faf9f5 0%, #f4f3ed 42%, #f1f2ec 100%);
+    radial-gradient(circle at 18% 0%, rgb(15 102 84 / 6%), transparent 30rem),
+    radial-gradient(circle at 88% 12%, rgb(242 103 82 / 3.5%), transparent 24rem),
+    linear-gradient(180deg, #f8fbf9 0%, #f3f7f5 48%, #edf4f0 100%);
 }
 
 :root:not([data-theme='dark']) .home-content-shell > .local-news,
 :root:not([data-theme='dark']) .home-content-shell > .local-jobs {
   border-color: #dfe5df;
-  background: rgb(250 250 247 / 95%);
+  background: rgb(248 251 249 / 96%);
 }
 
 :root:not([data-theme='dark']) .home-feed-toolbar,
