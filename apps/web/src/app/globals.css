@@ -21800,3 +21800,11 @@ h4,
 :root[data-theme='dark'] .business-profile-back {
   color: var(--locz-text-secondary) !important;
 }
+
+/* Dark-mode: the unclaimed-listing callout is hardcoded white in the storefront CSS, so its text
+   went light-on-white (invisible). Give it a dark-appropriate tinted surface + light text. */
+:root[data-theme='dark'] .business-profile-unclaimed {
+  border-color: rgb(48 177 141 / 45%) !important;
+  background: rgb(48 177 141 / 12%) !important;
+  color: var(--locz-text-primary) !important;
+}
