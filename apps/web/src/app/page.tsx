@@ -5,7 +5,7 @@ import { ListingCard } from '@/components/listing-card';
 import { Icon } from '@/components/icons';
 import { getTranslator, getMessageGroup } from '@/i18n';
 import { apiSafe } from '@/lib/api';
-import { premiumDiscoveryArtwork } from '@/lib/premium-icon-catalog';
+import { premiumCategoryArtwork, premiumDiscoveryArtwork } from '@/lib/premium-icon-catalog';
 import { NearbyBusinesses } from './search/nearby-businesses';
 import { loadNearbyBusinesses } from './search/businesses-actions';
 import { RADIUS_OPTIONS_KM, getLocale, getSelectedCity, getSelectedRadius } from '@/lib/session';
@@ -418,8 +418,17 @@ export default async function HomePage({
       {homeCity && popularCategories.length > 0 ? (
         <section className="container home-popular" aria-labelledby="home-popular-title">
           <div className="home-popular__head">
-            <span className="section-kicker">{t('home.popularKicker')}</span>
-            <h2 id="home-popular-title">{t('home.popularTitle', { city: homeCity.name })}</h2>
+            <div>
+              <span className="section-kicker">{t('home.popularKicker')}</span>
+              <h2 id="home-popular-title">{t('home.popularTitle', { city: homeCity.name })}</h2>
+            </div>
+            <span className="home-popular__summary" aria-label={areaLabels.businesses}>
+              <Icon name="location" />
+              <strong>
+                {nf(popularCategories.reduce((total, category) => total + category.count, 0))}
+              </strong>
+              <span>{areaLabels.businesses}</span>
+            </span>
           </div>
           <div className="home-popular__grid">
             {popularCategories.map((category) => (
@@ -428,6 +437,14 @@ export default async function HomePage({
                 href={`/in/${homeCity.slug}/${category.slug}`}
                 className="home-popular-card"
               >
+                <span className="home-popular-card__art" aria-hidden="true">
+                  <Image
+                    src={premiumCategoryArtwork({ name: category.name })}
+                    alt=""
+                    width={64}
+                    height={64}
+                  />
+                </span>
                 <span className="home-popular-card__body">
                   <strong>{category.name}</strong>
                   <small>
@@ -436,7 +453,9 @@ export default async function HomePage({
                     })}
                   </small>
                 </span>
-                <Icon name="arrow" />
+                <span className="home-popular-card__arrow" aria-hidden="true">
+                  <Icon name="arrow" />
+                </span>
               </Link>
             ))}
           </div>
@@ -465,22 +484,24 @@ export default async function HomePage({
           {alerts.length > 0 ? (
             <section className="local-alerts" aria-labelledby="local-alerts-title" role="alert">
               <div className="local-alerts__head">
-                <Icon name="alert" />
-                <h2 id="local-alerts-title">{t('home.alertsTitle')}</h2>
+                <span className="local-alerts__signal">
+                  <Icon name="alert" />
+                  <h2 id="local-alerts-title">{t('home.alertsTitle')}</h2>
+                </span>
+                <span className="local-alerts__source">{'NDMA SACHET'}</span>
               </div>
               <ul className="local-alerts__list">
                 {alerts.map((alert) => {
                   const when = relativeTime(alert.publishedAt, locale);
                   return (
                     <li key={alert.title}>
-                      <span>{alert.title}</span>
+                      <span className="local-alerts__marker" aria-hidden="true" />
+                      <span className="local-alerts__message">{alert.title}</span>
                       {when ? <time>{when}</time> : null}
                     </li>
                   );
                 })}
               </ul>
-              {/* NDMA SACHET is an official source name — identical in every language. */}
-              <p className="local-alerts__attribution">{'NDMA SACHET'}</p>
             </section>
           ) : null}
         </div>
