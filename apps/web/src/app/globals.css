@@ -21784,3 +21784,19 @@ h4,
   height: 15px;
   transform: rotate(180deg);
 }
+
+/* Dark-mode contrast fix for the storefront identity — the name, stats and back control were
+   resolving to the light-theme ink (#142f28), invisible on the dark card. Force the theme text
+   tokens with !important so it wins regardless of the storefront stylesheet's cascade. */
+:root[data-theme='dark'] .business-profile-identity h1,
+:root[data-theme='dark'] .business-profile-stats strong,
+:root[data-theme='dark'] .business-profile-stats span {
+  color: var(--locz-text-primary) !important;
+}
+:root[data-theme='dark'] .business-profile-stats svg,
+:root[data-theme='dark'] .business-profile-back svg {
+  color: var(--locz-primary) !important;
+}
+:root[data-theme='dark'] .business-profile-back {
+  color: var(--locz-text-secondary) !important;
+}
