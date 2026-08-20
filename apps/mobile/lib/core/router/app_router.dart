@@ -64,8 +64,12 @@ final routerProvider = Provider<GoRouter>((ref) {
               GoRoute(path: '/', builder: (_, __) => const HomeScreen()),
               GoRoute(
                 path: '/discover/:area',
-                builder: (_, state) => DiscoveryFeedScreen(
-                  area: state.pathParameters['area'] ?? 'local-now',
+                pageBuilder: (context, state) => _motionPage(
+                  context,
+                  state,
+                  DiscoveryFeedScreen(
+                    area: state.pathParameters['area'] ?? 'local-now',
+                  ),
                 ),
               ),
             ],
@@ -244,11 +248,11 @@ CustomTransitionPage<void> _motionPage(
         opacity: entrance,
         child: SlideTransition(
           position: Tween<Offset>(
-            begin: const Offset(0, 0.035),
+            begin: const Offset(0, 0.06),
             end: Offset.zero,
           ).animate(entrance),
           child: ScaleTransition(
-            scale: Tween<double>(begin: 0.992, end: 1).animate(entrance),
+            scale: Tween<double>(begin: 0.975, end: 1).animate(entrance),
             child: child,
           ),
         ),
@@ -303,7 +307,6 @@ class _TabScaffold extends StatelessWidget {
             initialLocation: index == shell.currentIndex,
           ),
           onPost: () {
-            HapticFeedback.mediumImpact();
             context.push('/post');
           },
         ),
@@ -377,40 +380,34 @@ class _LoczBottomBar extends StatelessWidget {
                 onTap: () => onTab(1),
               ),
               Expanded(
-                child: Semantics(
-                  button: true,
-                  label: strings('nav.post'),
-                  child: InkResponse(
+                child: Center(
+                  child: LoczPressable(
                     onTap: onPost,
-                    radius: 34,
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Container(
-                          width: 40,
-                          height: 40,
-                          decoration: BoxDecoration(
-                            color: theme.colorScheme.primary,
-                            borderRadius: BorderRadius.circular(14),
-                            border: Border.all(
-                              color: theme.colorScheme.surface,
-                              width: 2,
-                            ),
-                            boxShadow: [
-                              BoxShadow(
-                                color: theme.colorScheme.primary.withValues(alpha: 0.22),
-                                blurRadius: 17,
-                                offset: const Offset(0, 6),
-                              ),
-                            ],
-                          ),
-                          child: Icon(
-                            Icons.add_rounded,
-                            size: 22,
-                            color: theme.colorScheme.onPrimary,
-                          ),
+                    semanticLabel: strings('nav.post'),
+                    borderRadius: BorderRadius.circular(14),
+                    child: Container(
+                      width: 40,
+                      height: 40,
+                      decoration: BoxDecoration(
+                        color: theme.colorScheme.primary,
+                        borderRadius: BorderRadius.circular(14),
+                        border: Border.all(
+                          color: theme.colorScheme.surface,
+                          width: 2,
                         ),
-                      ],
+                        boxShadow: [
+                          BoxShadow(
+                            color: theme.colorScheme.primary.withValues(alpha: 0.22),
+                            blurRadius: 17,
+                            offset: const Offset(0, 6),
+                          ),
+                        ],
+                      ),
+                      child: Icon(
+                        Icons.add_rounded,
+                        size: 22,
+                        color: theme.colorScheme.onPrimary,
+                      ),
                     ),
                   ),
                 ),
@@ -484,10 +481,19 @@ class _BottomDestination extends StatelessWidget {
                   scale: selected ? 1.04 : 1,
                   duration: LoczMotion.standard,
                   curve: LoczMotion.enterCurve,
-                  child: Icon(
-                    selected ? selectedIcon : icon,
-                    size: 19,
-                    color: color,
+                  child: AnimatedSwitcher(
+                    duration: LoczMotion.quick,
+                    switchInCurve: LoczMotion.enterCurve,
+                    transitionBuilder: (child, animation) => FadeTransition(
+                      opacity: animation,
+                      child: ScaleTransition(scale: animation, child: child),
+                    ),
+                    child: Icon(
+                      selected ? selectedIcon : icon,
+                      key: ValueKey(selected),
+                      size: 19,
+                      color: color,
+                    ),
                   ),
                 ),
               ),

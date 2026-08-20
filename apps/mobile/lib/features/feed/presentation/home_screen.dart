@@ -73,18 +73,25 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   padding: const EdgeInsets.fromLTRB(16, 14, 16, 0),
                   sliver: SliverList.list(
                     children: [
-                      _RadiusSelector(
-                        label: strings('feed.within'),
-                        selected: radiusKm,
-                        onSelect: (value) =>
-                            ref.read(selectedRadiusProvider.notifier).select(value),
-                        kmLabel: strings('common.km'),
+                      LoczEntrance(
+                        offset: const Offset(0, 10),
+                        child: _RadiusSelector(
+                          label: strings('feed.within'),
+                          selected: radiusKm,
+                          onSelect: (value) =>
+                              ref.read(selectedRadiusProvider.notifier).select(value),
+                          kmLabel: strings('common.km'),
+                        ),
                       ),
                       const SizedBox(height: 18),
-                      _DiscoveryHeading(
-                        city: location,
-                        resultCount: uniqueItems,
-                        onViewAll: () => context.go('/explore'),
+                      LoczEntrance(
+                        delay: const Duration(milliseconds: 90),
+                        offset: const Offset(0, 12),
+                        child: _DiscoveryHeading(
+                          city: location,
+                          resultCount: uniqueItems,
+                          onViewAll: () => context.go('/explore'),
+                        ),
                       ),
                     ],
                   ),
@@ -215,15 +222,24 @@ class _DiscoveryFeedScreenState extends ConsumerState<DiscoveryFeedScreen> {
                           final heroTag = 'discover-${widget.area}-${listing.id}';
                           return Padding(
                             padding: const EdgeInsets.only(bottom: 14),
-                            child: ListingCard(
-                              listing: listing,
-                              heroTag: heroTag,
-                              typeLabel: strings('type.${listing.type}'),
-                              onTap: () => context.push(
-                                '/ad/${listing.slug}',
-                                extra: ListingNavigationPreview(
-                                  listing: listing,
-                                  heroTag: heroTag,
+                            child: LoczEntrance(
+                              key: ValueKey(
+                                '${widget.area}-$_latestFirst-${listing.id}',
+                              ),
+                              delay: Duration(
+                                milliseconds: (index > 5 ? 5 : index) * 34,
+                              ),
+                              offset: const Offset(0, 9),
+                              child: ListingCard(
+                                listing: listing,
+                                heroTag: heroTag,
+                                typeLabel: strings('type.${listing.type}'),
+                                onTap: () => context.push(
+                                  '/ad/${listing.slug}',
+                                  extra: ListingNavigationPreview(
+                                    listing: listing,
+                                    heroTag: heroTag,
+                                  ),
                                 ),
                               ),
                             ),
@@ -1139,12 +1155,16 @@ class _AroundYouSectionState extends ConsumerState<_AroundYouSection> {
         itemCount: visibleAreas.length,
         itemBuilder: (context, index) {
           final entry = visibleAreas[index];
-          return _AreaChip(
-            asset: discoveryAreaAsset(entry.area),
-            count: entry.count > 0 ? _formatCount(entry.count) : '',
-            label: strings('area.${entry.area}'),
-            selected: widget.selectedArea == entry.area,
-            onTap: () => widget.onSelect(entry.area),
+          return LoczEntrance(
+            delay: Duration(milliseconds: index * 45),
+            offset: const Offset(0, 12),
+            child: _AreaChip(
+              asset: discoveryAreaAsset(entry.area),
+              count: entry.count > 0 ? _formatCount(entry.count) : '',
+              label: strings('area.${entry.area}'),
+              selected: widget.selectedArea == entry.area,
+              onTap: () => widget.onSelect(entry.area),
+            ),
           );
         },
       ),
@@ -1179,10 +1199,28 @@ class _FeedToolbarDelegate extends SliverPersistentHeaderDelegate {
   ) {
     final theme = Theme.of(context);
     final strings = Strings.of(context);
-    return Material(
-      color: theme.colorScheme.surface.withValues(alpha: 0.97),
-      elevation: overlapsContent ? 2 : 0,
-      shadowColor: theme.colorScheme.shadow.withValues(alpha: 0.12),
+    return AnimatedContainer(
+      duration: LoczMotion.standard,
+      curve: LoczMotion.enterCurve,
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surface.withValues(alpha: 0.97),
+        border: Border(
+          bottom: BorderSide(
+            color: overlapsContent
+                ? theme.colorScheme.primary.withValues(alpha: 0.16)
+                : theme.colorScheme.outlineVariant.withValues(alpha: 0.55),
+          ),
+        ),
+        boxShadow: overlapsContent
+            ? [
+                BoxShadow(
+                  color: theme.colorScheme.shadow.withValues(alpha: 0.14),
+                  blurRadius: 22,
+                  offset: const Offset(0, 8),
+                ),
+              ]
+            : const [],
+      ),
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
         child: Row(
@@ -1208,12 +1246,21 @@ class _FeedToolbarDelegate extends SliverPersistentHeaderDelegate {
             ),
             TextButton.icon(
               onPressed: () => onSortChanged(!latestFirst),
-              icon: Icon(
-                latestFirst ? Icons.schedule_rounded : Icons.near_me_outlined,
-                size: 17,
+              icon: AnimatedSwitcher(
+                duration: LoczMotion.quick,
+                switchInCurve: LoczMotion.enterCurve,
+                child: Icon(
+                  latestFirst ? Icons.schedule_rounded : Icons.near_me_outlined,
+                  key: ValueKey(latestFirst),
+                  size: 17,
+                ),
               ),
-              label: Text(
-                strings(latestFirst ? 'feed.latest' : 'feed.nearest'),
+              label: AnimatedSwitcher(
+                duration: LoczMotion.quick,
+                child: Text(
+                  strings(latestFirst ? 'feed.latest' : 'feed.nearest'),
+                  key: ValueKey(latestFirst),
+                ),
               ),
             ),
             IconButton(

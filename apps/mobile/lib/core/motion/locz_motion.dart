@@ -7,14 +7,13 @@ import 'package:flutter/services.dart';
 /// depth to make navigation and discovery feel intentionally composed.
 abstract final class LoczMotion {
   static const quick = Duration(milliseconds: 140);
-  static const standard = Duration(milliseconds: 260);
-  static const emphasized = Duration(milliseconds: 420);
+  static const standard = Duration(milliseconds: 220);
+  static const emphasized = Duration(milliseconds: 380);
 
   static const enterCurve = Cubic(0.16, 1, 0.3, 1);
   static const exitCurve = Cubic(0.7, 0, 0.84, 0);
 
-  static bool enabled(BuildContext context) =>
-      !MediaQuery.disableAnimationsOf(context);
+  static bool enabled(BuildContext context) => !MediaQuery.disableAnimationsOf(context);
 }
 
 /// A small, reusable entrance used to compose a screen in beats rather than
@@ -35,8 +34,7 @@ class LoczEntrance extends StatefulWidget {
   State<LoczEntrance> createState() => _LoczEntranceState();
 }
 
-class _LoczEntranceState extends State<LoczEntrance>
-    with SingleTickerProviderStateMixin {
+class _LoczEntranceState extends State<LoczEntrance> with SingleTickerProviderStateMixin {
   late final AnimationController _controller = AnimationController(
     vsync: this,
     duration: LoczMotion.emphasized,
@@ -162,9 +160,8 @@ Widget loczImageFlight(
     curve: LoczMotion.enterCurve,
     reverseCurve: LoczMotion.exitCurve,
   );
-  final source = direction == HeroFlightDirection.push
-      ? fromContext.widget as Hero
-      : toContext.widget as Hero;
+  final source =
+      direction == HeroFlightDirection.push ? fromContext.widget as Hero : toContext.widget as Hero;
   return FadeTransition(
     opacity: curve,
     child: source.child,
