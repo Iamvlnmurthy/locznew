@@ -15,6 +15,7 @@ import { MotionFrame } from '@/components/motion-frame';
 import './globals.css';
 import './theme-overrides.css';
 import './premium-motion.css';
+import './storefront-polish.css';
 
 const loczSans = localFont({
   src: [

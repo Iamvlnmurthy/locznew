@@ -402,10 +402,12 @@ export default async function BusinessPage({ params }: { params: Promise<{ slug:
             </div>
             <div className="business-profile-stats">
               <span>
+                <Icon name="store" />
                 <strong>{business.listingCount}</strong>
                 {p.listings}
               </span>
               <span>
+                <Icon name="sparkles" />
                 <strong>{business.viewCount.toLocaleString('en-IN')}</strong>
                 {p.profileViews}
               </span>
@@ -417,58 +419,65 @@ export default async function BusinessPage({ params }: { params: Promise<{ slug:
       <div className="container business-profile-layout">
         <main>
           <nav className="business-profile-tabs" aria-label={p.profileSections}>
-            <a href="#about">{p.about}</a>
-            <a href="#listings">{p.listingsOffers}</a>
-            <a href="#hours">{p.hoursLocation}</a>
-            {similar.length > 0 ? <a href="#nearby">{p.nearbyTab}</a> : null}
+            <a href="#about">
+              <Icon name="user" /> {p.about}
+            </a>
+            <a href="#listings">
+              <Icon name="store" /> {p.listingsOffers}
+            </a>
+            <a href="#hours">
+              <Icon name="calendar" /> {p.hoursLocation}
+            </a>
+            {similar.length > 0 ? (
+              <a href="#nearby">
+                <Icon name="location" /> {p.nearbyTab}
+              </a>
+            ) : null}
           </nav>
 
-          <section className="business-profile-section" id="about">
+          <section className="business-profile-section business-profile-section--about" id="about">
             <span className="section-kicker">{p.meetBusiness}</span>
             <h2>{p.aboutBusiness.replace('{name}', business.name)}</h2>
-            {business.description ? (
-              <>
-                <p className="business-profile-about">{business.description}</p>
-                {/* A reader cannot judge a description without knowing who wrote it, and this
-                    one was assembled from the record rather than written by the shop. */}
-                {business.descriptionIsGenerated ? (
-                  <p className="business-profile-note">{p.descriptionGenerated}</p>
-                ) : null}
-              </>
-            ) : (
-              <p className="business-profile-about is-empty">{p.noStory}</p>
-            )}
-
-            {business.keywords.length > 0 ? (
-              <p className="business-profile-keywords">
-                {p.peopleLookFor} {business.keywords.slice(0, 8).join(', ')}
-              </p>
-            ) : null}
-
-            {/* The neighbourhood placement in words — factual, unique per address, and the text
-                a crawler reads to associate this page with "{category} in {locality}". */}
-            <p className="business-profile-where">
-              <Icon name="location" /> {locationSentence}
-            </p>
-
-            {/* Nobody has stood behind this record yet, and a buyer deciding whether to trust
-                the details deserves to know that before they act on them. */}
-            {business.claimStatus === 'UNCLAIMED' && !business.isOwner ? (
-              <p className="business-profile-unclaimed">
-                {p.unclaimed} <Link href={`/b/${business.slug}/claim`}>{p.claimAction}</Link>
-              </p>
-            ) : null}
-            {/* One reassurance line, not three identical paragraphs: the promises block used to
-                repeat the same static copy on every one of millions of pages, diluting the text
-                that is actually unique to this business. Kept the city-specific line only. */}
-            <div className="business-profile-promises business-profile-promises--slim">
+            <div className="business-profile-about-grid">
               <div>
-                <Icon name="location" />
-                <span>
-                  <strong>{p.basedIn.replace('{city}', placeLabel)}</strong>
-                  {p.servingNearby}
-                </span>
+                {business.description ? (
+                  <>
+                    <p className="business-profile-about">{business.description}</p>
+                    {/* A reader cannot judge a description without knowing who wrote it, and this
+                        one was assembled from the record rather than written by the shop. */}
+                    {business.descriptionIsGenerated ? (
+                      <p className="business-profile-note">{p.descriptionGenerated}</p>
+                    ) : null}
+                  </>
+                ) : (
+                  <p className="business-profile-about is-empty">{p.noStory}</p>
+                )}
+
+                {business.keywords.length > 0 ? (
+                  <p className="business-profile-keywords">
+                    {p.peopleLookFor} {business.keywords.slice(0, 8).join(', ')}
+                  </p>
+                ) : null}
               </div>
+              <aside className="business-profile-about__place">
+                <p className="business-profile-where">
+                  <Icon name="location" /> {locationSentence}
+                </p>
+                {business.claimStatus === 'UNCLAIMED' && !business.isOwner ? (
+                  <p className="business-profile-unclaimed">
+                    {p.unclaimed} <Link href={`/b/${business.slug}/claim`}>{p.claimAction}</Link>
+                  </p>
+                ) : null}
+                <div className="business-profile-promises business-profile-promises--slim">
+                  <div>
+                    <Icon name="location" />
+                    <span>
+                      <strong>{p.basedIn.replace('{city}', placeLabel)}</strong>
+                      {p.servingNearby}
+                    </span>
+                  </div>
+                </div>
+              </aside>
             </div>
           </section>
 
@@ -492,13 +501,23 @@ export default async function BusinessPage({ params }: { params: Promise<{ slug:
               </div>
             ) : (
               <div className="business-profile-empty">
-                <span>
-                  <Icon name="store" />
+                <span className="business-profile-empty__art">
+                  <Image
+                    src={premiumCategoryArtwork({ name: business.categoryName })}
+                    alt=""
+                    width={92}
+                    height={92}
+                  />
                 </span>
                 <div>
                   <strong>{p.nothingPublished}</strong>
                   <p>{p.nothingPublishedBody}</p>
                 </div>
+                {business.claimStatus === 'UNCLAIMED' && !business.isOwner ? (
+                  <Link href={`/b/${business.slug}/claim`}>
+                    {p.claimAction} <Icon name="arrow" />
+                  </Link>
+                ) : null}
               </div>
             )}
           </section>
@@ -640,6 +659,20 @@ export default async function BusinessPage({ params }: { params: Promise<{ slug:
 
         <aside className="business-profile-contact">
           <section>
+            <div className="business-profile-contact__brand">
+              <span aria-hidden="true">
+                <Image
+                  src={premiumCategoryArtwork({ name: business.categoryName })}
+                  alt=""
+                  width={64}
+                  height={64}
+                />
+              </span>
+              <div>
+                <strong>{business.name}</strong>
+                <small>{placeLabel}</small>
+              </div>
+            </div>
             <span className="section-kicker">{p.talkBusiness}</span>
             <h2>{p.howHelp}</h2>
             <p>{p.contactPrivate}</p>
