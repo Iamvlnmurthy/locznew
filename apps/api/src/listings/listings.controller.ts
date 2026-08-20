@@ -78,6 +78,21 @@ export class ListingsController {
   }
 
   @Public()
+  @Get('sitemap-slugs')
+  @ApiOperation({
+    summary: 'Slugs of currently-published listings for the XML sitemap',
+    description:
+      'Only PUBLISHED (indexable) ads, matching the ad page robots rule. Expired/sold/paused ads ' +
+      'fall out automatically, so the sitemap never announces URLs that are about to 404.',
+  })
+  sitemapSlugs(
+    @Query('limit') limit?: string,
+  ): Promise<{ slugs: Array<{ slug: string; updatedAt: Date }>; capped: boolean }> {
+    const size = Math.min(50000, Math.max(1, Number(limit) || 50000));
+    return this.listings.sitemapSlugs(size);
+  }
+
+  @Public()
   @OptionalAuth()
   @Get(':slug')
   @ApiOperation({

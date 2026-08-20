@@ -27,7 +27,11 @@ export default function robots(): MetadataRoute.Robots {
       { userAgent: '*', allow: '/', disallow: DISALLOW },
       { userAgent: AI_CRAWLERS, allow: '/', disallow: DISALLOW },
     ],
-    sitemap: [`${SITE_URL}/sitemap.xml`, `${SITE_URL}/sitemap-businesses.xml`],
+    sitemap: [
+      `${SITE_URL}/sitemap.xml`,
+      `${SITE_URL}/sitemap-businesses.xml`,
+      `${SITE_URL}/sitemap-listings.xml`,
+    ],
     host: SITE_URL,
   };
 }

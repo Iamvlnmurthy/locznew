@@ -91,6 +91,34 @@ export class ListingsService {
     @InjectQueue(QUEUE_REQUIREMENTS) private readonly requirementMatches: Queue,
   ) {}
 
+  /**
+   * Slugs of currently-indexable ads for the XML sitemap. Only PUBLISHED listings that have not
+   * expired — the same rule the ad page uses to decide `robots: index`, so the sitemap never
+   * announces a URL the page then de-indexes. Unlike the permanent business sitemap, this set
+   * churns as ads are posted and expire, which is why ads are on their own short-lived sitemap.
+   */
+  async sitemapSlugs(
+    limit: number,
+  ): Promise<{ slugs: Array<{ slug: string; updatedAt: Date }>; capped: boolean }> {
+    const where: Prisma.ListingWhereInput = {
+      deletedAt: null,
+      status: ListingStatus.PUBLISHED,
+      OR: [{ expiresAt: null }, { expiresAt: { gt: new Date() } }],
+    };
+    const slugs = await this.prisma.listing.findMany({
+      where,
+      select: { slug: true, updatedAt: true },
+      orderBy: { publishedAt: 'desc' },
+      take: limit,
+    });
+    // Surface truncation rather than silently capping — if this ever trips, the ad sitemap needs
+    // sharding the way the business one is.
+    if (slugs.length === limit) {
+      this.logger.warn(`Listing sitemap hit the ${limit}-URL cap; it should be sharded.`);
+    }
+    return { slugs, capped: slugs.length === limit };
+  }
+
   // -------------------------------------------------------------------
   // Creation
   // -------------------------------------------------------------------
