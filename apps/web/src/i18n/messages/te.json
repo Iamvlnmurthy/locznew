@@ -1702,7 +1702,7 @@
     "searchCta": "LocZ లో సెర్చ్ చేయండి"
   },
   "hub": {
-    "metaTitle": "{city} లో {category} — LocZ",
+    "metaTitle": "{city} లో {category}",
     "metaDescription": "{city} లో {category} కనుక్కోండి: కాంటాక్ట్ వివరాలు, డైరెక్షన్స్ మరియు లోకల్ బిజినెస్‌లు LocZ లో.",
     "inWord": "—",
     "subtitle": "{city} లో {count} {category} బిజినెస్‌లు, కాంటాక్ట్ వివరాలు మరియు డైరెక్షన్స్‌తో.",

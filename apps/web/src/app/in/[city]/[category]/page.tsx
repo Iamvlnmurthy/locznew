@@ -112,7 +112,7 @@ export default async function CityCategoryPage({
   const h = getMessageGroup(locale, 'hub');
 
   const [result, categories, cities] = await Promise.all([
-    apiSafe<{ items: HubBusiness[]; total: number }>(
+    apiSafe<{ items: HubBusiness[]; meta: { total: number } }>(
       `/businesses?cityId=${city.id}&categoryId=${category.id}&limit=30&sort=recommended`,
       { revalidate: 900 },
     ),
@@ -120,7 +120,7 @@ export default async function CityCategoryPage({
     loadCities(),
   ]);
   const businesses = result?.items ?? [];
-  const total = result?.total ?? 0;
+  const total = result?.meta?.total ?? 0;
   const placeLabel = `${category.name} ${h.inWord} ${city.name}`;
 
   const breadcrumbLd = {

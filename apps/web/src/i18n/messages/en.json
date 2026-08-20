@@ -1702,7 +1702,7 @@
     "searchCta": "Search LocZ"
   },
   "hub": {
-    "metaTitle": "{category} in {city} — LocZ",
+    "metaTitle": "{category} in {city}",
     "metaDescription": "Find {category} in {city}: contact details, directions and local businesses on LocZ.",
     "inWord": "in",
     "subtitle": "{count} {category} businesses in {city}, with contact details and directions.",
