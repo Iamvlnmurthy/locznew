@@ -8,7 +8,7 @@ import { Icon } from '@/components/icons';
 import { ListingCard } from '@/components/listing-card';
 import { getMessageGroup, getTranslator } from '@/i18n';
 import { ApiError, SITE_URL, api, apiSafe } from '@/lib/api';
-import { premiumCategoryBanner } from '@/lib/premium-banner-catalog';
+import { premiumBusinessBanner } from '@/lib/premium-banner-catalog';
 import { getCurrentUser, getLocale, localizedAlternates } from '@/lib/session';
 import { premiumCategoryArtwork } from '@/lib/premium-icon-catalog';
 import { BusinessEnquiry } from './business-enquiry';
@@ -283,7 +283,7 @@ export default async function BusinessPage({ params }: { params: Promise<{ slug:
         })),
       }
     : null;
-  const categoryBanner = premiumCategoryBanner(business.categoryName);
+  const categoryBanner = premiumBusinessBanner(business.name, business.categoryName);
 
   return (
     <div className="business-profile">

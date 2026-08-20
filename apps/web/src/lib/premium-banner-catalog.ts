@@ -202,3 +202,35 @@ const categoryBanners: Readonly<Record<string, PremiumCategoryBanner>> = {
 export function premiumCategoryBanner(name?: string | null): PremiumCategoryBanner | null {
   return name ? (categoryBanners[name.trim().toLowerCase()] ?? null) : null;
 }
+
+// A business only ever carries a broad category ("Restaurants & food"), so a dosa house, a café
+// and a biryani spot would all show the same restaurant banner. When the business NAME clearly
+// signals a sub-type we already have a dedicated banner for, use that instead — a dosa/tiffin place
+// gets the breakfast banner, a café the coffee banner, a sweet shop the mithai banner. Scoped to the
+// broad food categories so a "Coffee Table" furniture shop can never pick up a café banner, and
+// ordered by specificity (first match wins) with word-boundary keywords to avoid misfires.
+const NAME_BANNER_OVERRIDES: ReadonlyArray<{ test: RegExp; key: string }> = [
+  { test: /\b(dosa|tiffin|tiffins|idli|vada|udupi|breakfast)\b/i, key: 'tiffin centres' },
+  { test: /\b(sweets?|mithai|misthan|mishtan)\b/i, key: 'sweets & mithai' },
+  { test: /\b(bakery|bakers|cake|cakes|pastr\w*)\b/i, key: 'cakes & pastries' },
+  { test: /\b(cafe|café|coffee|barista|brew)\b/i, key: 'tea, coffee & beverages' },
+];
+const NAME_OVERRIDE_CATEGORIES = new Set(['restaurants & food', 'grocery & kirana']);
+
+/**
+ * The banner for a specific business: a name-based sub-type refinement over the plain category
+ * banner. Falls back to the category banner (and then the monogram) when the name says nothing
+ * specific — so it never shows a worse banner than before, only a more fitting one.
+ */
+export function premiumBusinessBanner(
+  name?: string | null,
+  categoryName?: string | null,
+): PremiumCategoryBanner | null {
+  const category = categoryName?.trim().toLowerCase();
+  if (name && category && NAME_OVERRIDE_CATEGORIES.has(category)) {
+    for (const { test, key } of NAME_BANNER_OVERRIDES) {
+      if (test.test(name) && categoryBanners[key]) return categoryBanners[key]!;
+    }
+  }
+  return premiumCategoryBanner(categoryName);
+}
