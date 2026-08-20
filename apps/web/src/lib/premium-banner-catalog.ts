@@ -197,6 +197,65 @@ const categoryBanners: Readonly<Record<string, PremiumCategoryBanner>> = {
   'clinics & hospitals': banner('business-clinics'),
   'shops & retail': banner('business-shops'),
   events: banner('events'),
+  // Business-name subtypes. Broad business categories remain the fallback; these keys
+  // let storefront routing select a more precise banner when a business name or future
+  // structured subtype clearly identifies the service being offered.
+  'cafe-coffee': banner('cafe-coffee'),
+  biryani: banner('biryani'),
+  pizza: banner('pizza'),
+  'fast-food': banner('fast-food'),
+  'chinese-noodles': banner('chinese-noodles'),
+  'ice-cream-desserts': banner('ice-cream-desserts'),
+  'juice-shakes': banner('juice-shakes'),
+  'tandoor-grill': banner('tandoor-grill'),
+  'north-indian-thali': banner('north-indian-thali'),
+  'south-indian-meals': banner('south-indian-meals'),
+  'chaat-street-food': banner('chaat-street-food'),
+  'dental-clinic': banner('dental-clinic'),
+  'eye-clinic': banner('eye-clinic'),
+  'skin-derma-clinic': banner('skin-derma-clinic'),
+  'diagnostic-lab': banner('diagnostic-lab'),
+  physiotherapy: banner('physiotherapy'),
+  'veterinary-clinic': banner('veterinary-clinic'),
+  'maternity-womens-clinic': banner('maternity-womens-clinic'),
+  'multispeciality-hospital': banner('multispeciality-hospital'),
+  'mens-salon-barber': banner('mens-salon-barber'),
+  'womens-beauty-parlour': banner('womens-beauty-parlour'),
+  'spa-massage': banner('spa-massage'),
+  'nail-studio': banner('nail-studio'),
+  'preschool-playschool': banner('preschool-playschool'),
+  'coaching-competitive': banner('coaching-competitive'),
+  'computer-training': banner('computer-training'),
+  'music-dance-arts': banner('music-dance-arts'),
+  'car-service-garage': banner('car-service-garage'),
+  'car-wash': banner('car-wash'),
+  'denting-painting': banner('denting-painting'),
+  'auto-spare-parts': banner('auto-spare-parts'),
+  'mobile-repair': banner('mobile-repair'),
+  'mobile-accessories': banner('mobile-accessories'),
+  'real-estate': banner('real-estate'),
+  'hotel-lodge': banner('hotel-lodge'),
+  'pg-hostel': banner('pg-hostel'),
+  'travel-agency': banner('travel-agency'),
+  'taxi-cab-rental': banner('taxi-cab-rental'),
+  catering: banner('catering'),
+  'event-decoration': banner('event-decoration'),
+  'photography-studio': banner('photography-studio'),
+  'tent-house-rental': banner('tent-house-rental'),
+  'ac-appliance-repair': banner('ac-appliance-repair'),
+  'deep-cleaning-pest': banner('deep-cleaning-pest'),
+  'carpentry-woodwork': banner('carpentry-woodwork'),
+  'painting-service': banner('painting-service'),
+  'accounting-ca': banner('accounting-ca'),
+  'legal-advocate': banner('legal-advocate'),
+  'insurance-finance': banner('insurance-finance'),
+  'architect-interior': banner('architect-interior'),
+  'printing-press': banner('printing-press'),
+  'flex-banner-signage': banner('flex-banner-signage'),
+  'pet-grooming-clinic': banner('pet-grooming-clinic'),
+  'aquarium-fish': banner('aquarium-fish'),
+  'optical-store': banner('optical-store'),
+  'sports-fitness-store': banner('sports-fitness-store'),
 };
 
 export function premiumCategoryBanner(name?: string | null): PremiumCategoryBanner | null {
@@ -209,26 +268,155 @@ export function premiumCategoryBanner(name?: string | null): PremiumCategoryBann
 // gets the breakfast banner, a café the coffee banner, a sweet shop the mithai banner. Scoped to the
 // broad food categories so a "Coffee Table" furniture shop can never pick up a café banner, and
 // ordered by specificity (first match wins) with word-boundary keywords to avoid misfires.
-const NAME_BANNER_OVERRIDES: ReadonlyArray<{ test: RegExp; key: string }> = [
-  { test: /\b(dosas?|tiffins?|idlis?|vadas?|udupi|breakfast)\b/i, key: 'tiffin centres' },
-  { test: /\b(sweets?|mithai|misthan|mishtan)\b/i, key: 'sweets & mithai' },
-  { test: /\b(bakery|bakers|cake|cakes|pastr\w*)\b/i, key: 'cakes & pastries' },
-  { test: /\b(cafe|café|coffee|barista|brew)\b/i, key: 'tea, coffee & beverages' },
-];
-const NAME_OVERRIDE_CATEGORIES = new Set(['restaurants & food', 'grocery & kirana']);
+// Name-based sub-type banners, scoped BY business category so a keyword can only fire inside the
+// category it belongs to — a "Coffee Table" furniture shop can never pick up a café banner, and
+// "City Eye Hospital" only matches inside Hospitals. First match within the category wins; if none
+// match (or the target banner is missing) it falls back to the plain category banner. Every `key`
+// here is a registered entry in `categoryBanners`.
+const SUBTYPE_OVERRIDES: Readonly<Record<string, ReadonlyArray<{ test: RegExp; key: string }>>> = {
+  'restaurants & food': [
+    { test: /\b(dosas?|tiffins?|idlis?|vadas?|udupi|breakfast)\b/i, key: 'tiffin centres' },
+    { test: /\b(biryani|biriyani|dum)\b/i, key: 'biryani' },
+    { test: /\b(pizza|pizzeria)\b/i, key: 'pizza' },
+    { test: /\b(kfc|fried chicken|burgers?|fast ?food)\b/i, key: 'fast-food' },
+    { test: /\b(chinese|noodles?|manchurian|hakka|momos?)\b/i, key: 'chinese-noodles' },
+    { test: /\b(ice ?cream|gelato|kulfi|falooda|desserts?)\b/i, key: 'ice-cream-desserts' },
+    { test: /\b(juices?|smoothies?|shakes?|milkshake)\b/i, key: 'juice-shakes' },
+    { test: /\b(tandoor\w*|kebabs?|grill|bbq|barbeque|barbecue)\b/i, key: 'tandoor-grill' },
+    { test: /\b(chaat|pani ?puri|bhel|street ?food)\b/i, key: 'chaat-street-food' },
+    { test: /\b(sweets?|mithai|misthan|mishtan)\b/i, key: 'sweets & mithai' },
+    { test: /\b(bakery|bakers|cakes?|pastr\w*)\b/i, key: 'cakes & pastries' },
+    { test: /\b(cafe|café|coffee|barista|brew)\b/i, key: 'cafe-coffee' },
+    { test: /\b(thali|punjabi|north ?indian)\b/i, key: 'north-indian-thali' },
+    { test: /\b(meals|andhra|south ?indian)\b/i, key: 'south-indian-meals' },
+  ],
+  'hospitals & clinics': [
+    { test: /\b(dental|dentist|teeth|orthodont\w*)/i, key: 'dental-clinic' },
+    { test: /\b(eye|vision|optical|opthal\w*|ophthal\w*|netra)\b/i, key: 'eye-clinic' },
+    { test: /\b(skin|derma\w*|cosmetolog\w*)\b/i, key: 'skin-derma-clinic' },
+    {
+      test: /\b(diagnostics?|labs?|laborator\w*|scans?|pathology|imaging|x-?ray)\b/i,
+      key: 'diagnostic-lab',
+    },
+    { test: /\bphysio\w*/i, key: 'physiotherapy' },
+    { test: /\b(veterinary|vet|animal)\b/i, key: 'veterinary-clinic' },
+    {
+      test: /\b(maternity|gyna?ec\w*|fertility|ivf|nursing home)\b/i,
+      key: 'maternity-womens-clinic',
+    },
+    {
+      test: /\b(multi ?speciality|multi ?specialty|general hospital)\b/i,
+      key: 'multispeciality-hospital',
+    },
+  ],
+  'salons & spas': [
+    { test: /\b(barbers?|gents?|mens?|hair ?cutting)\b/i, key: 'mens-salon-barber' },
+    {
+      test: /\b(beauty ?parlou?r|ladies|womens?|bridal|makeover)\b/i,
+      key: 'womens-beauty-parlour',
+    },
+    { test: /\b(spa|massage|ayurved\w*)\b/i, key: 'spa-massage' },
+    { test: /\bnails?\b/i, key: 'nail-studio' },
+  ],
+  'beauty & wellness': [
+    { test: /\b(spa|massage)\b/i, key: 'spa-massage' },
+    { test: /\bnails?\b/i, key: 'nail-studio' },
+  ],
+  'tuition & coaching': [
+    { test: /\b(iit|neet|eamcet|upsc|ias|coaching|academy)\b/i, key: 'coaching-competitive' },
+    { test: /\b(computers?|software|typing)\b/i, key: 'computer-training' },
+    { test: /\b(music|dance|abacus|arts?|drawing|karate)\b/i, key: 'music-dance-arts' },
+  ],
+  'education & training': [
+    { test: /\b(iit|neet|upsc|coaching|academy)\b/i, key: 'coaching-competitive' },
+    { test: /\b(computers?|software)\b/i, key: 'computer-training' },
+    { test: /\b(music|dance|arts?|abacus)\b/i, key: 'music-dance-arts' },
+  ],
+  schools: [
+    {
+      test: /\b(pre ?school|play ?school|kinder\w*|montessori|nursery)\b/i,
+      key: 'preschool-playschool',
+    },
+  ],
+  'automobile services': [
+    { test: /\b(wash|detailing)\b/i, key: 'car-wash' },
+    { test: /\b(denting|painting|body ?shop)\b/i, key: 'denting-painting' },
+    { test: /\b(spare ?parts?|spares|accessories)\b/i, key: 'auto-spare-parts' },
+    { test: /\b(service|garage|motors|workshop)\b/i, key: 'car-service-garage' },
+  ],
+  'mobile stores': [
+    { test: /\b(repairs?|service)\b/i, key: 'mobile-repair' },
+    { test: /\b(accessories|covers?|cases?)\b/i, key: 'mobile-accessories' },
+  ],
+  'property services': [
+    { test: /\b(real ?estate|propert\w*|realtor|builders?|estates?)\b/i, key: 'real-estate' },
+  ],
+  'hotels & stays': [{ test: /\b(pg|hostel|paying ?guest)\b/i, key: 'pg-hostel' }],
+  'travel services': [
+    { test: /\b(taxi|cabs?|car ?rental|travels)\b/i, key: 'taxi-cab-rental' },
+    { test: /\b(travels?|tours?|holidays?|tourism)\b/i, key: 'travel-agency' },
+  ],
+  'event services': [
+    { test: /\b(catering|caterers?)\b/i, key: 'catering' },
+    { test: /\b(decor\w*|florist|flowers?)\b/i, key: 'event-decoration' },
+    { test: /\b(photo\w*|studio|videograph\w*)\b/i, key: 'photography-studio' },
+    { test: /\b(tent|mandap|function ?hall)\b/i, key: 'tent-house-rental' },
+  ],
+  'home services': [
+    {
+      test: /\b(ac|air ?con\w*|appliance|refrigerat\w*|washing ?machine)\b/i,
+      key: 'ac-appliance-repair',
+    },
+    { test: /\b(carpent\w*|woodwork|furniture)\b/i, key: 'carpentry-woodwork' },
+    { test: /\b(painting|painters?)\b/i, key: 'painting-service' },
+    { test: /\b(cleaning|pest ?control)\b/i, key: 'deep-cleaning-pest' },
+  ],
+  'cleaning services': [
+    { test: /\b(pest ?control|deep ?cleaning|cleaning)\b/i, key: 'deep-cleaning-pest' },
+  ],
+  'professional services': [
+    {
+      test: /\b(chartered ?accountant|accounting|accounts?|tax|\bca\b|audit\w*)\b/i,
+      key: 'accounting-ca',
+    },
+    { test: /\b(advocate|lawyer|legal|law\b)\b/i, key: 'legal-advocate' },
+    { test: /\b(insurance|finance|loans?|investment\w*)\b/i, key: 'insurance-finance' },
+    { test: /\b(architect\w*|interior\w*|design\w*)\b/i, key: 'architect-interior' },
+  ],
+  'printing & stationery': [
+    { test: /\b(flex|banners?|signage|vinyl|hoarding)\b/i, key: 'flex-banner-signage' },
+    { test: /\b(printing|printers?|press|xerox|offset)\b/i, key: 'printing-press' },
+  ],
+  'pet stores & services': [
+    { test: /\b(grooming|clinic|vet)\b/i, key: 'pet-grooming-clinic' },
+    { test: /\b(aquarium|fish|aquatic)\b/i, key: 'aquarium-fish' },
+  ],
+  'clothing stores': [
+    { test: /\b(sarees?|saris?|ethnic|silks?)\b/i, key: 'sarees & ethnic wear' },
+    { test: /\b(kids|childrens?|baby)\b/i, key: 'kids clothing' },
+    { test: /\b(footwear|shoes?|chappals?|sandals?)\b/i, key: 'footwear' },
+    { test: /\b(ladies|womens?)\b/i, key: 'womens clothing' },
+    { test: /\b(gents?|mens?)\b/i, key: 'mens clothing' },
+  ],
+  'jewellery stores': [
+    { test: /\b(imitation|artificial|fashion)\b/i, key: 'jewellery & imitation' },
+  ],
+};
 
 /**
  * The banner for a specific business: a name-based sub-type refinement over the plain category
- * banner. Falls back to the category banner (and then the monogram) when the name says nothing
- * specific — so it never shows a worse banner than before, only a more fitting one.
+ * banner, scoped to the business's category so it can never misfire across categories. Falls back
+ * to the category banner (then the monogram) when the name says nothing specific — so it never
+ * shows a worse banner than before, only a more fitting one.
  */
 export function premiumBusinessBanner(
   name?: string | null,
   categoryName?: string | null,
 ): PremiumCategoryBanner | null {
   const category = categoryName?.trim().toLowerCase();
-  if (name && category && NAME_OVERRIDE_CATEGORIES.has(category)) {
-    for (const { test, key } of NAME_BANNER_OVERRIDES) {
+  const overrides = category ? SUBTYPE_OVERRIDES[category] : undefined;
+  if (name && overrides) {
+    for (const { test, key } of overrides) {
       if (test.test(name) && categoryBanners[key]) return categoryBanners[key]!;
     }
   }
