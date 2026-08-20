@@ -86,7 +86,10 @@
     "heroUpdatedNow": "अभी अपडेट हुआ",
     "heroExplore": "आसपास देखें",
     "heroBrowse": "डायरेक्टरी देखें",
-    "heroNoAlerts": "कोई सक्रिय अलर्ट नहीं"
+    "heroNoAlerts": "कोई सक्रिय अलर्ट नहीं",
+    "popularKicker": "डायरेक्टरी देखें",
+    "popularTitle": "{city} में लोकप्रिय",
+    "popularCount": "{count} जगहें"
   },
   "nav": {
     "home": "होम",

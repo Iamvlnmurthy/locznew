@@ -86,7 +86,10 @@
     "heroUpdatedNow": "ఇప్పుడే అప్‌డేట్",
     "heroExplore": "దగ్గరలో చూడండి",
     "heroBrowse": "డైరెక్టరీ చూడండి",
-    "heroNoAlerts": "యాక్టివ్ అలర్ట్స్ లేవు"
+    "heroNoAlerts": "యాక్టివ్ అలర్ట్స్ లేవు",
+    "popularKicker": "డైరెక్టరీ చూడండి",
+    "popularTitle": "{city} లో పాపులర్",
+    "popularCount": "{count} ప్రదేశాలు"
   },
   "nav": {
     "home": "హోమ్",

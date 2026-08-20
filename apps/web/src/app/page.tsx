@@ -208,6 +208,38 @@ export default async function HomePage({
         `/local-now/area-summary?${countScope.toString()}`,
       )) ?? { areas: [] })
     : { areas: [] };
+
+  // "Popular in {city}" — the biggest business categories for the visitor's city, each linking to
+  // its city × category hub page. This is the cold-start payoff surfaced on Home: the millions of
+  // imported businesses become browsable the moment someone lands, and the links thread Home into
+  // the hub pages (the indexable "{category} in {area}" surfaces). Falls back to the default
+  // launched city so it is never empty for a first-time, location-less visitor.
+  const homeCity =
+    city ??
+    (
+      await apiSafe<Array<{ id: string; name: string; slug: string }>>(
+        '/locations/cities?launchedOnly=true&limit=1',
+        { revalidate: 3600 },
+      )
+    )?.[0] ??
+    null;
+  const [bizCategories, cityCatCounts] = await Promise.all([
+    apiSafe<Array<{ id: string; slug: string; name: string }>>('/businesses/categories', {
+      revalidate: 86400,
+    }),
+    homeCity?.id
+      ? apiSafe<Array<{ categoryId: string; count: number }>>(
+          `/businesses/category-counts?cityId=${homeCity.id}`,
+          { revalidate: 3600 },
+        )
+      : Promise.resolve([]),
+  ]);
+  const catCountById = new Map((cityCatCounts ?? []).map((c) => [c.categoryId, c.count]));
+  const popularCategories = (bizCategories ?? [])
+    .map((c) => ({ ...c, count: catCountById.get(c.id) ?? 0 }))
+    .filter((c) => c.count > 0)
+    .sort((a, b) => b.count - a.count)
+    .slice(0, 8);
   const areaLabels = getMessageGroup(locale, 'discoveryAreas');
   const primaryAreas = [
     'local-now',
@@ -381,6 +413,34 @@ export default async function HomePage({
           </div>
         </div>
       </section>
+
+      {homeCity && popularCategories.length > 0 ? (
+        <section className="container home-popular" aria-labelledby="home-popular-title">
+          <div className="home-popular__head">
+            <span className="section-kicker">{t('home.popularKicker')}</span>
+            <h2 id="home-popular-title">{t('home.popularTitle', { city: homeCity.name })}</h2>
+          </div>
+          <div className="home-popular__grid">
+            {popularCategories.map((category) => (
+              <Link
+                key={category.slug}
+                href={`/in/${homeCity.slug}/${category.slug}`}
+                className="home-popular-card"
+              >
+                <span className="home-popular-card__body">
+                  <strong>{category.name}</strong>
+                  <small>
+                    {t('home.popularCount', {
+                      count: category.count.toLocaleString(`${locale}-IN`),
+                    })}
+                  </small>
+                </span>
+                <Icon name="arrow" />
+              </Link>
+            ))}
+          </div>
+        </section>
+      ) : null}
 
       <div className="container home-desktop-content">
         <div className="home-status-rail">
