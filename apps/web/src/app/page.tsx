@@ -499,14 +499,7 @@ export default async function HomePage({
             ) : null}
 
             {!feed || feed.sections.length === 0 ? (
-              <div className="empty-state">
-                <img
-                  className="empty-state__art"
-                  src="/illustrations/empty-neighbourhood.webp"
-                  alt=""
-                  width="280"
-                  height="230"
-                />
+              <div className="empty-state empty-state--compact">
                 <h1 className="page-title">{t('brand.tagline')}</h1>
                 <p>{t('feed.empty')}</p>
                 <Link href="/post" className="btn btn--primary" style={{ marginTop: 16 }}>
