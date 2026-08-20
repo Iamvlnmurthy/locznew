@@ -292,8 +292,14 @@ export class BusinessesService {
         Prisma.sql`b."deletedAt" IS NULL`,
         Prisma.sql`b."isActive"`,
         Prisma.sql`b."geo" IS NOT NULL`,
-        Prisma.sql`ST_DWithin(b."geo", ${point}, ${radiusMeters})`,
-        query.pincode ? Prisma.sql`b."pincodeCode" = ${query.pincode}` : Prisma.sql`TRUE`,
+        // An explicit pincode is a precise, intended filter, so it selects that pincode exactly
+        // and is NOT clipped by the radius. Pincodes resolve to a coarse district centroid that can
+        // sit 10–30 km from the pincode's actual businesses, so a radius around it would wrongly
+        // drop most of them (the "506001 works but 506002 is empty" bug). Without a pincode this is
+        // a true "near me" query, so the radius applies. Either way we order by distance below.
+        query.pincode
+          ? Prisma.sql`b."pincodeCode" = ${query.pincode}`
+          : Prisma.sql`ST_DWithin(b."geo", ${point}, ${radiusMeters})`,
         categoryIds
           ? categoryIds.length > 0
             ? Prisma.sql`b."categoryId" IN (${Prisma.join(
