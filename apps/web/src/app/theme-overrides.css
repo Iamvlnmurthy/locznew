@@ -1402,7 +1402,7 @@
 .business-profile-cover__banner {
   z-index: 0;
   object-fit: cover;
-  object-position: 54% center;
+  object-position: center;
 }
 
 .business-profile-cover.has-banner .business-profile-cover__copy,
@@ -1426,7 +1426,7 @@
   }
 
   .business-profile-cover__banner {
-    object-position: 56% center;
+    object-position: center;
   }
 
   .business-profile-cover.has-banner .business-profile-cover__copy {
