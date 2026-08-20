@@ -11,8 +11,10 @@ import { SITE_URL } from '@/lib/api';
 import { headers } from 'next/headers';
 import { getLocale, getSelectedCity, localizedAlternates } from '@/lib/session';
 import { LocationPrompt } from '@/components/location-prompt';
+import { MotionFrame } from '@/components/motion-frame';
 import './globals.css';
 import './theme-overrides.css';
+import './premium-motion.css';
 
 const loczSans = localFont({
   src: [
@@ -119,7 +121,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
       <body>
         <Header locale={locale} />
         <LocationPrompt hasLocation={Boolean(selectedCity)} />
-        <main id="main">{children}</main>
+        <MotionFrame>{children}</MotionFrame>
 
         <footer className="footer">
           <div className="container footer__inner">

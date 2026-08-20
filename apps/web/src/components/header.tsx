@@ -21,15 +21,15 @@ export async function Header({ locale }: { locale: Locale }) {
   const unreadNotifications = user
     ? await apiSafe<{ count: number }>('/notifications/unread-count', { auth: true })
     : null;
-  // The home hero owns a large search field, so the header one is redundant there.
   const pathname = (await headers()).get('x-pathname') ?? '';
-  const isHome = pathname === '/';
   const primaryLinks = [
     { href: '/discover/local-now', label: discoveryLabels['local-now'] },
     { href: '/business', label: discoveryLabels.businesses },
     { href: '/discover/jobs', label: discoveryLabels.jobs },
     { href: '/discover/services', label: discoveryLabels.services },
   ];
+  const activeClass = (active: boolean, extra = '') =>
+    [extra, active ? 'is-active' : ''].filter(Boolean).join(' ') || undefined;
 
   return (
     <>
@@ -128,25 +128,36 @@ export async function Header({ locale }: { locale: Locale }) {
         </div>
       </header>
       <nav className="mobile-dock" aria-label={t('nav.primary')}>
-        <Link href="/">
+        <Link href="/" className={activeClass(pathname === '/')}>
           <Icon name="home" />
           <span>{t('nav.home')}</span>
         </Link>
-        <Link href="/search">
+        <Link href="/search" className={activeClass(pathname.startsWith('/search'))}>
           <Icon name="search" />
           <span>{t('nav.search')}</span>
         </Link>
-        <Link href="/post" className="mobile-dock__post">
+        <Link
+          href="/post"
+          className={activeClass(pathname.startsWith('/post'), 'mobile-dock__post')}
+        >
           <span className="mobile-dock__plus">
             <Icon name="plus" />
           </span>
           <span>{t('nav.post')}</span>
         </Link>
-        <Link href="/dashboard?tab=saved">
+        <Link
+          href="/dashboard?tab=saved"
+          className={activeClass(pathname.startsWith('/dashboard'))}
+        >
           <Icon name="heart" />
           <span>{t('nav.saved')}</span>
         </Link>
-        <Link href={user ? '/notifications' : '/signin'}>
+        <Link
+          href={user ? '/notifications' : '/signin'}
+          className={activeClass(
+            user ? pathname.startsWith('/notifications') : pathname.startsWith('/signin'),
+          )}
+        >
           <span className="mobile-dock__notification">
             <Icon name={user ? 'bell' : 'user'} />
             {unreadNotifications?.count ? <strong>{unreadNotifications.count}</strong> : null}

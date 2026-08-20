@@ -99,7 +99,7 @@ export default async function CategoryPage({ params }: { params: Promise<{ slug:
         className={`discovery-hero discovery-hero--category${categoryBanner ? ' has-category-banner' : ''}`}
       >
         {categoryBanner ? (
-          <picture className="discovery-hero__banner" aria-hidden="true">
+          <picture className="discovery-hero__banner">
             <source media="(max-width: 820px)" srcSet={categoryBanner.mobile} />
             <Image
               src={categoryBanner.desktop}

@@ -1,0 +1,377 @@
+/* LocZ premium motion language. Motion explains hierarchy and state; it never loops. */
+:root {
+  --locz-motion-quick: 140ms;
+  --locz-motion-standard: 210ms;
+  --locz-motion-panel: 310ms;
+  --locz-motion-cinematic: 560ms;
+  --locz-ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --locz-ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+}
+
+@keyframes locz-route-enter {
+  from {
+    opacity: 0;
+    transform: translateY(7px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes locz-hero-enter {
+  from {
+    opacity: 0;
+    transform: translateY(14px) scale(0.992);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes locz-panel-enter {
+  from {
+    opacity: 0;
+    transform: perspective(1200px) translateY(26px) rotateX(2deg) scale(0.975);
+  }
+  to {
+    opacity: 1;
+    transform: perspective(1200px)
+      translate3d(calc(var(--locz-hero-x, 0) * -8px), calc(var(--locz-hero-y, 0) * -6px), 0)
+      rotateX(calc(var(--locz-hero-y, 0) * -1.6deg)) rotateY(calc(var(--locz-hero-x, 0) * 1.8deg));
+  }
+}
+
+@keyframes locz-rings-breathe {
+  0%,
+  100% {
+    opacity: 0.42;
+    box-shadow:
+      0 0 0 4rem rgb(255 255 255 / 2%),
+      0 0 0 9rem rgb(255 255 255 / 2%);
+  }
+  50% {
+    opacity: 0.75;
+    box-shadow:
+      0 0 0 5rem rgb(255 255 255 / 3%),
+      0 0 0 11rem rgb(255 255 255 / 1.5%);
+  }
+}
+
+@keyframes locz-icon-float {
+  0%,
+  100% {
+    transform: translateY(0) rotate(0);
+  }
+  50% {
+    transform: translateY(-4px) rotate(1.2deg);
+  }
+}
+
+@keyframes locz-search-shine {
+  0%,
+  72% {
+    transform: translateX(-180%) skewX(-20deg);
+  }
+  100% {
+    transform: translateX(280%) skewX(-20deg);
+  }
+}
+
+@keyframes locz-banner-drift {
+  from {
+    transform: scale(1.01) translateX(0);
+  }
+  to {
+    transform: scale(1.035) translateX(-0.55%);
+  }
+}
+
+.locz-route-frame {
+  animation: locz-route-enter var(--locz-motion-panel) var(--locz-ease-out) both;
+}
+
+.header {
+  transition:
+    background-color var(--locz-motion-standard) ease,
+    border-color var(--locz-motion-standard) ease,
+    box-shadow var(--locz-motion-standard) ease;
+}
+
+:root[data-page-scrolled] .header {
+  border-bottom-color: color-mix(in srgb, var(--locz-primary) 15%, var(--locz-border));
+  box-shadow: 0 12px 34px rgb(20 58 48 / 10%);
+}
+
+.header__primary a,
+.mobile-dock > a,
+.mobile-dock__plus {
+  transition:
+    color var(--locz-motion-quick) ease,
+    background-color var(--locz-motion-standard) ease,
+    box-shadow var(--locz-motion-standard) ease,
+    transform var(--locz-motion-standard) var(--locz-ease-out);
+}
+
+.header__primary a:active,
+.mobile-dock > a:active {
+  transform: scale(0.96);
+}
+
+.home-hero--discovery .home-hero__copy > * {
+  animation: locz-hero-enter 480ms var(--locz-ease-out) both;
+}
+
+.home-hero--discovery .home-hero__copy > :nth-child(1) {
+  animation-delay: 35ms;
+}
+.home-hero--discovery .home-hero__copy > :nth-child(2) {
+  animation-delay: 65ms;
+}
+.home-hero--discovery .home-hero__copy > :nth-child(3) {
+  animation-delay: 90ms;
+}
+.home-hero--discovery .home-hero__copy > :nth-child(4) {
+  animation-delay: 115ms;
+}
+.home-hero--discovery .home-hero__copy > :nth-child(5) {
+  animation-delay: 140ms;
+}
+.home-hero--discovery .home-hero__copy > :nth-child(6) {
+  animation-delay: 165ms;
+}
+.home-hero--discovery .home-hero__copy > :nth-child(7) {
+  animation-delay: 190ms;
+}
+.home-hero--discovery .home-discovery--bento {
+  --locz-hero-x: inherit;
+  --locz-hero-y: inherit;
+  animation: locz-panel-enter var(--locz-motion-cinematic) var(--locz-ease-out) 150ms both;
+  transition: transform 180ms var(--locz-ease-out);
+  transform-style: preserve-3d;
+}
+
+@media (min-width: 761px) {
+  .home-hero--discovery::after {
+    animation: locz-rings-breathe 8s ease-in-out -2s infinite;
+    transform: translate3d(
+      calc(var(--locz-hero-x, 0) * 24px),
+      calc(var(--locz-hero-y, 0) * 18px),
+      0
+    );
+    transition: transform 240ms var(--locz-ease-out);
+  }
+
+  .home-discovery-card__art img {
+    animation: locz-icon-float 4.8s ease-in-out infinite;
+  }
+
+  .home-discovery-card:nth-child(2n) .home-discovery-card__art img {
+    animation-delay: -1.7s;
+  }
+
+  .home-discovery-card:nth-child(3n) .home-discovery-card__art img {
+    animation-delay: -3.1s;
+  }
+
+  .home-hero--discovery .hero-search button {
+    position: relative;
+    overflow: hidden;
+  }
+
+  .home-hero--discovery .hero-search button::after {
+    position: absolute;
+    inset: -30% auto -30% -35%;
+    width: 28%;
+    background: linear-gradient(90deg, transparent, rgb(255 255 255 / 38%), transparent);
+    content: '';
+    animation: locz-search-shine 5.4s ease-in-out 1.4s infinite;
+    pointer-events: none;
+  }
+}
+
+.home-discovery-card,
+.home-popular-card,
+.home-intent,
+.local-news__list a,
+.local-jobs__card,
+.search-business-card,
+.listing-card {
+  will-change: transform;
+  transition:
+    border-color var(--locz-motion-standard) ease,
+    background-color var(--locz-motion-standard) ease,
+    box-shadow var(--locz-motion-standard) ease,
+    transform var(--locz-motion-standard) var(--locz-ease-out);
+}
+
+.home-discovery__grid:has(.home-discovery-card.is-launching)
+  .home-discovery-card:not(.is-launching) {
+  opacity: 0.56;
+  transform: scale(0.975);
+}
+
+.home-discovery-card.is-launching {
+  z-index: 2;
+  border-color: color-mix(in srgb, var(--locz-primary) 62%, white) !important;
+  box-shadow: 0 18px 42px color-mix(in srgb, var(--locz-primary) 24%, transparent) !important;
+  transform: scale(0.955) !important;
+}
+
+:root[data-motion-ready='true'] [data-motion-reveal='true'] {
+  opacity: 0;
+  transform: translateY(30px) scale(0.985);
+  transition:
+    opacity 520ms var(--locz-ease-out) var(--locz-reveal-delay, 0ms),
+    transform 620ms var(--locz-ease-out) var(--locz-reveal-delay, 0ms),
+    border-color var(--locz-motion-standard) ease,
+    box-shadow var(--locz-motion-standard) ease;
+}
+
+:root[data-motion-ready='true'] [data-motion-reveal='true'].is-motion-visible {
+  opacity: 1;
+  transform: none;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  :root[data-motion-ready='true']
+    :is(
+      .home-popular-card,
+      .home-intent,
+      .listing-card,
+      .search-business-card,
+      .local-news__list a,
+      .local-jobs__card
+    )[data-motion-reveal='true'].is-motion-visible:hover {
+    transform: translateY(-3px);
+  }
+}
+
+.business-profile-cover.has-banner .business-profile-cover__banner,
+.discovery-hero.has-category-banner .discovery-hero__banner img {
+  animation: locz-banner-drift 12s ease-in-out alternate infinite;
+  transform-origin: 72% 50%;
+}
+
+.home-discovery-card__art,
+.home-discovery-card__arrow,
+.home-popular-card > svg,
+.home-intent > svg:last-child,
+.local-news__list a > svg,
+.local-jobs__card > svg:last-child {
+  transition: transform var(--locz-motion-standard) var(--locz-ease-out);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .home-discovery-card:hover,
+  .home-popular-card:hover,
+  .home-intent:hover,
+  .local-news__list a:hover,
+  .local-jobs__card:hover {
+    transform: translateY(-3px);
+  }
+
+  .home-discovery-card:hover .home-discovery-card__art {
+    transform: translateY(-2px) scale(1.035);
+  }
+
+  .home-discovery-card:hover .home-discovery-card__arrow,
+  .home-popular-card:hover > svg,
+  .home-intent:hover > svg:last-child,
+  .local-news__list a:hover > svg,
+  .local-jobs__card:hover > svg:last-child {
+    transform: translateX(3px);
+  }
+}
+
+.home-feed-toolbar,
+.discovery-feed-toolbar {
+  transition:
+    background-color var(--locz-motion-standard) ease,
+    border-color var(--locz-motion-standard) ease,
+    box-shadow var(--locz-motion-standard) ease,
+    transform var(--locz-motion-panel) var(--locz-ease-out);
+}
+
+:root[data-page-scrolled] .home-feed-toolbar,
+:root[data-page-scrolled] .discovery-feed-toolbar {
+  box-shadow: 0 16px 42px rgb(24 58 49 / 14%);
+}
+
+.home-feed-toolbar__filters > a,
+.discovery-feed-toolbar nav a,
+.discovery-feed-toolbar nav span {
+  transition:
+    color var(--locz-motion-quick) ease,
+    background-color var(--locz-motion-standard) ease,
+    border-color var(--locz-motion-standard) ease,
+    box-shadow var(--locz-motion-standard) ease,
+    transform var(--locz-motion-quick) ease;
+}
+
+.home-feed-toolbar__filters > a:active,
+.discovery-feed-toolbar nav a:active {
+  transform: scale(0.96);
+}
+
+:where(a, button, input, select, textarea):focus-visible {
+  outline: 0;
+  box-shadow: var(--locz-shadow-focus);
+}
+
+@media (max-width: 760px) {
+  .mobile-dock > a {
+    position: relative;
+    isolation: isolate;
+  }
+
+  .mobile-dock > a::before {
+    position: absolute;
+    z-index: -1;
+    top: 5px;
+    width: 42px;
+    height: 28px;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--locz-primary) 12%, transparent);
+    content: '';
+    opacity: 0;
+    transform: scale(0.72);
+    transition:
+      opacity var(--locz-motion-standard) ease,
+      transform var(--locz-motion-standard) var(--locz-ease-out);
+  }
+
+  .mobile-dock > a.is-active {
+    color: var(--locz-primary);
+  }
+
+  .mobile-dock > a.is-active::before {
+    opacity: 1;
+    transform: scale(1);
+  }
+
+  .mobile-dock > a.mobile-dock__post::before {
+    display: none;
+  }
+
+  .mobile-dock__post:active .mobile-dock__plus {
+    transform: translateY(1px) scale(0.92);
+  }
+
+  .home-hero--discovery .home-hero__copy > * {
+    animation-duration: 280ms;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-delay: 0ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

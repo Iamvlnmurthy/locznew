@@ -10,6 +10,7 @@ import { NearbyBusinesses } from './search/nearby-businesses';
 import { loadNearbyBusinesses } from './search/businesses-actions';
 import { RADIUS_OPTIONS_KM, getLocale, getSelectedCity, getSelectedRadius } from '@/lib/session';
 import { RadiusSelector } from '@/components/radius-selector';
+import { DiscoveryMotionLink } from '@/components/discovery-motion-link';
 
 interface LocalWeather {
   tempC: number;
@@ -366,7 +367,7 @@ export default async function HomePage({
             </div>
             <div className="home-discovery__grid home-discovery__grid--bento">
               {heroAreas.map(({ area, count }) => (
-                <Link
+                <DiscoveryMotionLink
                   key={area}
                   href={`/discover/${encodeURIComponent(area)}`}
                   className={`home-discovery-card home-discovery-card--${area}`}
@@ -385,7 +386,7 @@ export default async function HomePage({
                     <small>{heroMetrics[area] ?? count.toLocaleString('en-IN')}</small>
                   </span>
                   <Icon name="arrow" className="home-discovery-card__arrow" />
-                </Link>
+                </DiscoveryMotionLink>
               ))}
             </div>
             <div className="home-discovery__context" aria-label={t('home.heroContext')}>
