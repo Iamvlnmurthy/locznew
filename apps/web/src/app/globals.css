@@ -21459,3 +21459,171 @@ h4,
     min-width: 14px;
   }
 }
+
+/* City × category hub pages ("Restaurants & food in Hyderabad"). */
+.hub-hero {
+  padding: clamp(28px, 5vw, 56px) 0 clamp(20px, 3vw, 32px);
+  background: var(--locz-surface-muted);
+  border-bottom: 1px solid var(--locz-border);
+}
+.hub-hero .breadcrumbs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+  margin-bottom: 12px;
+  font-size: 0.66rem;
+  color: var(--locz-text-muted);
+}
+.hub-hero .breadcrumbs a {
+  color: var(--locz-primary);
+}
+.hub-hero h1 {
+  margin: 0 0 8px;
+  font-size: clamp(1.5rem, 4vw, 2.4rem);
+  letter-spacing: -0.04em;
+}
+.hub-hero p {
+  margin: 0;
+  max-width: 60ch;
+  color: var(--locz-text-secondary);
+  font-size: 0.8rem;
+  line-height: 1.6;
+}
+.hub-body {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 300px;
+  gap: 28px;
+  padding-block: clamp(24px, 4vw, 40px);
+  align-items: start;
+}
+.hub-list {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.hub-list a {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  padding: 14px 16px;
+  border: 1px solid var(--locz-border);
+  border-radius: 16px;
+  background: var(--locz-surface);
+  transition: border-color 0.18s ease, box-shadow 0.18s ease;
+}
+.hub-list a:hover {
+  border-color: var(--locz-primary);
+  box-shadow: var(--locz-shadow-sm);
+}
+.hub-list__logo {
+  display: grid;
+  width: 44px;
+  height: 44px;
+  flex: 0 0 44px;
+  place-items: center;
+  border-radius: 12px;
+  background: var(--locz-primary-soft);
+  color: var(--locz-primary);
+  font-weight: 800;
+  font-size: 1.05rem;
+}
+.hub-list__body {
+  min-width: 0;
+  flex: 1;
+}
+.hub-list__body strong {
+  display: block;
+  overflow: hidden;
+  font-size: 0.82rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.hub-list__body small {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 2px;
+  color: var(--locz-text-muted);
+  font-size: 0.64rem;
+}
+.hub-list__body small svg {
+  width: 12px;
+  height: 12px;
+  color: var(--locz-primary);
+}
+.hub-list__body em {
+  display: block;
+  margin-top: 3px;
+  font-size: 0.6rem;
+  font-style: normal;
+  color: var(--locz-primary);
+}
+.hub-list a > svg:last-child {
+  width: 16px;
+  flex: 0 0 16px;
+  color: var(--locz-text-muted);
+}
+.hub-seeall {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 18px;
+}
+.hub-empty {
+  padding: 40px 24px;
+  text-align: center;
+  border: 1px dashed var(--locz-border-strong);
+  border-radius: 18px;
+  background: var(--locz-surface-muted);
+}
+.hub-empty h2 {
+  margin: 0 0 8px;
+  font-size: 1.1rem;
+}
+.hub-empty p {
+  margin: 0 0 16px;
+  color: var(--locz-text-secondary);
+  font-size: 0.74rem;
+}
+.hub-cross section {
+  margin-bottom: 20px;
+  padding: 18px;
+  border: 1px solid var(--locz-border);
+  border-radius: 16px;
+  background: var(--locz-surface);
+}
+.hub-cross h2 {
+  margin: 0 0 10px;
+  font-size: 0.74rem;
+  font-weight: 760;
+  color: var(--locz-text-secondary);
+}
+.hub-cross ul {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.hub-cross a {
+  display: inline-block;
+  padding: 6px 11px;
+  border: 1px solid var(--locz-border);
+  border-radius: 999px;
+  background: var(--locz-surface-muted);
+  font-size: 0.64rem;
+  color: var(--locz-text-primary);
+}
+.hub-cross a:hover {
+  border-color: var(--locz-primary);
+  color: var(--locz-primary);
+}
+@media (max-width: 860px) {
+  .hub-body {
+    grid-template-columns: 1fr;
+  }
+}

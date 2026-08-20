@@ -41,6 +41,13 @@ export class BusinessesController {
   }
 
   @Public()
+  @Get('categories')
+  @ApiOperation({ summary: 'Distinct business categories with live counts (for hub pages)' })
+  businessCategories(): Promise<Array<{ id: string; slug: string; name: string; count: number }>> {
+    return this.businesses.businessCategories();
+  }
+
+  @Public()
   @Get('category-counts')
   @ApiOperation({ summary: 'Active business count per category for an area (for tile badges)' })
   categoryCounts(

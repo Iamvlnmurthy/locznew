@@ -1700,5 +1700,20 @@
     "emptyTitle": "ఇంకా దగ్గర్లో ఏమీ లేదు",
     "emptyBody": "పెద్ద రేడియస్ ట్రై చేయండి లేదా కొద్దిసేపటికి మళ్లీ చూడండి.",
     "searchCta": "LocZ లో సెర్చ్ చేయండి"
+  },
+  "hub": {
+    "metaTitle": "{city} లో {category} — LocZ",
+    "metaDescription": "{city} లో {category} కనుక్కోండి: కాంటాక్ట్ వివరాలు, డైరెక్షన్స్ మరియు లోకల్ బిజినెస్‌లు LocZ లో.",
+    "inWord": "—",
+    "subtitle": "{city} లో {count} {category} బిజినెస్‌లు, కాంటాక్ట్ వివరాలు మరియు డైరెక్షన్స్‌తో.",
+    "subtitleEmpty": "{city} లో లోకల్ {category} LocZ లో.",
+    "verified": "వెరిఫైడ్",
+    "listings": "{count} లిస్టింగ్‌లు",
+    "emptyTitle": "{city} లో ఇంకా {category} లేవు",
+    "emptyBody": "ఇక్కడ ఈ కేటగిరీలో ఇంకా బిజినెస్‌లు లిస్ట్ కాలేదు. బదులుగా సిటీ మొత్తం చూడండి.",
+    "browseCity": "{city} చూడండి",
+    "seeAll": "మొత్తం {count} చూడండి",
+    "otherCategories": "{city} లో ఇతర కేటగిరీలు",
+    "inOtherCities": "{category} ఇతర చోట్ల"
   }
 }

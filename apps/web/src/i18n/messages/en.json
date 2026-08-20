@@ -1700,5 +1700,20 @@
     "emptyTitle": "Nothing nearby yet",
     "emptyBody": "Try a wider radius or check again shortly.",
     "searchCta": "Search LocZ"
+  },
+  "hub": {
+    "metaTitle": "{category} in {city} — LocZ",
+    "metaDescription": "Find {category} in {city}: contact details, directions and local businesses on LocZ.",
+    "inWord": "in",
+    "subtitle": "{count} {category} businesses in {city}, with contact details and directions.",
+    "subtitleEmpty": "Local {category} in {city} on LocZ.",
+    "verified": "Verified",
+    "listings": "{count} listings",
+    "emptyTitle": "No {category} in {city} yet",
+    "emptyBody": "No businesses listed in this category here yet. Browse everything in the city instead.",
+    "browseCity": "Browse {city}",
+    "seeAll": "See all {count}",
+    "otherCategories": "Other categories in {city}",
+    "inOtherCities": "{category} elsewhere"
   }
 }

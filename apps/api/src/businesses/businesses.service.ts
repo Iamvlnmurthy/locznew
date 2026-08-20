@@ -130,6 +130,23 @@ export class BusinessesService {
    * nearby" counts on the category tiles, so it's obvious which areas are populated. Scoped by
    * city or pincode (the indexed columns) so it stays cheap.
    */
+  /**
+   * The distinct categories businesses actually use (an import taxonomy separate from the
+   * marketplace category tree), with a live count each — powers the city × category hub pages and
+   * their cross-links. Ordered by size so the busiest categories lead.
+   */
+  async businessCategories(): Promise<
+    Array<{ id: string; slug: string; name: string; count: number }>
+  > {
+    return this.prisma.$queryRaw<Array<{ id: string; slug: string; name: string; count: number }>>`
+      SELECT c.id, c.slug, c.name, count(b.*)::int AS count
+      FROM categories c
+      JOIN businesses b ON b."categoryId" = c.id AND b."deletedAt" IS NULL AND b."isActive"
+      GROUP BY c.id, c.slug, c.name
+      ORDER BY count DESC
+    `;
+  }
+
   async categoryCounts(scope: {
     cityId?: string;
     pincode?: string;

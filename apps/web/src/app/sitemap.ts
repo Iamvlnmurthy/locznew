@@ -15,9 +15,10 @@ export const revalidate = 3600;
 const LOCALES = ['en', 'te', 'hi'] as const;
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const [cities, categories] = await Promise.all([
+  const [cities, categories, businessCategories] = await Promise.all([
     apiSafe<City[]>('/locations/cities?launchedOnly=true&limit=50', { revalidate: 3600 }),
     apiSafe<Category[]>('/categories', { revalidate: 3600 }),
+    apiSafe<Array<{ slug: string; name: string }>>('/businesses/categories', { revalidate: 3600 }),
   ]);
 
   const now = new Date();
@@ -82,6 +83,20 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         priority: category.parentId ? 0.6 : 0.8,
       }),
     );
+  }
+
+  // City × business-category hub pages ("Restaurants & food in Hyderabad") — the surfaces that
+  // capture "{category} in {area}" demand. Launched cities × the business taxonomy; the busiest
+  // categories are broadly populated across every district.
+  for (const city of cities ?? []) {
+    for (const category of businessCategories ?? []) {
+      entries.push(
+        ...localized(`/in/${city.slug}/${category.slug}`, {
+          changeFrequency: 'daily',
+          priority: 0.7,
+        }),
+      );
+    }
   }
 
   return entries;

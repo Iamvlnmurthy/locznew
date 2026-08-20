@@ -1700,5 +1700,20 @@
     "emptyTitle": "अभी आसपास कुछ नहीं",
     "emptyBody": "बड़ा दायरा आज़माएं या थोड़ी देर में फिर देखें।",
     "searchCta": "LocZ में खोजें"
+  },
+  "hub": {
+    "metaTitle": "{city} में {category} — LocZ",
+    "metaDescription": "{city} में {category} खोजें: संपर्क विवरण, दिशा-निर्देश और लोकल बिज़नेस LocZ पर.",
+    "inWord": "में",
+    "subtitle": "{city} में {count} {category} बिज़नेस, संपर्क विवरण और दिशा-निर्देश के साथ.",
+    "subtitleEmpty": "{city} में लोकल {category} LocZ पर.",
+    "verified": "वेरिफाइड",
+    "listings": "{count} लिस्टिंग",
+    "emptyTitle": "{city} में अभी {category} नहीं",
+    "emptyBody": "यहाँ इस श्रेणी में अभी कोई बिज़नेस सूचीबद्ध नहीं है. इसके बजाय पूरा शहर देखें.",
+    "browseCity": "{city} देखें",
+    "seeAll": "सभी {count} देखें",
+    "otherCategories": "{city} में अन्य श्रेणियाँ",
+    "inOtherCities": "{category} अन्य शहरों में"
   }
 }
