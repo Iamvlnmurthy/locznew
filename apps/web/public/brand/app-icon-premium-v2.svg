@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" role="img" aria-labelledby="title description">
+  <title id="title">LocZ premium app icon</title>
+  <desc id="description">An emerald rounded square with an ivory route-shaped Z and coral waypoint.</desc>
+  <defs>
+    <radialGradient id="field" cx="38%" cy="28%" r="86%">
+      <stop offset="0" stop-color="#0b715e"/>
+      <stop offset="0.58" stop-color="#075d4d"/>
+      <stop offset="1" stop-color="#03483d"/>
+    </radialGradient>
+  </defs>
+  <rect width="1024" height="1024" fill="#fff9ef"/>
+  <rect x="64" y="64" width="896" height="896" rx="232" fill="url(#field)"/>
+  <path
+    d="M302 303h420L307 721h417"
+    fill="none"
+    stroke="#fff9ef"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+    stroke-width="132"
+  />
+  <circle cx="307" cy="721" r="49" fill="#ff6458"/>
+</svg>

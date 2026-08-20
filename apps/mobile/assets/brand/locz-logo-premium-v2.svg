@@ -1,0 +1,41 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1040 360" role="img" aria-labelledby="title description">
+  <title id="title">LocZ premium logo</title>
+  <desc id="description">The LocZ route symbol followed by the LocZ wordmark.</desc>
+  <defs>
+    <radialGradient id="field" cx="38%" cy="28%" r="86%">
+      <stop offset="0" stop-color="#0b715e"/>
+      <stop offset="0.6" stop-color="#075d4d"/>
+      <stop offset="1" stop-color="#03483d"/>
+    </radialGradient>
+  </defs>
+  <g transform="translate(20 20)">
+    <rect width="320" height="320" rx="88" fill="url(#field)"/>
+    <path
+      d="M94 94h134L96 228h133"
+      fill="none"
+      stroke="#fff9ef"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+      stroke-width="47"
+    />
+    <circle cx="96" cy="228" r="18" fill="#ff6458"/>
+  </g>
+  <text
+    x="382"
+    y="250"
+    fill="#075d4d"
+    font-family="Segoe UI, Arial, sans-serif"
+    font-size="220"
+    font-weight="750"
+    letter-spacing="-13"
+  >Loc</text>
+  <text
+    x="730"
+    y="250"
+    fill="#ff6458"
+    font-family="Segoe UI, Arial, sans-serif"
+    font-size="220"
+    font-weight="750"
+    letter-spacing="-8"
+  >Z</text>
+</svg>
