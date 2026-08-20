@@ -311,6 +311,18 @@ export class BusinessDetailDto extends BusinessSummaryDto {
   })
   attribution!: string | null;
 
+  @ApiPropertyOptional({ description: 'Neighbourhood/locality within the city, when known.' })
+  localityName!: string | null;
+
+  @ApiPropertyOptional({ description: 'A nearby landmark from the address, when known.' })
+  landmark!: string | null;
+
+  @ApiProperty({ description: 'Category id — for building "similar nearby" and category links.' })
+  categoryId!: string;
+
+  @ApiProperty({ description: 'City id — for building city/category directory links.' })
+  cityId!: string;
+
   // latitude/longitude are inherited from BusinessSummaryDto.
   @ApiPropertyOptional() primaryPhone!: string | null;
   @ApiPropertyOptional() whatsappNumber!: string | null;

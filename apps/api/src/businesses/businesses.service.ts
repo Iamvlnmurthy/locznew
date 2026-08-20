@@ -44,7 +44,14 @@ const STAFF_PERMISSIONS: Record<string, string[]> = {
 const BUSINESS_INCLUDE = {
   category: { select: { name: true } },
   city: { select: { name: true } },
-  address: { select: { line1: true } },
+  address: {
+    select: {
+      line1: true,
+      line2: true,
+      landmark: true,
+      locality: { select: { name: true } },
+    },
+  },
   hours: true,
   _count: { select: { listings: true } },
 } satisfies Prisma.BusinessInclude;
@@ -875,11 +882,13 @@ export class BusinessesService {
   }
 
   private toDetail(business: BusinessRow, viewerId?: string): BusinessDetailDto {
+    const localityName = business.address?.locality?.name ?? null;
+    const landmark = business.address?.landmark ?? null;
     const described = describeBusiness({
       categoryName: business.category.name,
-      // The locality is not on the row shape this mapper receives; the city is enough to
-      // place a business, and the full address is rendered separately anyway.
-      localityName: null,
+      localityName,
+      landmark,
+      pincode: business.pincodeCode,
       cityName: business.city.name,
       keywords: business.keywords,
       description: business.description,
@@ -896,7 +905,12 @@ export class BusinessesService {
       scale: business.scale,
       offering: business.offering,
       keywords: business.keywords,
-      addressLine: business.address?.line1 ?? null,
+      localityName,
+      landmark,
+      categoryId: business.categoryId,
+      cityId: business.cityId,
+      addressLine:
+        [business.address?.line1, business.address?.line2].filter(Boolean).join(', ') || null,
       latitude: business.latitude ? Number(business.latitude) : null,
       longitude: business.longitude ? Number(business.longitude) : null,
       primaryPhone: business.primaryPhone,

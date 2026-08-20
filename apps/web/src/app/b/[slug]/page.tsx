@@ -21,12 +21,28 @@ interface BusinessHour {
   isClosed: boolean;
 }
 
-interface BusinessDetail {
+interface SimilarBusiness {
   id: string;
   name: string;
   slug: string;
   categoryName: string;
   cityName: string;
+  pincode: string | null;
+  distanceMeters?: number;
+  verificationStatus: string;
+}
+
+interface BusinessDetail {
+  id: string;
+  name: string;
+  slug: string;
+  categoryName: string;
+  categoryId: string;
+  cityName: string;
+  cityId: string;
+  localityName: string | null;
+  landmark: string | null;
+  pincode: string | null;
   logoUrl: string | null;
   description: string | null;
   addressLine: string | null;
@@ -73,10 +89,15 @@ export async function generateMetadata({
     return { title: 'Business not found', robots: { index: false, follow: false } };
   }
 
-  const title = `${business.name} — ${business.categoryName} in ${business.cityName}`;
+  // Neighbourhood before district: "Kirana store in Madhapur, Hyderabad" matches how people
+  // actually search, and is far less contested than the district-level phrase alone.
+  const place = business.localityName
+    ? `${business.localityName}, ${business.cityName}`
+    : business.cityName;
+  const title = `${business.name} — ${business.categoryName} in ${place}`;
   const description =
     business.description?.replace(/\s+/g, ' ').slice(0, 155) ??
-    `${business.name} is a ${business.categoryName.toLowerCase()} in ${business.cityName}. Find contact details, offers and jobs on LocZ.`;
+    `${business.name} is a ${business.categoryName.toLowerCase()} in ${place}. Find contact details, directions, offers and jobs on LocZ.`;
 
   return {
     title,
@@ -112,15 +133,76 @@ export default async function BusinessPage({ params }: { params: Promise<{ slug:
     p.friday,
     p.saturday,
   ];
-  const listings = await apiSafe<{ items: ListingSummary[] }>(
-    `/search?businessId=${business.id}&limit=12`,
-    { revalidate: 300 },
-  );
+  // "Similar businesses nearby" — the same category around this exact point. Every page gets a
+  // different set (it depends on the coordinates), so it is genuinely unique content, and the
+  // links weave the directory into a mesh a crawler can follow into the deep pages.
+  const similarQuery = new URLSearchParams({ categoryId: business.categoryId, limit: '9' });
+  if (business.latitude !== null && business.longitude !== null) {
+    similarQuery.set('latitude', String(business.latitude));
+    similarQuery.set('longitude', String(business.longitude));
+    similarQuery.set('radiusKm', '10');
+  } else if (business.pincode) {
+    similarQuery.set('pincode', business.pincode);
+  }
+  const [listings, similarResponse] = await Promise.all([
+    apiSafe<{ items: ListingSummary[] }>(`/search?businessId=${business.id}&limit=12`, {
+      revalidate: 300,
+    }),
+    apiSafe<{ items: SimilarBusiness[] }>(`/businesses/nearby?${similarQuery.toString()}`, {
+      revalidate: 900,
+    }),
+  ]);
+  const similar = (similarResponse?.items ?? [])
+    .filter((b) => b.slug !== business.slug)
+    .slice(0, 8);
   const openState = currentOpenState(business.hours, p);
   const mapUrl =
     business.latitude !== null && business.longitude !== null
       ? `https://www.google.com/maps/search/?api=1&query=${business.latitude},${business.longitude}`
       : null;
+  const directionsUrl =
+    business.latitude !== null && business.longitude !== null
+      ? `https://www.google.com/maps/dir/?api=1&destination=${business.latitude},${business.longitude}`
+      : null;
+
+  // The neighbourhood placement, in words — "directions" a crawler and a reader can both use,
+  // assembled only from address facts (no invented turn-by-turn, which would need an origin).
+  const placeLabel = business.localityName
+    ? `${business.localityName}, ${business.cityName}`
+    : business.cityName;
+  const locationSentence = [
+    p.locatedIn.replace('{place}', placeLabel),
+    business.landmark ? p.nearLandmark.replace('{landmark}', business.landmark) : null,
+    business.pincode ? p.pincodeArea.replace('{pincode}', business.pincode) : null,
+  ]
+    .filter(Boolean)
+    .join(' ');
+
+  // A short FAQ answering the exact questions people type for a specific place — its number, its
+  // area, whether it is on WhatsApp. Real answers from real fields; rendered as FAQPage JSON-LD.
+  const faqs: Array<{ q: string; a: string }> = [
+    business.primaryPhone
+      ? {
+          q: p.faqPhoneQ.replace('{name}', business.name),
+          a: p.faqPhoneA
+            .replace('{name}', business.name)
+            .replace('{phone}', formatPhone(business.primaryPhone)),
+        }
+      : null,
+    {
+      q: p.faqWhereQ.replace('{name}', business.name),
+      a: p.faqWhereA.replace('{name}', business.name).replace('{place}', placeLabel),
+    },
+    business.hours.length
+      ? { q: p.faqHoursQ.replace('{name}', business.name), a: openState.label }
+      : null,
+    business.whatsappNumber
+      ? {
+          q: p.faqWhatsappQ.replace('{name}', business.name),
+          a: p.faqWhatsappA.replace('{name}', business.name),
+        }
+      : null,
+  ].filter((item): item is { q: string; a: string } => item !== null);
 
   const jsonLd = {
     '@context': 'https://schema.org',
@@ -134,7 +216,9 @@ export default async function BusinessPage({ params }: { params: Promise<{ slug:
     address: {
       '@type': 'PostalAddress',
       streetAddress: business.addressLine ?? undefined,
-      addressLocality: business.cityName,
+      addressLocality: business.localityName ?? business.cityName,
+      addressRegion: business.cityName,
+      postalCode: business.pincode ?? undefined,
       addressCountry: 'IN',
     },
     ...(business.latitude && business.longitude
@@ -173,6 +257,32 @@ export default async function BusinessPage({ params }: { params: Promise<{ slug:
       { '@type': 'ListItem', position: 4, name: business.name },
     ],
   };
+  // FAQPage — the answers a person types for this specific place, eligible for FAQ rich results.
+  const faqLd = faqs.length
+    ? {
+        '@context': 'https://schema.org',
+        '@type': 'FAQPage',
+        mainEntity: faqs.map((item) => ({
+          '@type': 'Question',
+          name: item.q,
+          acceptedAnswer: { '@type': 'Answer', text: item.a },
+        })),
+      }
+    : null;
+
+  // ItemList of the nearby similar businesses — declares the internal links as a curated set.
+  const similarLd = similar.length
+    ? {
+        '@context': 'https://schema.org',
+        '@type': 'ItemList',
+        itemListElement: similar.map((b, index) => ({
+          '@type': 'ListItem',
+          position: index + 1,
+          url: `${SITE_URL}/b/${b.slug}`,
+          name: b.name,
+        })),
+      }
+    : null;
   const categoryBanner = premiumCategoryBanner(business.categoryName);
 
   return (
@@ -185,6 +295,18 @@ export default async function BusinessPage({ params }: { params: Promise<{ slug:
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbLd).replace(/</g, '\\u003c') }}
       />
+      {faqLd ? (
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(faqLd).replace(/</g, '\\u003c') }}
+        />
+      ) : null}
+      {similarLd ? (
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(similarLd).replace(/</g, '\\u003c') }}
+        />
+      ) : null}
 
       <section className="business-profile-hero">
         <div className="container">
@@ -200,14 +322,17 @@ export default async function BusinessPage({ params }: { params: Promise<{ slug:
 
           <div className={`business-profile-cover${categoryBanner ? ' has-banner' : ''}`}>
             {categoryBanner ? (
-              <Image
-                src={categoryBanner}
-                alt=""
-                fill
-                priority
-                sizes="(max-width: 760px) 100vw, 1440px"
-                className="business-profile-cover__banner"
-              />
+              <picture>
+                <source media="(max-width: 700px)" srcSet={categoryBanner.mobile} />
+                <Image
+                  src={categoryBanner.desktop}
+                  alt=""
+                  fill
+                  priority
+                  sizes="(max-width: 760px) 100vw, 1440px"
+                  className="business-profile-cover__banner"
+                />
+              </picture>
             ) : (
               <span className="business-profile-cover__shape" aria-hidden="true">
                 <Image
@@ -241,11 +366,15 @@ export default async function BusinessPage({ params }: { params: Promise<{ slug:
               )}
             </span>
             <div>
-              <span className="business-profile-category">{business.categoryName}</span>
+              <span className="business-profile-category">
+                {business.categoryName}
+                {business.localityName ? ` · ${business.localityName}` : ''}
+              </span>
               <h1>{business.name}</h1>
               <p>
                 <Icon name="location" /> {business.addressLine ? `${business.addressLine}, ` : ''}
-                {business.cityName}
+                {placeLabel}
+                {business.pincode ? ` — ${business.pincode}` : ''}
               </p>
               <div className="business-profile-badges">
                 {business.verificationStatus === 'VERIFIED' ? (
@@ -285,6 +414,7 @@ export default async function BusinessPage({ params }: { params: Promise<{ slug:
             <a href="#about">{p.about}</a>
             <a href="#listings">{p.listingsOffers}</a>
             <a href="#hours">{p.hoursLocation}</a>
+            {similar.length > 0 ? <a href="#nearby">{p.nearbyTab}</a> : null}
           </nav>
 
           <section className="business-profile-section" id="about">
@@ -309,6 +439,12 @@ export default async function BusinessPage({ params }: { params: Promise<{ slug:
               </p>
             ) : null}
 
+            {/* The neighbourhood placement in words — factual, unique per address, and the text
+                a crawler reads to associate this page with "{category} in {locality}". */}
+            <p className="business-profile-where">
+              <Icon name="location" /> {locationSentence}
+            </p>
+
             {/* Nobody has stood behind this record yet, and a buyer deciding whether to trust
                 the details deserves to know that before they act on them. */}
             {business.claimStatus === 'UNCLAIMED' && !business.isOwner ? (
@@ -316,26 +452,15 @@ export default async function BusinessPage({ params }: { params: Promise<{ slug:
                 {p.unclaimed} <Link href={`/b/${business.slug}/claim`}>{p.claimAction}</Link>
               </p>
             ) : null}
-            <div className="business-profile-promises">
+            {/* One reassurance line, not three identical paragraphs: the promises block used to
+                repeat the same static copy on every one of millions of pages, diluting the text
+                that is actually unique to this business. Kept the city-specific line only. */}
+            <div className="business-profile-promises business-profile-promises--slim">
               <div>
                 <Icon name="location" />
                 <span>
-                  <strong>{p.basedIn.replace('{city}', business.cityName)}</strong>
+                  <strong>{p.basedIn.replace('{city}', placeLabel)}</strong>
                   {p.servingNearby}
-                </span>
-              </div>
-              <div>
-                <Icon name="message" />
-                <span>
-                  <strong>{p.easyReach}</strong>
-                  {p.enquireSafely}
-                </span>
-              </div>
-              <div>
-                <Icon name="shield" />
-                <span>
-                  <strong>{p.communityStandards}</strong>
-                  {p.reportWrong}
                 </span>
               </div>
             </div>
@@ -377,13 +502,34 @@ export default async function BusinessPage({ params }: { params: Promise<{ slug:
               <span className="section-kicker">{p.planVisit}</span>
               <h2>{p.hoursLocation}</h2>
               <p>
-                <Icon name="location" /> {business.addressLine ?? business.cityName}
+                <Icon name="location" />{' '}
+                {[business.addressLine, business.localityName, business.cityName, business.pincode]
+                  .filter(Boolean)
+                  .join(', ')}
               </p>
-              {mapUrl ? (
-                <a href={mapUrl} target="_blank" rel="noopener noreferrer">
-                  {p.getDirections} <Icon name="arrow" />
-                </a>
-              ) : null}
+              <p className="business-profile-where">{locationSentence}</p>
+              <div className="business-profile-map-actions">
+                {directionsUrl ? (
+                  <a
+                    href={directionsUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="btn btn--primary btn--sm"
+                  >
+                    <Icon name="location" /> {p.getDirections}
+                  </a>
+                ) : null}
+                {mapUrl ? (
+                  <a
+                    href={mapUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="btn btn--ghost btn--sm"
+                  >
+                    {p.viewOnMaps} <Icon name="arrow" />
+                  </a>
+                ) : null}
+              </div>
             </div>
             {business.hours.length ? (
               <dl>
@@ -411,6 +557,62 @@ export default async function BusinessPage({ params }: { params: Promise<{ slug:
               </div>
             )}
           </section>
+
+          {faqs.length > 0 ? (
+            <section className="business-profile-section business-profile-faq" id="faq">
+              <span className="section-kicker">{p.goodToKnow}</span>
+              <h2>{p.faqHeading.replace('{name}', business.name)}</h2>
+              <dl className="business-profile-faq__list">
+                {faqs.map((item) => (
+                  <div key={item.q}>
+                    <dt>{item.q}</dt>
+                    <dd>{item.a}</dd>
+                  </div>
+                ))}
+              </dl>
+            </section>
+          ) : null}
+
+          {similar.length > 0 ? (
+            <section className="business-profile-section business-profile-similar" id="nearby">
+              <div className="business-profile-section__head">
+                <div>
+                  <span className="section-kicker">{p.exploreArea}</span>
+                  <h2>
+                    {p.similarHeading
+                      .replace('{category}', business.categoryName)
+                      .replace('{place}', placeLabel)}
+                  </h2>
+                </div>
+              </div>
+              <ul className="business-profile-similar__grid">
+                {similar.map((b) => (
+                  <li key={b.id}>
+                    <Link href={`/b/${b.slug}`}>
+                      <span className="business-profile-similar__logo" aria-hidden="true">
+                        {b.name.slice(0, 1).toUpperCase()}
+                      </span>
+                      <span className="business-profile-similar__body">
+                        <strong>{b.name}</strong>
+                        <small>
+                          {b.verificationStatus === 'VERIFIED' ? (
+                            <>
+                              <Icon name="shield" /> {p.verifiedBusiness} ·{' '}
+                            </>
+                          ) : null}
+                          {[b.categoryName, b.pincode].filter(Boolean).join(' · ')}
+                          {typeof b.distanceMeters === 'number'
+                            ? ` · ${formatDistance(b.distanceMeters, t)}`
+                            : ''}
+                        </small>
+                      </span>
+                      <Icon name="arrow" />
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          ) : null}
 
           <section className="business-profile-safety">
             <Icon name="shield" />
@@ -564,4 +766,10 @@ function formatClock(value: string): string {
 function formatPhone(value: string): string {
   const digits = value.replace(/\D/g, '').slice(-10);
   return `+91 ${digits.slice(0, 5)} ${digits.slice(5)}`;
+}
+
+function formatDistance(meters: number, t: (key: string) => string): string {
+  return meters < 1000
+    ? `${Math.round(meters)} ${t('common.m')}`
+    : `${(meters / 1000).toFixed(1)} ${t('common.km')}`;
 }

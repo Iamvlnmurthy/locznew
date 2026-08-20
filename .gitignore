@@ -52,3 +52,9 @@ next-env.d.ts
 .premium-preview.err.log
 .ui-preview-server.err.log
 .ui-preview-server.out.log
+
+# Signing secrets — upload keystore, never commit
+locz-signing-DO-NOT-SHARE/
+*.jks
+*.keystore
+key.properties

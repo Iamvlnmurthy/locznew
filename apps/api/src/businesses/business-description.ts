@@ -21,6 +21,10 @@ export interface DescribableBusiness {
   businessType?: string | null;
   localityName?: string | null;
   cityName?: string | null;
+  /** A nearby landmark from the address, when known — a fact, never invented. */
+  landmark?: string | null;
+  /** The six-digit pincode, when known. */
+  pincode?: string | null;
   /** What the shop is searched for. Real demand once the learning system has any. */
   keywords?: string[];
   /** The owner's own words. When present nothing here is used at all. */
@@ -50,6 +54,15 @@ export function describeBusiness(business: DescribableBusiness): {
   // category and city are required columns.
   const place = [business.localityName, business.cityName].filter(Boolean).join(', ');
   lines.push(place ? `${business.categoryName} in ${place}.` : `${business.categoryName}.`);
+
+  // "Located near Inorbit Mall, in the 500081 area." — both are facts from the address, so they
+  // place the business more precisely without any claim about it. Landmark first: it is how
+  // people actually navigate to a place.
+  const where = [
+    business.landmark ? `near ${business.landmark}` : null,
+    business.pincode ? `in the ${business.pincode} area` : null,
+  ].filter(Boolean);
+  if (where.length > 0) lines.push(`Located ${where.join(', ')}.`);
 
   const terms = (business.keywords ?? [])
     .map((keyword) => keyword.trim())

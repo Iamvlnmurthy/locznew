@@ -8520,6 +8520,155 @@ textarea {
   line-height: 1.35;
 }
 
+/* Slim variant: the promises block used to repeat three identical lines on every page. Reduced
+   to the one city-specific line, so it no longer needs the three-column grid. */
+.business-profile-promises--slim {
+  grid-template-columns: 1fr;
+}
+
+/* Factual "where it is" sentence — the unique, crawler-readable location text. */
+.business-profile-where {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin: 14px 0 0;
+  color: var(--locz-text-secondary);
+  font-size: 0.72rem;
+  line-height: 1.6;
+}
+
+.business-profile-where svg {
+  width: 15px;
+  height: 15px;
+  flex: 0 0 15px;
+  margin-top: 2px;
+  color: var(--locz-primary);
+}
+
+.business-profile-map-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.btn--sm {
+  padding: 8px 14px;
+  font-size: 0.64rem;
+  gap: 6px;
+}
+
+.btn--sm svg {
+  width: 14px;
+  height: 14px;
+}
+
+/* FAQ — question/answer pairs that mirror the FAQPage JSON-LD. */
+.business-profile-faq__list {
+  display: grid;
+  gap: 12px;
+  margin: 6px 0 0;
+}
+
+.business-profile-faq__list > div {
+  padding: 14px 16px;
+  border: 1px solid var(--locz-border);
+  border-radius: 14px;
+  background: var(--locz-surface-muted);
+}
+
+.business-profile-faq__list dt {
+  font-size: 0.72rem;
+  font-weight: 720;
+  color: var(--locz-text-primary);
+}
+
+.business-profile-faq__list dd {
+  margin: 5px 0 0;
+  font-size: 0.68rem;
+  line-height: 1.6;
+  color: var(--locz-text-secondary);
+}
+
+/* Similar businesses nearby — the internal-link mesh into deep pages. */
+.business-profile-similar__grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.business-profile-similar__grid a {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  padding: 12px 14px;
+  border: 1px solid var(--locz-border);
+  border-radius: 14px;
+  background: var(--locz-surface);
+  transition: border-color 0.18s ease, box-shadow 0.18s ease;
+}
+
+.business-profile-similar__grid a:hover {
+  border-color: var(--locz-primary);
+  box-shadow: var(--locz-shadow-sm);
+}
+
+.business-profile-similar__logo {
+  display: grid;
+  width: 38px;
+  height: 38px;
+  flex: 0 0 38px;
+  place-items: center;
+  border-radius: 11px;
+  background: var(--locz-primary-soft);
+  color: var(--locz-primary);
+  font-weight: 800;
+  font-size: 0.9rem;
+}
+
+.business-profile-similar__body {
+  min-width: 0;
+  flex: 1;
+}
+
+.business-profile-similar__body strong {
+  display: block;
+  overflow: hidden;
+  font-size: 0.72rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.business-profile-similar__body small {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  margin-top: 2px;
+  color: var(--locz-text-muted);
+  font-size: 0.58rem;
+}
+
+.business-profile-similar__body small svg {
+  width: 11px;
+  height: 11px;
+  color: var(--locz-primary);
+}
+
+.business-profile-similar__grid > li > a > svg:last-child {
+  width: 15px;
+  flex: 0 0 15px;
+  color: var(--locz-text-muted);
+}
+
+@media (max-width: 640px) {
+  .business-profile-similar__grid {
+    grid-template-columns: 1fr;
+  }
+}
+
 .business-profile-section__head {
   display: flex;
   margin-bottom: 18px;

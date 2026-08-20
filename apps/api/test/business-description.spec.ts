@@ -61,6 +61,29 @@ describe('describeBusiness', () => {
     expect(text).not.toContain('item6');
   });
 
+  it('places it by landmark and pincode — both facts from the address', () => {
+    const { text } = describeBusiness({
+      ...imported,
+      landmark: 'Inorbit Mall',
+      pincode: '500081',
+    });
+
+    // "near X" and "in the NNNNNN area" are drawn straight from the address, so they locate the
+    // business precisely without asserting anything about it.
+    expect(text).toContain('Located near Inorbit Mall, in the 500081 area.');
+    expect(text).not.toMatch(/\bbest\b|\bleading\b|\btrusted\b|\bpopular\b/i);
+  });
+
+  it('uses the pincode alone when there is no landmark', () => {
+    const { text } = describeBusiness({ ...imported, pincode: '500081' });
+    expect(text).toContain('Located in the 500081 area.');
+  });
+
+  it('adds no location line when neither landmark nor pincode is known', () => {
+    const { text } = describeBusiness(imported);
+    expect(text).not.toContain('Located');
+  });
+
   it('works with nothing but a category', () => {
     // Some imported rows have no locality and no vocabulary yet. A record that renders a bare
     // category is thin; one that throws is a broken page.

@@ -763,7 +763,23 @@
     "descriptionGenerated": "सार्वजनिक सूची डेटा से लिखा गया, व्यवसाय द्वारा नहीं।",
     "peopleLookFor": "लोग यहाँ खोजते हैं:",
     "unclaimed": "इस लिस्टिंग पर अभी किसी ने दावा नहीं किया है, इसलिए ये विवरण व्यवसाय द्वारा पुष्ट नहीं हैं।",
-    "claimAction": "क्या यह आपका व्यवसाय है?"
+    "claimAction": "क्या यह आपका व्यवसाय है?",
+    "viewOnMaps": "Google Maps पर देखें",
+    "goodToKnow": "जानने योग्य बातें",
+    "faqHeading": "{name} के बारे में सवाल",
+    "faqPhoneQ": "{name} का फ़ोन नंबर क्या है?",
+    "faqPhoneA": "आप {name} को {phone} पर संपर्क कर सकते हैं।",
+    "faqWhereQ": "{name} कहाँ है?",
+    "faqWhereA": "{name} {place} में है।",
+    "faqHoursQ": "क्या {name} अभी खुला है?",
+    "faqWhatsappQ": "क्या {name} WhatsApp पर है?",
+    "faqWhatsappA": "हाँ — LocZ के ज़रिए {name} को WhatsApp पर मैसेज करें।",
+    "exploreArea": "इस इलाके में और",
+    "similarHeading": "{place} में अन्य {category}",
+    "nearbyTab": "आसपास",
+    "locatedIn": "यह {place} में है।",
+    "nearLandmark": "यह {landmark} के पास है।",
+    "pincodeArea": "पिनकोड {pincode} है।"
   },
   "dashboardUi": {
     "aboutYou": "आपके बारे में",
@@ -1484,7 +1500,8 @@
     "errorHint": "थोड़ी देर बाद दोबारा कोशिश करें।",
     "close": "बंद करें",
     "seeMore": "और देखें",
-    "away": "{distance} दूर"
+    "away": "{distance} दूर",
+    "m": "मी"
   },
   "footer": {
     "aria": "फ़ुटर",

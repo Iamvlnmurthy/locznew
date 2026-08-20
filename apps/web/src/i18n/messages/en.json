@@ -795,7 +795,23 @@
     "descriptionGenerated": "Written from public listing data, not by the business.",
     "peopleLookFor": "People look here for:",
     "unclaimed": "Nobody has claimed this listing yet, so these details have not been confirmed by the business.",
-    "claimAction": "Is this your business?"
+    "claimAction": "Is this your business?",
+    "viewOnMaps": "View on Google Maps",
+    "goodToKnow": "Good to know",
+    "faqHeading": "Questions about {name}",
+    "faqPhoneQ": "What is {name}'s phone number?",
+    "faqPhoneA": "You can reach {name} on {phone}.",
+    "faqWhereQ": "Where is {name}?",
+    "faqWhereA": "{name} is in {place}.",
+    "faqHoursQ": "Is {name} open now?",
+    "faqWhatsappQ": "Is {name} on WhatsApp?",
+    "faqWhatsappA": "Yes — message {name} on WhatsApp through LocZ.",
+    "exploreArea": "More in this area",
+    "similarHeading": "Other {category} in {place}",
+    "nearbyTab": "Nearby",
+    "locatedIn": "It is in {place}.",
+    "nearLandmark": "It is near {landmark}.",
+    "pincodeArea": "The pincode is {pincode}."
   },
   "dashboardUi": {
     "aboutYou": "About you",
@@ -1547,7 +1563,8 @@
     "close": "Close",
     "seeMore": "See more",
     "km": "km",
-    "away": "{distance} away"
+    "away": "{distance} away",
+    "m": "m"
   },
   "footer": {
     "aria": "Footer",

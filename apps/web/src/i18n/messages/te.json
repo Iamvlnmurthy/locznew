@@ -763,7 +763,23 @@
     "descriptionGenerated": "ప్రజా జాబితా డేటా నుండి రాయబడింది, వ్యాపారం ద్వారా కాదు.",
     "peopleLookFor": "ప్రజలు ఇక్కడ వెతికేవి:",
     "unclaimed": "ఈ జాబితాను ఇంకా ఎవరూ క్లెయిమ్ చేయలేదు, కాబట్టి ఈ వివరాలు వ్యాపారం ద్వారా ధృవీకరించబడలేదు.",
-    "claimAction": "ఇది మీ వ్యాపారమా?"
+    "claimAction": "ఇది మీ వ్యాపారమా?",
+    "viewOnMaps": "Google Maps లో చూడండి",
+    "goodToKnow": "తెలుసుకోవాల్సినవి",
+    "faqHeading": "{name} గురించి ప్రశ్నలు",
+    "faqPhoneQ": "{name} ఫోన్ నంబర్ ఏంటి?",
+    "faqPhoneA": "{name} ని {phone} లో సంప్రదించవచ్చు.",
+    "faqWhereQ": "{name} ఎక్కడ ఉంది?",
+    "faqWhereA": "{name} {place} లో ఉంది.",
+    "faqHoursQ": "{name} ఇప్పుడు తెరిచి ఉందా?",
+    "faqWhatsappQ": "{name} WhatsApp లో ఉందా?",
+    "faqWhatsappA": "అవును — LocZ ద్వారా {name} కి WhatsApp లో మెసేజ్ చేయవచ్చు.",
+    "exploreArea": "ఈ ఏరియాలో ఇంకా",
+    "similarHeading": "{place} లో ఇతర {category}",
+    "nearbyTab": "దగ్గరలో",
+    "locatedIn": "ఇది {place} లో ఉంది.",
+    "nearLandmark": "ఇది {landmark} దగ్గర ఉంది.",
+    "pincodeArea": "పిన్‌కోడ్ {pincode}."
   },
   "dashboardUi": {
     "aboutYou": "మీ గురించి",
@@ -1484,7 +1500,8 @@
     "errorHint": "కాసేపటి తర్వాత మళ్లీ ప్రయత్నించండి.",
     "close": "మూసివేయండి",
     "seeMore": "మరిన్ని చూడండి",
-    "away": "{distance} దూరంలో"
+    "away": "{distance} దూరంలో",
+    "m": "మీ"
   },
   "footer": {
     "aria": "ఫుటర్",
