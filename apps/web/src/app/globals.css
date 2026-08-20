@@ -8553,7 +8553,8 @@ textarea {
 }
 
 .btn--sm {
-  padding: 8px 14px;
+  min-height: 44px;
+  padding: 10px 16px;
   font-size: 0.64rem;
   gap: 6px;
 }
