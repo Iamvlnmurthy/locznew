@@ -322,17 +322,14 @@ export default async function BusinessPage({ params }: { params: Promise<{ slug:
 
           <div className={`business-profile-cover${categoryBanner ? ' has-banner' : ''}`}>
             {categoryBanner ? (
-              <picture>
-                <source media="(max-width: 700px)" srcSet={categoryBanner.mobile} />
-                <Image
-                  src={categoryBanner.desktop}
-                  alt=""
-                  fill
-                  priority
-                  sizes="(max-width: 760px) 100vw, 1440px"
-                  className="business-profile-cover__banner"
-                />
-              </picture>
+              <Image
+                src={categoryBanner}
+                alt=""
+                fill
+                priority
+                sizes="(max-width: 760px) 100vw, 1440px"
+                className="business-profile-cover__banner"
+              />
             ) : (
               <span className="business-profile-cover__shape" aria-hidden="true">
                 <Image
