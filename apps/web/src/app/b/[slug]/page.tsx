@@ -284,6 +284,14 @@ export default async function BusinessPage({ params }: { params: Promise<{ slug:
       }
     : null;
   const categoryBanner = premiumBusinessBanner(business.name, business.categoryName);
+  const displayCategory = storefrontCategoryLabel(business.name, business.categoryName);
+  const categoryArtwork = premiumCategoryArtwork({
+    name: storefrontArtworkCategory(business.name, business.categoryName),
+  });
+  const storefrontDescription =
+    business.descriptionIsGenerated && displayCategory !== business.categoryName
+      ? business.description?.replace(business.categoryName, displayCategory)
+      : business.description;
 
   return (
     <div className="business-profile">
@@ -335,12 +343,7 @@ export default async function BusinessPage({ params }: { params: Promise<{ slug:
               </picture>
             ) : (
               <span className="business-profile-cover__shape" aria-hidden="true">
-                <Image
-                  src={premiumCategoryArtwork({ name: business.categoryName })}
-                  alt=""
-                  width={148}
-                  height={148}
-                />
+                <Image src={categoryArtwork} alt="" width={148} height={148} />
               </span>
             )}
             <div className="business-profile-cover__copy">
@@ -371,9 +374,9 @@ export default async function BusinessPage({ params }: { params: Promise<{ slug:
                 <span aria-hidden="true">{business.name.slice(0, 1).toUpperCase()}</span>
               )}
             </span>
-            <div>
+            <div className="business-profile-identity__content">
               <span className="business-profile-category">
-                {business.categoryName}
+                {displayCategory}
                 {business.localityName ? ` · ${business.localityName}` : ''}
               </span>
               <h1>{business.name}</h1>
@@ -398,6 +401,28 @@ export default async function BusinessPage({ params }: { params: Promise<{ slug:
                 <span>
                   {p.onLoczSince} {new Date(business.createdAt).getFullYear()}
                 </span>
+              </div>
+              <div className="business-profile-identity__actions" aria-label={p.talkBusiness}>
+                {directionsUrl ? (
+                  <a
+                    href={directionsUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="is-primary"
+                  >
+                    <Icon name="location" /> {p.getDirections}
+                  </a>
+                ) : null}
+                {business.primaryPhone ? (
+                  <a href={`tel:${business.primaryPhone}`}>
+                    <Icon name="phone" /> {p.callBusiness}
+                  </a>
+                ) : null}
+                {!business.isOwner ? (
+                  <a href="#contact">
+                    <Icon name="message" /> {p.sendEnquiry}
+                  </a>
+                ) : null}
               </div>
             </div>
             <div className="business-profile-stats">
@@ -440,9 +465,9 @@ export default async function BusinessPage({ params }: { params: Promise<{ slug:
             <h2>{p.aboutBusiness.replace('{name}', business.name)}</h2>
             <div className="business-profile-about-grid">
               <div>
-                {business.description ? (
+                {storefrontDescription ? (
                   <>
-                    <p className="business-profile-about">{business.description}</p>
+                    <p className="business-profile-about">{storefrontDescription}</p>
                     {/* A reader cannot judge a description without knowing who wrote it, and this
                         one was assembled from the record rather than written by the shop. */}
                     {business.descriptionIsGenerated ? (
@@ -502,12 +527,7 @@ export default async function BusinessPage({ params }: { params: Promise<{ slug:
             ) : (
               <div className="business-profile-empty">
                 <span className="business-profile-empty__art">
-                  <Image
-                    src={premiumCategoryArtwork({ name: business.categoryName })}
-                    alt=""
-                    width={92}
-                    height={92}
-                  />
+                  <Image src={categoryArtwork} alt="" width={92} height={92} />
                 </span>
                 <div>
                   <strong>{p.nothingPublished}</strong>
@@ -657,16 +677,11 @@ export default async function BusinessPage({ params }: { params: Promise<{ slug:
           ) : null}
         </main>
 
-        <aside className="business-profile-contact">
+        <aside className="business-profile-contact" id="contact">
           <section>
             <div className="business-profile-contact__brand">
               <span aria-hidden="true">
-                <Image
-                  src={premiumCategoryArtwork({ name: business.categoryName })}
-                  alt=""
-                  width={64}
-                  height={64}
-                />
+                <Image src={categoryArtwork} alt="" width={64} height={64} />
               </span>
               <div>
                 <strong>{business.name}</strong>
@@ -761,6 +776,32 @@ function currentIndiaDay(): number {
     weekday: 'short',
   }).format(new Date());
   return ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].indexOf(label);
+}
+
+function storefrontCategoryLabel(name: string, categoryName: string): string {
+  if (categoryName.trim().toLowerCase() !== 'other local businesses') return categoryName;
+  if (
+    /\b(badminton|cricket|football|tennis|volleyball|basketball|skating|swimming|kabaddi|athletics?|sports?|turf|stadium|arena)\b/i.test(
+      name,
+    )
+  ) {
+    return 'Sports & fitness';
+  }
+  if (/\b(gym|fitness|yoga|crossfit|zumba|aerobics|workout)\b/i.test(name)) {
+    return 'Fitness & wellness';
+  }
+  if (/\b(coaching|tuition|institute|classes|academy|iit|neet|upsc)\b/i.test(name)) {
+    return 'Education & training';
+  }
+  return categoryName;
+}
+
+function storefrontArtworkCategory(name: string, categoryName: string): string {
+  const label = storefrontCategoryLabel(name, categoryName);
+  if (label === 'Sports & fitness') return 'Sports, fitness & outdoors';
+  if (label === 'Fitness & wellness') return 'Fitness & gym equipment';
+  if (label === 'Education & training') return 'Education & training';
+  return categoryName;
 }
 
 function currentOpenState(
