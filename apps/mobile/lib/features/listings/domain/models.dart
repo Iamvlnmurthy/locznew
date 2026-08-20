@@ -653,7 +653,12 @@ class BusinessDetail {
     required this.name,
     required this.slug,
     this.categoryName,
+    this.categoryId,
     this.cityName,
+    this.cityId,
+    this.localityName,
+    this.landmark,
+    this.pincode,
     this.addressLine,
     this.description,
     this.descriptionIsGenerated = false,
@@ -673,7 +678,12 @@ class BusinessDetail {
   final String name;
   final String slug;
   final String? categoryName;
+  final String? categoryId;
   final String? cityName;
+  final String? cityId;
+  final String? localityName;
+  final String? landmark;
+  final String? pincode;
   final String? addressLine;
   final String? description;
 
@@ -706,7 +716,12 @@ class BusinessDetail {
         name: json['name'] as String? ?? '',
         slug: json['slug'] as String? ?? '',
         categoryName: json['categoryName'] as String?,
+        categoryId: json['categoryId'] as String?,
         cityName: json['cityName'] as String?,
+        cityId: json['cityId'] as String?,
+        localityName: json['localityName'] as String?,
+        landmark: json['landmark'] as String?,
+        pincode: json['pincode'] as String?,
         addressLine: json['addressLine'] as String?,
         description: json['description'] as String?,
         descriptionIsGenerated: json['descriptionIsGenerated'] as bool? ?? false,

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../../core/config/env.dart';
@@ -337,6 +338,8 @@ class _BusinessBody extends StatelessWidget {
                 ],
               ],
 
+              _SimilarNearby(business: business, strings: strings),
+
               if (!business.isClaimed) ...[
                 const SizedBox(height: LoczSpacing.x5),
                 Container(
@@ -627,6 +630,131 @@ class _SparseBusinessState extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+/// "Similar places nearby" — the same category around this business's point. Mirrors the web
+/// storefront: unique per location and a way to keep discovery inside the app rather than
+/// dead-ending on a single record. Fetches lazily and renders nothing until it has results.
+class _SimilarNearby extends ConsumerStatefulWidget {
+  const _SimilarNearby({required this.business, required this.strings});
+
+  final BusinessDetail business;
+  final Strings strings;
+
+  @override
+  ConsumerState<_SimilarNearby> createState() => _SimilarNearbyState();
+}
+
+class _SimilarNearbyState extends ConsumerState<_SimilarNearby> {
+  Future<List<BusinessSummary>>? _future;
+
+  @override
+  void initState() {
+    super.initState();
+    final b = widget.business;
+    final categoryId = b.categoryId;
+    if (categoryId == null || categoryId.isEmpty) return;
+    final hasGeo = b.latitude != null && b.longitude != null;
+    if (!hasGeo && (b.pincode == null || b.pincode!.isEmpty)) return;
+    _future = ref
+        .read(listingRepositoryProvider)
+        .nearbyBusinesses(
+          latitude: b.latitude,
+          longitude: b.longitude,
+          categoryId: categoryId,
+          pincode: hasGeo ? null : b.pincode,
+          radiusKm: 10,
+          limit: 9,
+        )
+        .then((r) => r.items.where((x) => x.slug != b.slug).take(8).toList());
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final future = _future;
+    if (future == null) return const SizedBox.shrink();
+    final theme = Theme.of(context);
+
+    return FutureBuilder<List<BusinessSummary>>(
+      future: future,
+      builder: (context, snapshot) {
+        final items = snapshot.data ?? const <BusinessSummary>[];
+        if (snapshot.connectionState != ConnectionState.done || items.isEmpty) {
+          return const SizedBox.shrink();
+        }
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const SizedBox(height: LoczSpacing.x6),
+            _SectionLabel(text: widget.strings('business.similarTitle')),
+            const SizedBox(height: LoczSpacing.x3),
+            for (final b in items)
+              Padding(
+                padding: const EdgeInsets.only(bottom: LoczSpacing.x2),
+                child: Material(
+                  color: theme.colorScheme.surfaceContainer,
+                  borderRadius: BorderRadius.circular(LoczRadius.md),
+                  child: InkWell(
+                    borderRadius: BorderRadius.circular(LoczRadius.md),
+                    onTap: () => context.push('/b/${b.slug}'),
+                    child: Padding(
+                      padding: const EdgeInsets.all(LoczSpacing.x3),
+                      child: Row(
+                        children: [
+                          Container(
+                            width: 42,
+                            height: 42,
+                            alignment: Alignment.center,
+                            decoration: BoxDecoration(
+                              color: theme.colorScheme.primaryContainer,
+                              borderRadius: BorderRadius.circular(LoczRadius.sm),
+                            ),
+                            child: Text(
+                              b.name.isNotEmpty ? b.name.substring(0, 1).toUpperCase() : '?',
+                              style: theme.textTheme.titleMedium
+                                  ?.copyWith(color: theme.colorScheme.primary),
+                            ),
+                          ),
+                          const SizedBox(width: LoczSpacing.x3),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  b.name,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: theme.textTheme.titleSmall,
+                                ),
+                                const SizedBox(height: 2),
+                                Text(
+                                  [
+                                    if (b.isVerified) widget.strings('business.verified'),
+                                    b.subtitle,
+                                  ].where((s) => s.trim().isNotEmpty).join(' · '),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: theme.textTheme.labelSmall
+                                      ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+                                ),
+                              ],
+                            ),
+                          ),
+                          Icon(
+                            Icons.chevron_right_rounded,
+                            color: theme.colorScheme.onSurfaceVariant,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+          ],
+        );
+      },
     );
   }
 }
