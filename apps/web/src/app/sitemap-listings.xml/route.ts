@@ -24,7 +24,7 @@ const loadSlugs = unstable_cache(
   async (): Promise<Slug[]> =>
     (await apiSafe<{ slugs: Slug[] }>('/listings/sitemap-slugs?limit=50000', { revalidate }))
       ?.slugs ?? [],
-  ['listing-sitemap-slugs'],
+  ['listing-sitemap-slugs-v2'],
   { revalidate: 3600 },
 );
 
