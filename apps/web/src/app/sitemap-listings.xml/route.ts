@@ -9,6 +9,10 @@ import { SITE_URL, apiSafe } from '@/lib/api';
 //
 // Ads change often, so this revalidates hourly (vs a day for the durable business sitemap). A
 // single file for now; if the active set ever nears 50k it must be sharded like sitemap-businesses.
+// Render per request (the underlying data is still cached for an hour by unstable_cache below).
+// Without this the route prerenders once at build time, when the API may be unreachable, and
+// would then serve an empty sitemap until the ISR window elapsed.
+export const dynamic = 'force-dynamic';
 export const revalidate = 3600;
 
 interface Slug {
