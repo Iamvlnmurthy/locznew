@@ -274,6 +274,42 @@ export function premiumCategoryBanner(name?: string | null): PremiumCategoryBann
 // match (or the target banner is missing) it falls back to the plain category banner. Every `key`
 // here is a registered entry in `categoryBanners`.
 const SUBTYPE_OVERRIDES: Readonly<Record<string, ReadonlyArray<{ test: RegExp; key: string }>>> = {
+  // "Other local businesses" is the import's catch-all — a badminton academy, a gym, a coaching
+  // centre and a jeweller all land here, so the category banner is meaningless. This is where name
+  // detection matters most: read the actual business type from the name and pick a fitting banner.
+  // Ordered by specificity — a named sport wins over the generic "academy".
+  'other local businesses': [
+    {
+      test: /\b(badminton|cricket|football|tennis|volleyball|basketball|skating|swimming|kabaddi|athletics?|sports?|turf|stadium|arena)\b/i,
+      key: 'sports, fitness & outdoors',
+    },
+    {
+      test: /\b(gym|fitness|yoga|crossfit|zumba|aerobics|workout)\b/i,
+      key: 'fitness & gym equipment',
+    },
+    {
+      test: /\b(coaching|tuition|institute|classes|academy|iit|neet|upsc)\b/i,
+      key: 'coaching-competitive',
+    },
+    { test: /\b(computers?|software)\b/i, key: 'computer-training' },
+    { test: /\b(music|dance|karate|drawing|abacus)\b/i, key: 'music-dance-arts' },
+    { test: /\b(dental|dentist)\b/i, key: 'dental-clinic' },
+    { test: /\b(clinic|hospital|nursing home|diagnostic|scan)\b/i, key: 'hospitals & clinics' },
+    { test: /\b(pharmacy|medical|medicals|chemist)\b/i, key: 'medical stores & pharmacies' },
+    { test: /\b(salons?|parlou?r|beauty|spa)\b/i, key: 'salons & spas' },
+    { test: /\b(travels?|tours?|holidays?)\b/i, key: 'travel-agency' },
+    { test: /\b(caterers?|catering)\b/i, key: 'catering' },
+    { test: /\b(photo\w*|studio)\b/i, key: 'photography-studio' },
+    { test: /\b(real ?estate|properties|builders?|realtor)\b/i, key: 'real-estate' },
+    { test: /\b(mobiles?|cellphones?)\b/i, key: 'mobile stores' },
+    { test: /\b(jewell?ers?|jewell?ery)\b/i, key: 'jewellery stores' },
+    { test: /\b(furnitures?)\b/i, key: 'furniture stores' },
+    { test: /\b(hardware|electricals?)\b/i, key: 'hardware stores' },
+    { test: /\b(hotels?|lodge|restaurants?|biryani|tiffin|dhaba)\b/i, key: 'restaurants & food' },
+    { test: /\b(cafe|café|coffee)\b/i, key: 'cafe-coffee' },
+    { test: /\b(bakery|bakers|cakes?)\b/i, key: 'cakes & pastries' },
+    { test: /\b(sweets?|mithai)\b/i, key: 'sweets & mithai' },
+  ],
   'restaurants & food': [
     { test: /\b(dosas?|tiffins?|idlis?|vadas?|udupi|breakfast)\b/i, key: 'tiffin centres' },
     { test: /\b(biryani|biriyani|dum)\b/i, key: 'biryani' },
