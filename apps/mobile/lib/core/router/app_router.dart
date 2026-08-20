@@ -334,9 +334,9 @@ class _LoczBottomBar extends StatelessWidget {
 
     return SafeArea(
       top: false,
-      minimum: const EdgeInsets.fromLTRB(8, 3, 8, 6),
+      minimum: const EdgeInsets.fromLTRB(10, 4, 10, 8),
       child: Container(
-        height: 60,
+        height: 66,
         decoration: BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.topLeft,
@@ -349,20 +349,20 @@ class _LoczBottomBar extends StatelessWidget {
               ),
             ],
           ),
-          borderRadius: BorderRadius.circular(24),
+          borderRadius: BorderRadius.circular(25),
           border: Border.all(color: theme.colorScheme.outlineVariant),
           boxShadow: [
             BoxShadow(
               color: theme.colorScheme.shadow.withValues(
                 alpha: theme.brightness == Brightness.dark ? 0.30 : 0.10,
               ),
-              blurRadius: 28,
-              offset: const Offset(0, 9),
+              blurRadius: 32,
+              offset: const Offset(0, 11),
             ),
           ],
         ),
         child: ClipRRect(
-          borderRadius: BorderRadius.circular(24),
+          borderRadius: BorderRadius.circular(25),
           child: Row(
             children: [
               _BottomDestination(
@@ -384,13 +384,13 @@ class _LoczBottomBar extends StatelessWidget {
                   child: LoczPressable(
                     onTap: onPost,
                     semanticLabel: strings('nav.post'),
-                    borderRadius: BorderRadius.circular(14),
+                    borderRadius: BorderRadius.circular(16),
                     child: Container(
-                      width: 40,
-                      height: 40,
+                      width: 46,
+                      height: 46,
                       decoration: BoxDecoration(
                         color: theme.colorScheme.primary,
-                        borderRadius: BorderRadius.circular(14),
+                        borderRadius: BorderRadius.circular(16),
                         border: Border.all(
                           color: theme.colorScheme.surface,
                           width: 2,
@@ -398,14 +398,14 @@ class _LoczBottomBar extends StatelessWidget {
                         boxShadow: [
                           BoxShadow(
                             color: theme.colorScheme.primary.withValues(alpha: 0.22),
-                            blurRadius: 17,
-                            offset: const Offset(0, 6),
+                            blurRadius: 20,
+                            offset: const Offset(0, 7),
                           ),
                         ],
                       ),
                       child: Icon(
                         Icons.add_rounded,
-                        size: 22,
+                        size: 25,
                         color: theme.colorScheme.onPrimary,
                       ),
                     ),
@@ -471,8 +471,8 @@ class _BottomDestination extends StatelessWidget {
               AnimatedContainer(
                 duration: LoczMotion.standard,
                 curve: LoczMotion.enterCurve,
-                width: selected ? 36 : 28,
-                height: 23,
+                width: selected ? 40 : 30,
+                height: 26,
                 decoration: BoxDecoration(
                   color: selected ? theme.colorScheme.primaryContainer : Colors.transparent,
                   borderRadius: BorderRadius.circular(LoczRadius.full),
@@ -491,7 +491,7 @@ class _BottomDestination extends StatelessWidget {
                     child: Icon(
                       selected ? selectedIcon : icon,
                       key: ValueKey(selected),
-                      size: 19,
+                      size: 20,
                       color: color,
                     ),
                   ),
@@ -504,7 +504,7 @@ class _BottomDestination extends StatelessWidget {
                 overflow: TextOverflow.fade,
                 style: TextStyle(
                   color: color,
-                  fontSize: 9.5,
+                  fontSize: 10,
                   fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
                 ),
               ),

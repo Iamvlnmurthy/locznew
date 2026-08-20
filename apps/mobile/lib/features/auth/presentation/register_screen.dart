@@ -114,200 +114,210 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
             constraints: const BoxConstraints(maxWidth: 440),
             child: Form(
               key: _formKey,
-              child: ListView(
+              child: SingleChildScrollView(
                 padding: const EdgeInsets.fromLTRB(
                   LoczSpacing.x5,
                   LoczSpacing.x2,
                   LoczSpacing.x5,
                   LoczSpacing.x6,
                 ),
-                children: [
-                  Row(
-                    children: [
-                      Image.asset(
-                        'assets/brand/locz-mark.png',
-                        width: 38,
-                        height: 38,
-                        semanticLabel: strings('register.brandLabel'),
-                      ),
-                      const SizedBox(width: 10),
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'LocZ',
-                            style: theme.textTheme.titleMedium?.copyWith(
-                              fontWeight: FontWeight.w800,
-                              letterSpacing: -0.4,
-                            ),
-                          ),
-                          Text(
-                            strings('register.freeAccount'),
-                            style: theme.textTheme.labelSmall,
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: LoczSpacing.x6),
-                  Text(
-                    strings('register.title'),
-                    style: theme.textTheme.headlineSmall,
-                  ),
-                  const SizedBox(height: LoczSpacing.x2),
-                  Text(
-                    strings('register.subtitle'),
-                    style: theme.textTheme.bodyMedium,
-                  ),
-                  const SizedBox(height: LoczSpacing.x6),
-                  if (_error != null)
-                    Container(
-                      padding: const EdgeInsets.all(LoczSpacing.x3),
-                      margin: const EdgeInsets.only(bottom: LoczSpacing.x4),
-                      decoration: BoxDecoration(
-                        color: theme.colorScheme.errorContainer,
-                        borderRadius: BorderRadius.circular(LoczRadius.md),
-                      ),
-                      child: Text(
-                        _error!,
-                        key: const Key('register-error'),
-                        style: TextStyle(color: theme.colorScheme.onErrorContainer),
-                      ),
-                    ),
-                  AutofillGroup(
-                    child: Column(
+                child: Column(
+                  children: [
+                    Row(
                       children: [
-                        TextFormField(
-                          key: const Key('register-name'),
-                          controller: _nameController,
-                          enabled: !_busy,
-                          textCapitalization: TextCapitalization.words,
-                          textInputAction: TextInputAction.next,
-                          autofillHints: const [AutofillHints.name],
-                          decoration: InputDecoration(
-                            labelText: strings('register.name'),
-                            helperText: strings('register.nameHint'),
-                          ),
-                          validator: _validName,
+                        Image.asset(
+                          'assets/brand/locz-mark.png',
+                          width: 38,
+                          height: 38,
+                          semanticLabel: strings('register.brandLabel'),
                         ),
-                        const SizedBox(height: LoczSpacing.x4),
-                        TextFormField(
-                          key: const Key('register-phone'),
-                          controller: _phoneController,
-                          enabled: !_busy,
-                          keyboardType: TextInputType.phone,
-                          textInputAction: TextInputAction.next,
-                          autofillHints: const [AutofillHints.telephoneNumberNational],
-                          maxLength: 10,
-                          inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                          decoration: InputDecoration(
-                            labelText: strings('auth.phone'),
-                            prefixText: '+91 ',
-                            helperText: strings('register.phoneHint'),
-                            counterText: '',
-                          ),
-                          validator: _validPhone,
-                        ),
-                        const SizedBox(height: LoczSpacing.x4),
-                        TextFormField(
-                          key: const Key('register-password'),
-                          controller: _passwordController,
-                          enabled: !_busy,
-                          obscureText: !_showPassword,
-                          textInputAction: TextInputAction.next,
-                          autofillHints: const [AutofillHints.newPassword],
-                          decoration: InputDecoration(
-                            labelText: strings('register.password'),
-                            helperText: strings('register.passwordHint'),
-                            suffixIcon: IconButton(
-                              tooltip: strings(
-                                _showPassword ? 'register.hidePassword' : 'register.showPassword',
-                              ),
-                              onPressed: _busy
-                                  ? null
-                                  : () => setState(() => _showPassword = !_showPassword),
-                              icon: Icon(
-                                _showPassword
-                                    ? Icons.visibility_off_outlined
-                                    : Icons.visibility_outlined,
+                        const SizedBox(width: 10),
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'LocZ',
+                              style: theme.textTheme.titleMedium?.copyWith(
+                                fontWeight: FontWeight.w800,
+                                letterSpacing: -0.4,
                               ),
                             ),
-                          ),
-                          validator: _validPassword,
-                        ),
-                        const SizedBox(height: LoczSpacing.x4),
-                        TextFormField(
-                          key: const Key('register-confirm'),
-                          controller: _confirmController,
-                          enabled: !_busy,
-                          obscureText: !_showPassword,
-                          textInputAction: TextInputAction.done,
-                          autofillHints: const [AutofillHints.newPassword],
-                          decoration: InputDecoration(
-                            labelText: strings('register.confirmPassword'),
-                          ),
-                          validator: _validConfirmation,
-                          onFieldSubmitted: (_) => _busy ? null : _submit(),
+                            Text(
+                              strings('register.freeAccount'),
+                              style: theme.textTheme.labelSmall,
+                            ),
+                          ],
                         ),
                       ],
                     ),
-                  ),
-                  const SizedBox(height: LoczSpacing.x5),
-                  FilledButton(
-                    key: const Key('register-submit'),
-                    onPressed: _busy ? null : _submit,
-                    child: _busy
-                        ? const SizedBox(
-                            width: 20,
-                            height: 20,
-                            child: CircularProgressIndicator(strokeWidth: 2),
-                          )
-                        : Text(strings('register.submit')),
-                  ),
-                  const SizedBox(height: LoczSpacing.x3),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Flexible(
+                    const SizedBox(height: LoczSpacing.x6),
+                    Text(
+                      strings('register.title'),
+                      style: theme.textTheme.headlineSmall,
+                    ),
+                    const SizedBox(height: LoczSpacing.x2),
+                    Text(
+                      strings('register.subtitle'),
+                      style: theme.textTheme.bodyMedium,
+                    ),
+                    const SizedBox(height: LoczSpacing.x6),
+                    if (_error != null)
+                      Container(
+                        padding: const EdgeInsets.all(LoczSpacing.x3),
+                        margin: const EdgeInsets.only(bottom: LoczSpacing.x4),
+                        decoration: BoxDecoration(
+                          color: theme.colorScheme.errorContainer,
+                          borderRadius: BorderRadius.circular(LoczRadius.md),
+                        ),
                         child: Text(
-                          strings('register.haveAccount'),
-                          style: theme.textTheme.bodySmall,
+                          _error!,
+                          key: const Key('register-error'),
+                          style: TextStyle(
+                            color: theme.colorScheme.onErrorContainer,
+                          ),
                         ),
                       ),
-                      TextButton(
-                        onPressed: _busy
-                            ? null
-                            : () => context.go(
-                                  Uri(
-                                    path: '/signin',
-                                    queryParameters: {
-                                      if (widget.redirectTo != null) 'next': widget.redirectTo,
-                                    },
-                                  ).toString(),
+                    AutofillGroup(
+                      child: Column(
+                        children: [
+                          TextFormField(
+                            key: const Key('register-name'),
+                            controller: _nameController,
+                            enabled: !_busy,
+                            textCapitalization: TextCapitalization.words,
+                            textInputAction: TextInputAction.next,
+                            autofillHints: const [AutofillHints.name],
+                            decoration: InputDecoration(
+                              labelText: strings('register.name'),
+                              helperText: strings('register.nameHint'),
+                            ),
+                            validator: _validName,
+                          ),
+                          const SizedBox(height: LoczSpacing.x4),
+                          TextFormField(
+                            key: const Key('register-phone'),
+                            controller: _phoneController,
+                            enabled: !_busy,
+                            keyboardType: TextInputType.phone,
+                            textInputAction: TextInputAction.next,
+                            autofillHints: const [
+                              AutofillHints.telephoneNumberNational,
+                            ],
+                            maxLength: 10,
+                            inputFormatters: [
+                              FilteringTextInputFormatter.digitsOnly,
+                            ],
+                            decoration: InputDecoration(
+                              labelText: strings('auth.phone'),
+                              prefixText: '+91 ',
+                              helperText: strings('register.phoneHint'),
+                              counterText: '',
+                            ),
+                            validator: _validPhone,
+                          ),
+                          const SizedBox(height: LoczSpacing.x4),
+                          TextFormField(
+                            key: const Key('register-password'),
+                            controller: _passwordController,
+                            enabled: !_busy,
+                            obscureText: !_showPassword,
+                            textInputAction: TextInputAction.next,
+                            autofillHints: const [AutofillHints.newPassword],
+                            decoration: InputDecoration(
+                              labelText: strings('register.password'),
+                              helperText: strings('register.passwordHint'),
+                              suffixIcon: IconButton(
+                                tooltip: strings(
+                                  _showPassword ? 'register.hidePassword' : 'register.showPassword',
                                 ),
-                        child: Text(strings('nav.signIn')),
+                                onPressed: _busy
+                                    ? null
+                                    : () => setState(
+                                          () => _showPassword = !_showPassword,
+                                        ),
+                                icon: Icon(
+                                  _showPassword
+                                      ? Icons.visibility_off_outlined
+                                      : Icons.visibility_outlined,
+                                ),
+                              ),
+                            ),
+                            validator: _validPassword,
+                          ),
+                          const SizedBox(height: LoczSpacing.x4),
+                          TextFormField(
+                            key: const Key('register-confirm'),
+                            controller: _confirmController,
+                            enabled: !_busy,
+                            obscureText: !_showPassword,
+                            textInputAction: TextInputAction.done,
+                            autofillHints: const [AutofillHints.newPassword],
+                            decoration: InputDecoration(
+                              labelText: strings('register.confirmPassword'),
+                            ),
+                            validator: _validConfirmation,
+                            onFieldSubmitted: (_) => _busy ? null : _submit(),
+                          ),
+                        ],
                       ),
-                    ],
-                  ),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(
-                        Icons.verified_user_outlined,
-                        size: 15,
-                        color: theme.colorScheme.primary,
-                      ),
-                      const SizedBox(width: 6),
-                      Flexible(
-                        child: Text(
-                          strings('register.privacy'),
-                          style: theme.textTheme.labelSmall,
-                          textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: LoczSpacing.x5),
+                    FilledButton(
+                      key: const Key('register-submit'),
+                      onPressed: _busy ? null : _submit,
+                      child: _busy
+                          ? const SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            )
+                          : Text(strings('register.submit')),
+                    ),
+                    const SizedBox(height: LoczSpacing.x3),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Flexible(
+                          child: Text(
+                            strings('register.haveAccount'),
+                            style: theme.textTheme.bodySmall,
+                          ),
                         ),
-                      ),
-                    ],
-                  ),
-                ],
+                        TextButton(
+                          onPressed: _busy
+                              ? null
+                              : () => context.go(
+                                    Uri(
+                                      path: '/signin',
+                                      queryParameters: {
+                                        if (widget.redirectTo != null) 'next': widget.redirectTo,
+                                      },
+                                    ).toString(),
+                                  ),
+                          child: Text(strings('nav.signIn')),
+                        ),
+                      ],
+                    ),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          Icons.verified_user_outlined,
+                          size: 15,
+                          color: theme.colorScheme.primary,
+                        ),
+                        const SizedBox(width: 6),
+                        Flexible(
+                          child: Text(
+                            strings('register.privacy'),
+                            style: theme.textTheme.labelSmall,
+                            textAlign: TextAlign.center,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
               ),
             ),
           ),

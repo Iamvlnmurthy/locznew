@@ -23,49 +23,95 @@ class AccountScreen extends ConsumerWidget {
 
     if (!auth.isSignedIn) {
       return Scaffold(
-        appBar: AppBar(
-          toolbarHeight: 56,
-          scrolledUnderElevation: 0,
-          title: Text(strings('nav.account')),
-        ),
-        body: ListView(
-          padding: const EdgeInsets.all(LoczSpacing.x4),
-          children: [
-            _SignedOutAccountHero(
-              title: strings('nav.signIn'),
-              hint: strings('account.signInHint'),
-              onPressed: () => context.push('/signin?next=/account'),
-            ),
-            const SizedBox(height: LoczSpacing.x3),
-            Card(
-              child: Column(
-                children: [
-                  const DeviceLockTile(),
-                  const Divider(),
-                  ListTile(
-                    dense: true,
-                    leading: const Icon(Icons.brightness_6_outlined),
-                    title: Text(strings('account.appearance')),
-                    trailing: const Icon(Icons.chevron_right_rounded),
-                    onTap: () => _showAppearance(context),
-                  ),
-                  const Divider(),
-                  ListTile(
-                    dense: true,
-                    leading: const Icon(Icons.translate_rounded),
-                    title: Text(strings('account.language')),
-                    trailing: const Icon(Icons.chevron_right_rounded),
-                    onTap: () => showModalBottomSheet<void>(
-                      context: context,
-                      builder: (_) => const SafeArea(
-                        child: _LanguageSelector(),
+        body: SafeArea(
+          bottom: false,
+          child: ListView(
+            padding: const EdgeInsets.fromLTRB(12, 12, 12, 32),
+            children: [
+              Padding(
+                padding: const EdgeInsets.fromLTRB(6, 2, 6, 14),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        strings('nav.account'),
+                        style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                              fontWeight: FontWeight.w800,
+                              letterSpacing: -.55,
+                            ),
                       ),
                     ),
-                  ),
-                ],
+                    Container(
+                      width: 40,
+                      height: 40,
+                      decoration: BoxDecoration(
+                        color: Theme.of(context).colorScheme.primaryContainer,
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                      child: Icon(
+                        Icons.person_outline_rounded,
+                        color: Theme.of(context).colorScheme.primary,
+                      ),
+                    ),
+                  ],
+                ),
               ),
-            ),
-          ],
+              _SignedOutAccountHero(
+                title: strings('nav.signIn'),
+                hint: strings('account.signInHint'),
+                onPressed: () => context.push('/signin?next=/account'),
+              ),
+              const SizedBox(height: 12),
+              _SignedOutBenefits(
+                saved: strings('nav.saved'),
+                chats: strings('nav.chats'),
+                alerts: strings('nav.alerts'),
+              ),
+              const SizedBox(height: 12),
+              Material(
+                color: Theme.of(context).colorScheme.surface,
+                elevation: 2,
+                shadowColor: Theme.of(context).colorScheme.shadow.withValues(alpha: .12),
+                clipBehavior: Clip.antiAlias,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(22),
+                  side: BorderSide(
+                    color: Theme.of(context).colorScheme.outlineVariant,
+                  ),
+                ),
+                child: Column(
+                  children: [
+                    const DeviceLockTile(),
+                    const Divider(indent: 56),
+                    ListTile(
+                      leading: _AccountActionIcon(
+                        icon: Icons.brightness_6_outlined,
+                        color: Theme.of(context).colorScheme.secondary,
+                      ),
+                      title: Text(strings('account.appearance')),
+                      trailing: const Icon(Icons.chevron_right_rounded),
+                      onTap: () => _showAppearance(context),
+                    ),
+                    const Divider(indent: 56),
+                    ListTile(
+                      leading: _AccountActionIcon(
+                        icon: Icons.translate_rounded,
+                        color: Theme.of(context).colorScheme.tertiary,
+                      ),
+                      title: Text(strings('account.language')),
+                      trailing: const Icon(Icons.chevron_right_rounded),
+                      onTap: () => showModalBottomSheet<void>(
+                        context: context,
+                        builder: (_) => const SafeArea(
+                          child: _LanguageSelector(),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
         ),
       );
     }
@@ -184,6 +230,84 @@ class AccountScreen extends ConsumerWidget {
       ),
     );
   }
+}
+
+class _SignedOutBenefits extends StatelessWidget {
+  const _SignedOutBenefits({
+    required this.saved,
+    required this.chats,
+    required this.alerts,
+  });
+
+  final String saved;
+  final String chats;
+  final String alerts;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final items = <(IconData, String, Color)>[
+      (Icons.favorite_border_rounded, saved, const Color(0xFFB05E4D)),
+      (Icons.chat_bubble_outline_rounded, chats, theme.colorScheme.primary),
+      (Icons.notifications_none_rounded, alerts, const Color(0xFFB17827)),
+    ];
+    return Row(
+      children: [
+        for (var index = 0; index < items.length; index++) ...[
+          if (index > 0) const SizedBox(width: 8),
+          Expanded(
+            child: Container(
+              height: 82,
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: Color.alphaBlend(
+                  items[index].$3.withValues(alpha: .055),
+                  theme.colorScheme.surface,
+                ),
+                borderRadius: BorderRadius.circular(19),
+                border: Border.all(color: items[index].$3.withValues(alpha: .11)),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(items[index].$1, size: 21, color: items[index].$3),
+                  const SizedBox(height: 8),
+                  Text(
+                    items[index].$2,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: theme.textTheme.labelMedium?.copyWith(
+                      color: theme.colorScheme.onSurface,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ],
+    );
+  }
+}
+
+class _AccountActionIcon extends StatelessWidget {
+  const _AccountActionIcon({required this.icon, required this.color});
+
+  final IconData icon;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) => Container(
+        width: 38,
+        height: 38,
+        decoration: BoxDecoration(
+          color: color.withValues(alpha: .09),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Icon(icon, size: 19, color: color),
+      );
 }
 
 class _SignedOutAccountHero extends StatelessWidget {

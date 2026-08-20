@@ -96,13 +96,33 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     ],
                   ),
                 ),
-                SliverToBoxAdapter(
-                  child: _AroundYouSection(
-                    selectedArea: null,
-                    onSelect: _selectArea,
+                SliverPadding(
+                  padding: const EdgeInsets.fromLTRB(10, 0, 10, 0),
+                  sliver: SliverToBoxAdapter(
+                    child: Container(
+                      padding: const EdgeInsets.fromLTRB(6, 4, 6, 14),
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(28),
+                        gradient: LinearGradient(
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                          colors: [
+                            Theme.of(context).colorScheme.surface.withValues(alpha: .82),
+                            Theme.of(context).colorScheme.primaryContainer.withValues(alpha: .34),
+                          ],
+                        ),
+                        border: Border.all(
+                          color: Theme.of(context).colorScheme.primary.withValues(alpha: .08),
+                        ),
+                      ),
+                      child: _AroundYouSection(
+                        selectedArea: null,
+                        onSelect: _selectArea,
+                      ),
+                    ),
                   ),
                 ),
-                const SliverToBoxAdapter(child: SizedBox(height: 20)),
+                const SliverToBoxAdapter(child: SizedBox(height: 28)),
               ],
             );
           },
@@ -286,14 +306,42 @@ class _HomeAppBar extends StatelessWidget implements PreferredSizeWidget {
       toolbarHeight: 60,
       title: Row(
         children: [
-          Image.asset(
-            'assets/brand/locz-mark.png',
-            key: const Key('home-brand-mark'),
-            width: 32,
-            height: 38,
-            fit: BoxFit.contain,
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Image.asset(
+                'assets/brand/locz-mark.png',
+                key: const Key('home-brand-mark'),
+                width: 25,
+                height: 32,
+                fit: BoxFit.contain,
+              ),
+              const SizedBox(width: 4),
+              Text.rich(
+                TextSpan(
+                  children: [
+                    TextSpan(
+                      text: 'Loc',
+                      style: theme.textTheme.titleLarge?.copyWith(
+                        color: theme.colorScheme.primary,
+                        fontWeight: FontWeight.w900,
+                        letterSpacing: -0.9,
+                      ),
+                    ),
+                    TextSpan(
+                      text: 'Z',
+                      style: theme.textTheme.titleLarge?.copyWith(
+                        color: const Color(0xFFEF6851),
+                        fontWeight: FontWeight.w900,
+                        letterSpacing: -0.9,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
           ),
-          const SizedBox(width: 8),
+          const SizedBox(width: 10),
           Flexible(
             child: Semantics(
               button: true,
@@ -1142,15 +1190,15 @@ class _AroundYouSectionState extends ConsumerState<_AroundYouSection> {
     ];
 
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+      padding: const EdgeInsets.fromLTRB(8, 10, 8, 0),
       child: GridView.builder(
         shrinkWrap: true,
         physics: const NeverScrollableScrollPhysics(),
         gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-          crossAxisCount: 4,
-          mainAxisSpacing: 10,
-          crossAxisSpacing: 10,
-          childAspectRatio: 0.68,
+          crossAxisCount: 2,
+          mainAxisSpacing: 9,
+          crossAxisSpacing: 9,
+          childAspectRatio: 2.12,
         ),
         itemCount: visibleAreas.length,
         itemBuilder: (context, index) {
@@ -1302,62 +1350,90 @@ class _AreaChip extends StatelessWidget {
     final scheme = theme.colorScheme;
     return Material(
       color: selected ? scheme.primaryContainer : scheme.surface,
-      borderRadius: BorderRadius.circular(18),
+      borderRadius: BorderRadius.circular(20),
       child: InkWell(
-        borderRadius: BorderRadius.circular(18),
+        borderRadius: BorderRadius.circular(20),
         onTap: onTap,
         child: AnimatedContainer(
           duration: LoczMotion.quick,
-          padding: const EdgeInsets.fromLTRB(6, 7, 6, 6),
+          padding: const EdgeInsets.fromLTRB(10, 8, 9, 8),
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(18),
+            borderRadius: BorderRadius.circular(20),
             border: Border.all(
               color: selected ? scheme.primary : scheme.outlineVariant,
               width: selected ? 1.5 : 1,
             ),
-            boxShadow: selected
-                ? [
-                    BoxShadow(
-                      color: scheme.primary.withValues(alpha: 0.14),
-                      blurRadius: 16,
-                      offset: const Offset(0, 6),
-                    ),
-                  ]
-                : null,
+            gradient: selected
+                ? null
+                : LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [
+                      scheme.surface,
+                      Color.alphaBlend(
+                        scheme.primary.withValues(alpha: .035),
+                        scheme.surface,
+                      ),
+                    ],
+                  ),
+            boxShadow: [
+              BoxShadow(
+                color: scheme.shadow.withValues(alpha: selected ? .11 : .055),
+                blurRadius: selected ? 18 : 12,
+                offset: const Offset(0, 6),
+              ),
+            ],
           ),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
+          child: Row(
             children: [
               Container(
-                width: 38,
-                height: 38,
+                width: 48,
+                height: 48,
                 decoration: BoxDecoration(
                   color: scheme.primary.withValues(alpha: selected ? 0.14 : 0.08),
-                  borderRadius: BorderRadius.circular(13),
+                  borderRadius: BorderRadius.circular(15),
                 ),
                 child: Padding(
-                  padding: const EdgeInsets.all(3),
+                  padding: const EdgeInsets.all(4),
                   child: Image.asset(asset, fit: BoxFit.contain),
                 ),
               ),
-              const SizedBox(height: 5),
-              Text(
-                label,
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-                textAlign: TextAlign.center,
-                softWrap: true,
-                style: theme.textTheme.labelMedium?.copyWith(fontWeight: FontWeight.w700),
-              ),
-              if (count.isNotEmpty)
-                Text(
-                  count,
-                  maxLines: 1,
-                  style: theme.textTheme.labelSmall?.copyWith(
-                    color: scheme.onSurfaceVariant,
-                    fontSize: 10,
-                  ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      label,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: theme.textTheme.labelLarge?.copyWith(
+                        color: scheme.onSurface,
+                        fontWeight: FontWeight.w700,
+                        height: 1.15,
+                      ),
+                    ),
+                    if (count.isNotEmpty) ...[
+                      const SizedBox(height: 3),
+                      Text(
+                        count,
+                        maxLines: 1,
+                        style: theme.textTheme.labelSmall?.copyWith(
+                          color: scheme.primary,
+                          fontSize: 10,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ],
+                  ],
                 ),
+              ),
+              Icon(
+                Icons.arrow_forward_rounded,
+                size: 14,
+                color: scheme.onSurfaceVariant.withValues(alpha: .7),
+              ),
             ],
           ),
         ),
