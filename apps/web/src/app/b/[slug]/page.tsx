@@ -358,11 +358,17 @@ export default async function BusinessPage({ params }: { params: Promise<{ slug:
           </div>
 
           <div className="business-profile-identity">
-            <span className="business-profile-logo">
+            <span
+              className={`business-profile-logo ${
+                business.logoUrl
+                  ? 'business-profile-logo--image'
+                  : 'business-profile-logo--monogram'
+              }`}
+            >
               {business.logoUrl ? (
                 <Image src={business.logoUrl} alt="" width={112} height={112} />
               ) : (
-                business.name.slice(0, 1).toUpperCase()
+                <span aria-hidden="true">{business.name.slice(0, 1).toUpperCase()}</span>
               )}
             </span>
             <div>
