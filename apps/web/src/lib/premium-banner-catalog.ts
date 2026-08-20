@@ -210,7 +210,7 @@ export function premiumCategoryBanner(name?: string | null): PremiumCategoryBann
 // broad food categories so a "Coffee Table" furniture shop can never pick up a café banner, and
 // ordered by specificity (first match wins) with word-boundary keywords to avoid misfires.
 const NAME_BANNER_OVERRIDES: ReadonlyArray<{ test: RegExp; key: string }> = [
-  { test: /\b(dosa|tiffin|tiffins|idli|vada|udupi|breakfast)\b/i, key: 'tiffin centres' },
+  { test: /\b(dosas?|tiffins?|idlis?|vadas?|udupi|breakfast)\b/i, key: 'tiffin centres' },
   { test: /\b(sweets?|mithai|misthan|mishtan)\b/i, key: 'sweets & mithai' },
   { test: /\b(bakery|bakers|cake|cakes|pastr\w*)\b/i, key: 'cakes & pastries' },
   { test: /\b(cafe|café|coffee|barista|brew)\b/i, key: 'tea, coffee & beverages' },
