@@ -814,7 +814,8 @@
     "nearbyTab": "Nearby",
     "locatedIn": "It is in {place}.",
     "nearLandmark": "It is near {landmark}.",
-    "pincodeArea": "The pincode is {pincode}."
+    "pincodeArea": "The pincode is {pincode}.",
+    "back": "Back"
   },
   "dashboardUi": {
     "aboutYou": "About you",

@@ -21757,3 +21757,30 @@ h4,
     grid-template-columns: 1fr;
   }
 }
+
+/* Storefront back control — history-aware, falls back to Home on a cold entry. */
+.business-profile-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 12px;
+  padding: 8px 14px 8px 11px;
+  border: 1px solid var(--locz-border);
+  border-radius: 999px;
+  background: var(--locz-surface);
+  color: var(--locz-text-secondary);
+  font-size: 0.68rem;
+  font-weight: 640;
+  cursor: pointer;
+  transition: border-color 0.18s ease, color 0.18s ease, transform 0.18s ease;
+}
+.business-profile-back:hover {
+  border-color: var(--locz-primary);
+  color: var(--locz-primary);
+  transform: translateX(-2px);
+}
+.business-profile-back svg {
+  width: 15px;
+  height: 15px;
+  transform: rotate(180deg);
+}

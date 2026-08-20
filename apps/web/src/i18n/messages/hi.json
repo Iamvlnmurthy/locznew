@@ -782,7 +782,8 @@
     "nearbyTab": "आसपास",
     "locatedIn": "यह {place} में है।",
     "nearLandmark": "यह {landmark} के पास है।",
-    "pincodeArea": "पिनकोड {pincode} है।"
+    "pincodeArea": "पिनकोड {pincode} है।",
+    "back": "वापस"
   },
   "dashboardUi": {
     "aboutYou": "आपके बारे में",

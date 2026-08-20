@@ -782,7 +782,8 @@
     "nearbyTab": "దగ్గరలో",
     "locatedIn": "ఇది {place} లో ఉంది.",
     "nearLandmark": "ఇది {landmark} దగ్గర ఉంది.",
-    "pincodeArea": "పిన్‌కోడ్ {pincode}."
+    "pincodeArea": "పిన్‌కోడ్ {pincode}.",
+    "back": "వెనుకకు"
   },
   "dashboardUi": {
     "aboutYou": "మీ గురించి",

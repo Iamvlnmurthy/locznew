@@ -13,6 +13,7 @@ import { getCurrentUser, getLocale, localizedAlternates } from '@/lib/session';
 import { premiumCategoryArtwork } from '@/lib/premium-icon-catalog';
 import { BusinessEnquiry } from './business-enquiry';
 import { ShareBusiness } from './share-business';
+import { BusinessBackButton } from './back-button';
 
 interface BusinessHour {
   dayOfWeek: number;
@@ -318,6 +319,7 @@ export default async function BusinessPage({ params }: { params: Promise<{ slug:
 
       <section className="business-profile-hero">
         <div className="container">
+          <BusinessBackButton label={p.back} />
           <nav className="business-profile-breadcrumbs" aria-label={p.breadcrumb}>
             <Link href="/">{t('nav.home')}</Link>
             <Icon name="arrow" />
