@@ -7,6 +7,7 @@ import { ListingCard } from '@/components/listing-card';
 import { Icon } from '@/components/icons';
 import { getTranslator } from '@/i18n';
 import { ApiError, api, apiSafe } from '@/lib/api';
+import { premiumCategoryBanner } from '@/lib/premium-banner-catalog';
 import { premiumCategoryArtwork } from '@/lib/premium-icon-catalog';
 import { getLocale, getSelectedCity, localizedAlternates } from '@/lib/session';
 
@@ -90,10 +91,26 @@ export default async function CategoryPage({ params }: { params: Promise<{ slug:
       : locale === 'hi'
         ? (category.nameHi ?? category.name)
         : category.name;
+  const categoryBanner = premiumCategoryBanner(category.name);
 
   return (
     <>
-      <section className="discovery-hero discovery-hero--category">
+      <section
+        className={`discovery-hero discovery-hero--category${categoryBanner ? ' has-category-banner' : ''}`}
+      >
+        {categoryBanner ? (
+          <picture className="discovery-hero__banner" aria-hidden="true">
+            <source media="(max-width: 820px)" srcSet={categoryBanner.mobile} />
+            <Image
+              src={categoryBanner.desktop}
+              alt=""
+              width={2000}
+              height={320}
+              sizes="100vw"
+              priority
+            />
+          </picture>
+        ) : null}
         <div className="container discovery-hero__inner">
           <div className="discovery-hero__copy">
             <nav className="breadcrumbs breadcrumbs--light" aria-label={t('common.breadcrumb')}>
@@ -148,19 +165,21 @@ export default async function CategoryPage({ params }: { params: Promise<{ slug:
             </div>
           </div>
 
-          <div className="discovery-hero__category-art" aria-hidden="true">
-            <span>
-              <Image
-                src={premiumCategoryArtwork({ slug: category.slug, name: category.name })}
-                alt=""
-                width="180"
-                height="180"
-                priority
-              />
-            </span>
-            <i />
-            <i />
-          </div>
+          {!categoryBanner ? (
+            <div className="discovery-hero__category-art" aria-hidden="true">
+              <span>
+                <Image
+                  src={premiumCategoryArtwork({ slug: category.slug, name: category.name })}
+                  alt=""
+                  width="180"
+                  height="180"
+                  priority
+                />
+              </span>
+              <i />
+              <i />
+            </div>
+          ) : null}
         </div>
       </section>
 
