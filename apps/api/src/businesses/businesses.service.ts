@@ -163,16 +163,23 @@ export class BusinessesService {
   private static readonly JUNK_NAME_RE =
     '(sub ?centre|anganwadi|panchayat|primary health|fair price|ration shop|milk collection|^unnamed|^unknown|^n/?a$|^null$|^test$)';
 
-  private static readonly SITEMAP_WHERE: Prisma.BusinessWhereInput = {
-    deletedAt: null,
-    isActive: true,
-    OR: [
-      { claimStatus: 'CLAIMED' },
-      { verificationStatus: 'VERIFIED' },
-      { primaryPhone: { not: null } },
-      { description: { not: null } },
-    ],
-  };
+  /**
+   * The single WHERE that defines the sitemap's set of pages, shared verbatim by the count, the
+   * shard cursors and the shard slugs so all three see exactly the same rows (otherwise the shard
+   * boundaries and the shard contents would drift apart). A page qualifies when it has real
+   * substance (claimed, verified, or carrying a phone or description) AND is not one of the
+   * imported non-businesses (civic POIs, placeholder or too-short names) — submitting those thin,
+   * junk pages to Google risks a site-wide thin-content signal. Every column referenced here is in
+   * the covering index `businesses_sitemap_cov2_idx`, so these stay index-only and fast.
+   */
+  private static sitemapWhereSql(): Prisma.Sql {
+    return Prisma.sql`"deletedAt" IS NULL AND "isActive"
+      AND ("claimStatus" = 'CLAIMED' OR "verificationStatus" = 'VERIFIED'
+        OR "primaryPhone" IS NOT NULL OR description IS NOT NULL)
+      AND name !~* ${BusinessesService.JUNK_NAME_RE}
+      AND char_length(btrim(name)) > 2`;
+  }
+
   // The curated total barely moves and its count is a multi-second scan, so it is memoised in
   // process for a day — the sitemap index reads it without re-counting on every crawler fetch.
   private sitemapTotalCache: { value: number; at: number } | null = null;
@@ -182,7 +189,10 @@ export class BusinessesService {
     if (this.sitemapTotalCache && now - this.sitemapTotalCache.at < 86_400_000) {
       return this.sitemapTotalCache.value;
     }
-    const value = await this.prisma.business.count({ where: BusinessesService.SITEMAP_WHERE });
+    const rows = await this.prisma.$queryRaw<Array<{ count: bigint }>>(
+      Prisma.sql`SELECT count(*)::bigint AS count FROM businesses WHERE ${BusinessesService.sitemapWhereSql()}`,
+    );
+    const value = Number(rows[0]?.count ?? 0);
     this.sitemapTotalCache = { value, at: now };
     return value;
   }
@@ -191,13 +201,11 @@ export class BusinessesService {
     page: number,
     pageSize: number,
   ): Promise<{ slugs: Array<{ slug: string; updatedAt: Date }> }> {
-    const slugs = await this.prisma.business.findMany({
-      where: BusinessesService.SITEMAP_WHERE,
-      select: { slug: true, updatedAt: true },
-      orderBy: { id: 'asc' },
-      skip: page * pageSize,
-      take: pageSize,
-    });
+    const slugs = await this.prisma.$queryRaw<Array<{ slug: string; updatedAt: Date }>>(
+      Prisma.sql`SELECT slug, "updatedAt" FROM businesses
+                 WHERE ${BusinessesService.sitemapWhereSql()}
+                 ORDER BY id ASC LIMIT ${pageSize} OFFSET ${page * pageSize}`,
+    );
     return { slugs };
   }
 
@@ -215,17 +223,16 @@ export class BusinessesService {
     if (this.sitemapCursorCache && now - this.sitemapCursorCache.at < 86_400_000) {
       return this.sitemapCursorCache.value;
     }
-    const rows = await this.prisma.$queryRaw<Array<{ id: string }>>`
-      SELECT id FROM (
-        SELECT id, row_number() OVER (ORDER BY id) AS rn
-        FROM businesses
-        WHERE "deletedAt" IS NULL AND "isActive"
-          AND ("claimStatus" = 'CLAIMED' OR "verificationStatus" = 'VERIFIED'
-            OR "primaryPhone" IS NOT NULL OR description IS NOT NULL)
-      ) t
-      WHERE (rn - 1) % ${shardSize} = 0
-      ORDER BY id
-    `;
+    const rows = await this.prisma.$queryRaw<Array<{ id: string }>>(
+      Prisma.sql`
+        SELECT id FROM (
+          SELECT id, row_number() OVER (ORDER BY id) AS rn
+          FROM businesses
+          WHERE ${BusinessesService.sitemapWhereSql()}
+        ) t
+        WHERE (rn - 1) % ${shardSize} = 0
+        ORDER BY id`,
+    );
     const value = rows.map((r) => r.id);
     this.sitemapCursorCache = { value, at: now };
     return value;
@@ -236,12 +243,11 @@ export class BusinessesService {
     fromId: string,
     limit: number,
   ): Promise<{ slugs: Array<{ slug: string; updatedAt: Date }> }> {
-    const slugs = await this.prisma.business.findMany({
-      where: { ...BusinessesService.SITEMAP_WHERE, id: { gte: fromId } },
-      select: { slug: true, updatedAt: true },
-      orderBy: { id: 'asc' },
-      take: limit,
-    });
+    const slugs = await this.prisma.$queryRaw<Array<{ slug: string; updatedAt: Date }>>(
+      Prisma.sql`SELECT slug, "updatedAt" FROM businesses
+                 WHERE ${BusinessesService.sitemapWhereSql()} AND id >= ${fromId}
+                 ORDER BY id ASC LIMIT ${limit}`,
+    );
     return { slugs };
   }
 
