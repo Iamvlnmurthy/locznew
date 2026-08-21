@@ -12,6 +12,7 @@ interface ClaimableBusiness {
   name: string;
   categoryName: string;
   cityName: string;
+  isClaimable?: boolean;
 }
 
 export const metadata: Metadata = { robots: { index: false, follow: false } };
@@ -26,6 +27,7 @@ export default async function BusinessClaimPage({ params }: { params: Promise<{ 
     apiSafe<Category[]>('/categories?listingType=BUSINESS_LISTING', { revalidate: 3600 }),
   ]);
   if (!business) notFound();
+  if (business.isClaimable === false) redirect(`/b/${business.slug}`);
 
   return (
     <BusinessClaimForm

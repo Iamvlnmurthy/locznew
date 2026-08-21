@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { cache } from 'react';
 import type { ListingSummary } from '@locz/shared-types';
+import { publicBrandLogo } from '@locz/public-brands';
 import { Icon } from '@/components/icons';
 import { ListingCard } from '@/components/listing-card';
 import { getMessageGroup, getTranslator } from '@/i18n';
@@ -45,6 +46,8 @@ interface BusinessDetail {
   landmark: string | null;
   pincode: string | null;
   logoUrl: string | null;
+  publicBrandKey: string | null;
+  isClaimable?: boolean;
   description: string | null;
   addressLine: string | null;
   latitude: number | null;
@@ -99,6 +102,7 @@ export async function generateMetadata({
   const description =
     business.description?.replace(/\s+/g, ' ').slice(0, 155) ??
     `${business.name} is a ${business.categoryName.toLowerCase()} in ${place}. Find contact details, directions, offers and jobs on LocZ.`;
+  const brandLogo = business.logoUrl ?? publicBrandLogo(business.name, business.publicBrandKey);
 
   return {
     title,
@@ -109,7 +113,7 @@ export async function generateMetadata({
       description,
       type: 'website',
       url: `${SITE_URL}/b/${business.slug}`,
-      ...(business.logoUrl ? { images: [{ url: business.logoUrl }] } : {}),
+      ...(brandLogo ? { images: [{ url: new URL(brandLogo, SITE_URL).toString() }] } : {}),
     },
   };
 }
@@ -125,6 +129,7 @@ export default async function BusinessPage({ params }: { params: Promise<{ slug:
   if (!business) notFound();
   const t = getTranslator(locale);
   const p = getMessageGroup(locale, 'businessProfile');
+  const profileLogo = business.logoUrl ?? publicBrandLogo(business.name, business.publicBrandKey);
   const localizedDays = [
     p.sunday,
     p.monday,
@@ -209,7 +214,7 @@ export default async function BusinessPage({ params }: { params: Promise<{ slug:
     '@context': 'https://schema.org',
     '@type': 'LocalBusiness',
     name: business.name,
-    image: business.logoUrl ?? undefined,
+    image: profileLogo ? new URL(profileLogo, SITE_URL).toString() : undefined,
     description: business.description ?? undefined,
     url: `${SITE_URL}/b/${business.slug}`,
     telephone: business.primaryPhone ?? undefined,
@@ -365,13 +370,11 @@ export default async function BusinessPage({ params }: { params: Promise<{ slug:
           <div className="business-profile-identity">
             <span
               className={`business-profile-logo ${
-                business.logoUrl
-                  ? 'business-profile-logo--image'
-                  : 'business-profile-logo--monogram'
+                profileLogo ? 'business-profile-logo--image' : 'business-profile-logo--monogram'
               }`}
             >
-              {business.logoUrl ? (
-                <Image src={business.logoUrl} alt="" width={112} height={112} />
+              {profileLogo ? (
+                <Image src={profileLogo} alt={`${business.name} logo`} width={112} height={112} />
               ) : (
                 <span aria-hidden="true">{business.name.slice(0, 1).toUpperCase()}</span>
               )}
@@ -490,7 +493,9 @@ export default async function BusinessPage({ params }: { params: Promise<{ slug:
                 <p className="business-profile-where">
                   <Icon name="location" /> {locationSentence}
                 </p>
-                {business.claimStatus === 'UNCLAIMED' && !business.isOwner ? (
+                {business.claimStatus === 'UNCLAIMED' &&
+                business.isClaimable !== false &&
+                !business.isOwner ? (
                   <p className="business-profile-unclaimed">
                     {p.unclaimed} <Link href={`/b/${business.slug}/claim`}>{p.claimAction}</Link>
                   </p>
@@ -535,7 +540,9 @@ export default async function BusinessPage({ params }: { params: Promise<{ slug:
                   <strong>{p.nothingPublished}</strong>
                   <p>{p.nothingPublishedBody}</p>
                 </div>
-                {business.claimStatus === 'UNCLAIMED' && !business.isOwner ? (
+                {business.claimStatus === 'UNCLAIMED' &&
+                business.isClaimable !== false &&
+                !business.isOwner ? (
                   <Link href={`/b/${business.slug}/claim`}>
                     {p.claimAction} <Icon name="arrow" />
                   </Link>

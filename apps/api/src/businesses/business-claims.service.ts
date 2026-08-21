@@ -14,6 +14,7 @@ import {
   Prisma,
 } from '@prisma/client';
 import { v7 as uuid } from 'uuid';
+import { findPublicBrand } from '@locz/public-brands';
 import { AuditService } from '../audit/audit.service';
 import { distanceInMetres, matchedSignals, qualifiesForAutoApproval } from './claim-signals';
 
@@ -153,6 +154,8 @@ export class BusinessClaimsService {
     });
 
     const scored = candidates
+      // Enterprise and public-service branches are directory identities, not takeover targets.
+      .filter((candidate) => !findPublicBrand(candidate.name))
       .map((candidate) => {
         const matchedOn: string[] = [];
 
@@ -240,6 +243,13 @@ export class BusinessClaimsService {
     });
 
     if (!business) throw new NotFoundException('That business does not exist.');
+
+    const publicBrand = findPublicBrand(business.name);
+    if (publicBrand) {
+      throw new ConflictException(
+        `${publicBrand.displayName} locations are maintained as public brand records and cannot be claimed. Report an incorrect location instead.`,
+      );
+    }
 
     if (business.ownerId) {
       throw new ConflictException(

@@ -10,6 +10,8 @@ export interface NearbyBusiness {
   cityName: string | null;
   pincode: string | null;
   logoUrl?: string | null;
+  publicBrandKey?: string | null;
+  isClaimable?: boolean;
   addressLine?: string | null;
   description?: string | null;
   listingCount?: number;

@@ -1,0 +1,17 @@
+{
+  "name": "@locz/public-brands",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Strict, curated matching for enterprise and public-service business records",
+  "main": "index.js",
+  "types": "index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./index.d.ts",
+      "default": "./index.js"
+    }
+  },
+  "scripts": {
+    "test": "node --test index.test.js"
+  }
+}

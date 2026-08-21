@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import Image from 'next/image';
 import Link from 'next/link';
 import type { Category, City, Paginated } from '@locz/shared-types';
+import { publicBrandLogo } from '@locz/public-brands';
 import { CityCombobox } from '@/components/city-combobox';
 import { Icon } from '@/components/icons';
 import { getTranslator, type Locale, type Translator } from '@/i18n';
@@ -33,6 +34,8 @@ interface BusinessSummary {
   categoryName: string;
   cityName: string;
   logoUrl: string | null;
+  publicBrandKey: string | null;
+  isClaimable: boolean;
   verificationStatus: string;
   listingCount: number;
   viewCount: number;
@@ -371,12 +374,13 @@ function BusinessCard({
   t: Translator;
 }) {
   const openState = currentOpenState(business.hours, locale, t);
+  const logo = business.logoUrl ?? publicBrandLogo(business.name, business.publicBrandKey);
   return (
     <article className="business-directory-card">
       <div className="business-directory-card__top">
         <span className="business-directory-card__logo">
-          {business.logoUrl ? (
-            <Image src={business.logoUrl} alt="" width="72" height="72" />
+          {logo ? (
+            <Image src={logo} alt={`${business.name} logo`} width="72" height="72" />
           ) : (
             business.name.slice(0, 1).toUpperCase()
           )}

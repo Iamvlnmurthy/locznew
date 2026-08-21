@@ -219,6 +219,13 @@ export class BusinessSummaryDto {
   @ApiPropertyOptional({ description: 'Present only for nearby (geo) queries' })
   distanceMeters?: number;
   @ApiPropertyOptional() logoUrl!: string | null;
+  @ApiPropertyOptional({
+    description:
+      'Curated enterprise/public-service identity used by clients for a local brand mark',
+  })
+  publicBrandKey!: string | null;
+  @ApiProperty({ description: 'False for owned, in-review, and curated public-brand records' })
+  isClaimable!: boolean;
   @ApiProperty({ enum: VerificationStatus }) verificationStatus!: VerificationStatus;
   @ApiProperty({ enum: BusinessClaimStatus }) claimStatus!: BusinessClaimStatus;
   @ApiProperty() listingCount!: number;

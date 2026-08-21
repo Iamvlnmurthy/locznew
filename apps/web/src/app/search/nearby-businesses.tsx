@@ -1,6 +1,7 @@
 'use client';
 
 import Image from 'next/image';
+import { publicBrandLogo } from '@locz/public-brands';
 import Link from 'next/link';
 import { Fragment, useCallback, useEffect, useRef, useState } from 'react';
 import { Icon } from '@/components/icons';
@@ -233,6 +234,8 @@ export function NearbyBusinesses({
               [business.addressLine, business.cityName].filter(Boolean).join(', ') ||
               business.pincode ||
               nearYou;
+            const businessLogo =
+              business.logoUrl ?? publicBrandLogo(business.name, business.publicBrandKey);
             return (
               <Fragment key={business.id}>
                 {showBand ? <h3 className="nearby-businesses__band">{bandLabel(band)}</h3> : null}
@@ -245,10 +248,10 @@ export function NearbyBusinesses({
                     aria-label={business.name}
                   />
                   <div className="search-business-card__visual" aria-hidden="true">
-                    {business.logoUrl ? (
+                    {businessLogo ? (
                       <Image
                         className="search-business-card__logo"
-                        src={business.logoUrl}
+                        src={businessLogo}
                         alt=""
                         width={112}
                         height={112}
@@ -279,7 +282,7 @@ export function NearbyBusinesses({
                         <span className="search-business-card__verified">
                           <Icon name="shield" /> {verifiedLabel}
                         </span>
-                      ) : business.claimStatus === 'UNCLAIMED' ? (
+                      ) : business.claimStatus === 'UNCLAIMED' && business.isClaimable !== false ? (
                         <span className="search-business-card__claim">{claimLabel}</span>
                       ) : null}
                     </div>

@@ -145,7 +145,7 @@ class AppTheme {
       ),
       cardTheme: CardThemeData(
         color: scheme.surface,
-        elevation: isDark ? 0 : 1,
+        elevation: 0,
         shadowColor: LoczColors.neutral900.withValues(alpha: 0.07),
         margin: EdgeInsets.zero,
         shape: RoundedRectangleBorder(
@@ -153,6 +153,24 @@ class AppTheme {
           side: BorderSide(
             color: isDark ? scheme.outlineVariant : scheme.outline.withValues(alpha: 0.42),
           ),
+        ),
+      ),
+      listTileTheme: ListTileThemeData(
+        minTileHeight: 58,
+        contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 5),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        iconColor: scheme.primary,
+        textColor: scheme.onSurface,
+        titleTextStyle: TextStyle(
+          color: scheme.onSurface,
+          fontSize: 14,
+          fontWeight: FontWeight.w700,
+          height: 1.3,
+        ),
+        subtitleTextStyle: TextStyle(
+          color: scheme.onSurfaceVariant,
+          fontSize: 12,
+          height: 1.4,
         ),
       ),
       filledButtonTheme: FilledButtonThemeData(
@@ -252,6 +270,56 @@ class AppTheme {
         shape: const RoundedRectangleBorder(
           borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
         ),
+      ),
+      dialogTheme: DialogThemeData(
+        backgroundColor: scheme.surface,
+        surfaceTintColor: Colors.transparent,
+        elevation: 0,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(24),
+          side: BorderSide(color: scheme.outlineVariant),
+        ),
+        titleTextStyle: TextStyle(
+          color: scheme.onSurface,
+          fontSize: 20,
+          fontWeight: FontWeight.w800,
+          letterSpacing: -0.35,
+        ),
+        contentTextStyle: TextStyle(
+          color: scheme.onSurfaceVariant,
+          fontSize: 14,
+          height: 1.5,
+        ),
+      ),
+      floatingActionButtonTheme: FloatingActionButtonThemeData(
+        backgroundColor: scheme.primary,
+        foregroundColor: scheme.onPrimary,
+        elevation: 0,
+        focusElevation: 0,
+        hoverElevation: 2,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(17)),
+      ),
+      progressIndicatorTheme: ProgressIndicatorThemeData(
+        color: scheme.primary,
+        linearTrackColor: scheme.primaryContainer,
+        circularTrackColor: scheme.primaryContainer,
+      ),
+      switchTheme: SwitchThemeData(
+        thumbColor: WidgetStateProperty.resolveWith(
+          (states) => states.contains(WidgetState.selected) ? scheme.onPrimary : scheme.outline,
+        ),
+        trackColor: WidgetStateProperty.resolveWith(
+          (states) => states.contains(WidgetState.selected)
+              ? scheme.primary
+              : scheme.surfaceContainerHighest,
+        ),
+      ),
+      checkboxTheme: CheckboxThemeData(
+        fillColor: WidgetStateProperty.resolveWith(
+          (states) => states.contains(WidgetState.selected) ? scheme.primary : Colors.transparent,
+        ),
+        side: BorderSide(color: scheme.outline, width: 1.4),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5)),
       ),
       snackBarTheme: SnackBarThemeData(
         behavior: SnackBarBehavior.floating,

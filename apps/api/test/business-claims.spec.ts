@@ -123,6 +123,15 @@ describe('BusinessClaimsService', () => {
       );
     });
 
+    it('refuses takeover claims for curated public-brand locations', async () => {
+      const { service, prisma } = build({ found: { ...business, name: 'Starbucks - Gachibowli' } });
+
+      await expect(service.create('user-1', 'biz-1', claimInput())).rejects.toThrow(
+        'public brand records and cannot be claimed',
+      );
+      expect(prisma.businessClaim.findFirst).not.toHaveBeenCalled();
+    });
+
     it('refuses a second claim from the same person', async () => {
       const { service } = build({ existingClaim: { id: 'claim-0' } });
 

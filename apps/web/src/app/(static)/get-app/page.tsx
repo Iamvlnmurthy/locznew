@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import Image from 'next/image';
 import { getMessageGroup, getTranslator } from '@/i18n';
 import { getLocale } from '@/lib/session';
 
@@ -49,38 +50,82 @@ export default async function GetAppPage() {
   const megabytes = manifest?.sizeBytes ? Math.round(manifest.sizeBytes / 1048576) : null;
   const href = manifest?.url ?? '/download/locz-latest.apk';
 
+  const version = manifest?.versionName
+    ? `${s.version} ${manifest.versionName}${
+        manifest.publishedAt
+          ? ` · ${new Date(manifest.publishedAt).toLocaleDateString(
+              { en: 'en-IN', hi: 'hi-IN', te: 'te-IN' }[locale] ?? 'en-IN',
+            )}`
+          : ''
+      }`
+    : null;
+
   return (
-    <div className="static-page get-app-card">
-      <h1>{s.title}</h1>
-      <p className="static-page__lede">{s.lede}</p>
+    <div className="get-app-page">
+      <section className="container get-app-hero">
+        <div className="get-app-hero__copy">
+          <span className="get-app-hero__eyebrow">{s.eyebrow}</span>
+          <h1>{s.title}</h1>
+          <p>{s.lede}</p>
 
-      <p>
-        <a className="btn btn--primary btn--lg" href={href} download>
-          {s.download}
-          {megabytes ? ` (${megabytes} MB)` : ''}
-        </a>
-      </p>
+          <a className="btn btn--primary btn--lg get-app-hero__download" href={href} download>
+            <span aria-hidden="true">↓</span>
+            {s.download}
+            {megabytes ? ` · ${megabytes} MB` : ''}
+          </a>
 
-      {manifest?.versionName ? (
-        <p className="static-page__meta">
-          {s.version} {manifest.versionName}
-          {manifest.publishedAt
-            ? ` · ${new Date(manifest.publishedAt).toLocaleDateString(
-                { en: 'en-IN', hi: 'hi-IN', te: 'te-IN' }[locale] ?? 'en-IN',
-              )}`
-            : ''}
-        </p>
-      ) : null}
+          {version ? <p className="get-app-hero__version">{version}</p> : null}
 
-      <h2>{s.installTitle}</h2>
-      <ol>
-        <li>{s.step1}</li>
-        <li>{s.step2}</li>
-        <li>{s.step3}</li>
-      </ol>
+          <div className="get-app-hero__trust" aria-label={s.assurances}>
+            <span>✓ {s.sourceTrust}</span>
+            <span>✓ {s.platformTrust}</span>
+            <span>✓ {s.updateTrust}</span>
+          </div>
+        </div>
 
-      <p className="static-page__note">{s.updateNote}</p>
-      <p className="static-page__note">{t('getApp.iosNote')}</p>
+        <div className="get-app-hero__visual" aria-hidden="true">
+          <div className="get-app-device">
+            <div className="get-app-device__top" />
+            <Image
+              src="/brand/app-icon-premium-v2-1024.png"
+              alt=""
+              width={150}
+              height={150}
+              priority
+            />
+            <strong>LocZ</strong>
+            <small>{s.tagline}</small>
+            <div className="get-app-device__tiles">
+              <i />
+              <i />
+              <i />
+              <i />
+            </div>
+          </div>
+          <span className="get-app-hero__orb get-app-hero__orb--one" />
+          <span className="get-app-hero__orb get-app-hero__orb--two" />
+        </div>
+      </section>
+
+      <section className="container get-app-install">
+        <div className="get-app-install__heading">
+          <span>01—03</span>
+          <h2>{s.installTitle}</h2>
+        </div>
+        <ol className="get-app-install__steps">
+          {[s.step1, s.step2, s.step3].map((step, index) => (
+            <li key={step}>
+              <span>{String(index + 1).padStart(2, '0')}</span>
+              <p>{step}</p>
+            </li>
+          ))}
+        </ol>
+      </section>
+
+      <section className="container get-app-notes">
+        <p>{s.updateNote}</p>
+        <p>{t('getApp.iosNote')}</p>
+      </section>
     </div>
   );
 }

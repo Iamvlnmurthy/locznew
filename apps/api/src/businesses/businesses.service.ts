@@ -13,6 +13,7 @@ import {
   VerificationStatus,
 } from '@prisma/client';
 import { v7 as uuid } from 'uuid';
+import { findPublicBrand } from '@locz/public-brands';
 import { AuditService } from '../audit/audit.service';
 import { paginate, PaginatedDto } from '../common/dto/pagination.dto';
 import { slugify } from '../common/utils/slug.util';
@@ -490,6 +491,12 @@ export class BusinessesService {
   }
 
   async create(userId: string, dto: CreateBusinessDto): Promise<BusinessDetailDto> {
+    const publicBrand = findPublicBrand(dto.name);
+    if (publicBrand) {
+      throw new ConflictException(
+        `${publicBrand.displayName} locations are maintained as public brand records. Report a missing or incorrect branch instead of creating an owned profile.`,
+      );
+    }
     const keywords = dto.keywords ? await this.normaliseKeywords(dto.keywords) : [];
     const [category, city] = await Promise.all([
       this.prisma.category.findUnique({ where: { id: dto.categoryId } }),
@@ -966,6 +973,7 @@ export class BusinessesService {
   }
 
   private toSummary(business: BusinessRow, distanceMeters?: number): BusinessSummaryDto {
+    const publicBrand = findPublicBrand(business.name);
     return {
       id: business.id,
       name: business.name,
@@ -976,6 +984,9 @@ export class BusinessesService {
       pincode: business.pincodeCode ?? null,
       ...(distanceMeters !== undefined ? { distanceMeters: Math.round(distanceMeters) } : {}),
       logoUrl: business.logoMediaId ? this.storage.publicUrl(business.logoMediaId) : null,
+      publicBrandKey: publicBrand?.key ?? null,
+      isClaimable:
+        !publicBrand && business.ownerId === null && business.claimStatus === 'UNCLAIMED',
       verificationStatus: business.verificationStatus,
       claimStatus: business.claimStatus,
       listingCount: business._count.listings,

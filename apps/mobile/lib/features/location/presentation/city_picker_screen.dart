@@ -4,6 +4,7 @@ import 'package:geolocator/geolocator.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/i18n/strings.dart';
+import '../../../core/motion/locz_motion.dart';
 import '../../../core/providers.dart';
 import '../../../core/theme/tokens.g.dart';
 
@@ -125,173 +126,364 @@ class _CityPickerScreenState extends ConsumerState<CityPickerScreen> {
     final cities = ref.watch(citiesProvider);
     final selected = ref.watch(selectedCityProvider);
 
+    final theme = Theme.of(context);
+
     return Scaffold(
       appBar: AppBar(title: Text(strings('location.searchCity'))),
-      body: Column(
-        children: [
-          Padding(
-            padding: const EdgeInsets.all(LoczSpacing.x4),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                FilledButton.icon(
-                  onPressed: _locating ? null : _useCurrentLocation,
-                  icon: _locating
-                      ? const SizedBox(
-                          height: 16,
-                          width: 16,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        )
-                      : const Icon(Icons.my_location),
-                  label: Text(strings('location.useCurrent')),
-                ),
-                if (_status != null) ...[
-                  const SizedBox(height: LoczSpacing.x2),
-                  Text(
-                    _status!,
-                    textAlign: TextAlign.center,
-                    style: Theme.of(context).textTheme.bodyMedium,
+      body: DecoratedBox(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [
+              theme.colorScheme.primaryContainer.withValues(alpha: .52),
+              theme.scaffoldBackgroundColor,
+              theme.scaffoldBackgroundColor,
+            ],
+            stops: const [0, .28, 1],
+          ),
+        ),
+        child: Column(
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(14, 8, 14, 12),
+              child: Column(
+                children: [
+                  LoczEntrance(
+                    child: Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: theme.colorScheme.surface.withValues(alpha: .96),
+                        borderRadius: BorderRadius.circular(24),
+                        border: Border.all(color: theme.colorScheme.outlineVariant),
+                        boxShadow: [
+                          BoxShadow(
+                            color: theme.colorScheme.primary.withValues(alpha: .08),
+                            blurRadius: 30,
+                            offset: const Offset(0, 12),
+                          ),
+                        ],
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          Row(
+                            children: [
+                              Container(
+                                width: 46,
+                                height: 46,
+                                decoration: BoxDecoration(
+                                  gradient: LinearGradient(
+                                    colors: [
+                                      theme.colorScheme.primary,
+                                      theme.colorScheme.primary.withValues(alpha: .78),
+                                    ],
+                                  ),
+                                  borderRadius: BorderRadius.circular(15),
+                                ),
+                                child: Icon(
+                                  Icons.near_me_rounded,
+                                  color: theme.colorScheme.onPrimary,
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      strings('location.searchCity'),
+                                      style: theme.textTheme.titleLarge,
+                                    ),
+                                    const SizedBox(height: 2),
+                                    Text(
+                                      selected?.name ?? strings('location.useCurrent'),
+                                      style: theme.textTheme.bodySmall?.copyWith(
+                                        color: theme.colorScheme.onSurfaceVariant,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 15),
+                          FilledButton.icon(
+                            onPressed: _locating ? null : _useCurrentLocation,
+                            icon: _locating
+                                ? const SizedBox(
+                                    height: 17,
+                                    width: 17,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                    ),
+                                  )
+                                : const Icon(
+                                    Icons.my_location_rounded,
+                                    size: 19,
+                                  ),
+                            label: Text(strings('location.useCurrent')),
+                          ),
+                          if (_status != null) ...[
+                            const SizedBox(height: 10),
+                            _LocationStatus(message: _status!),
+                          ],
+                          const SizedBox(height: 12),
+                          Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Expanded(
+                                child: TextField(
+                                  controller: _pincodeController,
+                                  keyboardType: TextInputType.number,
+                                  maxLength: 6,
+                                  decoration: InputDecoration(
+                                    labelText: strings('location.pincodeLabel'),
+                                    hintText: '500081',
+                                    prefixIcon: const Icon(
+                                      Icons.pin_drop_outlined,
+                                      size: 20,
+                                    ),
+                                    counterText: '',
+                                    errorText: _pincodeError,
+                                  ),
+                                  onChanged: (value) {
+                                    if (_pincodeError != null) {
+                                      setState(() => _pincodeError = null);
+                                    }
+                                  },
+                                  onSubmitted: (_) {
+                                    if (_pincodeController.text.trim().length == 6) {
+                                      _applyPincode();
+                                    }
+                                  },
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              SizedBox(
+                                width: 82,
+                                height: 47,
+                                child: FilledButton.tonal(
+                                  onPressed: _checkingPincode ? null : _applyPincode,
+                                  child: _checkingPincode
+                                      ? const SizedBox(
+                                          height: 17,
+                                          width: 17,
+                                          child: CircularProgressIndicator(
+                                            strokeWidth: 2,
+                                          ),
+                                        )
+                                      : Text(strings('location.pincodeGo')),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  LoczEntrance(
+                    delay: const Duration(milliseconds: 80),
+                    offset: const Offset(0, 8),
+                    child: TextField(
+                      decoration: InputDecoration(
+                        hintText: strings('location.searchCity'),
+                        prefixIcon: const Icon(Icons.search_rounded, size: 21),
+                      ),
+                      onChanged: (value) => setState(() => _query = value.toLowerCase()),
+                    ),
                   ),
                 ],
-                const SizedBox(height: LoczSpacing.x4),
-                Row(
-                  children: [
-                    Expanded(
-                      child: TextField(
-                        controller: _pincodeController,
-                        keyboardType: TextInputType.number,
-                        maxLength: 6,
-                        decoration: InputDecoration(
-                          labelText: strings('location.pincodeLabel'),
-                          hintText: '500081',
-                          prefixIcon: const Icon(Icons.markunread_mailbox_outlined),
-                          counterText: '',
-                          errorText: _pincodeError,
-                        ),
-                        onChanged: (value) {
-                          if (_pincodeError != null) {
-                            setState(() => _pincodeError = null);
-                          }
-                        },
-                        onSubmitted: (_) {
-                          if (_pincodeController.text.trim().length == 6) {
-                            _applyPincode();
-                          }
-                        },
-                      ),
-                    ),
-                    const SizedBox(width: LoczSpacing.x2),
-                    // The theme makes every filled button full-width (Size.fromHeight
-                    // gives an infinite minimum width), and a Row hands unbounded width
-                    // to its non-flex children — which asserts. An explicit width is what
-                    // reconciles a full-width button style with sitting beside a field.
-                    SizedBox(
-                      width: 104,
-                      child: FilledButton.tonal(
-                        onPressed: _checkingPincode ? null : _applyPincode,
-                        child: _checkingPincode
-                            ? const SizedBox(
-                                height: 16,
-                                width: 16,
-                                child: CircularProgressIndicator(strokeWidth: 2),
-                              )
-                            : Text(strings('location.pincodeGo')),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: LoczSpacing.x4),
-                TextField(
-                  decoration: InputDecoration(
-                    hintText: strings('location.searchCity'),
-                    prefixIcon: const Icon(Icons.search),
-                  ),
-                  onChanged: (value) => setState(() => _query = value.toLowerCase()),
-                ),
-              ],
-            ),
-          ),
-          Expanded(
-            child: cities.when(
-              loading: () => const Center(child: CircularProgressIndicator()),
-              error: (_, __) => _LocationLoadError(
-                message: strings('location.loadError'),
-                retryLabel: strings('common.retry'),
-                onRetry: () => ref.invalidate(citiesProvider),
               ),
-              data: (list) {
-                final filtered = list
-                    .where(
-                      (city) =>
-                          _query.isEmpty ||
-                          city.name.toLowerCase().contains(_query) ||
-                          (city.nameTe?.contains(_query) ?? false) ||
-                          (city.nameHi?.contains(_query) ?? false),
-                    )
-                    .toList()
-                  // Launched cities first; the rest stay visible but clearly secondary.
-                  ..sort(
-                    (a, b) => (b.isLaunched ? 1 : 0).compareTo(a.isLaunched ? 1 : 0),
-                  );
+            ),
+            Expanded(
+              child: cities.when(
+                loading: () => const Center(child: CircularProgressIndicator()),
+                error: (_, __) => _LocationLoadError(
+                  message: strings('location.loadError'),
+                  retryLabel: strings('common.retry'),
+                  onRetry: () => ref.invalidate(citiesProvider),
+                ),
+                data: (list) {
+                  final filtered = list
+                      .where(
+                        (city) =>
+                            _query.isEmpty ||
+                            city.name.toLowerCase().contains(_query) ||
+                            (city.nameTe?.contains(_query) ?? false) ||
+                            (city.nameHi?.contains(_query) ?? false),
+                      )
+                      .toList()
+                    ..sort(
+                      (a, b) => (b.isLaunched ? 1 : 0).compareTo(a.isLaunched ? 1 : 0),
+                    );
 
-                if (filtered.isEmpty) {
-                  return _EmptyCities(
-                    message: strings(
-                      _query.isEmpty ? 'location.noCities' : 'location.noMatches',
-                    ),
-                  );
-                }
-
-                return ListView.separated(
-                  padding: const EdgeInsets.fromLTRB(
-                    LoczSpacing.x3,
-                    0,
-                    LoczSpacing.x3,
-                    LoczSpacing.x4,
-                  ),
-                  itemCount: filtered.length,
-                  separatorBuilder: (_, __) => const SizedBox(height: 6),
-                  itemBuilder: (context, index) {
-                    final city = filtered[index];
-                    return Card(
-                      child: ListTile(
-                        dense: true,
-                        leading: CircleAvatar(
-                          radius: 18,
-                          backgroundColor: Theme.of(context).colorScheme.primaryContainer,
-                          child: Icon(
-                            Icons.location_city_outlined,
-                            size: 18,
-                            color: Theme.of(context).colorScheme.primary,
-                          ),
-                        ),
-                        title: Text(city.name),
-                        subtitle: Text(city.stateName),
-                        trailing: city.isLaunched
-                            ? (selected?.id == city.id
-                                ? Icon(
-                                    Icons.check_circle_rounded,
-                                    color: Theme.of(context).colorScheme.primary,
-                                  )
-                                : const Icon(Icons.chevron_right_rounded))
-                            : Chip(
-                                label: Text(strings('location.soon')),
-                                visualDensity: VisualDensity.compact,
-                              ),
-                        onTap: !city.isLaunched
-                            ? null
-                            : () async {
-                                await ref.read(selectedCityProvider.notifier).select(city);
-                                if (context.mounted) context.pop();
-                              },
+                  if (filtered.isEmpty) {
+                    return _EmptyCities(
+                      message: strings(
+                        _query.isEmpty ? 'location.noCities' : 'location.noMatches',
                       ),
                     );
-                  },
-                );
-              },
+                  }
+
+                  return ListView.separated(
+                    keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+                    padding: const EdgeInsets.fromLTRB(14, 2, 14, 28),
+                    itemCount: filtered.length,
+                    separatorBuilder: (_, __) => const SizedBox(height: 8),
+                    itemBuilder: (context, index) {
+                      final city = filtered[index];
+                      return LoczEntrance(
+                        delay: Duration(milliseconds: (index.clamp(0, 5)) * 30),
+                        offset: const Offset(0, 7),
+                        child: _CityRow(
+                          name: city.name,
+                          state: city.stateName,
+                          launched: city.isLaunched,
+                          selected: selected?.id == city.id,
+                          soonLabel: strings('location.soon'),
+                          onTap: !city.isLaunched
+                              ? null
+                              : () async {
+                                  await ref.read(selectedCityProvider.notifier).select(city);
+                                  if (context.mounted) context.pop();
+                                },
+                        ),
+                      );
+                    },
+                  );
+                },
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _LocationStatus extends StatelessWidget {
+  const _LocationStatus({required this.message});
+
+  final String message;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 9),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.secondaryContainer.withValues(alpha: .7),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Row(
+        children: [
+          Icon(
+            Icons.info_outline_rounded,
+            size: 17,
+            color: theme.colorScheme.onSecondaryContainer,
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              message,
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: theme.colorScheme.onSecondaryContainer,
+              ),
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _CityRow extends StatelessWidget {
+  const _CityRow({
+    required this.name,
+    required this.state,
+    required this.launched,
+    required this.selected,
+    required this.soonLabel,
+    required this.onTap,
+  });
+
+  final String name;
+  final String state;
+  final bool launched;
+  final bool selected;
+  final String soonLabel;
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Material(
+      color: selected
+          ? theme.colorScheme.primaryContainer.withValues(alpha: .72)
+          : theme.colorScheme.surface,
+      borderRadius: BorderRadius.circular(18),
+      child: Container(
+        constraints: const BoxConstraints(minHeight: 68),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(18),
+          border: Border.all(
+            color: selected
+                ? theme.colorScheme.primary.withValues(alpha: .36)
+                : theme.colorScheme.outlineVariant,
+          ),
+        ),
+        child: ListTile(
+          onTap: onTap,
+          leading: Container(
+            width: 42,
+            height: 42,
+            decoration: BoxDecoration(
+              color: launched
+                  ? theme.colorScheme.primaryContainer
+                  : theme.colorScheme.secondaryContainer,
+              borderRadius: BorderRadius.circular(13),
+            ),
+            child: Icon(
+              launched ? Icons.location_city_rounded : Icons.schedule_rounded,
+              size: 20,
+              color: launched
+                  ? theme.colorScheme.onPrimaryContainer
+                  : theme.colorScheme.onSecondaryContainer,
+            ),
+          ),
+          title: Text(name),
+          subtitle: Text(state),
+          trailing: selected
+              ? Icon(
+                  Icons.check_circle_rounded,
+                  color: theme.colorScheme.primary,
+                )
+              : launched
+                  ? Icon(
+                      Icons.arrow_forward_rounded,
+                      size: 18,
+                      color: theme.colorScheme.primary,
+                    )
+                  : Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 9,
+                        vertical: 5,
+                      ),
+                      decoration: BoxDecoration(
+                        color: theme.colorScheme.secondaryContainer,
+                        borderRadius: BorderRadius.circular(999),
+                      ),
+                      child: Text(
+                        soonLabel,
+                        style: theme.textTheme.labelSmall?.copyWith(
+                          color: theme.colorScheme.onSecondaryContainer,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ),
+        ),
       ),
     );
   }
