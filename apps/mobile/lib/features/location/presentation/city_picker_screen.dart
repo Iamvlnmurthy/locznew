@@ -192,12 +192,12 @@ class _CityPickerScreenState extends ConsumerState<CityPickerScreen> {
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     Text(
-                                      strings('location.searchCity'),
+                                      strings('location.findArea'),
                                       style: theme.textTheme.titleLarge,
                                     ),
                                     const SizedBox(height: 2),
                                     Text(
-                                      selected?.name ?? strings('location.useCurrent'),
+                                      selected?.name ?? strings('location.gpsOrPincode'),
                                       style: theme.textTheme.bodySmall?.copyWith(
                                         color: theme.colorScheme.onSurfaceVariant,
                                       ),
