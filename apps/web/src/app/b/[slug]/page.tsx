@@ -259,7 +259,12 @@ export default async function BusinessPage({ params }: { params: Promise<{ slug:
         name: business.categoryName,
         item: `${SITE_URL}/search?q=${encodeURIComponent(business.categoryName)}`,
       },
-      { '@type': 'ListItem', position: 3, name: business.cityName },
+      {
+        '@type': 'ListItem',
+        position: 3,
+        name: business.cityName,
+        item: `${SITE_URL}/search?cityId=${encodeURIComponent(business.cityId)}`,
+      },
       { '@type': 'ListItem', position: 4, name: business.name },
     ],
   };

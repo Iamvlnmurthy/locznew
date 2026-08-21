@@ -210,6 +210,7 @@ export default async function ListingPage({ params }: { params: Promise<{ slug: 
         name: listing.localityName
           ? `${listing.localityName}, ${listing.cityName}`
           : listing.cityName,
+        item: `${SITE_URL}/search?q=${encodeURIComponent(listing.cityName)}`,
       },
       { '@type': 'ListItem', position: 4, name: listing.title },
     ],
