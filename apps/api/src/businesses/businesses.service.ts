@@ -18,6 +18,7 @@ import { paginate, PaginatedDto } from '../common/dto/pagination.dto';
 import { slugify } from '../common/utils/slug.util';
 import { categoryNameToArea } from '../common/utils/discovery-areas';
 import { attributionFor, describeBusiness } from './business-description';
+import { BusinessSearchService } from '../search/business-search.service';
 import { matchesKeyword } from '../moderation/rule-based-moderation.provider';
 import { PrismaService } from '../prisma/prisma.service';
 import { RbacService } from '../rbac/rbac.service';
@@ -73,10 +74,36 @@ export class BusinessesService {
     private readonly audit: AuditService,
     private readonly storage: StorageService,
     private readonly notifications: NotificationsService,
+    private readonly businessSearch: BusinessSearchService,
   ) {}
 
   async listPublic(query: BusinessSearchQueryDto): Promise<PaginatedDto<BusinessSummaryDto>> {
     const term = query.q?.trim();
+
+    // A text query goes through the ranked, typo-tolerant business search (Postgres tsvector +
+    // pg_trgm fuzzy fallback) rather than a plain ILIKE, so "hospitl" still finds hospitals and
+    // results come back by relevance. Browsing without a query keeps the cheap filter path below.
+    if (term) {
+      const { ids, total } = await this.businessSearch.search({
+        query: term,
+        cityId: query.cityId,
+        pincode: query.pincode,
+        categoryId: query.categoryId,
+        page: query.page,
+        limit: query.limit,
+      });
+      if (ids.length === 0) return paginate([], total, query.page, query.limit);
+      const found = await this.prisma.business.findMany({
+        where: { id: { in: ids } },
+        include: BUSINESS_INCLUDE,
+      });
+      const rank = new Map(ids.map((id, index) => [id, index]));
+      const ordered = found
+        .sort((a, b) => (rank.get(a.id) ?? 0) - (rank.get(b.id) ?? 0))
+        .map((business) => this.toSummary(business));
+      return paginate(ordered, total, query.page, query.limit);
+    }
+
     const where: Prisma.BusinessWhereInput = {
       deletedAt: null,
       isActive: true,
@@ -318,6 +345,41 @@ export class BusinessesService {
                     WHERE "pincodeCode" = ${query.pincode} AND "deletedAt" IS NULL AND "geo" IS NOT NULL)`
       : Prisma.sql`ST_SetSRID(ST_MakePoint(${query.longitude}::double precision, ${query.latitude}::double precision), 4326)::geography`;
     const term = query.q?.trim();
+
+    // A text query goes through the ranked, typo-tolerant search (relevance first, then distance)
+    // rather than a plain ILIKE. An exact pincode is not radius-clipped (its centroid is coarse);
+    // a plain "near me" query uses the geo radius. Discovery-area browsing (which maps to many
+    // categories) stays on the geo path below. No query at all → pure-geo browse below.
+    if (term && !query.area) {
+      const { ids, total } = await this.businessSearch.search({
+        query: term,
+        pincode: query.pincode,
+        categoryId: query.categoryId,
+        ...(query.pincode
+          ? {}
+          : { latitude: query.latitude, longitude: query.longitude, radiusKm: query.radiusKm }),
+        page: query.page,
+        limit: query.limit,
+      });
+      if (ids.length === 0) return paginate([], total, query.page, query.limit);
+      const distanceRows = await this.prisma.$queryRaw<
+        Array<{ id: string; distanceMeters: number }>
+      >(
+        Prisma.sql`SELECT id, ST_Distance("geo", ${point}) AS "distanceMeters"
+                   FROM "businesses"
+                   WHERE id IN (${Prisma.join(ids.map((id) => Prisma.sql`${id}::uuid`))})`,
+      );
+      const distanceById = new Map(distanceRows.map((r) => [r.id, Number(r.distanceMeters)]));
+      const found = await this.prisma.business.findMany({
+        where: { id: { in: ids } },
+        include: BUSINESS_INCLUDE,
+      });
+      const rank = new Map(ids.map((id, index) => [id, index]));
+      const items = found
+        .sort((a, b) => (rank.get(a.id) ?? 0) - (rank.get(b.id) ?? 0))
+        .map((business) => this.toSummary(business, distanceById.get(business.id)));
+      return paginate(items, total, query.page, query.limit);
+    }
 
     // The business filter is by discovery area ("Food"), since businesses use an import taxonomy
     // distinct from the marketplace category tree. An explicit categoryId is still honoured for
