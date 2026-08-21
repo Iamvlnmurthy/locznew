@@ -135,8 +135,13 @@ export default async function SearchPage({
   const bizLat = city?.latitude;
   const bizLon = city?.longitude;
   const bizRadiusKm = params.radiusKm ? Number(params.radiusKm) : undefined;
+  // Run the business search whenever the visitor has a location OR typed a query. Previously it
+  // required a location, so an anonymous "dosa" search returned nothing even though the directory
+  // holds thousands — the main "search doesn't work" complaint. With a query and no location it
+  // falls through to a nationwide name search (/businesses?q=), which is exactly what a searcher
+  // wants: find the place by name first, narrow by area second.
   const businessPage =
-    (bizLat !== undefined && bizLon !== undefined) || pincode || cityId
+    (bizLat !== undefined && bizLon !== undefined) || pincode || cityId || Boolean(params.q)
       ? await loadNearbyBusinesses({
           q: params.q,
           pincode,
