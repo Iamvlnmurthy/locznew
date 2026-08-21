@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { RedisModule } from '../redis/redis.module';
 import { LocalAlertsService } from './local-alerts.service';
 import { LocalAreaService } from './local-area.service';
+import { LocalDealsService } from './local-deals.service';
 import { LocalJobsService } from './local-jobs.service';
 import { LocalNewsService } from './local-news.service';
 import { WeatherController } from './weather.controller';
@@ -20,6 +21,7 @@ import { WeatherService } from './weather.service';
     LocalAreaService,
     LocalNewsService,
     LocalJobsService,
+    LocalDealsService,
     LocalAlertsService,
   ],
   exports: [
@@ -27,6 +29,7 @@ import { WeatherService } from './weather.service';
     LocalAreaService,
     LocalNewsService,
     LocalJobsService,
+    LocalDealsService,
     LocalAlertsService,
   ],
 })

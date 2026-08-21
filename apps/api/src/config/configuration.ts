@@ -41,6 +41,9 @@ export const envSchema = z.object({
   ADZUNA_APP_ID: z.string().optional(),
   ADZUNA_APP_KEY: z.string().optional(),
 
+  // Optional: enables the "Deals" strip (Cuelinks Publisher API). Absent → the section hides.
+  CUELINKS_API_KEY: z.string().optional(),
+
   JWT_ACCESS_SECRET: z.string().min(32, 'JWT_ACCESS_SECRET must be at least 32 characters'),
   JWT_REFRESH_SECRET: z.string().min(32, 'JWT_REFRESH_SECRET must be at least 32 characters'),
   JWT_ACCESS_TTL: z.string().default('15m'),

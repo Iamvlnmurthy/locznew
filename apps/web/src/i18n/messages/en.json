@@ -1595,8 +1595,14 @@
     "title": "Post your ad"
   },
   "getApp": {
-    "title": "Post your ad",
+    "title": "Your neighbourhood, in your pocket",
     "lede": "Buy and sell near you, in your language. Android app.",
+    "eyebrow": "LocZ for Android",
+    "tagline": "Everything useful around you",
+    "assurances": "App assurances",
+    "sourceTrust": "From locz.in",
+    "platformTrust": "Made for Android",
+    "updateTrust": "Automatic updates",
     "download": "Download for Android",
     "version": "Version",
     "installTitle": "How to install",
@@ -1703,7 +1709,12 @@
     "fromCommunity": "From your community",
     "emptyTitle": "Nothing nearby yet",
     "emptyBody": "Try a wider radius or check again shortly.",
-    "searchCta": "Search LocZ"
+    "searchCta": "Search LocZ",
+    "deals": "Deals & offers",
+    "dealsSource": "Affiliate offers",
+    "couponLabel": "Code",
+    "redeemLabel": "Redeem",
+    "dealsNote": "Online offers from partner merchants — not location-specific."
   },
   "hub": {
     "metaTitle": "{category} in {city}",

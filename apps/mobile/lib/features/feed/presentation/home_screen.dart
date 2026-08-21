@@ -158,6 +158,7 @@ class _DiscoveryFeedScreenState extends ConsumerState<DiscoveryFeedScreen> {
   bool get _showAlerts => widget.area == 'alerts';
   bool get _showNews => widget.area == 'news';
   bool get _showJobs => widget.area == 'jobs';
+  bool get _showDeals => widget.area == 'deals';
   bool get _showBusinesses => widget.area == 'businesses';
   bool get _showCommunityFeed =>
       widget.area == 'local-now' ||
@@ -197,6 +198,7 @@ class _DiscoveryFeedScreenState extends ConsumerState<DiscoveryFeedScreen> {
               if (_showAlerts) const SliverToBoxAdapter(child: _LocalAlertsSection()),
               if (_showNews) const SliverToBoxAdapter(child: _LocalNewsSection()),
               if (_showJobs) const SliverToBoxAdapter(child: _LocalJobsSection()),
+              if (_showDeals) const SliverToBoxAdapter(child: _LocalDealsSection()),
               if (_showBusinesses) const SliverToBoxAdapter(child: _NearbyBusinessesSection()),
               if (_showCommunityFeed)
                 feed.when(
@@ -1895,6 +1897,192 @@ class _LocalJobsSectionState extends ConsumerState<_LocalJobsSection> {
             padding: const EdgeInsets.only(top: 4),
             child: Text(
               'Adzuna',
+              style:
+                  theme.textTheme.labelSmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// "Local Now" deals — live affiliate offers linking out to the merchant to redeem. Mirrors the
+/// web Deals surface. Deliberately national online offers, NOT location-specific and NOT LocZ-owned
+/// listings. Hidden when there is nothing (or on error / when unconfigured).
+class _LocalDealsSection extends ConsumerStatefulWidget {
+  const _LocalDealsSection();
+
+  @override
+  ConsumerState<_LocalDealsSection> createState() => _LocalDealsSectionState();
+}
+
+class _LocalDealsSectionState extends ConsumerState<_LocalDealsSection> {
+  List<
+      ({
+        String id,
+        String title,
+        String merchant,
+        String description,
+        String? couponCode,
+        String? imageUrl,
+        String url,
+        String? category,
+        String? endDate,
+      })> _items = const [];
+  bool _loading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _load();
+  }
+
+  Future<void> _load() async {
+    try {
+      final items = await ref.read(listingRepositoryProvider).localDeals();
+      if (mounted) {
+        setState(() {
+          _items = items;
+          _loading = false;
+        });
+      }
+    } catch (_) {
+      if (mounted) setState(() => _loading = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_loading || _items.isEmpty) return const SizedBox.shrink();
+    final theme = Theme.of(context);
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 24, 16, 0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const _SectionHeader(
+            title: 'Deals & offers',
+            hint: 'Affiliate offers',
+          ),
+          Padding(
+            padding: const EdgeInsets.only(bottom: 4),
+            child: Text(
+              'Online offers from partner merchants — not location-specific.',
+              style:
+                  theme.textTheme.labelSmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+            ),
+          ),
+          const SizedBox(height: 8),
+          for (final deal in _items)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 10),
+              child: Material(
+                color: theme.colorScheme.surface,
+                borderRadius: BorderRadius.circular(16),
+                clipBehavior: Clip.antiAlias,
+                child: InkWell(
+                  onTap: () => launchUrl(
+                    Uri.parse(deal.url),
+                    mode: LaunchMode.externalApplication,
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      if (deal.imageUrl != null && deal.imageUrl!.isNotEmpty)
+                        AspectRatio(
+                          aspectRatio: 16 / 9,
+                          child: Image.network(
+                            deal.imageUrl!,
+                            fit: BoxFit.cover,
+                            errorBuilder: (_, __, ___) => Container(
+                              color: theme.colorScheme.primary.withValues(alpha: 0.08),
+                              child: Icon(
+                                Icons.local_offer_outlined,
+                                color: theme.colorScheme.primary,
+                              ),
+                            ),
+                          ),
+                        ),
+                      Padding(
+                        padding: const EdgeInsets.all(12),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              deal.title,
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                              style:
+                                  theme.textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w700),
+                            ),
+                            if (deal.description.isNotEmpty) ...[
+                              const SizedBox(height: 4),
+                              Text(
+                                deal.description,
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                                style: theme.textTheme.labelSmall?.copyWith(
+                                  color: theme.colorScheme.onSurfaceVariant,
+                                ),
+                              ),
+                            ],
+                            const SizedBox(height: 8),
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: Text(
+                                    deal.merchant.isNotEmpty
+                                        ? 'via ${deal.merchant}'
+                                        : (deal.category ?? ''),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: theme.textTheme.labelSmall?.copyWith(
+                                      color: theme.colorScheme.onSurfaceVariant,
+                                    ),
+                                  ),
+                                ),
+                                if (deal.couponCode != null && deal.couponCode!.isNotEmpty)
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                    decoration: BoxDecoration(
+                                      borderRadius: BorderRadius.circular(999),
+                                      border: Border.all(
+                                        color: theme.colorScheme.primary,
+                                        width: 1,
+                                      ),
+                                    ),
+                                    child: Text(
+                                      'Code: ${deal.couponCode}',
+                                      style: theme.textTheme.labelSmall?.copyWith(
+                                        color: theme.colorScheme.primary,
+                                        fontWeight: FontWeight.w700,
+                                      ),
+                                    ),
+                                  )
+                                else
+                                  Text(
+                                    'Redeem',
+                                    style: theme.textTheme.labelSmall?.copyWith(
+                                      color: theme.colorScheme.primary,
+                                      fontWeight: FontWeight.w700,
+                                    ),
+                                  ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          Padding(
+            padding: const EdgeInsets.only(top: 4),
+            child: Text(
+              'Cuelinks',
               style:
                   theme.textTheme.labelSmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
             ),

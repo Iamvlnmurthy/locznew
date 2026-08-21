@@ -291,6 +291,40 @@ class ListingRepository {
     ];
   }
 
+  /// Live affiliate deals/offers, pulled on demand (never stored). Display-only: title, merchant,
+  /// coupon + a link out to redeem at the merchant. Deliberately national online offers, NOT
+  /// location-specific and NOT LocZ-owned listings. Empty when unconfigured or on failure.
+  Future<
+      List<
+          ({
+            String id,
+            String title,
+            String merchant,
+            String description,
+            String? couponCode,
+            String? imageUrl,
+            String url,
+            String? category,
+            String? endDate,
+          })>> localDeals() async {
+    final json = await _api.get<Map<String, dynamic>>('/local-now/deals');
+    final deals = (json['deals'] as List<dynamic>? ?? []);
+    return [
+      for (final entry in deals)
+        (
+          id: (entry as Map<String, dynamic>)['id'] as String? ?? '',
+          title: entry['title'] as String? ?? '',
+          merchant: entry['merchant'] as String? ?? '',
+          description: entry['description'] as String? ?? '',
+          couponCode: entry['couponCode'] as String?,
+          imageUrl: entry['imageUrl'] as String?,
+          url: entry['url'] as String? ?? '',
+          category: entry['category'] as String?,
+          endDate: entry['endDate'] as String?,
+        ),
+    ];
+  }
+
   Future<BusinessDetail> businessDetail(String slug) async {
     final json = await _api.get<Map<String, dynamic>>('/businesses/$slug');
     return BusinessDetail.fromJson(json);

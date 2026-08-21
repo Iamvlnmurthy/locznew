@@ -44,6 +44,18 @@ interface LocalAlert {
   publishedAt: string | null;
 }
 
+interface LocalDeal {
+  id: string;
+  title: string;
+  merchant: string;
+  description: string;
+  couponCode: string | null;
+  imageUrl: string | null;
+  url: string;
+  category: string | null;
+  endDate: string | null;
+}
+
 const destinations = [
   'local-now',
   'businesses',
@@ -108,45 +120,52 @@ export default async function DiscoveryAreaPage({ params }: { params: Promise<{ 
   const showAlerts = area === 'alerts';
   const showNews = area === 'news';
   const showJobs = area === 'jobs';
+  const showDeals = area === 'deals';
   const showBusinesses = area === 'businesses';
   const alertQuery = new URLSearchParams({ q: cityName });
   if (place?.id) alertQuery.set('cityId', place.id);
 
-  const [feed, weatherResponse, newsResponse, alertResponse, jobsResponse, businesses] =
-    await Promise.all([
-      apiSafe<Feed>(`/feed?${feedQuery.toString()}`, { auth: true }),
-      showWeather && city?.latitude !== undefined && city.longitude !== undefined
-        ? apiSafe<{ weather: LocalWeather | null }>(
-            `/local-now/weather?latitude=${city.latitude}&longitude=${city.longitude}`,
-          )
-        : Promise.resolve(null),
-      showNews
-        ? apiSafe<{ headlines: NewsHeadline[] }>(
-            `/local-now/news?q=${encodeURIComponent(cityName)}`,
-          )
-        : Promise.resolve(null),
-      showAlerts
-        ? apiSafe<{ alerts: LocalAlert[] }>(`/local-now/alerts?${alertQuery.toString()}`)
-        : Promise.resolve(null),
-      showJobs
-        ? apiSafe<{ jobs: JobPosting[] }>(`/local-now/jobs?q=${encodeURIComponent(cityName)}`)
-        : Promise.resolve(null),
-      showBusinesses
-        ? place?.latitude !== undefined && place.longitude !== undefined
-          ? loadNearbyBusinesses({
-              latitude: place.latitude,
-              longitude: place.longitude,
-              radiusKm,
-              pincode: city?.pincode,
-              page: 1,
-            })
-          : city?.pincode
-            ? loadNearbyBusinesses({ pincode: city.pincode, page: 1 })
-            : place?.id
-              ? loadNearbyBusinesses({ cityId: place.id, page: 1 })
-              : Promise.resolve({ items: [], total: 0, page: 1, hasNextPage: false })
-        : Promise.resolve({ items: [], total: 0, page: 1, hasNextPage: false }),
-    ]);
+  const [
+    feed,
+    weatherResponse,
+    newsResponse,
+    alertResponse,
+    jobsResponse,
+    dealsResponse,
+    businesses,
+  ] = await Promise.all([
+    apiSafe<Feed>(`/feed?${feedQuery.toString()}`, { auth: true }),
+    showWeather && city?.latitude !== undefined && city.longitude !== undefined
+      ? apiSafe<{ weather: LocalWeather | null }>(
+          `/local-now/weather?latitude=${city.latitude}&longitude=${city.longitude}`,
+        )
+      : Promise.resolve(null),
+    showNews
+      ? apiSafe<{ headlines: NewsHeadline[] }>(`/local-now/news?q=${encodeURIComponent(cityName)}`)
+      : Promise.resolve(null),
+    showAlerts
+      ? apiSafe<{ alerts: LocalAlert[] }>(`/local-now/alerts?${alertQuery.toString()}`)
+      : Promise.resolve(null),
+    showJobs
+      ? apiSafe<{ jobs: JobPosting[] }>(`/local-now/jobs?q=${encodeURIComponent(cityName)}`)
+      : Promise.resolve(null),
+    showDeals ? apiSafe<{ deals: LocalDeal[] }>(`/local-now/deals`) : Promise.resolve(null),
+    showBusinesses
+      ? place?.latitude !== undefined && place.longitude !== undefined
+        ? loadNearbyBusinesses({
+            latitude: place.latitude,
+            longitude: place.longitude,
+            radiusKm,
+            pincode: city?.pincode,
+            page: 1,
+          })
+        : city?.pincode
+          ? loadNearbyBusinesses({ pincode: city.pincode, page: 1 })
+          : place?.id
+            ? loadNearbyBusinesses({ cityId: place.id, page: 1 })
+            : Promise.resolve({ items: [], total: 0, page: 1, hasNextPage: false })
+      : Promise.resolve({ items: [], total: 0, page: 1, hasNextPage: false }),
+  ]);
 
   const types = listingTypes[area];
   const seen = new Set<string>();
@@ -161,6 +180,7 @@ export default async function DiscoveryAreaPage({ params }: { params: Promise<{ 
   const news = newsResponse?.headlines ?? [];
   const alerts = alertResponse?.alerts ?? [];
   const jobs = jobsResponse?.jobs ?? [];
+  const deals = dealsResponse?.deals ?? [];
 
   return (
     <main className="discovery-feed-page">
@@ -293,6 +313,55 @@ export default async function DiscoveryAreaPage({ params }: { params: Promise<{ 
             </section>
           ) : null}
 
+          {deals.length > 0 ? (
+            <section className="discovery-source-section">
+              <div className="discovery-source-section__head">
+                <span>{d.deals}</span>
+                <small>{d.dealsSource}</small>
+              </div>
+              <p className="discovery-source-note">{d.dealsNote}</p>
+              <div className="discovery-deal-grid">
+                {deals.map((deal) => (
+                  <a
+                    key={deal.id}
+                    href={deal.url}
+                    target="_blank"
+                    rel="nofollow sponsored noopener noreferrer"
+                    className="discovery-deal-card"
+                  >
+                    {deal.imageUrl ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        className="discovery-deal-card__media"
+                        src={deal.imageUrl}
+                        alt=""
+                        loading="lazy"
+                      />
+                    ) : (
+                      <span className="discovery-deal-card__media discovery-deal-card__media--empty">
+                        <Icon name="tag" />
+                      </span>
+                    )}
+                    <div className="discovery-deal-card__body">
+                      <strong>{deal.title}</strong>
+                      {deal.description ? <p>{deal.description}</p> : null}
+                      <div className="discovery-deal-card__foot">
+                        <small>{deal.merchant ? `via ${deal.merchant}` : deal.category}</small>
+                        {deal.couponCode ? (
+                          <span className="discovery-deal-card__code">
+                            {d.couponLabel}: {deal.couponCode}
+                          </span>
+                        ) : (
+                          <span className="discovery-deal-card__redeem">{d.redeemLabel}</span>
+                        )}
+                      </div>
+                    </div>
+                  </a>
+                ))}
+              </div>
+            </section>
+          ) : null}
+
           {listings.length > 0 ? (
             <section className="discovery-source-section">
               <div className="discovery-source-section__head">
@@ -344,6 +413,7 @@ export default async function DiscoveryAreaPage({ params }: { params: Promise<{ 
           alerts.length === 0 &&
           news.length === 0 &&
           jobs.length === 0 &&
+          deals.length === 0 &&
           listings.length === 0 &&
           businesses.items.length === 0 ? (
             <div className="discovery-feed-empty">

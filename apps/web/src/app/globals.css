@@ -2387,7 +2387,9 @@ html {
   min-height: calc(100vh - 72px);
   padding-block: 38px 55px;
   background:
-    radial-gradient(circle at 12% 12%, rgba(176, 214, 199, 0.29), transparent 24%), #f6f5ef;
+    radial-gradient(circle at 12% 12%, rgb(176 214 199 / 34%), transparent 24rem),
+    radial-gradient(circle at 90% 8%, rgb(242 103 82 / 4%), transparent 22rem),
+    linear-gradient(180deg, #f8fbf9, #eef5f1);
 }
 
 .location-page__inner {
@@ -2472,10 +2474,10 @@ html {
 
 .location-page__picker {
   padding: clamp(22px, 3vw, 34px);
-  border: 1px solid #e0e4dd;
+  border: 1px solid var(--locz-border);
   border-radius: 28px;
-  background: rgba(255, 255, 255, 0.92);
-  box-shadow: 0 24px 60px rgba(24, 55, 44, 0.1);
+  background: rgb(255 255 255 / 94%);
+  box-shadow: 0 28px 74px rgb(24 55 44 / 11%);
 }
 
 .location-page__picker-head > span {
@@ -2506,10 +2508,10 @@ html {
   grid-template-columns: auto minmax(0, 1fr) auto;
   align-items: center;
   gap: 11px;
-  border: 1px solid #bbd6cb;
+  border: 1px solid #b6d4c8;
   border-radius: 16px;
   color: var(--locz-text);
-  background: #e9f4ef;
+  background: linear-gradient(135deg, #e8f4ef, #f5faf7);
   text-align: left;
   cursor: pointer;
   transition:
@@ -2676,7 +2678,7 @@ html {
   border: 1px solid transparent;
   border-radius: 13px;
   color: var(--locz-text);
-  background: #fafaf7;
+  background: #f8fbf9;
   text-align: left;
   cursor: pointer;
   transition:
@@ -2754,7 +2756,7 @@ html {
   border: 1px dashed var(--locz-border-strong);
   border-radius: 14px;
   color: var(--locz-text-muted);
-  background: #fafaf7;
+  background: #f8fbf9;
   text-align: center;
   font-size: 0.7rem;
   line-height: 1.5;
@@ -17042,21 +17044,409 @@ body {
   line-height: 1.65;
 }
 
-.get-app-card > p:first-of-type {
-  margin-block: 24px;
+.get-app-page {
+  min-height: calc(100vh - 72px);
+  padding: clamp(22px, 4vw, 58px) 0 70px;
+  overflow: hidden;
+  background:
+    radial-gradient(circle at 86% 8%, rgb(240 185 95 / 13%), transparent 25rem),
+    radial-gradient(circle at 8% 20%, rgb(15 102 84 / 9%), transparent 30rem),
+    linear-gradient(180deg, #f8fbf9, #edf5f1);
 }
-.get-app-card .btn {
-  min-height: 52px;
+
+.info-experience:has(.get-app-page) {
+  padding: 0;
 }
-.get-app-card .static-page__meta {
+
+.info-experience__layout:has(.get-app-page) {
+  width: 100%;
+  max-width: none;
+  padding: 0;
+}
+
+.info-card:has(> .get-app-page) {
+  width: 100%;
+  max-width: none;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.get-app-hero {
+  min-height: 540px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(330px, 0.72fr);
+  align-items: center;
+  gap: clamp(32px, 7vw, 100px);
+  padding: clamp(30px, 5vw, 70px);
+  overflow: hidden;
+  border: 1px solid rgb(255 255 255 / 76%);
+  border-radius: 36px;
+  background:
+    linear-gradient(125deg, rgb(9 62 51 / 98%), rgb(13 91 73 / 94%)),
+    var(--locz-primary);
+  box-shadow: 0 35px 90px rgb(17 65 51 / 18%);
+}
+
+.get-app-hero__copy {
+  position: relative;
+  z-index: 2;
+  min-width: 0;
+  color: white;
+}
+
+.get-app-hero__eyebrow {
+  color: #f4c775;
   font-size: 0.72rem;
+  font-weight: 850;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
 }
-.get-app-card .static-page__note {
-  margin-top: 10px;
-  padding: 12px 14px;
-  border-left: 3px solid var(--locz-accent);
-  border-radius: 0 10px 10px 0;
-  background: var(--locz-surface-muted);
+
+.get-app-hero h1 {
+  max-width: 690px;
+  margin: 12px 0 18px;
+  color: white;
+  font-size: clamp(3rem, 6vw, 5.75rem);
+  line-height: 0.96;
+  letter-spacing: -0.065em;
+}
+
+.get-app-hero__copy > p {
+  max-width: 610px;
+  margin: 0;
+  color: rgb(255 255 255 / 72%);
+  font-size: clamp(0.95rem, 1.4vw, 1.13rem);
+  line-height: 1.7;
+}
+
+.get-app-hero__download {
+  width: fit-content;
+  min-height: 58px;
+  margin-top: 30px;
+  padding-inline: 22px;
+  border: 1px solid rgb(255 255 255 / 42%);
+  color: #143a31;
+  background: #fff;
+  box-shadow: 0 18px 42px rgb(5 34 27 / 24%);
+}
+
+.get-app-hero__download:hover {
+  color: #143a31;
+  background: #f5fbf8;
+}
+
+.get-app-hero__download > span {
+  font-size: 1.2rem;
+}
+
+.get-app-hero__version {
+  margin-top: 11px !important;
+  color: rgb(255 255 255 / 57%) !important;
+  font-size: 0.7rem !important;
+}
+
+.get-app-hero__trust {
+  margin-top: 28px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.get-app-hero__trust span {
+  padding: 7px 10px;
+  border: 1px solid rgb(255 255 255 / 14%);
+  border-radius: 999px;
+  color: rgb(255 255 255 / 76%);
+  background: rgb(255 255 255 / 7%);
+  font-size: 0.67rem;
+  font-weight: 700;
+}
+
+.get-app-hero__visual {
+  position: relative;
+  min-width: 0;
+  min-height: 410px;
+  display: grid;
+  place-items: center;
+}
+
+.get-app-device {
+  position: relative;
+  z-index: 2;
+  width: 245px;
+  min-height: 420px;
+  padding: 48px 24px 25px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  border: 8px solid #17251f;
+  border-radius: 42px;
+  color: var(--locz-text);
+  background: linear-gradient(165deg, #fff, #edf5f1);
+  box-shadow: 0 42px 80px rgb(2 25 19 / 42%);
+  transform: rotate(4deg);
+}
+
+.get-app-device__top {
+  position: absolute;
+  top: 12px;
+  width: 76px;
+  height: 7px;
+  border-radius: 999px;
+  background: #17251f;
+}
+
+.get-app-device img {
+  width: 126px;
+  height: 126px;
+  margin-top: 15px;
+  border-radius: 30px;
+  box-shadow: 0 18px 36px rgb(20 74 60 / 17%);
+}
+
+.get-app-device strong {
+  margin-top: 20px;
+  font-size: 1.35rem;
+  letter-spacing: -0.04em;
+}
+
+.get-app-device small {
+  margin-top: 4px;
+  color: var(--locz-text-muted);
+  font-size: 0.62rem;
+}
+
+.get-app-device__tiles {
+  width: 100%;
+  margin-top: 28px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.get-app-device__tiles i {
+  height: 48px;
+  border: 1px solid var(--locz-border);
+  border-radius: 13px;
+  background: white;
+}
+
+.get-app-device__tiles i:nth-child(1) {
+  background: #e8f3ef;
+}
+
+.get-app-device__tiles i:nth-child(4) {
+  background: #fff1e9;
+}
+
+.get-app-hero__orb {
+  position: absolute;
+  border: 1px solid rgb(255 255 255 / 11%);
+  border-radius: 50%;
+}
+
+.get-app-hero__orb--one {
+  width: 360px;
+  height: 360px;
+}
+
+.get-app-hero__orb--two {
+  width: 490px;
+  height: 490px;
+}
+
+.get-app-install {
+  margin-top: 22px;
+  padding: clamp(26px, 4vw, 48px);
+  display: grid;
+  grid-template-columns: minmax(190px, 0.32fr) minmax(0, 1fr);
+  gap: clamp(30px, 5vw, 70px);
+  border: 1px solid var(--locz-border);
+  border-radius: 28px;
+  background: rgb(255 255 255 / 90%);
+  box-shadow: var(--locz-shadow-md);
+}
+
+.get-app-install__heading span {
+  color: var(--locz-coral);
+  font-size: 0.68rem;
+  font-weight: 850;
+  letter-spacing: 0.12em;
+}
+
+.get-app-install__heading h2 {
+  margin: 9px 0 0;
+  font-size: clamp(1.8rem, 3vw, 2.65rem);
+  letter-spacing: -0.05em;
+}
+
+.get-app-install__steps {
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  list-style: none;
+}
+
+.get-app-install__steps li {
+  min-height: 170px;
+  padding: 18px;
+  border: 1px solid var(--locz-border);
+  border-radius: 18px;
+  background: var(--locz-surface-elevated);
+}
+
+.get-app-install__steps span {
+  width: 34px;
+  height: 34px;
+  display: grid;
+  place-items: center;
+  border-radius: 11px;
+  color: var(--locz-primary);
+  background: var(--locz-primary-soft);
+  font-size: 0.7rem;
+  font-weight: 850;
+}
+
+.get-app-install__steps p {
+  margin: 22px 0 0;
+  color: var(--locz-text-secondary);
+  font-size: 0.78rem;
+  line-height: 1.65;
+}
+
+.get-app-notes {
+  margin-top: 14px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.get-app-notes p {
+  margin: 0;
+  padding: 16px 18px;
+  border: 1px solid var(--locz-border);
+  border-radius: 16px;
+  color: var(--locz-text-secondary);
+  background: rgb(255 255 255 / 76%);
+  font-size: 0.75rem;
+  line-height: 1.6;
+}
+
+@media (max-width: 860px) {
+  .get-app-hero {
+    min-height: auto;
+    grid-template-columns: 1fr;
+  }
+
+  .get-app-hero__visual {
+    min-height: 350px;
+  }
+
+  .get-app-install {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 620px) {
+  .get-app-page {
+    padding: 10px 0 34px;
+  }
+
+  .get-app-hero {
+    width: calc(100vw - 16px) !important;
+    min-width: 0;
+    max-width: calc(100vw - 16px) !important;
+    margin-inline: 8px;
+    padding: 30px 22px 35px;
+    border-radius: 26px;
+  }
+
+  .get-app-hero h1 {
+    max-width: 100%;
+    font-size: clamp(2rem, 9.2vw, 2.3rem);
+    overflow-wrap: anywhere;
+  }
+
+  .get-app-hero__copy > p {
+    max-width: 100%;
+    font-size: 0.86rem;
+  }
+
+  .get-app-hero__download {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    padding-inline: 12px;
+    justify-content: center;
+    white-space: normal;
+    text-align: center;
+  }
+
+  .get-app-hero__trust span {
+    max-width: 100%;
+    overflow-wrap: anywhere;
+  }
+
+  .get-app-hero__trust {
+    width: 100%;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .get-app-hero__trust span:last-child {
+    grid-column: 1 / -1;
+    justify-self: start;
+  }
+
+  .get-app-hero__visual {
+    min-height: 315px;
+  }
+
+  .get-app-device {
+    width: 205px;
+    min-height: 335px;
+    padding-top: 38px;
+    border-width: 6px;
+    border-radius: 34px;
+  }
+
+  .get-app-device img {
+    width: 94px;
+    height: 94px;
+  }
+
+  .get-app-install {
+    margin: 12px 8px 0;
+    padding: 24px 18px;
+    border-radius: 22px;
+  }
+
+  .get-app-install__steps {
+    grid-template-columns: 1fr;
+  }
+
+  .get-app-install__steps li {
+    min-height: 0;
+    display: grid;
+    grid-template-columns: auto 1fr;
+    align-items: start;
+    gap: 13px;
+  }
+
+  .get-app-install__steps p {
+    margin: 2px 0 0;
+  }
+
+  .get-app-notes {
+    margin: 12px 8px 0;
+    grid-template-columns: 1fr;
+  }
 }
 
 @media (max-width: 520px) {
@@ -19405,6 +19795,120 @@ h4,
 .discovery-source-section__head small {
   color: var(--locz-text-muted);
   font-size: 0.65rem;
+}
+
+.discovery-source-note {
+  margin: 0;
+  padding: 0 18px 10px;
+  color: var(--locz-text-muted);
+  font-size: 0.72rem;
+}
+
+.discovery-deal-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 14px;
+  padding: 4px 18px 18px;
+}
+
+.discovery-deal-card {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border: 1px solid var(--locz-border);
+  border-radius: 16px;
+  background: var(--locz-surface);
+  text-decoration: none;
+  color: inherit;
+  transition:
+    transform 180ms ease,
+    box-shadow 180ms ease,
+    border-color 180ms ease;
+}
+
+.discovery-deal-card:hover {
+  transform: translateY(-3px);
+  border-color: var(--locz-primary);
+  box-shadow: 0 12px 30px -18px rgba(0, 0, 0, 0.45);
+}
+
+.discovery-deal-card__media {
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  object-fit: cover;
+  background: var(--locz-surface-muted, rgba(0, 0, 0, 0.04));
+}
+
+.discovery-deal-card__media--empty {
+  display: grid;
+  place-items: center;
+  color: var(--locz-primary);
+}
+
+.discovery-deal-card__media--empty svg {
+  width: 34px;
+  height: 34px;
+}
+
+.discovery-deal-card__body {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 12px 14px 14px;
+  flex: 1;
+}
+
+.discovery-deal-card__body strong {
+  font-size: 0.9rem;
+  font-weight: 720;
+  line-height: 1.3;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.discovery-deal-card__body p {
+  margin: 0;
+  font-size: 0.76rem;
+  color: var(--locz-text-secondary);
+  line-height: 1.4;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.discovery-deal-card__foot {
+  margin-top: auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding-top: 4px;
+}
+
+.discovery-deal-card__foot small {
+  color: var(--locz-text-muted);
+  font-size: 0.68rem;
+}
+
+.discovery-deal-card__code {
+  font-size: 0.68rem;
+  font-weight: 720;
+  letter-spacing: 0.03em;
+  padding: 3px 8px;
+  border-radius: 999px;
+  border: 1px dashed var(--locz-primary);
+  color: var(--locz-primary);
+  white-space: nowrap;
+}
+
+.discovery-deal-card__redeem {
+  font-size: 0.68rem;
+  font-weight: 720;
+  color: var(--locz-primary);
+  white-space: nowrap;
 }
 
 .discovery-text-card {

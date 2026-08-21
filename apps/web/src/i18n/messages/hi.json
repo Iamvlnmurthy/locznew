@@ -1595,8 +1595,14 @@
     "title": "अपना विज्ञापन पोस्ट करें"
   },
   "getApp": {
-    "title": "अपना विज्ञापन पोस्ट करें",
+    "title": "आपका पड़ोस, आपकी जेब में",
     "lede": "अपने पास ख़रीदें और बेचें, अपनी भाषा में। Android ऐप।",
+    "eyebrow": "Android के लिए LocZ",
+    "tagline": "आपके आसपास की हर उपयोगी चीज़",
+    "assurances": "ऐप भरोसा",
+    "sourceTrust": "locz.in से",
+    "platformTrust": "Android के लिए बनाया गया",
+    "updateTrust": "अपने-आप अपडेट",
     "download": "Android के लिए डाउनलोड करें",
     "version": "संस्करण",
     "installTitle": "इंस्टॉल कैसे करें",
@@ -1703,7 +1709,12 @@
     "fromCommunity": "आपके समुदाय से",
     "emptyTitle": "अभी आसपास कुछ नहीं",
     "emptyBody": "बड़ा दायरा आज़माएं या थोड़ी देर में फिर देखें।",
-    "searchCta": "LocZ में खोजें"
+    "searchCta": "LocZ में खोजें",
+    "deals": "डील और ऑफ़र",
+    "dealsSource": "सहबद्ध ऑफ़र",
+    "couponLabel": "कोड",
+    "redeemLabel": "रिडीम करें",
+    "dealsNote": "साझेदार व्यापारियों के ऑनलाइन ऑफ़र — स्थान-विशिष्ट नहीं।"
   },
   "hub": {
     "metaTitle": "{city} में {category}",

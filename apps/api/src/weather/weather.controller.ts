@@ -5,6 +5,7 @@ import { IsLatitude, IsLongitude, IsOptional, IsString, Matches, MaxLength } fro
 import { Public } from '../rbac/rbac.decorators';
 import { LocalAlert, LocalAlertsService } from './local-alerts.service';
 import { AreaCount, LocalAreaService } from './local-area.service';
+import { LocalDeal, LocalDealsService } from './local-deals.service';
 import { JobPosting, LocalJobsService } from './local-jobs.service';
 import { LocalNewsService, NewsHeadline } from './local-news.service';
 import { LocalWeather } from './weather.mapper';
@@ -39,6 +40,7 @@ export class WeatherController {
     private readonly localArea: LocalAreaService,
     private readonly localNews: LocalNewsService,
     private readonly localJobs: LocalJobsService,
+    private readonly localDeals: LocalDealsService,
     private readonly localAlerts: LocalAlertsService,
   ) {}
 
@@ -68,6 +70,13 @@ export class WeatherController {
   @ApiOperation({ summary: 'Live local job openings for an area (empty when not configured)' })
   async jobs(@Query() query: NewsQueryDto): Promise<{ jobs: JobPosting[] }> {
     return { jobs: await this.localJobs.nearby(query.q) };
+  }
+
+  @Public()
+  @Get('deals')
+  @ApiOperation({ summary: 'Live affiliate deals/offers (empty when not configured)' })
+  async deals(): Promise<{ deals: LocalDeal[] }> {
+    return { deals: await this.localDeals.list() };
   }
 
   @Public()
