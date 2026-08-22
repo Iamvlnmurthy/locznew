@@ -165,6 +165,18 @@ export class CreateBusinessDto {
 export class UpdateBusinessDto extends PartialType(CreateBusinessDto) {}
 
 export class BusinessNearbyQueryDto extends PaginationQueryDto {
+  @ApiPropertyOptional({
+    description:
+      'Language for category and city names in the results: te, hi, or absent for English. ' +
+      'A query param rather than a header because the web layer caches on the URL — a ' +
+      'header would let one language be served from a cached page in another language.',
+    example: 'te',
+  })
+  @IsOptional()
+  @IsString()
+  @MaxLength(8)
+  lang?: string;
+
   @ApiProperty() @Type(() => Number) @IsLatitude() latitude!: number;
   @ApiProperty() @Type(() => Number) @IsLongitude() longitude!: number;
 
@@ -239,6 +251,18 @@ export class BusinessSummaryDto {
 }
 
 export class BusinessSearchQueryDto extends PaginationQueryDto {
+  @ApiPropertyOptional({
+    description:
+      'Language for category and city names in the results: te, hi, or absent for English. ' +
+      'A query param rather than a header because the web layer caches on the URL — a ' +
+      'header would let one language be served from a cached page in another language.',
+    example: 'te',
+  })
+  @IsOptional()
+  @IsString()
+  @MaxLength(8)
+  lang?: string;
+
   @ApiPropertyOptional({ description: 'Business name or description' })
   @IsOptional()
   @IsString()

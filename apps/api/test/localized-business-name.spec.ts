@@ -36,6 +36,13 @@ describe('the name shown to a reader', () => {
     expect(localizedName({ name: 'Salem', nameTe: '   ' }, 'te')).toBe('Salem');
   });
 
+  it('leaves a name alone when the locale is one we do not translate into', () => {
+    // Tamil Nadu, Kerala and Karnataka hold roughly 800,000 businesses between them and
+    // LocZ has no Tamil, Malayalam or Kannada. Asking for one must fall back, not blank out.
+    expect(localizedName(category, 'ta')).toBe('Grocery & kirana');
+    expect(localizedName(category, 'ml')).toBe('Grocery & kirana');
+  });
+
   it('is not confused by the case of the locale', () => {
     // The stored preference is "TE"; the URL prefix is "te".
     expect(localizedName(category, 'TE')).toBe('కిరాణా');

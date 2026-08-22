@@ -105,7 +105,7 @@ export class BusinessesService {
       const rank = new Map(ids.map((id, index) => [id, index]));
       const ordered = found
         .sort((a, b) => (rank.get(a.id) ?? 0) - (rank.get(b.id) ?? 0))
-        .map((business) => this.toSummary(business));
+        .map((business) => this.toSummary(business, undefined, query.lang));
       return paginate(ordered, total, query.page, query.limit);
     }
 
@@ -150,7 +150,7 @@ export class BusinessesService {
     ]);
 
     return paginate(
-      businesses.map((business) => this.toSummary(business)),
+      businesses.map((business) => this.toSummary(business, undefined, query.lang)),
       total,
       query.page,
       query.limit,
@@ -338,6 +338,7 @@ export class BusinessesService {
     page: number;
     limit: number;
     skip: number;
+    lang?: string;
   }): Promise<PaginatedDto<BusinessSummaryDto>> {
     const radiusMeters = (query.radiusKm ?? 25) * 1000;
     // The `pincodes` table's lat/lng is a coarse district centroid that can be ~18km from the
@@ -382,7 +383,7 @@ export class BusinessesService {
       const rank = new Map(ids.map((id, index) => [id, index]));
       const items = found
         .sort((a, b) => (rank.get(a.id) ?? 0) - (rank.get(b.id) ?? 0))
-        .map((business) => this.toSummary(business, distanceById.get(business.id)));
+        .map((business) => this.toSummary(business, distanceById.get(business.id), query.lang));
       return paginate(items, total, query.page, query.limit);
     }
 
@@ -451,7 +452,7 @@ export class BusinessesService {
     const order = new Map(rows.map((r, index) => [r.id, index]));
     const items = businesses
       .sort((a, b) => (order.get(a.id) ?? 0) - (order.get(b.id) ?? 0))
-      .map((business) => this.toSummary(business, distanceById.get(business.id)));
+      .map((business) => this.toSummary(business, distanceById.get(business.id), query.lang));
     return paginate(items, total, query.page, query.limit);
   }
 
@@ -997,15 +998,27 @@ export class BusinessesService {
     return businessSlug(name, `${cityName}-${Date.now().toString(36)}`);
   }
 
-  private toSummary(business: BusinessRow, distanceMeters?: number): BusinessSummaryDto {
+  /**
+   * A business as it appears in a list.
+   *
+   * `lang` is threaded all the way down here because these rows are what the directory, the
+   * city hubs and "similar businesses nearby" render — a Telugu page listing English category
+   * names is the same fault as a Telugu page with an English description, just repeated once
+   * per card.
+   */
+  private toSummary(
+    business: BusinessRow,
+    distanceMeters?: number,
+    lang?: string,
+  ): BusinessSummaryDto {
     const publicBrand = findPublicBrand(business.name);
     return {
       id: business.id,
       name: business.name,
       slug: business.slug,
       businessType: business.businessType,
-      categoryName: business.category.name,
-      cityName: business.city.name,
+      categoryName: localizedName(business.category, lang),
+      cityName: localizedName(business.city, lang),
       pincode: business.pincodeCode ?? null,
       ...(distanceMeters !== undefined ? { distanceMeters: Math.round(distanceMeters) } : {}),
       logoUrl: business.logoMediaId ? this.storage.publicUrl(business.logoMediaId) : null,
@@ -1047,7 +1060,7 @@ export class BusinessesService {
     });
 
     return {
-      ...this.toSummary(business),
+      ...this.toSummary(business, undefined, lang),
       // toSummary carries the English names; the profile page speaks the reader's language.
       categoryName,
       cityName,

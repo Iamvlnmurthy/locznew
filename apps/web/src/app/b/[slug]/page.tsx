@@ -175,7 +175,14 @@ export default async function BusinessPage({ params }: { params: Promise<{ slug:
   // "Similar businesses nearby" — the same category around this exact point. Every page gets a
   // different set (it depends on the coordinates), so it is genuinely unique content, and the
   // links weave the directory into a mesh a crawler can follow into the deep pages.
-  const similarQuery = new URLSearchParams({ categoryId: business.categoryId, limit: '9' });
+  // lang travels with the request so the cards carry Telugu category names on a Telugu page.
+  // It is also part of the ISR cache key, which is the reason it belongs in the query string
+  // rather than in a header.
+  const similarQuery = new URLSearchParams({
+    categoryId: business.categoryId,
+    limit: '9',
+    lang: locale,
+  });
   if (business.latitude !== null && business.longitude !== null) {
     similarQuery.set('latitude', String(business.latitude));
     similarQuery.set('longitude', String(business.longitude));

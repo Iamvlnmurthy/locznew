@@ -106,6 +106,7 @@ export class BusinessesController {
       page: query.page,
       limit: query.limit,
       skip: query.skip,
+      lang: query.lang,
     });
   }
 
