@@ -2121,6 +2121,7 @@ model DataSource {
   createdAt           DateTime          @default(now())
   updatedAt           DateTime          @updatedAt
   rawRecords          SourceRawRecord[]
+  newsSources         NewsSource[]
 
   @@index([type, enabled])
 }
@@ -2145,4 +2146,274 @@ model SourceRawRecord {
   @@unique([sourceId, externalId])
   @@index([status])
   @@index([h3])
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// News intelligence (docs/NEWS_INTELLIGENCE_ARCHITECTURE.md). Ingest once, resolve
+// places to coordinates, cluster into events, distribute by PostGIS radius. Public
+// projection defaults to headline + summary + source link; body/media are gated on
+// each source licence (mirrors the DataSource gate).
+// ─────────────────────────────────────────────────────────────────────────────
+
+enum NewsSourceType {
+  RSS
+  ATOM
+  API
+  SITEMAP
+  NEWS_SITEMAP
+  HTML
+  GOV
+  ALERT
+}
+
+/// How much of a source's media LocZ may use. Default is conservative.
+enum NewsMediaPolicy {
+  MEDIA_DISABLED
+  MEDIA_METADATA_ONLY
+  MEDIA_LINK_ONLY
+  MEDIA_EMBED_ALLOWED
+  MEDIA_HOTLINK_ALLOWED
+  MEDIA_DOWNLOAD_ALLOWED
+  MEDIA_DOWNLOAD_AND_REHOST_ALLOWED
+}
+
+/// Verification state of a real-world event. Copy count never promotes a rumour to fact.
+enum NewsEventStatus {
+  VERIFIED
+  HIGH_CONFIDENCE
+  REPORTED
+  UNVERIFIED
+  DISPUTED
+  CORRECTED
+  RETRACTED
+}
+
+/// The role one article plays for an event: the primary report, a supporting independent
+/// report, or a syndicated reprint (which must not count as independent confirmation).
+enum NewsArticleRole {
+  PRIMARY
+  SUPPORTING
+  SYNDICATED
+}
+
+/// Which admin entity a location alias points at. Polymorphic by (type,id) rather than an
+/// FK, since an alias can name a state, district, city or locality.
+enum AliasEntityType {
+  STATE
+  DISTRICT
+  CITY
+  LOCALITY
+}
+
+/// A registered news/information source. Config + licence gate; NO credentials here.
+/// Optionally linked to a DataSource so the production licence gate is shared.
+model NewsSource {
+  id           String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  key          String         @unique
+  name         String
+  domain       String
+  sourceType   NewsSourceType
+  language     String         @default("en")
+  dataSourceId String?        @db.Uuid
+  dataSource   DataSource?    @relation(fields: [dataSourceId], references: [id], onDelete: SetNull)
+
+  coverageStateId    String? @db.Uuid
+  coverageDistrictId String? @db.Uuid
+  coverageCityId     String? @db.Uuid
+  coverageScope      String  @default("regional")
+
+  crawlAllowed     Boolean      @default(true)
+  crawlIntervalSec Int          @default(900)
+  reliability      Int          @default(50)
+  nextFetchAt      DateTime?
+  lastFetchAt      DateTime?
+  lastChangeAt     DateTime?
+  etag             String?
+  lastModified     String?
+  failureCount     Int          @default(0)
+  status           SourceHealth @default(DISABLED)
+
+  mediaPolicy         NewsMediaPolicy @default(MEDIA_METADATA_ONLY)
+  attributionRequired Boolean         @default(true)
+  mediaLicense        String?
+
+  requestCount   Int      @default(0)
+  articlesFound  Int      @default(0)
+  duplicatesSeen Int      @default(0)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  feeds    NewsFeed[]
+  articles NewsArticle[]
+
+  @@index([sourceType, status])
+  @@index([nextFetchAt])
+  @@index([coverageCityId])
+}
+
+/// One feed/sitemap/endpoint URL under a source. A source may have many.
+model NewsFeed {
+  id           String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  sourceId     String         @db.Uuid
+  source       NewsSource     @relation(fields: [sourceId], references: [id], onDelete: Cascade)
+  url          String
+  feedType     NewsSourceType
+  language     String?
+  etag         String?
+  lastModified String?
+  lastFetchAt  DateTime?
+  nextFetchAt  DateTime?
+  active       Boolean        @default(true)
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+
+  rawDocuments RawNewsDocument[]
+
+  @@unique([sourceId, url])
+  @@index([active, nextFetchAt])
+}
+
+/// The unmodified fetched payload for one feed item. Idempotency anchor: re-fetching the
+/// same content never creates a second row.
+model RawNewsDocument {
+  id          String          @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  feedId      String          @db.Uuid
+  feed        NewsFeed        @relation(fields: [feedId], references: [id], onDelete: Cascade)
+  externalId  String
+  contentHash String
+  rawPayload  Json
+  status      IngestionStatus @default(PENDING)
+  fetchError  String?
+  retrievedAt DateTime        @default(now())
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+
+  article NewsArticle?
+
+  @@unique([feedId, externalId])
+  @@unique([feedId, contentHash])
+  @@index([status])
+}
+
+/// A normalized article. Body is nullable and stored only where source policy permits; the
+/// default public projection is title + summary + canonicalUrl + publisher.
+model NewsArticle {
+  id       String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  sourceId String           @db.Uuid
+  source   NewsSource       @relation(fields: [sourceId], references: [id], onDelete: Cascade)
+  rawDocId String?          @unique @db.Uuid
+  rawDoc   RawNewsDocument? @relation(fields: [rawDocId], references: [id], onDelete: SetNull)
+
+  title        String
+  summary      String?
+  body         String?
+  language     String    @default("en")
+  canonicalUrl String    @unique
+  sourceUrl    String
+  publisher    String?
+  author       String?
+  imageUrl     String?
+  category     String?
+  publishedAt  DateTime?
+  updatedAtSrc DateTime?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  events NewsEventArticle[]
+
+  @@index([sourceId, publishedAt])
+  @@index([publishedAt])
+}
+
+/// The canonical, deduplicated real-world event. Carries the geo point (populated by the
+/// locz_sync_geo trigger via the migration) that the nearby-feed radius query hits.
+model NewsEvent {
+  id                String          @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  slug              String          @unique // SEO URL: locz.in/news/<slug>
+  title             String
+  summary           String?
+  categories        String[]
+  severity          Int             @default(0)
+  status            NewsEventStatus @default(REPORTED)
+  trustScore        Int             @default(0)
+  relevanceScore    Int             @default(0)
+  originatingAgency String?
+
+  latitude            Decimal?                               @db.Decimal(10, 7)
+  longitude           Decimal?                               @db.Decimal(10, 7)
+  geo                 Unsupported("geography(Point, 4326)")?
+  distributionRadiusM Int                                    @default(5000)
+  coverageStateId     String?                                @db.Uuid
+  coverageDistrictId  String?                                @db.Uuid
+  coverageCityId      String?                                @db.Uuid
+
+  firstSeenAt    DateTime @default(now())
+  latestUpdateAt DateTime @default(now())
+  sourceCount    Int      @default(1)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  articles  NewsEventArticle[]
+  locations NewsEventLocation[]
+  updates   NewsEventUpdate[]
+
+  @@index([latestUpdateAt])
+  @@index([status, latestUpdateAt])
+}
+
+/// M:N event to article, with the role each article plays (syndication guard lives here).
+model NewsEventArticle {
+  eventId   String          @db.Uuid
+  event     NewsEvent       @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  articleId String          @db.Uuid
+  article   NewsArticle     @relation(fields: [articleId], references: [id], onDelete: Cascade)
+  role      NewsArticleRole @default(SUPPORTING)
+  addedAt   DateTime        @default(now())
+
+  @@id([eventId, articleId])
+  @@index([articleId])
+}
+
+/// A place an event affects, with resolution confidence. Low confidence pins only at
+/// district/state level, never a wrong neighbourhood.
+model NewsEventLocation {
+  id         String          @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  eventId    String          @db.Uuid
+  event      NewsEvent       @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  entityType AliasEntityType
+  entityId   String          @db.Uuid
+  confidence Int             @default(0)
+  createdAt  DateTime        @default(now())
+
+  @@unique([eventId, entityType, entityId])
+  @@index([entityType, entityId])
+}
+
+/// Append-only version history of an event (fire started to controlled to casualties).
+model NewsEventUpdate {
+  id        String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  eventId   String    @db.Uuid
+  event     NewsEvent @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  summary   String
+  changedBy String?
+  createdAt DateTime  @default(now())
+
+  @@index([eventId, createdAt])
+}
+
+/// The long-term asset: every way a place can be named, mapped to the canonical admin
+/// entity. Polymorphic by (entityType, entityId).
+model LocationAlias {
+  id              String          @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  aliasNormalized String
+  aliasDisplay    String
+  entityType      AliasEntityType
+  entityId        String          @db.Uuid
+  language        String?
+  source          String          @default("seed")
+  confidence      Int             @default(100)
+  createdAt       DateTime        @default(now())
+
+  @@unique([aliasNormalized, entityType, entityId])
+  @@index([entityType, entityId])
 }
