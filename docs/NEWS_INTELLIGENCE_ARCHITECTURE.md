@@ -343,3 +343,43 @@ compliance, geo accuracy, multilingual, cost) before the next.
 
 Reliability over exotic AI: a solid RSS→dedup→geo→feed path (P1–P10) is the product; the LLM
 is a last-resort tie-breaker, never the spine.
+
+---
+
+## News Product & Scale (delivery model)
+
+How the ingested events reach a user, and how it stays affordable at India scale. Implemented as
+pure, tested modules: `feed/ranking.ts` (distance-ring + freshness + facets) and
+`refine/refinement.ts` (modern-language regeneration + provider fallback).
+
+**Ingest target:** ~20 _deduplicated events_ per district per day is a **cap, not a floor** — dense
+districts overflow (kept top-20 by trust/severity), sparse ones underfill (fine; the feed widens).
+Roll out **region by region** (Telangana + AP first, ~55 districts), not all 800 on day one.
+
+**The two-speed cost model — this is what makes it viable:**
+
+- **Cheap for everyone (all events):** fetch → geo-tag (locality point via the alias graph) → dedup.
+  Deterministic, no LLM.
+- **Expensive, lazy + cached (only what's shown):** the LocZ summary and each translation are
+  generated **once per (event × language)** and cached forever, **only when an event is about to be
+  shown**. Most of ~16k daily events are never opened, so we never pay for them. `proactiveLanguages
+ForState()` pre-does only the region's languages for **top/emergency** news (Telangana → te/en/hi/ur,
+  never all 13). Provider order = **local Ollama (free, bulk) → Groq/Cerebras/Gemini (fast/quality
+  fallback, rotated on 429)**; see `refineWithFallback`. **Modern spoken TV-news language, not
+  literary** (the `register` note per language fixes "old Telugu").
+
+**The feed (`rankFeed`):** the user picks a **language**; the app gets **location** (asks if not
+detected). Events are ranked by **distance ring** (locality → nearby localities → city → district →
+state → India) with **freshness** breaking ties inside a ring and **emergencies overriding**. A
+**7-day** recency window = the archive (today → older). The scope **auto-widens** as the local
+supply thins (infinite scroll never dead-ends), rather than forcing the user to exhaust 140 first.
+
+**Facets** are filters over the one event store, all backed by indexed columns:
+
+- **topic** (`category`: sports/movies/political/…), **date** (the archive window),
+- **state / India** (`scope` cap), **top news** (`topOnly`: emergency ∨ high trust ∨ high severity).
+
+**Area matching:** articles are ingested at district level but **tagged at locality level** — the
+resolver maps "గచ్చిబౌలి / Gachibowli" via `LocationAlias` to one point; the viewer's selected area
+then matches that news **plus nearby localities within the ring radius** (PostGIS). Articles that
+only name a city/district show at that lower precision, never falsely pinned to a neighbourhood.
