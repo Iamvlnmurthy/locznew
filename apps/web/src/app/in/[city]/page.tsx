@@ -7,6 +7,7 @@ import { ListingCard } from '@/components/listing-card';
 import { Icon } from '@/components/icons';
 import { getTranslator } from '@/i18n';
 import { ApiError, api, apiSafe } from '@/lib/api';
+import { localizedName } from '@/lib/localized-name';
 import { premiumCategoryArtwork } from '@/lib/premium-icon-catalog';
 import { getLocale, localizedAlternates } from '@/lib/session';
 
@@ -37,9 +38,12 @@ export async function generateMetadata({
     };
   }
 
-  const title = t('discovery.cityMetadataTitle', { city: city.name });
+  // The city name in the reader's script. Only 8 of 640 cities are translated so far, so this
+  // is English for most of them — by design, since a blank name is worse than an English one.
+  const cityName = localizedName(city, locale);
+  const title = t('discovery.cityMetadataTitle', { city: cityName });
   const description = t('discovery.cityMetadataDescription', {
-    city: city.name,
+    city: cityName,
     state: city.stateName,
   });
 
@@ -61,6 +65,8 @@ export default async function CityPage({ params }: { params: Promise<{ city: str
 
   if (!city) notFound();
 
+  const cityName = localizedName(city, locale);
+
   const t = getTranslator(locale);
 
   const [result, categories] = await Promise.all([
@@ -75,13 +81,13 @@ export default async function CityPage({ params }: { params: Promise<{ city: str
   const jsonLd = {
     '@context': 'https://schema.org',
     '@type': 'CollectionPage',
-    name: t('discovery.cityCollectionName', { city: city.name }),
+    name: t('discovery.cityCollectionName', { city: cityName }),
     about: {
       '@type': 'City',
-      name: city.name,
+      name: cityName,
       address: {
         '@type': 'PostalAddress',
-        addressLocality: city.name,
+        addressLocality: cityName,
         addressRegion: city.stateName,
         addressCountry: 'IN',
       },
@@ -102,13 +108,13 @@ export default async function CityPage({ params }: { params: Promise<{ city: str
             <nav className="breadcrumbs breadcrumbs--light" aria-label={t('common.breadcrumb')}>
               <Link href="/">{t('nav.home')}</Link>
               <span>›</span>
-              <span>{city.name}</span>
+              <span>{cityName}</span>
             </nav>
             <span className="eyebrow">
-              <i /> {t('discovery.cityEyebrow', { city: city.name })}
+              <i /> {t('discovery.cityEyebrow', { city: cityName })}
             </span>
-            <h1>{t('discovery.cityTitle', { city: city.name })}</h1>
-            <p>{t('discovery.citySubtitle', { city: city.name, state: city.stateName })}</p>
+            <h1>{t('discovery.cityTitle', { city: cityName })}</h1>
+            <p>{t('discovery.citySubtitle', { city: cityName, state: city.stateName })}</p>
 
             <form className="discovery-search" action="/search" method="get" role="search">
               <input type="hidden" name="cityId" value={city.id} />
@@ -120,7 +126,7 @@ export default async function CityPage({ params }: { params: Promise<{ city: str
                 id="city-discovery-search"
                 name="q"
                 type="search"
-                placeholder={t('discovery.searchCity', { city: city.name })}
+                placeholder={t('discovery.searchCity', { city: cityName })}
               />
               <button type="submit">
                 {t('search.submit')} <Icon name="arrow" width="16" height="16" />
@@ -153,7 +159,7 @@ export default async function CityPage({ params }: { params: Promise<{ city: str
             />
             <span className="discovery-pin">
               <Icon name="location" width="18" height="18" />
-              {city.name}
+              {cityName}
             </span>
           </div>
         </div>
@@ -197,7 +203,7 @@ export default async function CityPage({ params }: { params: Promise<{ city: str
         <section className="discovery-results">
           <div className="section__head">
             <div>
-              <span className="section-kicker">{t('discovery.freshIn', { city: city.name })}</span>
+              <span className="section-kicker">{t('discovery.freshIn', { city: cityName })}</span>
               <h2>{t('discovery.latestNearYou')}</h2>
             </div>
             <Link href={`/search?cityId=${city.id}&sort=newest`} className="section-link">
@@ -214,7 +220,7 @@ export default async function CityPage({ params }: { params: Promise<{ city: str
                 width="280"
                 height="230"
               />
-              <h2>{t('discovery.beFirst', { city: city.name })}</h2>
+              <h2>{t('discovery.beFirst', { city: cityName })}</h2>
               <p>{t('feed.empty')}</p>
               <Link href="/post" className="btn btn--primary">
                 <Icon name="plus" width="18" height="18" /> {t('nav.post')}

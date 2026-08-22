@@ -5,6 +5,7 @@ import type { Category, City } from '@locz/shared-types';
 import { Icon } from '@/components/icons';
 import { getMessageGroup, getTranslator } from '@/i18n';
 import { ApiError, SITE_URL, api, apiSafe } from '@/lib/api';
+import { localizedName } from '@/lib/localized-name';
 import { getLocale, localizedAlternates } from '@/lib/session';
 
 interface HubBusiness {
@@ -78,10 +79,16 @@ export async function generateMetadata({
     return { title: 'Not found', robots: { index: false, follow: false } };
   }
   const h = getMessageGroup(locale, 'hub');
-  const title = h.metaTitle.replace('{category}', category.name).replace('{city}', city.name);
+  // The names the page is *about*. Served at /te and /hi these were English, so the title and
+  // meta description of every city-by-category hub were English behind <html lang="te">.
+  const categoryName = localizedName(category, locale);
+  const cityName = localizedName(city, locale);
+  const title = h.metaTitle.replace('{category}', categoryName).replace('{city}', cityName);
   const description = h.metaDescription
-    .replace('{category}', category.name.toLowerCase())
-    .replace('{city}', city.name);
+    // Lower-casing is an English habit; Telugu and Devanagari have no case, and forcing it on
+    // a name that did not come from English is how a proper noun ends up looking wrong.
+    .replace('{category}', locale === 'en' ? categoryName.toLowerCase() : categoryName)
+    .replace('{city}', cityName);
   return {
     title,
     description,
@@ -121,15 +128,17 @@ export default async function CityCategoryPage({
   ]);
   const businesses = result?.items ?? [];
   const total = result?.meta?.total ?? 0;
-  const placeLabel = `${category.name} ${h.inWord} ${city.name}`;
+  const categoryName = localizedName(category, locale);
+  const cityName = localizedName(city, locale);
+  const placeLabel = `${categoryName} ${h.inWord} ${cityName}`;
 
   const breadcrumbLd = {
     '@context': 'https://schema.org',
     '@type': 'BreadcrumbList',
     itemListElement: [
       { '@type': 'ListItem', position: 1, name: 'LocZ', item: SITE_URL },
-      { '@type': 'ListItem', position: 2, name: city.name, item: `${SITE_URL}/in/${city.slug}` },
-      { '@type': 'ListItem', position: 3, name: category.name },
+      { '@type': 'ListItem', position: 2, name: cityName, item: `${SITE_URL}/in/${city.slug}` },
+      { '@type': 'ListItem', position: 3, name: categoryName },
     ],
   };
   const itemListLd = businesses.length
@@ -167,20 +176,26 @@ export default async function CityCategoryPage({
           <nav className="breadcrumbs" aria-label={t('common.breadcrumb')}>
             <Link href="/">{t('nav.home')}</Link>
             <span>›</span>
-            <Link href={`/in/${city.slug}`}>{city.name}</Link>
+            <Link href={`/in/${city.slug}`}>{cityName}</Link>
             <span>›</span>
-            <span>{category.name}</span>
+            <span>{categoryName}</span>
           </nav>
           <h1>{placeLabel}</h1>
           <p>
             {total > 0
               ? h.subtitle
                   .replace('{count}', total.toLocaleString(`${locale}-IN`))
-                  .replace('{category}', category.name.toLowerCase())
-                  .replace('{city}', city.name)
+                  .replace(
+                    '{category}',
+                    locale === 'en' ? categoryName.toLowerCase() : categoryName,
+                  )
+                  .replace('{city}', cityName)
               : h.subtitleEmpty
-                  .replace('{category}', category.name.toLowerCase())
-                  .replace('{city}', city.name)}
+                  .replace(
+                    '{category}',
+                    locale === 'en' ? categoryName.toLowerCase() : categoryName,
+                  )
+                  .replace('{city}', cityName)}
           </p>
         </div>
       </section>
@@ -217,11 +232,11 @@ export default async function CityCategoryPage({
           ) : (
             <div className="hub-empty">
               <h2>
-                {h.emptyTitle.replace('{category}', category.name).replace('{city}', city.name)}
+                {h.emptyTitle.replace('{category}', categoryName).replace('{city}', cityName)}
               </h2>
               <p>{h.emptyBody}</p>
               <Link href={`/in/${city.slug}`} className="btn btn--primary">
-                {h.browseCity.replace('{city}', city.name)} <Icon name="arrow" />
+                {h.browseCity.replace('{city}', cityName)} <Icon name="arrow" />
               </Link>
             </div>
           )}
@@ -240,7 +255,7 @@ export default async function CityCategoryPage({
         <aside className="hub-cross">
           {siblingCategories.length > 0 ? (
             <section>
-              <h2>{h.otherCategories.replace('{city}', city.name)}</h2>
+              <h2>{h.otherCategories.replace('{city}', cityName)}</h2>
               <ul>
                 {siblingCategories.map((c) => (
                   <li key={c.slug}>
@@ -252,12 +267,12 @@ export default async function CityCategoryPage({
           ) : null}
           {otherCities.length > 0 ? (
             <section>
-              <h2>{h.inOtherCities.replace('{category}', category.name)}</h2>
+              <h2>{h.inOtherCities.replace('{category}', categoryName)}</h2>
               <ul>
                 {otherCities.map((c) => (
                   <li key={c.id}>
                     <Link href={`/in/${c.slug}/${category.slug}`}>
-                      {category.name} {h.inWord} {c.name}
+                      {categoryName} {h.inWord} {localizedName(c, locale)}
                     </Link>
                   </li>
                 ))}
