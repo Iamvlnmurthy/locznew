@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { GeoRepository } from '../../prisma/geo.repository';
+import { NewsRefineService } from '../refine/news-refine.service';
 import {
   type CoverageScope,
   type FeedFacets,
@@ -11,6 +12,7 @@ import {
 export interface FeedQuery {
   latitude: number;
   longitude: number;
+  lang?: string;
   category?: string;
   scope?: CoverageScope;
   after?: string;
@@ -28,6 +30,8 @@ export interface FeedCard {
   distanceKm: number | null;
   ring: number;
   publishedAt: string | null;
+  /** true when the title/summary are LocZ's own regenerated content (not the raw source). */
+  locz: boolean;
 }
 
 /** How wide to search the DB per requested scope (rankFeed then orders into rings within it). */
@@ -46,7 +50,10 @@ const SCOPE_RADIUS_M: Record<CoverageScope, number> = {
  */
 @Injectable()
 export class NewsFeedService {
-  constructor(private readonly geo: GeoRepository) {}
+  constructor(
+    private readonly geo: GeoRepository,
+    private readonly refine: NewsRefineService,
+  ) {}
 
   async getFeed(
     q: FeedQuery,
@@ -80,22 +87,30 @@ export class NewsFeedService {
     };
     const ranked = rankFeed(events, { lat: q.latitude, lng: q.longitude }, facets, nowMs);
 
-    // Map ranking output back onto the row fields for the card, preserving order.
+    // Paginate the ranked events, then refine ONLY this page (lazy + cached) into the viewer's
+    // language — most events are never viewed, so we never pay to refine them.
+    const { page, hasMore } = paginate(ranked, offset, limit);
+    const lang = q.lang ?? 'en';
     const byId = new Map(rows.map((r) => [r.id, r]));
-    const cards: FeedCard[] = ranked.map((e) => {
-      const row = byId.get(e.id)!;
-      return {
-        slug: row.slug,
-        title: row.title,
-        summary: row.summary,
-        category: e.category,
-        distanceKm: e.distanceKm,
-        ring: e.ring,
-        publishedAt: e.publishedAt,
-      };
-    });
 
-    const { page, hasMore } = paginate(cards, offset, limit);
-    return { cards: page, hasMore };
+    const cards = await Promise.all(
+      page.map(async (e): Promise<FeedCard> => {
+        const row = byId.get(e.id)!;
+        const sourceText = `${row.title}\n${row.summary ?? ''}`.trim();
+        const refined = await this.refine.refine(e.id, lang, sourceText);
+        return {
+          slug: row.slug,
+          title: refined?.title ?? row.title,
+          summary: refined?.summary ?? row.summary,
+          category: e.category,
+          distanceKm: e.distanceKm,
+          ring: e.ring,
+          publishedAt: e.publishedAt,
+          locz: !!refined,
+        };
+      }),
+    );
+
+    return { cards, hasMore };
   }
 }

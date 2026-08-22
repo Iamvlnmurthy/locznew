@@ -3,6 +3,7 @@ import { Global, Module } from '@nestjs/common';
 import { AppConfig } from '../config/config.module';
 import {
   QUEUE_LIFECYCLE,
+  QUEUE_NEWS,
   QUEUE_NOTIFICATIONS,
   QUEUE_REQUIREMENTS,
   QUEUE_SAVED_SEARCHES,
@@ -41,6 +42,7 @@ import {
       { name: QUEUE_LIFECYCLE },
       { name: QUEUE_SAVED_SEARCHES },
       { name: QUEUE_REQUIREMENTS },
+      { name: QUEUE_NEWS },
     ),
   ],
   exports: [BullModule],

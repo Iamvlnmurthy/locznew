@@ -7,6 +7,8 @@ export const QUEUE_NOTIFICATIONS = 'notifications';
 export const QUEUE_LIFECYCLE = 'lifecycle';
 export const QUEUE_SAVED_SEARCHES = 'saved-searches';
 export const QUEUE_REQUIREMENTS = 'requirements';
+export const QUEUE_NEWS = 'news';
+export const JOB_NEWS_INGEST = 'news-ingest';
 
 export const JOB_INDEX_LISTING = 'index-listing';
 export const JOB_REMOVE_LISTING = 'remove-listing';

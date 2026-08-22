@@ -46,6 +46,7 @@ export class NewsController {
     return this.feed.getFeed({
       latitude: q.latitude,
       longitude: q.longitude,
+      lang: q.lang,
       category: q.category,
       scope: q.scope,
       after: q.after,

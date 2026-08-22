@@ -44,6 +44,13 @@ export const envSchema = z.object({
   // Optional: enables the "Deals" strip (Cuelinks Publisher API). Absent → the section hides.
   CUELINKS_API_KEY: z.string().optional(),
 
+  // Optional: news refinement providers (LocZ regenerates news summaries in the viewer's language).
+  // With none set, the feed shows raw event summaries. Gemini is preferred for Indic quality.
+  GEMINI_API_KEY: z.string().optional(),
+  GROQ_API_KEY: z.string().optional(),
+  CEREBRAS_API_KEY: z.string().optional(),
+  NEWS_OLLAMA_URL: z.string().optional(), // local Ollama (dev machine only), e.g. http://localhost:11434
+
   JWT_ACCESS_SECRET: z.string().min(32, 'JWT_ACCESS_SECRET must be at least 32 characters'),
   JWT_REFRESH_SECRET: z.string().min(32, 'JWT_REFRESH_SECRET must be at least 32 characters'),
   JWT_ACCESS_TTL: z.string().default('15m'),

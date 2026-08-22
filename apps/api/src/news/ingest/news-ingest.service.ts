@@ -145,9 +145,10 @@ export class NewsIngestService {
       }
     }
 
+    // Self-throttle: don't re-fetch this feed until its interval passes (the 5-min tick then skips it).
     await this.prisma.newsFeed.update({
       where: { id: target.feedId },
-      data: { lastFetchAt: new Date() },
+      data: { lastFetchAt: new Date(), nextFetchAt: new Date(Date.now() + 5 * 60 * 1000) },
     });
     this.logger.log(
       `Ingested ${target.url}: fetched ${result.fetched}, created ${result.created}, ` +
