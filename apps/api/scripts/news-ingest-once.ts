@@ -7,12 +7,16 @@
  *   npx ts-node scripts/news-ingest-once.ts
  */
 import { PrismaClient } from '@prisma/client';
+import { PrismaPg } from '@prisma/adapter-pg';
 import { NewsSourceService } from '../src/news/sources/news-source.service';
 import { GazetteerService } from '../src/news/geo/gazetteer.service';
 import { NewsIngestService } from '../src/news/ingest/news-ingest.service';
 import type { PrismaService } from '../src/prisma/prisma.service';
 
-const prisma = new PrismaClient();
+// Prisma 7 connects through a driver adapter (same as the app's PrismaService).
+const prisma = new PrismaClient({
+  adapter: new PrismaPg({ connectionString: process.env.DATABASE_URL }),
+});
 const p = prisma as unknown as PrismaService;
 const sources = new NewsSourceService(p);
 const gaz = new GazetteerService(p);
