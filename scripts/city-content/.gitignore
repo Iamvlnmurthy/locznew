@@ -1,0 +1,3 @@
+# Local SQLite staging DB — rebuilt from the CSV, not tracked
+*.db
+*.db-journal
