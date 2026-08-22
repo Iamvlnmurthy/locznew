@@ -141,6 +141,24 @@ model then hallucinates; the Nest HTTP client sends UTF-8 natively, so this only
 (3) low temperature (~0.2) + a tight "only facts in the source" prompt, and still keep a
 faithfulness check — an early run mislabelled an IT employee as "businessman".
 
+### Retention — auto-delete after 7 days (bounded storage)
+
+News is disposable: an event older than a week has served its hyperlocal purpose, and keeping
+it forever grows the DB (and any cached media) without benefit. A daily off-peak lifecycle sweep
+(mirrors `sweepSessions`/`sweepOrphanMedia`) enforces a rolling window:
+
+- **`NEWS_RETENTION_DAYS` (default 7)** — env-configurable; a per-category override can come later
+  (e.g. keep official disaster alerts longer), but the default is a flat 7 days.
+- **Delete order, bounded batches, idempotent:** (1) `NewsEvent` where `latestUpdateAt < now −
+N days` — so an event still receiving updates survives; cascades drop its
+  `NewsEventArticle/Location/Update` rows. (2) `NewsArticle` past the window that no longer
+  belongs to any event. (3) `RawNewsDocument` past the window. (4) rehosted media for deleted
+  events goes through the existing media-cleanup path.
+- **Frees space by design** — 22 Aug news auto-clears ~29 Aug; steady-state disk is ~one week of
+  events, not an ever-growing archive.
+- `LocationAlias` and `NewsSource`/`NewsFeed` are **never** swept — those are the durable assets
+  (the place-name graph and the registry); only the time-bound content expires.
+
 ---
 
 ## 3. Files & modules to create or change
