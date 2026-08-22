@@ -39,7 +39,10 @@ class _BusinessDetailScreenState extends ConsumerState<BusinessDetailScreen> {
 
   void _load() {
     setState(() {
-      _business = ref.read(listingRepositoryProvider).businessDetail(widget.slug);
+      _business = ref.read(listingRepositoryProvider).businessDetail(
+            widget.slug,
+            lang: ref.read(localeProvider).name,
+          );
     });
   }
 

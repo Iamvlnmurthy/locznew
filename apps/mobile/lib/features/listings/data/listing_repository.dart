@@ -366,8 +366,15 @@ class ListingRepository {
     ];
   }
 
-  Future<BusinessDetail> businessDetail(String slug) async {
-    final json = await _api.get<Map<String, dynamic>>('/businesses/$slug');
+  /// A business profile, in the language the reader has chosen.
+  ///
+  /// The category, the city and the composed description are all built server-side, so the
+  /// language has to travel with the request: without it a reader who has set the app to
+  /// Telugu still gets an English description under a Telugu interface, which is what the
+  /// website did until recently.
+  Future<BusinessDetail> businessDetail(String slug, {String? lang}) async {
+    final query = (lang == null || lang == 'en') ? '' : '?lang=$lang';
+    final json = await _api.get<Map<String, dynamic>>('/businesses/$slug$query');
     return BusinessDetail.fromJson(json);
   }
 
