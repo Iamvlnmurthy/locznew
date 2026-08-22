@@ -139,8 +139,16 @@ export async function generateMetadata({
     ? `${business.localityName}, ${business.cityName}`
     : business.cityName;
   const cat = business.categoryName;
-  const catLower = cat.toLowerCase();
-  const title = `${business.name} — ${cat} in ${place}`;
+  // Lower-casing is an English habit. Telugu and Devanagari have no case, and forcing it on
+  // a name that did not come from English is how a proper noun ends up looking wrong.
+  const catLower = locale === 'en' ? cat.toLowerCase() : cat;
+  // "{category} in {place}" is English word order. Telugu and Hindi both put the place
+  // first, and the existing hub pattern already carries that per language, so the title is
+  // built from it rather than from an English frame with the nouns swapped out.
+  const placed = getMessageGroup(locale, 'hub')
+    .metaTitle.replace('{category}', cat)
+    .replace('{city}', place);
+  const title = `${business.name} — ${placed}`;
   const description =
     business.description?.replace(/\s+/g, ' ').slice(0, 155) ??
     `${business.name} is a ${catLower} in ${place}. Contact number, address, directions, timings, offers and reviews — find the best ${catLower} near you in ${business.cityName} on LocZ.`;
