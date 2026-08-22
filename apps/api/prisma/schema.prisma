@@ -900,6 +900,27 @@ model BusinessSlugAlias {
   @@map("business_slug_aliases")
 }
 
+/// What a business is searched for, in each language LocZ serves.
+///
+/// Business keywords come from a fixed vocabulary — roughly 1,400 terms derived from the
+/// source taxonomy — and they are rendered in the composed description ("people look here
+/// for dal, rice and soap"). With the sentence frame localised but the terms still English,
+/// a Telugu page read as a Telugu sentence with English nouns dropped into it.
+///
+/// A table rather than a constant in the code because the vocabulary grows: a new source
+/// category, or a term a shop types itself, should be translatable without a deployment.
+///
+/// Keyed by the English term, which is what is actually stored on the business.
+model KeywordTranslation {
+  term      String   @id @db.VarChar(120)
+  nameTe    String?  @db.VarChar(160)
+  nameHi    String?  @db.VarChar(160)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("keyword_translations")
+}
+
 model BusinessStaff {
   id          String    @id @db.Uuid
   businessId  String    @db.Uuid

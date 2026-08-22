@@ -18,6 +18,7 @@ import { AuditService } from '../audit/audit.service';
 import { paginate, PaginatedDto } from '../common/dto/pagination.dto';
 import { localizedName } from '../common/utils/localized-name';
 import { businessSlug, loczId } from '../common/utils/slug.util';
+import { KeywordTranslationsService } from './keyword-translations.service';
 import { categoryNameToArea } from '../common/utils/discovery-areas';
 import { attributionFor, describeBusiness } from './business-description';
 import { BusinessSearchService } from '../search/business-search.service';
@@ -80,6 +81,7 @@ export class BusinessesService {
     private readonly storage: StorageService,
     private readonly notifications: NotificationsService,
     private readonly businessSearch: BusinessSearchService,
+    private readonly keywordTranslations: KeywordTranslationsService,
   ) {}
 
   async listPublic(query: BusinessSearchQueryDto): Promise<PaginatedDto<BusinessSummaryDto>> {
@@ -1049,6 +1051,8 @@ export class BusinessesService {
     // makes the /te and /hi pages actually read in those languages.
     const categoryName = localizedName(business.category, lang);
     const cityName = localizedName(business.city, lang);
+    // The terms are shown inside the sentence, so they have to change language with it.
+    const keywords = this.keywordTranslations.localize(business.keywords, lang);
     const described = describeBusiness(
       {
         categoryName,
@@ -1075,7 +1079,7 @@ export class BusinessesService {
       attribution: attributionFor(business),
       scale: business.scale,
       offering: business.offering,
-      keywords: business.keywords,
+      keywords,
       localityName,
       landmark,
       socialLinks: business.socialLinks,

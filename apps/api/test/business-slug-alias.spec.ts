@@ -71,6 +71,7 @@ describe('a business whose URL has changed', () => {
       {} as never, // storage
       {} as never, // notifications
       {} as never, // businessSearch
+      { localize: (keywords: string[]) => keywords } as never, // keyword translations
     );
     return { service, prisma };
   }
