@@ -1,75 +1,102 @@
 import { Injectable, Logger } from '@nestjs/common';
+import { Prisma } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
-import { InMemoryGazetteer, type Gazetteer, type PlaceEntry } from './location-resolver';
+import {
+  InMemoryGazetteer,
+  resolvePlaces,
+  type Gazetteer,
+  type PlaceEntry,
+  type ResolvedPlace,
+} from './location-resolver';
 
 /**
- * The production gazetteer: builds the news location dictionary from the real City (+ Telugu/Hindi
- * names) and Locality tables so "Gachibowli / గచ్చిబౌలి" resolves to a point. Cached in memory and
- * rebuilt periodically — the dictionary changes slowly. Alias rows (LocationAlias) fold in here too
- * once populated.
- *
- * Note (scale): this is an in-memory matcher, fine for the launch region. When the locality set
- * grows large, move resolution to a DB trigram/FTS query; the `Gazetteer` interface stays the same.
+ * Resolves place names in article text to coordinates. Two-tier so it scales past the ~155k
+ * localities table:
+ *  - CITIES (640, + Telugu/Hindi names) live in an in-memory matcher, rebuilt hourly.
+ *  - LOCALITIES are matched by an INDEXED DB lookup on candidate tokens from the text, not by
+ *    loading the whole table — so "Gachibowli / Madhapur" resolve precisely without the memory cost.
+ * A locality hit (more specific) outranks a city hit.
  */
 @Injectable()
 export class GazetteerService {
   private readonly logger = new Logger(GazetteerService.name);
-  private cache: { gaz: Gazetteer; builtAt: number } | null = null;
-  private static readonly TTL_MS = 60 * 60 * 1000; // 1 hour
+  private cityCache: { gaz: Gazetteer; builtAt: number } | null = null;
+  private static readonly TTL_MS = 60 * 60 * 1000;
 
   constructor(private readonly prisma: PrismaService) {}
 
-  async get(): Promise<Gazetteer> {
-    if (this.cache && Date.now() - this.cache.builtAt < GazetteerService.TTL_MS) {
-      return this.cache.gaz;
+  /** In-memory city gazetteer (small, cached). */
+  private async cities(): Promise<Gazetteer> {
+    if (this.cityCache && Date.now() - this.cityCache.builtAt < GazetteerService.TTL_MS) {
+      return this.cityCache.gaz;
     }
-    const gaz = await this.build();
-    this.cache = { gaz, builtAt: Date.now() };
+    const rows = await this.prisma.city.findMany({
+      select: { id: true, name: true, nameTe: true, nameHi: true, latitude: true, longitude: true },
+    });
+    const entries: PlaceEntry[] = rows.map((c) => ({
+      entityId: c.id,
+      entityType: 'CITY',
+      name: c.name,
+      aliases: [c.nameTe, c.nameHi].filter((v): v is string => !!v),
+      lat: Number(c.latitude),
+      lng: Number(c.longitude),
+    }));
+    const gaz = new InMemoryGazetteer(entries);
+    this.cityCache = { gaz, builtAt: Date.now() };
+    this.logger.log(`City gazetteer built: ${entries.length} cities`);
     return gaz;
   }
 
-  private async build(): Promise<Gazetteer> {
-    const [cities, localities] = await Promise.all([
-      this.prisma.city.findMany({
-        // City latitude/longitude are required columns, so no null filter is needed.
-        select: {
-          id: true,
-          name: true,
-          nameTe: true,
-          nameHi: true,
-          latitude: true,
-          longitude: true,
-        },
-      }),
-      this.prisma.locality.findMany({
-        where: { latitude: { not: null }, longitude: { not: null }, isActive: true },
-        select: { id: true, name: true, cityId: true, latitude: true, longitude: true },
-      }),
-    ]);
+  /** Normalised 1- and 2-grams from the text, as locality-name candidates (drops short/noise). */
+  private candidateTokens(text: string): string[] {
+    const words = text
+      .toLowerCase()
+      .replace(/[^\p{L}\p{N}\s]/gu, ' ')
+      .split(/\s+/)
+      .filter((w) => w.length >= 4 && w.length <= 30);
+    const grams = new Set<string>();
+    for (let i = 0; i < words.length; i++) {
+      grams.add(words[i]!);
+      if (i + 1 < words.length) grams.add(`${words[i]} ${words[i + 1]}`);
+    }
+    return [...grams].slice(0, 60);
+  }
 
-    const entries: PlaceEntry[] = [];
-    for (const c of cities) {
-      entries.push({
-        entityId: c.id,
-        entityType: 'CITY',
-        name: c.name,
-        aliases: [c.nameTe, c.nameHi].filter((v): v is string => !!v),
-        lat: Number(c.latitude),
-        lng: Number(c.longitude),
-      });
+  /**
+   * Resolve every place the text names: city matches from memory + locality matches from an indexed
+   * DB lookup. Returns ResolvedPlace[] sorted by confidence (locality first).
+   */
+  async resolve(text: string): Promise<ResolvedPlace[]> {
+    const cityHits = resolvePlaces(text, await this.cities());
+
+    const candidates = this.candidateTokens(text);
+    let localityHits: ResolvedPlace[] = [];
+    if (candidates.length > 0) {
+      const rows = await this.prisma.$queryRaw<
+        Array<{
+          id: string;
+          name: string;
+          latitude: Prisma.Decimal | null;
+          longitude: Prisma.Decimal | null;
+        }>
+      >`
+        SELECT "id", "name", "latitude", "longitude"
+        FROM "localities"
+        WHERE lower("name") IN (${Prisma.join(candidates)})
+          AND "isActive" = true
+          AND "latitude" IS NOT NULL AND "longitude" IS NOT NULL
+        LIMIT 20
+      `;
+      localityHits = rows.map((r) => ({
+        entityId: r.id,
+        entityType: 'LOCALITY' as const,
+        name: r.name,
+        lat: Number(r.latitude),
+        lng: Number(r.longitude),
+        confidence: 90,
+      }));
     }
-    for (const lo of localities) {
-      entries.push({
-        entityId: lo.id,
-        entityType: 'LOCALITY',
-        name: lo.name,
-        aliases: [],
-        cityId: lo.cityId,
-        lat: Number(lo.latitude),
-        lng: Number(lo.longitude),
-      });
-    }
-    this.logger.log(`Gazetteer built: ${cities.length} cities, ${localities.length} localities`);
-    return new InMemoryGazetteer(entries);
+
+    return [...localityHits, ...cityHits].sort((a, b) => b.confidence - a.confidence);
   }
 }

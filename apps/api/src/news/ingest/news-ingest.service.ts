@@ -3,7 +3,7 @@ import { IngestionStatus, NewsArticleRole, Prisma } from '@prisma/client';
 import { createHash } from 'node:crypto';
 import { PrismaService } from '../../prisma/prisma.service';
 import { GazetteerService } from '../geo/gazetteer.service';
-import { primaryPlace, resolvePlaces } from '../geo/location-resolver';
+import { primaryPlace } from '../geo/location-resolver';
 import { guessCategory, hash8, slugify } from '../feed/event-shaper';
 import { parseFeed } from './rss.parser';
 
@@ -40,7 +40,6 @@ export class NewsIngestService {
   ) {}
 
   async ingestFeed(target: IngestTarget, limit = 40): Promise<IngestResult> {
-    const gaz = await this.gazetteer.get();
     let xml: string;
     try {
       const res = await fetch(target.url, {
@@ -68,7 +67,9 @@ export class NewsIngestService {
         continue;
       }
 
-      const place = primaryPlace(resolvePlaces(`${item.title} ${item.summary ?? ''}`, gaz));
+      const place = primaryPlace(
+        await this.gazetteer.resolve(`${item.title} ${item.summary ?? ''}`),
+      );
       if (!place) {
         result.unresolved += 1;
         continue; // stored for reprocessing later once the alias graph improves — kept simple here
