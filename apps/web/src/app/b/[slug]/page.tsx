@@ -219,7 +219,8 @@ export default async function BusinessPage({ params }: { params: Promise<{ slug:
   const locationSentence = [
     p.locatedIn.replace('{place}', placeLabel),
     business.landmark ? p.nearLandmark.replace('{landmark}', business.landmark) : null,
-    business.pincode ? p.pincodeArea.replace('{pincode}', business.pincode) : null,
+    // The pincode is deliberately not a sentence. It is already shown beside the address, and
+    // as prose it was the same filler that was taken out of the description.
   ]
     .filter(Boolean)
     .join(' ');
@@ -529,14 +530,13 @@ export default async function BusinessPage({ params }: { params: Promise<{ slug:
             <div className="business-profile-about-grid">
               <div>
                 {storefrontDescription ? (
-                  <>
-                    <p className="business-profile-about">{storefrontDescription}</p>
-                    {/* A reader cannot judge a description without knowing who wrote it, and this
-                        one was assembled from the record rather than written by the shop. */}
-                    {business.descriptionIsGenerated ? (
-                      <p className="business-profile-note">{p.descriptionGenerated}</p>
-                    ) : null}
-                  </>
+                  // The "written from public listing data" note used to sit here, under every
+                  // one of three and a half million descriptions. It is gone because the page
+                  // already says it, better and once: the unclaimed panel below states that
+                  // nobody has confirmed these details, and the licence attribution at the
+                  // foot names the source. Saying it a third time under every paragraph read
+                  // as a disclaimer on the shop itself.
+                  <p className="business-profile-about">{storefrontDescription}</p>
                 ) : (
                   <p className="business-profile-about is-empty">{p.noStory}</p>
                 )}
