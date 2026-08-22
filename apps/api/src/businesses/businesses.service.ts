@@ -1049,15 +1049,18 @@ export class BusinessesService {
     // makes the /te and /hi pages actually read in those languages.
     const categoryName = localizedName(business.category, lang);
     const cityName = localizedName(business.city, lang);
-    const described = describeBusiness({
-      categoryName,
-      localityName,
-      landmark,
-      pincode: business.pincodeCode,
-      cityName,
-      keywords: business.keywords,
-      description: business.description,
-    });
+    const described = describeBusiness(
+      {
+        categoryName,
+        localityName,
+        landmark,
+        pincode: business.pincodeCode,
+        cityName,
+        keywords: business.keywords,
+        description: business.description,
+      },
+      lang,
+    );
 
     return {
       ...this.toSummary(business, undefined, lang),

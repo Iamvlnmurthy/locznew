@@ -127,3 +127,60 @@ describe('attributionFor', () => {
     expect(attributionFor({})).toBeNull();
   });
 });
+
+/**
+ * The sentence around the names, not just the names.
+ *
+ * Localising the category and city produced "కిరాణా దుకాణాలు in Muzaffarpur" — a Telugu noun
+ * inside an English sentence, which reads worse than either language alone. These cases are
+ * about the words in between, and about word order: neither Telugu nor Hindi puts the place
+ * after the thing the way English does.
+ */
+describe('a description in the reader’s language', () => {
+  const shop = {
+    categoryName: 'కిరాణా దుకాణాలు',
+    localityName: null,
+    cityName: 'ముజఫర్‌పుర్',
+    landmark: 'ఆదర్శ విద్యా మందిర్',
+    keywords: ['బియ్యం', 'పప్పు'],
+  };
+
+  it('puts the place before the category in Telugu, as Telugu does', () => {
+    const { text } = describeBusiness(shop, 'te');
+
+    // Not "కిరాణా దుకాణాలు in ముజఫర్‌పుర్" — the frame is Telugu, not a translated preposition
+    // dropped into an English skeleton.
+    expect(text).toContain('ముజఫర్‌పుర్లో కిరాణా దుకాణాలు.');
+    expect(text).not.toContain(' in ');
+    expect(text).not.toContain('Located');
+    expect(text).not.toContain('People look here');
+  });
+
+  it('joins list terms with the Telugu word for "and"', () => {
+    const { text } = describeBusiness(shop, 'te');
+    expect(text).toContain('మరియు');
+    expect(text).not.toMatch(/\band\b/);
+  });
+
+  it('ends Hindi sentences with a danda, not a full stop', () => {
+    const { text } = describeBusiness({ ...shop, categoryName: 'किराना दुकानें' }, 'hi');
+
+    expect(text).toContain('।');
+    expect(text).toContain('के पास');
+  });
+
+  it('is unchanged for English, and for a language we have no frames for', () => {
+    const english = {
+      categoryName: 'Grocery & kirana',
+      cityName: 'Muzaffarpur',
+      landmark: 'Inorbit Mall',
+      keywords: ['rice', 'dal'],
+    };
+
+    // Tamil has no frames here. Falling back to English keeps the sentence readable rather
+    // than half-built.
+    expect(describeBusiness(english, 'ta').text).toBe(describeBusiness(english).text);
+    expect(describeBusiness(english).text).toContain('Grocery & kirana in Muzaffarpur.');
+    expect(describeBusiness(english).text).toContain('rice and dal');
+  });
+});

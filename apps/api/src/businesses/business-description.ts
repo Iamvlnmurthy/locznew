@@ -38,16 +38,73 @@ export interface DescribableBusiness {
 const MAX_TERMS_SHOWN = 6;
 
 /**
+ * The sentence frames, per language.
+ *
+ * Localising the category and city names was only half the job: it produced "కిరాణా దుకాణాలు
+ * in Muzaffarpur", a Telugu noun in an English sentence. The words *between* the names carry
+ * the language too.
+ *
+ * Word order is not English word order. Telugu and Hindi both put the place before the thing
+ * — "{place}లో {category}", not "{category} in {place}" — so these are whole frames rather
+ * than a translated preposition dropped into an English skeleton. Hindi ends a sentence with
+ * a danda, not a full stop.
+ */
+interface DescriptionPhrases {
+  /** Category and place. `{category}` and `{place}` are substituted. */
+  inPlace: (category: string, place: string) => string;
+  /** Category alone, when there is no place at all. */
+  categoryOnly: (category: string) => string;
+  /** The landmark line. */
+  near: (landmark: string) => string;
+  /** What people search this shop for. */
+  soughtFor: (terms: string) => string;
+  /** Joins the last two items of a list. */
+  and: string;
+}
+
+const PHRASES: Record<string, DescriptionPhrases> = {
+  en: {
+    inPlace: (category, place) => `${category} in ${place}.`,
+    categoryOnly: (category) => `${category}.`,
+    near: (landmark) => `Located near ${landmark}.`,
+    soughtFor: (terms) => `People look here for ${terms}.`,
+    and: 'and',
+  },
+  te: {
+    inPlace: (category, place) => `${place}లో ${category}.`,
+    categoryOnly: (category) => `${category}.`,
+    near: (landmark) => `${landmark} దగ్గర ఉంది.`,
+    soughtFor: (terms) => `ప్రజలు ఇక్కడ ${terms} కోసం చూస్తారు.`,
+    and: 'మరియు',
+  },
+  hi: {
+    inPlace: (category, place) => `${place} में ${category}।`,
+    categoryOnly: (category) => `${category}।`,
+    near: (landmark) => `${landmark} के पास स्थित।`,
+    soughtFor: (terms) => `लोग यहाँ ${terms} के लिए देखते हैं।`,
+    and: 'और',
+  },
+};
+
+function phrasesFor(lang?: string | null): DescriptionPhrases {
+  return PHRASES[lang?.toLowerCase() ?? 'en'] ?? PHRASES.en!;
+}
+
+/**
  * Describes a business in facts.
  *
  * Returns the owner's description untouched when there is one — a claimed business speaks for
  * itself, and generated text must never sit on top of what somebody actually wrote.
  */
-export function describeBusiness(business: DescribableBusiness): {
+export function describeBusiness(
+  business: DescribableBusiness,
+  lang?: string | null,
+): {
   text: string;
   /** True when this was assembled rather than written. The page must say so. */
   generated: boolean;
 } {
+  const phrases = phrasesFor(lang);
   const own = business.description?.trim();
   if (own) return { text: own, generated: false };
 
@@ -56,7 +113,11 @@ export function describeBusiness(business: DescribableBusiness): {
   // "Kirana store in Madhapur, Hyderabad." — the one line that is always available, because
   // category and city are required columns.
   const place = [business.localityName, business.cityName].filter(Boolean).join(', ');
-  lines.push(place ? `${business.categoryName} in ${place}.` : `${business.categoryName}.`);
+  lines.push(
+    place
+      ? phrases.inPlace(business.categoryName, place)
+      : phrases.categoryOnly(business.categoryName),
+  );
 
   // "Located near Inorbit Mall." — a fact from the address, so it places the business more
   // precisely without making any claim about it. This is how people actually navigate to a
@@ -68,7 +129,7 @@ export function describeBusiness(business: DescribableBusiness): {
   // sentence on millions of pages — the exact repetition that makes a page look worthless to
   // a reader and to a search engine. The pincode is still shown in the address block and in
   // the structured data, which is where a postcode belongs.
-  if (business.landmark) lines.push(`Located near ${business.landmark}.`);
+  if (business.landmark) lines.push(phrases.near(business.landmark));
 
   const terms = (business.keywords ?? [])
     .map((keyword) => keyword.trim())
@@ -78,16 +139,16 @@ export function describeBusiness(business: DescribableBusiness): {
   if (terms.length > 0) {
     // Hedged on purpose. These come from the category vocabulary and from what people search,
     // not from the shop confirming it stocks any particular thing.
-    lines.push(`People look here for ${listTerms(terms)}.`);
+    lines.push(phrases.soughtFor(listTerms(terms, phrases.and)));
   }
 
   return { text: lines.join(' '), generated: true };
 }
 
 /** "a, b and c" — an Oxford-comma-free list, which is how the rest of the product reads. */
-function listTerms(terms: string[]): string {
+function listTerms(terms: string[], and: string): string {
   if (terms.length === 1) return terms[0]!;
-  return `${terms.slice(0, -1).join(', ')} and ${terms[terms.length - 1]!}`;
+  return `${terms.slice(0, -1).join(', ')} ${and} ${terms[terms.length - 1]!}`;
 }
 
 /**
