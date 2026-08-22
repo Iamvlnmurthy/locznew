@@ -108,6 +108,26 @@ clustering, updates, history, and the nearby query), while the _public projectio
 link-and-summary by default. The old `weather/local-news` ephemeral path stays as a fallback
 and is superseded for registered sources.
 
+### Content regeneration — LocZ writes its own story, no redirect out
+
+LocZ keeps the reader on-platform: the story page is `locz.in/news/<slug>`, not a bounce to the
+publisher. That is only lawful if LocZ **regenerates** the content rather than reprinting it. A
+regeneration step (the event-summary phase) takes the source article(s) for a clustered event and
+produces LocZ's **own** canonical title + summary — a genuine synthesis in LocZ's words, reporting
+the facts (which are not copyrightable), never a near-verbatim copy of the publisher's expression.
+Guardrails, because AI rewriting is where both the legal and the cost risk live:
+
+- **Faithful, not fabricated** — the summary states only what the sources support; no invented
+  detail, no rumour promoted to fact (ties into the trust/verification engine).
+- **Genuine synthesis, attributed** — paraphrase-close-to-original is still derivative, so the
+  regeneration must abstract, and every event keeps a visible "via {source(s)}" credit.
+- **Once per event, cached forever** — regenerate when an event is created/materially updated,
+  never per view; the output is stored on `NewsEvent`. This is what keeps the LLM bill bounded.
+- **Cheapest model that suffices, provider-abstracted** — a small/local model for routine
+  summaries; a larger one only for the hard ones. Never coupled to one vendor.
+- **Full text is the exception** — government / official / explicitly-licensed / LocZ-owned
+  sources may carry full body verbatim; everything else is LocZ-regenerated summary + attribution.
+
 ---
 
 ## 3. Files & modules to create or change
