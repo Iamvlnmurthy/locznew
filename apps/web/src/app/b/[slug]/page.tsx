@@ -98,15 +98,33 @@ export async function generateMetadata({
   const place = business.localityName
     ? `${business.localityName}, ${business.cityName}`
     : business.cityName;
-  const title = `${business.name} — ${business.categoryName} in ${place}`;
+  const cat = business.categoryName;
+  const catLower = cat.toLowerCase();
+  const title = `${business.name} — ${cat} in ${place}`;
   const description =
     business.description?.replace(/\s+/g, ' ').slice(0, 155) ??
-    `${business.name} is a ${business.categoryName.toLowerCase()} in ${place}. Find contact details, directions, offers and jobs on LocZ.`;
+    `${business.name} is a ${catLower} in ${place}. Contact number, address, directions, timings, offers and reviews — find the best ${catLower} near you in ${business.cityName} on LocZ.`;
   const brandLogo = business.logoUrl ?? publicBrandLogo(business.name, business.publicBrandKey);
+
+  // The category+place phrases people actually search — the same shape ("Salons & spas in
+  // Ahmedabad") that already ranks, expanded to locality, "near me" and best/top variants.
+  const keywords = [
+    business.name,
+    `${business.name} ${business.cityName}`,
+    `${cat} in ${business.cityName}`,
+    ...(business.localityName ? [`${cat} in ${business.localityName}`, `${cat} in ${place}`] : []),
+    `${catLower} near me`,
+    `best ${catLower} in ${business.cityName}`,
+    `top ${catLower} in ${business.cityName}`,
+    `${catLower} near ${business.localityName ?? business.cityName}`,
+    cat,
+    business.cityName,
+  ];
 
   return {
     title,
     description,
+    keywords,
     alternates: await localizedAlternates(`/b/${business.slug}`),
     openGraph: {
       title,
