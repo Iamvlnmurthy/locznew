@@ -43,7 +43,20 @@ export class KeywordTranslationsService {
     const table = this.cache?.[code];
     if (!table) return keywords;
 
-    return keywords.map((keyword) => table.get(keyword.trim().toLowerCase()) ?? keyword);
+    // Two English terms can share one translation — "grocery store" and "food and beverage
+    // store" are both కిరాణా దుకాణం — and the description joins these into a sentence, so a
+    // duplicate reads as "people look here for X and X". Deduplicated after translating,
+    // keeping the order the terms arrived in.
+    const seen = new Set<string>();
+    const out: string[] = [];
+    for (const keyword of keywords) {
+      const translated = table.get(keyword.trim().toLowerCase()) ?? keyword;
+      const key = translated.trim().toLowerCase();
+      if (seen.has(key)) continue;
+      seen.add(key);
+      out.push(translated);
+    }
+    return out;
   }
 
   /** Loads the vocabulary once, and again when it goes stale. Never throws to the caller. */

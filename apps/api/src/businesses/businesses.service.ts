@@ -1064,7 +1064,7 @@ export class BusinessesService {
         landmark,
         pincode: business.pincodeCode,
         cityName,
-        keywords: business.keywords,
+        keywords,
         description: business.description,
       },
       lang,

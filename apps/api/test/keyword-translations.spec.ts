@@ -75,6 +75,26 @@ describe('keyword translations', () => {
     expect(service.localize(['dental clinic'], 'te')).toEqual(['dental clinic']);
   });
 
+  it('collapses two terms that share one translation', async () => {
+    // "grocery store" and "food and beverage store" are both కిరాణా దుకాణం. The description
+    // joins these into a sentence, so keeping both reads as "people look here for X and X".
+    const prisma = {
+      keywordTranslation: {
+        findMany: jest.fn().mockResolvedValue([
+          { term: 'grocery store', nameTe: 'కిరాణా దుకాణం', nameHi: null },
+          { term: 'food and beverage store', nameTe: 'కిరాణా దుకాణం', nameHi: null },
+        ]),
+      },
+    };
+    const service = new KeywordTranslationsService(prisma as never);
+    service.localize(['x'], 'te');
+    await new Promise(process.nextTick);
+
+    expect(service.localize(['grocery store', 'food and beverage store'], 'te')).toEqual([
+      'కిరాణా దుకాణం',
+    ]);
+  });
+
   it('does not read the table once per profile view', async () => {
     const { service, prisma } = build(rows);
 
