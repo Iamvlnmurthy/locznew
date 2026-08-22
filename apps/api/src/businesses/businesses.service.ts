@@ -56,7 +56,9 @@ const BUSINESS_INCLUDE = {
       line1: true,
       line2: true,
       landmark: true,
-      locality: { select: { name: true } },
+      // The neighbourhood is the most specific thing the page says about where a shop is,
+      // so it travels in the reader's script too.
+      locality: { select: { name: true, nameTe: true, nameHi: true } },
     },
   },
   hours: true,
@@ -1045,7 +1047,9 @@ export class BusinessesService {
   }
 
   private toDetail(business: BusinessRow, viewerId?: string, lang?: string): BusinessDetailDto {
-    const localityName = business.address?.locality?.name ?? null;
+    const localityName = business.address?.locality
+      ? localizedName(business.address.locality, lang)
+      : null;
     const landmark = business.address?.landmark ?? null;
     // The description is composed from these two names, so localising them here is what
     // makes the /te and /hi pages actually read in those languages.

@@ -647,9 +647,21 @@ model City {
 }
 
 model Locality {
-  id         String                                 @id @db.Uuid
-  cityId     String                                 @db.Uuid
-  name       String                                 @db.VarChar(140)
+  id     String @id @db.Uuid
+  cityId String @db.Uuid
+  name   String @db.VarChar(140)
+
+  /// The locality name in Telugu and Hindi script.
+  ///
+  /// A neighbourhood name is the most specific thing a business page can say about where it
+  /// is, and it appears in the title and the first sentence of the description. Untranslated,
+  /// a Telugu page read "Munirka, ముజఫర్‌పుర్" — half of one place name in each script.
+  ///
+  /// Transliterated rather than translated: these are proper nouns. Null wherever nobody has
+  /// transliterated it yet, which the reader sees as the English spelling — imperfect, but a
+  /// name they can still recognise.
+  nameTe     String?                                @db.VarChar(160)
+  nameHi     String?                                @db.VarChar(160)
   slug       String                                 @db.VarChar(160)
   // The sub-district: mandal in Telangana and Andhra, taluk in the south, tehsil in the
   // north, block in the east. Stored here rather than in its own table because it is read
