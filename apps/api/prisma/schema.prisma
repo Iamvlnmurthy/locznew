@@ -2122,7 +2122,6 @@ model DataSource {
   createdAt           DateTime          @default(now())
   updatedAt           DateTime          @updatedAt
   rawRecords          SourceRawRecord[]
-  newsSources         NewsSource[]
 
   @@index([type, enabled])
 }
@@ -2215,8 +2214,7 @@ model NewsSource {
   domain       String
   sourceType   NewsSourceType
   language     String         @default("en")
-  dataSourceId String?        @db.Uuid
-  dataSource   DataSource?    @relation(fields: [dataSourceId], references: [id], onDelete: SetNull)
+  dataSourceId String?        @db.Uuid // SOFT reference to DataSource — no FK, so the news schema has zero foreign keys into non-news tables and can be lifted to its own server/DB later
 
   coverageStateId    String? @db.Uuid
   coverageDistrictId String? @db.Uuid

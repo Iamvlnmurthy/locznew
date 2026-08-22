@@ -253,7 +253,6 @@ CREATE INDEX "LocationAlias_entityType_entityId_idx" ON "LocationAlias"("entityT
 CREATE UNIQUE INDEX "LocationAlias_aliasNormalized_entityType_entityId_key" ON "LocationAlias"("aliasNormalized", "entityType", "entityId");
 
 -- AddForeignKey
-ALTER TABLE "NewsSource" ADD CONSTRAINT "NewsSource_dataSourceId_fkey" FOREIGN KEY ("dataSourceId") REFERENCES "DataSource"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "NewsFeed" ADD CONSTRAINT "NewsFeed_sourceId_fkey" FOREIGN KEY ("sourceId") REFERENCES "NewsSource"("id") ON DELETE CASCADE ON UPDATE CASCADE;
