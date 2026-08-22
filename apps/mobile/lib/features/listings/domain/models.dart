@@ -752,6 +752,7 @@ class NewsCard {
     this.summary,
     this.distanceKm,
     this.publishedAt,
+    this.sources = 1,
   });
 
   final String slug;
@@ -760,6 +761,9 @@ class NewsCard {
   final String? summary;
   final double? distanceKm;
   final String? publishedAt;
+
+  /// How many source articles collapsed into this card (1 = single report).
+  final int sources;
 }
 
 /// A full LocZ-regenerated news event (`/news/:slug`) with its source attributions.

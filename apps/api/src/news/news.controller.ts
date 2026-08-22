@@ -4,6 +4,7 @@ import { Type } from 'class-transformer';
 import { IsIn, IsLatitude, IsLongitude, IsOptional, IsString, MaxLength } from 'class-validator';
 import { Public, RequirePermissions } from '../rbac/rbac.decorators';
 import { PrismaService } from '../prisma/prisma.service';
+import { cleanText, stripPublisherSuffix } from './feed/event-shaper';
 import type { CoverageScope } from './feed/ranking';
 import { NewsFeedService } from './feed/news-feed.service';
 import { NewsIngestService } from './ingest/news-ingest.service';
@@ -76,8 +77,8 @@ export class NewsController {
     );
     return {
       slug: event.slug,
-      title: refined?.title ?? event.title,
-      summary: refined?.summary ?? event.summary,
+      title: refined?.title ?? cleanText(stripPublisherSuffix(event.title)) ?? event.title,
+      summary: refined?.summary ?? cleanText(event.summary),
       categories: event.categories,
       publishedAt: event.latestUpdateAt,
       locz: !!refined,

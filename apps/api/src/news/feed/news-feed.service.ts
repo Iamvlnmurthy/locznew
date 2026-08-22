@@ -1,8 +1,10 @@
 import { Injectable } from '@nestjs/common';
 import { GeoRepository } from '../../prisma/geo.repository';
 import { NewsRefineService } from '../refine/news-refine.service';
+import { cleanText, stripPublisherSuffix } from './event-shaper';
 import {
   type CoverageScope,
+  dedupeRanked,
   type FeedFacets,
   paginate,
   rankFeed,
@@ -32,6 +34,8 @@ export interface FeedCard {
   publishedAt: string | null;
   /** true when the title/summary are LocZ's own regenerated content (not the raw source). */
   locz: boolean;
+  /** How many source articles collapsed into this card (1 = single report). */
+  sources: number;
 }
 
 /** How wide to search the DB per requested scope (rankFeed then orders into rings within it). */
@@ -76,6 +80,7 @@ export class NewsFeedService {
       longitude: r.longitude == null ? null : Number(r.longitude),
       severity: r.severity,
       trustScore: r.trustScore,
+      title: r.title,
     }));
 
     const facets: FeedFacets = {
@@ -86,10 +91,13 @@ export class NewsFeedService {
       topOnly: q.topOnly,
     };
     const ranked = rankFeed(events, { lat: q.latitude, lng: q.longitude }, facets, nowMs);
+    // Collapse the many-publishers-one-story duplicates before paginating, so a page isn't filled
+    // with the same event. sourceCount rides along for a "N reports" hint on the card.
+    const deduped = dedupeRanked(ranked);
 
-    // Paginate the ranked events, then refine ONLY this page (lazy + cached) into the viewer's
-    // language — most events are never viewed, so we never pay to refine them.
-    const { page, hasMore } = paginate(ranked, offset, limit);
+    // Paginate, then refine ONLY this page (lazy + cached) into the viewer's language — most events
+    // are never viewed, so we never pay to refine them.
+    const { page, hasMore } = paginate(deduped, offset, limit);
     const lang = q.lang ?? 'en';
     const byId = new Map(rows.map((r) => [r.id, r]));
 
@@ -98,15 +106,19 @@ export class NewsFeedService {
         const row = byId.get(e.id)!;
         const sourceText = `${row.title}\n${row.summary ?? ''}`.trim();
         const refined = await this.refine.refine(e.id, lang, sourceText);
+        // Refined text is already clean; the raw fallback needs entity/publisher tidy-up.
+        const title = refined?.title ?? cleanText(stripPublisherSuffix(row.title)) ?? row.title;
+        const summary = refined?.summary ?? cleanText(row.summary);
         return {
           slug: row.slug,
-          title: refined?.title ?? row.title,
-          summary: refined?.summary ?? row.summary,
+          title,
+          summary,
           category: e.category,
           distanceKm: e.distanceKm,
           ring: e.ring,
           publishedAt: e.publishedAt,
           locz: !!refined,
+          sources: e.sourceCount ?? 1,
         };
       }),
     );

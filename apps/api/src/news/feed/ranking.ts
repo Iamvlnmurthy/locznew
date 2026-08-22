@@ -21,6 +21,10 @@ export interface RankableEvent {
   severity?: number; // 0..100 — emergencies are high
   trustScore?: number; // 0..100
   isEmergency?: boolean;
+  /** Headline, used only for near-duplicate collapsing (many publishers, one story). */
+  title?: string;
+  /** How many source articles collapsed into this card (set by dedupeRanked). */
+  sourceCount?: number;
 }
 
 export interface Viewer {
@@ -135,6 +139,114 @@ export function rankFeed(
     out.push({ ...e, ring, distanceKm, score: scoreEvent(e, ring, nowMs) });
   }
   return out.sort((a, b) => b.score - a.score);
+}
+
+// --- Near-duplicate collapsing -------------------------------------------------------------------
+// The first ingest pass creates one event per article, so a single story reported by six publishers
+// shows up as six cards. Until true event-clustering lands at ingest, we collapse look-alikes at read
+// time by headline similarity. This is script-local (Telugu dups collapse with Telugu, English with
+// English) — safe and high-precision, since geo can't help here (most events share a city centroid).
+
+// A few high-frequency tokens that carry no story-identity (EN + common TE particles + place noise).
+const DEDUPE_STOPWORDS = new Set([
+  'the',
+  'a',
+  'an',
+  'in',
+  'on',
+  'at',
+  'of',
+  'to',
+  'for',
+  'and',
+  'or',
+  'with',
+  'by',
+  'from',
+  'as',
+  'is',
+  'are',
+  'was',
+  'were',
+  'be',
+  'new',
+  'city',
+  'news',
+  'update',
+  'updates',
+  'video',
+  'watch',
+  'live',
+  'today',
+  'hyderabad',
+  'telangana',
+  'india',
+  'లో',
+  'కి',
+  'న',
+  'ని',
+  'తో',
+  'కు',
+  'పై',
+  'లోని',
+  'గా',
+  'మరియు',
+  'ఒక',
+  'ఈ',
+  'ఆ',
+]);
+
+/** Significant-token set of a headline: entity-decoded, publisher-suffix stripped, stopwords dropped. */
+function titleSignature(title: string): Set<string> {
+  const cleaned = title
+    .replace(/&[a-z]+;|&#\d+;/gi, ' ') // HTML entities (&nbsp; etc.)
+    .replace(/\s[-|–—]\s[^-|–—]{1,40}$/u, ''); // trailing " - Publisher" / " | Publisher"
+  const tokens = cleaned
+    .toLowerCase()
+    .split(/[^\p{L}\p{N}]+/u)
+    .filter((t) => t.length >= 2 && !DEDUPE_STOPWORDS.has(t));
+  return new Set(tokens);
+}
+
+/** A token in `set` matches `tok` on exact equality or a shared ≥4-char prefix (collapse≈collapses). */
+function hasTokenMatch(tok: string, set: Set<string>): boolean {
+  if (set.has(tok)) return true;
+  for (const s of set) {
+    if (tok.length >= 4 && s.length >= 4 && (tok.startsWith(s) || s.startsWith(tok))) return true;
+  }
+  return false;
+}
+
+/** True when two headlines almost certainly describe the same story (Jaccard or containment). */
+export function areDuplicateTitles(a: string, b: string): boolean {
+  const A = titleSignature(a);
+  const B = titleSignature(b);
+  if (A.size < 3 || B.size < 3) return false; // too short to judge safely
+  let inter = 0;
+  for (const t of A) if (hasTokenMatch(t, B)) inter += 1;
+  const jaccard = inter / (A.size + B.size - inter);
+  const containment = inter / Math.min(A.size, B.size);
+  // containment catches "X collapses in Madhapur" ⊂ "Under-Construction X Collapses in Madhapur";
+  // jaccard is the symmetric backstop. Distinct same-topic stories (two realty items) share too few.
+  return jaccard >= 0.5 || containment >= 0.6;
+}
+
+/**
+ * Collapse near-duplicate events, keeping the first (highest-ranked) of each cluster and recording
+ * how many source articles merged into it (`sourceCount`). Input must be pre-sorted best-first.
+ */
+export function dedupeRanked(events: RankedEvent[]): RankedEvent[] {
+  const kept: RankedEvent[] = [];
+  for (const e of events) {
+    const title = e.title ?? '';
+    const rep = title ? kept.find((k) => areDuplicateTitles(k.title ?? '', title)) : undefined;
+    if (rep) {
+      rep.sourceCount = (rep.sourceCount ?? 1) + 1;
+      continue;
+    }
+    kept.push({ ...e, sourceCount: 1 });
+  }
+  return kept;
 }
 
 /** Cursor-style page: slice after `offset`, plus whether more remain (for infinite scroll). */

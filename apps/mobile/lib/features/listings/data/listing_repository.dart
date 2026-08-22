@@ -260,6 +260,7 @@ class ListingRepository {
           category: entry['category'] as String? ?? 'local',
           distanceKm: (entry['distanceKm'] as num?)?.toDouble(),
           publishedAt: entry['publishedAt'] as String?,
+          sources: (entry['sources'] as num?)?.toInt() ?? 1,
         ),
     ];
   }

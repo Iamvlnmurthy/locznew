@@ -57,6 +57,25 @@ const CATEGORY_KEYWORDS: Array<[NewsCategory, RegExp]> = [
   ['business', /\b(startup|company|ipo|market|investment|business)\w*/i],
 ];
 
+/** Decode the handful of HTML entities Google News leaves in titles/summaries and tidy whitespace. */
+export function cleanText(s: string | null): string | null {
+  if (s == null) return null;
+  const out = s
+    .replace(/&nbsp;/gi, ' ')
+    .replace(/&amp;/gi, '&')
+    .replace(/&#0?39;|&apos;|&lsquo;|&rsquo;/gi, "'")
+    .replace(/&quot;|&ldquo;|&rdquo;/gi, '"')
+    .replace(/&[a-z]+;|&#\d+;/gi, ' ') // any remaining entity → space
+    .replace(/\s{2,}/g, ' ')
+    .trim();
+  return out || null;
+}
+
+/** Strip a trailing " - Publisher" / " | Publisher" (Google News headline style). */
+export function stripPublisherSuffix(title: string): string {
+  return title.replace(/\s[-|–—]\s[^-|–—]{1,40}$/u, '').trim() || title;
+}
+
 /** Best-effort category from the headline+summary. Falls back to 'local'. */
 export function guessCategory(text: string): NewsCategory {
   for (const [category, re] of CATEGORY_KEYWORDS) {

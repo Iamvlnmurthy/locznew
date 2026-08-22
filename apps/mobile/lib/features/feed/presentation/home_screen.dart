@@ -1757,6 +1757,7 @@ class _LocalNewsSectionState extends ConsumerState<_LocalNewsSection> {
                                   if (item.distanceKm != null)
                                     '${item.distanceKm!.toStringAsFixed(item.distanceKm! < 10 ? 1 : 0)} km',
                                   item.category,
+                                  if (item.sources > 1) '${item.sources} reports',
                                   _relativeTime(item.publishedAt),
                                 ].whereType<String>().where((part) => part.isNotEmpty).join(' · '),
                                 style: theme.textTheme.labelSmall?.copyWith(

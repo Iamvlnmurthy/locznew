@@ -1715,7 +1715,8 @@
     "couponLabel": "కోడ్",
     "redeemLabel": "రిడీమ్ చేయండి",
     "dealsNote": "భాగస్వామ్య వ్యాపారుల ఆన్‌లైన్ ఆఫర్‌లు — ప్రదేశ-నిర్దిష్టం కాదు.",
-    "sourcesLabel": "మూలం"
+    "sourcesLabel": "మూలం",
+    "reports": "నివేదికలు"
   },
   "hub": {
     "metaTitle": "{city} లో {category}",

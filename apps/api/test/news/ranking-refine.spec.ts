@@ -1,10 +1,13 @@
 import {
+  areDuplicateTitles,
+  dedupeRanked,
   rankFeed,
   ringOf,
   scoreEvent,
   paginate,
   type RankableEvent,
 } from '../../src/news/feed/ranking';
+import { cleanText, stripPublisherSuffix } from '../../src/news/feed/event-shaper';
 import {
   buildRefineMessages,
   refineCacheKey,
@@ -88,6 +91,56 @@ describe('feed ranking', () => {
     const items = [1, 2, 3, 4, 5];
     expect(paginate(items, 0, 2)).toEqual({ page: [1, 2], hasMore: true });
     expect(paginate(items, 4, 2)).toEqual({ page: [5], hasMore: false });
+  });
+
+  it('collapses one story reported by many publishers, keeps distinct stories', () => {
+    // The real repetition seen in prod: one building collapse from several outlets.
+    const titles = [
+      'Multi-storey building collapses in Madhapur',
+      'Under-Construction Building Collapses in Madhapur, Hyderabad - NewsMeter',
+      'Building collapse in Madhapur, Hyderabad', // same story, different words
+      'Hyderabad Metro extends operating hours on weekends', // distinct
+    ];
+    const events = titles.map((title, i) =>
+      ev({ id: `e${i}`, title, latitude: 17.44, longitude: 78.35, publishedAt: iso(i + 1) }),
+    );
+    const ranked = rankFeed(events, GACHIBOWLI, {}, NOW);
+    const deduped = dedupeRanked(ranked);
+    // 3 collapse reports → 1 card (+2 merged), metro stays → 2 cards total.
+    expect(deduped).toHaveLength(2);
+    const collapse = deduped.find((e) => (e.title ?? '').toLowerCase().includes('collapse'));
+    expect(collapse!.sourceCount).toBe(3);
+  });
+
+  it('duplicate detection: same story true, unrelated false, too-short false', () => {
+    expect(
+      areDuplicateTitles(
+        'Multi-storey building collapses in Madhapur',
+        'Building collapse in Madhapur, Hyderabad',
+      ),
+    ).toBe(true);
+    expect(
+      areDuplicateTitles(
+        'Cricket match at Uppal stadium tonight',
+        'GHMC clears garbage in Kukatpally',
+      ),
+    ).toBe(false);
+    expect(areDuplicateTitles('Rain today', 'Rain now')).toBe(false); // too few significant tokens
+  });
+});
+
+describe('news text cleaning', () => {
+  it('decodes entities and strips the Google-News publisher suffix', () => {
+    expect(cleanText('Building collapse&nbsp;&nbsp; in Madhapur')).toBe(
+      'Building collapse in Madhapur',
+    );
+    expect(cleanText('Tom &amp; Jerry &#39;fun&#39;')).toBe(`Tom & Jerry 'fun'`);
+    expect(stripPublisherSuffix('Hyderabad building collapses - V6 Velugu')).toBe(
+      'Hyderabad building collapses',
+    );
+    // a long clause after a dash is not a short publisher suffix, so it is preserved
+    const longClause = 'Assembly - a detailed look at what the new budget means for local roads';
+    expect(stripPublisherSuffix(longClause)).toBe(longClause);
   });
 });
 

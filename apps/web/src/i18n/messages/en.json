@@ -1715,7 +1715,8 @@
     "couponLabel": "Code",
     "redeemLabel": "Redeem",
     "dealsNote": "Online offers from partner merchants — not location-specific.",
-    "sourcesLabel": "Reported by"
+    "sourcesLabel": "Reported by",
+    "reports": "reports"
   },
   "hub": {
     "metaTitle": "{category} in {city}",

@@ -33,6 +33,7 @@ interface NewsCard {
   ring: number;
   publishedAt: string | null;
   locz: boolean;
+  sources: number;
 }
 
 interface JobPosting {
@@ -298,6 +299,7 @@ export default async function DiscoveryAreaPage({ params }: { params: Promise<{ 
                           ? `${item.distanceKm.toFixed(item.distanceKm < 10 ? 1 : 0)} ${t('common.km')}`
                           : null,
                         item.category,
+                        item.sources > 1 ? `${item.sources} ${d.reports}` : null,
                       ]
                         .filter(Boolean)
                         .join(' · ')}
