@@ -74,6 +74,35 @@ interface BusinessDetail {
   keywords: string[];
 }
 
+/**
+ * The name of the site a profile URL points at.
+ *
+ * Shown instead of the raw URL, which for these records is usually a numeric Facebook page
+ * id — "facebook.com/109648271486990" tells a reader nothing and looks like a tracking link.
+ * Anything unrecognised falls back to its hostname rather than being hidden: the link is
+ * still useful, and guessing a friendly name we cannot verify is how a wrong brand ends up
+ * on somebody's page.
+ */
+function socialLabel(url: string): string | null {
+  try {
+    const host = new URL(url).hostname.replace(/^www\./, '');
+    const known: Record<string, string> = {
+      'facebook.com': 'Facebook',
+      'm.facebook.com': 'Facebook',
+      'instagram.com': 'Instagram',
+      'twitter.com': 'X',
+      'x.com': 'X',
+      'linkedin.com': 'LinkedIn',
+      'youtube.com': 'YouTube',
+      'wa.me': 'WhatsApp',
+    };
+    return known[host] ?? host;
+  } catch {
+    // Not a URL we can parse. A link we cannot name is not a link we should render.
+    return null;
+  }
+}
+
 const DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 
 // The locale is part of the cache key on purpose: the same business rendered at /te and at
@@ -216,14 +245,12 @@ export default async function BusinessPage({ params }: { params: Promise<{ slug:
   const placeLabel = business.localityName
     ? `${business.localityName}, ${business.cityName}`
     : business.cityName;
-  const locationSentence = [
-    p.locatedIn.replace('{place}', placeLabel),
-    business.landmark ? p.nearLandmark.replace('{landmark}', business.landmark) : null,
-    // The pincode is deliberately not a sentence. It is already shown beside the address, and
-    // as prose it was the same filler that was taken out of the description.
-  ]
-    .filter(Boolean)
-    .join(' ');
+  // Real profiles the source recorded, so a reader can check the business somewhere that is
+  // not LocZ. nofollow because these are third-party links we did not vet.
+  const socialProfiles = (business.socialLinks ?? [])
+    .map((url) => ({ url, label: socialLabel(url) }))
+    .filter((profile): profile is { url: string; label: string } => profile.label !== null)
+    .slice(0, 4);
 
   // A short FAQ answering the exact questions people type for a specific place — its number, its
   // area, whether it is on WhatsApp. Real answers from real fields; rendered as FAQPage JSON-LD.
@@ -548,9 +575,30 @@ export default async function BusinessPage({ params }: { params: Promise<{ slug:
                 ) : null}
               </div>
               <aside className="business-profile-about__place">
-                <p className="business-profile-where">
-                  <Icon name="location" /> {locationSentence}
-                </p>
+                {/* This panel used to say "It is in Kokapet, Hyderabad." and then, two boxes
+                    later, "Based in Kokapet, Hyderabad" — both repeating the first sentence
+                    of the description directly above them. Three statements of one fact read
+                    as less information, not more. What is here now is what the page does not
+                    already say somewhere else. */}
+                {business.landmark ? (
+                  <p className="business-profile-where">
+                    <Icon name="location" />{' '}
+                    {p.nearLandmarkFact.replace('{landmark}', business.landmark)}
+                  </p>
+                ) : null}
+                {socialProfiles.length > 0 ? (
+                  <p className="business-profile-social">
+                    {p.socialProfiles}{' '}
+                    {socialProfiles.map((profile, index) => (
+                      <span key={profile.url}>
+                        {index > 0 ? ', ' : ''}
+                        <a href={profile.url} target="_blank" rel="nofollow noopener noreferrer">
+                          {profile.label}
+                        </a>
+                      </span>
+                    ))}
+                  </p>
+                ) : null}
                 {business.claimStatus === 'UNCLAIMED' &&
                 business.isClaimable !== false &&
                 !business.isOwner ? (
@@ -558,15 +606,6 @@ export default async function BusinessPage({ params }: { params: Promise<{ slug:
                     {p.unclaimed} <Link href={`/b/${business.slug}/claim`}>{p.claimAction}</Link>
                   </p>
                 ) : null}
-                <div className="business-profile-promises business-profile-promises--slim">
-                  <div>
-                    <Icon name="location" />
-                    <span>
-                      <strong>{p.basedIn.replace('{city}', placeLabel)}</strong>
-                      {p.servingNearby}
-                    </span>
-                  </div>
-                </div>
               </aside>
             </div>
           </section>
@@ -619,7 +658,6 @@ export default async function BusinessPage({ params }: { params: Promise<{ slug:
                   .filter(Boolean)
                   .join(', ')}
               </p>
-              <p className="business-profile-where">{locationSentence}</p>
               <div className="business-profile-map-actions">
                 {directionsUrl ? (
                   <a

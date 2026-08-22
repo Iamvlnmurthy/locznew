@@ -762,6 +762,8 @@
     "nothingPublished": "Nothing published right now",
     "nothingPublishedBody": "Fresh offers, products and jobs from this business will appear here.",
     "onLoczSince": "On LocZ since",
+    "socialProfiles": "Also found on",
+    "nearLandmarkFact": "Near {landmark}",
     "loczId": "LocZ ID",
     "openConversation": "Open conversation",
     "opensAt": "Opens at {time}",
