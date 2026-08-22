@@ -1714,7 +1714,8 @@
     "dealsSource": "सहबद्ध ऑफ़र",
     "couponLabel": "कोड",
     "redeemLabel": "रिडीम करें",
-    "dealsNote": "साझेदार व्यापारियों के ऑनलाइन ऑफ़र — स्थान-विशिष्ट नहीं।"
+    "dealsNote": "साझेदार व्यापारियों के ऑनलाइन ऑफ़र — स्थान-विशिष्ट नहीं।",
+    "sourcesLabel": "स्रोत"
   },
   "hub": {
     "metaTitle": "{city} में {category}",

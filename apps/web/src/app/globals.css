@@ -19983,6 +19983,130 @@ h4,
   color: var(--locz-coral);
 }
 
+/* News cards: LocZ-regenerated, so give them room to breathe (title wraps, summary preview). */
+.discovery-news-card {
+  align-items: start;
+}
+
+.discovery-news-card .discovery-text-card__dot {
+  margin-top: 6px;
+}
+
+.discovery-news-card strong {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  white-space: normal;
+}
+
+.discovery-news-card__summary {
+  display: -webkit-box;
+  overflow: hidden;
+  margin: 0;
+  color: var(--locz-text-muted);
+  font-size: 0.78rem;
+  line-height: 1.45;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.discovery-news-card > svg {
+  margin-top: 4px;
+}
+
+/* News article (detail) page — LocZ's own regenerated content, no source redirect. */
+.news-article-page {
+  padding: clamp(20px, 4vw, 48px) 0 64px;
+}
+
+.news-article {
+  max-width: 720px;
+}
+
+.news-article__back {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 22px;
+  color: var(--locz-text-muted);
+  font-size: 0.82rem;
+}
+
+.news-article__back svg {
+  width: 15px;
+  transform: rotate(180deg);
+}
+
+.news-article__meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 14px;
+  color: var(--locz-text-muted);
+  font-size: 0.74rem;
+}
+
+.news-article__tag {
+  padding: 3px 10px;
+  border-radius: 999px;
+  color: var(--locz-primary);
+  font-weight: 600;
+  text-transform: capitalize;
+  background: color-mix(in srgb, var(--locz-primary) 10%, white);
+}
+
+.news-article__title {
+  margin: 0 0 20px;
+  font-size: clamp(1.5rem, 4vw, 2.15rem);
+  line-height: 1.22;
+  letter-spacing: -0.01em;
+}
+
+.news-article__body {
+  display: grid;
+  gap: 16px;
+  color: var(--locz-text);
+  font-size: 1.02rem;
+  line-height: 1.72;
+}
+
+.news-article__byline {
+  margin: 24px 0 0;
+  color: var(--locz-primary);
+  font-size: 0.78rem;
+  font-weight: 600;
+}
+
+.news-article__sources {
+  margin-top: 28px;
+  padding-top: 18px;
+  border-top: 1px solid color-mix(in srgb, var(--locz-border) 72%, transparent);
+}
+
+.news-article__sources small {
+  color: var(--locz-text-muted);
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.news-article__sources ul {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 14px;
+  margin: 8px 0 0;
+  padding: 0;
+  list-style: none;
+  font-size: 0.82rem;
+}
+
+.news-article__sources a {
+  color: var(--locz-text-muted);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
 .discovery-listing-feed {
   display: grid;
   gap: 12px;

@@ -23,11 +23,16 @@ interface LocalWeather {
   condition: string;
 }
 
-interface NewsHeadline {
+// A LocZ-regenerated news card from /news/feed (our own content, not a source redirect).
+interface NewsCard {
+  slug: string;
   title: string;
-  url: string;
-  source: string;
+  summary: string | null;
+  category: string;
+  distanceKm: number | null;
+  ring: number;
   publishedAt: string | null;
+  locz: boolean;
 }
 
 interface JobPosting {
@@ -140,8 +145,16 @@ export default async function DiscoveryAreaPage({ params }: { params: Promise<{ 
           `/local-now/weather?latitude=${city.latitude}&longitude=${city.longitude}`,
         )
       : Promise.resolve(null),
-    showNews
-      ? apiSafe<{ headlines: NewsHeadline[] }>(`/local-now/news?q=${encodeURIComponent(cityName)}`)
+    showNews && place?.latitude !== undefined && place.longitude !== undefined
+      ? apiSafe<{ cards: NewsCard[]; hasMore: boolean }>(
+          `/news/feed?${new URLSearchParams({
+            latitude: String(place.latitude),
+            longitude: String(place.longitude),
+            lang: locale,
+            scope: 'city',
+            limit: '20',
+          }).toString()}`,
+        )
       : Promise.resolve(null),
     showAlerts
       ? apiSafe<{ alerts: LocalAlert[] }>(`/local-now/alerts?${alertQuery.toString()}`)
@@ -177,7 +190,7 @@ export default async function DiscoveryAreaPage({ params }: { params: Promise<{ 
       return true;
     });
   const weather = weatherResponse?.weather ?? null;
-  const news = newsResponse?.headlines ?? [];
+  const news = newsResponse?.cards ?? [];
   const alerts = alertResponse?.alerts ?? [];
   const jobs = jobsResponse?.jobs ?? [];
   const deals = dealsResponse?.deals ?? [];
@@ -265,23 +278,33 @@ export default async function DiscoveryAreaPage({ params }: { params: Promise<{ 
             <section className="discovery-source-section">
               <div className="discovery-source-section__head">
                 <span>{d.localNews}</span>
-                <small>{'Google News'}</small>
+                <small>{'LocZ'}</small>
               </div>
               {news.map((item) => (
-                <a
-                  key={item.url}
-                  href={item.url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="discovery-text-card"
+                <Link
+                  key={item.slug}
+                  href={`/news/${item.slug}`}
+                  className="discovery-text-card discovery-news-card"
                 >
                   <span className="discovery-text-card__dot" />
                   <div>
                     <strong>{item.title}</strong>
-                    <small>{item.source}</small>
+                    {item.summary ? (
+                      <p className="discovery-news-card__summary">{item.summary}</p>
+                    ) : null}
+                    <small>
+                      {[
+                        item.distanceKm != null
+                          ? `${item.distanceKm.toFixed(item.distanceKm < 10 ? 1 : 0)} ${t('common.km')}`
+                          : null,
+                        item.category,
+                      ]
+                        .filter(Boolean)
+                        .join(' · ')}
+                    </small>
                   </div>
                   <Icon name="arrow" />
-                </a>
+                </Link>
               ))}
             </section>
           ) : null}

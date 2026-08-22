@@ -7,6 +7,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import type { CoverageScope } from './feed/ranking';
 import { NewsFeedService } from './feed/news-feed.service';
 import { NewsIngestService } from './ingest/news-ingest.service';
+import { NewsRefineService } from './refine/news-refine.service';
 import { NewsSourceService } from './sources/news-source.service';
 
 const SCOPES = ['local', 'city', 'district', 'state', 'india'] as const;
@@ -34,6 +35,7 @@ export class NewsController {
     private readonly feed: NewsFeedService,
     private readonly ingest: NewsIngestService,
     private readonly sources: NewsSourceService,
+    private readonly refine: NewsRefineService,
     private readonly prisma: PrismaService,
   ) {}
 
@@ -57,8 +59,8 @@ export class NewsController {
 
   @Public()
   @Get(':slug')
-  @ApiOperation({ summary: 'One news event with its source attributions' })
-  async getEvent(@Param('slug') slug: string) {
+  @ApiOperation({ summary: 'One news event, LocZ-regenerated in the requested language' })
+  async getEvent(@Param('slug') slug: string, @Query('lang') lang?: string) {
     const event = await this.prisma.newsEvent.findUnique({
       where: { slug },
       include: {
@@ -66,12 +68,19 @@ export class NewsController {
       },
     });
     if (!event) throw new NotFoundException('Event not found');
+    // Serve LocZ's own regenerated content (no source redirect); fall back to the raw event text.
+    const refined = await this.refine.refine(
+      event.id,
+      lang ?? 'en',
+      `${event.title}\n${event.summary ?? ''}`.trim(),
+    );
     return {
       slug: event.slug,
-      title: event.title,
-      summary: event.summary,
+      title: refined?.title ?? event.title,
+      summary: refined?.summary ?? event.summary,
       categories: event.categories,
       publishedAt: event.latestUpdateAt,
+      locz: !!refined,
       sources: event.articles.map((a) => ({
         publisher: a.article.publisher,
         url: a.article.sourceUrl,

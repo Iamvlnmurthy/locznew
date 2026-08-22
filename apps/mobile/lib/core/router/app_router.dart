@@ -13,6 +13,7 @@ import '../../features/feed/presentation/home_screen.dart';
 import '../../features/listings/presentation/business_detail_screen.dart';
 import '../../features/listings/presentation/listing_detail_screen.dart';
 import '../../features/listings/presentation/listing_navigation.dart';
+import '../../features/listings/presentation/news_detail_screen.dart';
 import '../../features/listings/presentation/report_listing_screen.dart';
 import '../../features/listings/presentation/requirement_responses_screen.dart';
 import '../../features/listings/presentation/saved_searches_screen.dart';
@@ -197,6 +198,14 @@ final routerProvider = Provider<GoRouter>((ref) {
           context,
           state,
           BusinessDetailScreen(slug: state.pathParameters['slug']!),
+        ),
+      ),
+      GoRoute(
+        path: '/news/:slug',
+        pageBuilder: (context, state) => _motionPage(
+          context,
+          state,
+          NewsDetailScreen(slug: state.pathParameters['slug']!),
         ),
       ),
       GoRoute(

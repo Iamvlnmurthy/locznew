@@ -1714,7 +1714,8 @@
     "dealsSource": "Affiliate offers",
     "couponLabel": "Code",
     "redeemLabel": "Redeem",
-    "dealsNote": "Online offers from partner merchants — not location-specific."
+    "dealsNote": "Online offers from partner merchants — not location-specific.",
+    "sourcesLabel": "Reported by"
   },
   "hub": {
     "metaTitle": "{category} in {city}",

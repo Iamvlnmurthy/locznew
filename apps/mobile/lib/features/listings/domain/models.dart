@@ -741,3 +741,42 @@ class BusinessDetail {
         verificationStatus: json['verificationStatus'] as String?,
       );
 }
+
+/// A LocZ-regenerated news card from `/news/feed`. Content is our OWN rewrite — the card links to
+/// the in-app detail screen (`/news/:slug`), never out to the source publisher.
+class NewsCard {
+  const NewsCard({
+    required this.slug,
+    required this.title,
+    required this.category,
+    this.summary,
+    this.distanceKm,
+    this.publishedAt,
+  });
+
+  final String slug;
+  final String title;
+  final String category;
+  final String? summary;
+  final double? distanceKm;
+  final String? publishedAt;
+}
+
+/// A full LocZ-regenerated news event (`/news/:slug`) with its source attributions.
+class NewsEvent {
+  const NewsEvent({
+    required this.slug,
+    required this.title,
+    required this.categories,
+    this.summary,
+    this.publishedAt,
+    this.sources = const [],
+  });
+
+  final String slug;
+  final String title;
+  final List<String> categories;
+  final String? summary;
+  final String? publishedAt;
+  final List<({String? publisher, String? url})> sources;
+}

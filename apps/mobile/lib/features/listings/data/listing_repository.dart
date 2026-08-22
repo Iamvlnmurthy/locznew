@@ -231,23 +231,63 @@ class ListingRepository {
     );
   }
 
-  /// Live local news headlines for an area, pulled on demand (never stored). Display-only:
-  /// headline + publisher + a link back to the original. Empty on any failure.
-  Future<List<({String title, String url, String source, String? publishedAt})>> localNews(
-    String query,
-  ) async {
-    if (query.trim().isEmpty) return const [];
-    final json = await _api.get<Map<String, dynamic>>('/local-now/news', query: {'q': query});
-    final headlines = (json['headlines'] as List<dynamic>? ?? []);
+  /// LocZ-regenerated hyperlocal news near a point, ranked by distance-ring + freshness.
+  /// Cards carry our OWN rewritten title/summary (never a source redirect). Empty on failure.
+  Future<List<NewsCard>> newsFeed({
+    required double latitude,
+    required double longitude,
+    String lang = 'en',
+    String scope = 'city',
+    int limit = 20,
+  }) async {
+    final json = await _api.get<Map<String, dynamic>>(
+      '/news/feed',
+      query: {
+        'latitude': '$latitude',
+        'longitude': '$longitude',
+        'lang': lang,
+        'scope': scope,
+        'limit': '$limit',
+      },
+    );
+    final cards = (json['cards'] as List<dynamic>? ?? []);
     return [
-      for (final entry in headlines)
-        (
-          title: (entry as Map<String, dynamic>)['title'] as String? ?? '',
-          url: entry['url'] as String? ?? '',
-          source: entry['source'] as String? ?? '',
+      for (final entry in cards)
+        NewsCard(
+          slug: (entry as Map<String, dynamic>)['slug'] as String? ?? '',
+          title: entry['title'] as String? ?? '',
+          summary: entry['summary'] as String?,
+          category: entry['category'] as String? ?? 'local',
+          distanceKm: (entry['distanceKm'] as num?)?.toDouble(),
           publishedAt: entry['publishedAt'] as String?,
         ),
     ];
+  }
+
+  /// One LocZ-regenerated news event by slug, in the requested language (for the detail screen).
+  Future<NewsEvent?> newsEvent(String slug, {String lang = 'en'}) async {
+    try {
+      final json = await _api.get<Map<String, dynamic>>(
+        '/news/${Uri.encodeComponent(slug)}',
+        query: {'lang': lang},
+      );
+      return NewsEvent(
+        slug: json['slug'] as String? ?? slug,
+        title: json['title'] as String? ?? '',
+        summary: json['summary'] as String?,
+        categories: [for (final c in (json['categories'] as List<dynamic>? ?? [])) c as String],
+        publishedAt: json['publishedAt'] as String?,
+        sources: [
+          for (final s in (json['sources'] as List<dynamic>? ?? []))
+            (
+              publisher: (s as Map<String, dynamic>)['publisher'] as String?,
+              url: s['url'] as String?,
+            ),
+        ],
+      );
+    } catch (_) {
+      return null;
+    }
   }
 
   /// Official public-safety alerts (NDMA SACHET) naming the viewer's area. Display-only, verbatim.

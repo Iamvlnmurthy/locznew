@@ -1645,7 +1645,7 @@ class _LocalNewsSection extends ConsumerStatefulWidget {
 }
 
 class _LocalNewsSectionState extends ConsumerState<_LocalNewsSection> {
-  List<({String title, String url, String source, String? publishedAt})> _items = const [];
+  List<NewsCard> _items = const [];
   bool _loading = true;
 
   @override
@@ -1656,9 +1656,17 @@ class _LocalNewsSectionState extends ConsumerState<_LocalNewsSection> {
 
   Future<void> _load() async {
     final city = ref.read(selectedCityProvider);
-    final query = (city?.name.isEmpty ?? true) ? '' : city!.name;
+    final lat = city?.latitude;
+    final lng = city?.longitude;
+    if (lat == null || lng == null) {
+      if (mounted) setState(() => _loading = false);
+      return;
+    }
+    final lang = ref.read(localeProvider).name;
     try {
-      final items = await ref.read(listingRepositoryProvider).localNews(query);
+      final items = await ref
+          .read(listingRepositoryProvider)
+          .newsFeed(latitude: lat, longitude: lng, lang: lang);
       if (mounted) {
         setState(() {
           _items = items;
@@ -1706,10 +1714,7 @@ class _LocalNewsSectionState extends ConsumerState<_LocalNewsSection> {
                 borderRadius: BorderRadius.circular(14),
                 child: InkWell(
                   borderRadius: BorderRadius.circular(14),
-                  onTap: () => launchUrl(
-                    Uri.parse(item.url),
-                    mode: LaunchMode.externalApplication,
-                  ),
+                  onTap: () => context.push('/news/${item.slug}'),
                   child: Padding(
                     padding: const EdgeInsets.all(12),
                     child: Row(
@@ -1735,12 +1740,25 @@ class _LocalNewsSectionState extends ConsumerState<_LocalNewsSection> {
                                 style: theme.textTheme.bodyMedium
                                     ?.copyWith(fontWeight: FontWeight.w600),
                               ),
+                              if (item.summary != null && item.summary!.isNotEmpty) ...[
+                                const SizedBox(height: 3),
+                                Text(
+                                  item.summary!,
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: theme.textTheme.bodySmall?.copyWith(
+                                    color: theme.colorScheme.onSurfaceVariant,
+                                  ),
+                                ),
+                              ],
                               const SizedBox(height: 2),
                               Text(
-                                [item.source, _relativeTime(item.publishedAt)]
-                                    .whereType<String>()
-                                    .where((part) => part.isNotEmpty)
-                                    .join(' · '),
+                                [
+                                  if (item.distanceKm != null)
+                                    '${item.distanceKm!.toStringAsFixed(item.distanceKm! < 10 ? 1 : 0)} km',
+                                  item.category,
+                                  _relativeTime(item.publishedAt),
+                                ].whereType<String>().where((part) => part.isNotEmpty).join(' · '),
                                 style: theme.textTheme.labelSmall?.copyWith(
                                   color: theme.colorScheme.onSurfaceVariant,
                                 ),
@@ -1749,8 +1767,8 @@ class _LocalNewsSectionState extends ConsumerState<_LocalNewsSection> {
                           ),
                         ),
                         Icon(
-                          Icons.north_east,
-                          size: 16,
+                          Icons.chevron_right,
+                          size: 18,
                           color: theme.colorScheme.onSurfaceVariant,
                         ),
                       ],
@@ -1762,7 +1780,7 @@ class _LocalNewsSectionState extends ConsumerState<_LocalNewsSection> {
           Padding(
             padding: const EdgeInsets.only(top: 4),
             child: Text(
-              'Google News',
+              'LocZ',
               style:
                   theme.textTheme.labelSmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
             ),
