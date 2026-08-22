@@ -23,7 +23,10 @@ export interface DescribableBusiness {
   cityName?: string | null;
   /** A nearby landmark from the address, when known — a fact, never invented. */
   landmark?: string | null;
-  /** The six-digit pincode, when known. */
+  /**
+   * The six-digit pincode. Held for the address block and the structured data, and
+   * deliberately never written into the prose — see below.
+   */
   pincode?: string | null;
   /** What the shop is searched for. Real demand once the learning system has any. */
   keywords?: string[];
@@ -55,14 +58,17 @@ export function describeBusiness(business: DescribableBusiness): {
   const place = [business.localityName, business.cityName].filter(Boolean).join(', ');
   lines.push(place ? `${business.categoryName} in ${place}.` : `${business.categoryName}.`);
 
-  // "Located near Inorbit Mall, in the 500081 area." — both are facts from the address, so they
-  // place the business more precisely without any claim about it. Landmark first: it is how
-  // people actually navigate to a place.
-  const where = [
-    business.landmark ? `near ${business.landmark}` : null,
-    business.pincode ? `in the ${business.pincode} area` : null,
-  ].filter(Boolean);
-  if (where.length > 0) lines.push(`Located ${where.join(', ')}.`);
+  // "Located near Inorbit Mall." — a fact from the address, so it places the business more
+  // precisely without making any claim about it. This is how people actually navigate to a
+  // place: by what is next to it, not by its coordinates.
+  //
+  // The pincode used to be appended here as "in the 500081 area". It is gone on purpose. A
+  // six-digit number is not how anyone describes where a shop is, it was the only thing many
+  // of these lines contained, and because every record has one it produced the same filler
+  // sentence on millions of pages — the exact repetition that makes a page look worthless to
+  // a reader and to a search engine. The pincode is still shown in the address block and in
+  // the structured data, which is where a postcode belongs.
+  if (business.landmark) lines.push(`Located near ${business.landmark}.`);
 
   const terms = (business.keywords ?? [])
     .map((keyword) => keyword.trim())

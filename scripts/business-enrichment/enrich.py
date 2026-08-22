@@ -18,7 +18,6 @@ Requires env:  DATABASE_URL (prod Postgres)   SARVAM_KEY (sk_...)
 Requires file: var/overture/india_places.parquet  (see ENRICHMENT.md step 2)
 """
 import os, re, json, time, difflib, urllib.request
-import duckdb
 import psycopg  # psycopg 3
 
 DATABASE_URL = os.environ["DATABASE_URL"]
@@ -32,16 +31,26 @@ norm = lambda s: re.sub(r"[^a-z0-9]", "", (s or "").lower())
 
 
 def fetch_businesses(cur, limit):
-    """Rows still needing a description, newest-first, with coordinates."""
+    """Rows still needing a description, with coordinates.
+
+    `category` and `city` are joined rather than selected: `businesses` holds `categoryId`
+    and `cityId` as foreign keys, so the flat column names this script was written against
+    do not exist. Sarvam is given the human-readable names, which is what it needs anyway.
+    """
     cur.execute(
         """
-        SELECT id, name, category, city, latitude, longitude,
-               "primaryPhone", website
-        FROM businesses
-        WHERE description IS NULL
-          AND latitude IS NOT NULL
-          AND longitude IS NOT NULL
-        ORDER BY id
+        SELECT b.id, b.name,
+               c.name  AS category,
+               ct.name AS city,
+               b.latitude, b.longitude,
+               b."primaryPhone", b.website
+        FROM businesses b
+        LEFT JOIN categories c  ON c.id  = b."categoryId"
+        LEFT JOIN cities     ct ON ct.id = b."cityId"
+        WHERE b.description IS NULL
+          AND b.latitude IS NOT NULL
+          AND b.longitude IS NOT NULL
+        ORDER BY b.id
         LIMIT %s
         """,
         (limit,),
@@ -51,7 +60,14 @@ def fetch_businesses(cur, limit):
 
 
 def overture_match(con, b):
-    """One ~300m spatial box, then fuzzy name match in python."""
+    """One ~300m spatial box, then fuzzy name match in python.
+
+    Returns None when the parquet is absent. The file is a ~450MB prerequisite that only
+    supplies phone/website; requiring it to try five descriptions would make a cheap check
+    an expensive one. The description path does not depend on it.
+    """
+    if con is None:
+        return None
     lat, lng = float(b["latitude"]), float(b["longitude"])
     rows = con.execute(
         f"""
@@ -99,7 +115,14 @@ def sarvam(b, retries=2):
 
 
 def main():
-    con = duckdb.connect()
+    # Only pay for duckdb when there is a parquet to read.
+    con = None
+    if os.path.exists(PARQUET):
+        import duckdb
+        con = duckdb.connect()
+    else:
+        print(f"Overture parquet not found at {PARQUET} — "
+              "descriptions and keywords only, no phone/website enrichment.")
     done = 0
     t0 = time.time()
     with psycopg.connect(DATABASE_URL) as pg:

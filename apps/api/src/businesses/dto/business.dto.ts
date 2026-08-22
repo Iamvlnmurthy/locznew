@@ -324,6 +324,22 @@ export class BusinessDetailDto extends BusinessSummaryDto {
   @ApiPropertyOptional({ description: 'A nearby landmark from the address, when known.' })
   landmark!: string | null;
 
+  @ApiProperty({
+    description:
+      'Public profiles this business is known by elsewhere, emitted as schema.org sameAs. ' +
+      'Empty for most records; never a URL we assembled from a handle.',
+    example: ['https://www.facebook.com/examplestore'],
+  })
+  socialLinks!: string[];
+
+  @ApiPropertyOptional({
+    description:
+      'Short public reference for this business, taken from the tail of its slug. Unique ' +
+      'across the directory; what a shopkeeper quotes when claiming their listing.',
+    example: '000J-HRCF',
+  })
+  loczId!: string | null;
+
   @ApiProperty({ description: 'Category id — for building "similar nearby" and category links.' })
   categoryId!: string;
 

@@ -58,3 +58,10 @@ locz-signing-DO-NOT-SHARE/
 *.jks
 *.keystore
 key.properties
+
+# Overture extracts and enrichment working files — hundreds of MB, rebuildable from
+# the public release and from the database. Never in git.
+/var/
+
+# DuckDB spill files from local data work.
+/.tmp/

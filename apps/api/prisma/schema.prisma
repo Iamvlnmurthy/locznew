@@ -810,6 +810,17 @@ model Business {
   /// for. A bounded list of short terms is harder to abuse and easier to moderate.
   keywords String[]
 
+  /// Public profiles this business is known by elsewhere — Facebook, Instagram, and the like.
+  ///
+  /// Emitted as schema.org `sameAs`, which is how a search engine ties this page to an entity
+  /// it already knows about rather than treating it as an unrelated page that happens to share
+  /// a name. That is worth more to an unclaimed directory record than any amount of prose,
+  /// because it is corroboration from outside LocZ.
+  ///
+  /// URLs only, exactly as the source gave them. Never a handle we assembled ourselves: a
+  /// guessed profile URL is a link to somebody else's account.
+  socialLinks String[]
+
   /// Where an imported record came from, and under what licence.
   ///
   /// Not optional bookkeeping: ODbL and CDLA both require attribution to travel with the
@@ -844,6 +855,7 @@ model Business {
   listings             Listing[]
   requirementResponses RequirementResponse[]
   savedBy              SavedBusiness[]
+  slugAliases          BusinessSlugAlias[]
 
   /// Full-text document for business search, maintained by Postgres itself.
   ///
@@ -865,6 +877,27 @@ model Business {
   @@index([businessType])
   @@index([pincodeCode, claimStatus])
   @@map("businesses")
+}
+
+/// A URL a business used to live at.
+///
+/// The imported records were slugged `name-000j-hrcf`, where the last two segments are an
+/// import batch number and a disambiguator — machine noise that told a reader and a search
+/// engine nothing. Re-slugging them to `name-locality-city` is worth doing, but three and a
+/// half million URLs are already indexed, linked and shared, and a slug change without this
+/// table turns every one of them into a 404.
+///
+/// So every previous slug is kept and resolves to its business, which then redirects to the
+/// current URL. Rows are never deleted: a link that worked once must keep working.
+model BusinessSlugAlias {
+  slug       String   @id @db.VarChar(200)
+  businessId String   @db.Uuid
+  createdAt  DateTime @default(now())
+
+  business Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+
+  @@index([businessId])
+  @@map("business_slug_aliases")
 }
 
 model BusinessStaff {

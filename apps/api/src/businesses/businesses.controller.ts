@@ -141,8 +141,9 @@ export class BusinessesController {
   getBySlug(
     @Param('slug') slug: string,
     @CurrentUser() user?: AuthenticatedUser,
+    @Query('lang') lang?: string,
   ): Promise<BusinessDetailDto> {
-    return this.businesses.getBySlug(slug, user?.id);
+    return this.businesses.getBySlug(slug, user?.id, lang);
   }
 
   @Patch(':id')

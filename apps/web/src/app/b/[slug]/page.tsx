@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import Image from 'next/image';
 import Link from 'next/link';
-import { notFound } from 'next/navigation';
+import { notFound, permanentRedirect } from 'next/navigation';
 import { cache } from 'react';
 import type { ListingSummary } from '@locz/shared-types';
 import { publicBrandLogo } from '@locz/public-brands';
@@ -44,6 +44,10 @@ interface BusinessDetail {
   cityId: string;
   localityName: string | null;
   landmark: string | null;
+  /** Public profiles elsewhere, emitted as schema.org sameAs. Absent on older API builds. */
+  socialLinks?: string[] | null;
+  /** Short public reference, e.g. "000J-HRCF". Absent on older API builds. */
+  loczId?: string | null;
   pincode: string | null;
   logoUrl: string | null;
   publicBrandKey: string | null;
@@ -72,9 +76,15 @@ interface BusinessDetail {
 
 const DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 
-const loadBusiness = cache(async (slug: string): Promise<BusinessDetail | null> => {
+// The locale is part of the cache key on purpose: the same business rendered at /te and at
+// /en is two different documents, and caching one under the other's key would serve Telugu
+// readers English (or worse, the reverse) from whichever page was built first.
+const loadBusiness = cache(async (slug: string, locale: string): Promise<BusinessDetail | null> => {
   try {
-    return await api<BusinessDetail>(`/businesses/${encodeURIComponent(slug)}`, { auth: true });
+    return await api<BusinessDetail>(
+      `/businesses/${encodeURIComponent(slug)}?lang=${encodeURIComponent(locale)}`,
+      { auth: true },
+    );
   } catch (error) {
     if (error instanceof ApiError && error.status === 404) return null;
     throw error;
@@ -87,7 +97,8 @@ export async function generateMetadata({
   params: Promise<{ slug: string }>;
 }): Promise<Metadata> {
   const { slug } = await params;
-  const business = await loadBusiness(slug).catch(() => null);
+  const locale = await getLocale();
+  const business = await loadBusiness(slug, locale).catch(() => null);
 
   if (!business) {
     return { title: 'Business not found', robots: { index: false, follow: false } };
@@ -138,13 +149,17 @@ export async function generateMetadata({
 
 export default async function BusinessPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
-  const [locale, business, user] = await Promise.all([
-    getLocale(),
-    loadBusiness(slug),
-    getCurrentUser(),
-  ]);
+  const locale = await getLocale();
+  const [business, user] = await Promise.all([loadBusiness(slug, locale), getCurrentUser()]);
 
   if (!business) notFound();
+
+  // The API also answers to a slug the business used to have, so old links keep working.
+  // When that happens the URL asked for is not the canonical one, and serving the page at
+  // both addresses would be two URLs for one business — duplicate content, and the ranking
+  // split between them. 308 sends the reader and the crawler to the real one instead.
+  if (business.slug !== slug) permanentRedirect(`/b/${business.slug}`);
+
   const t = getTranslator(locale);
   const p = getMessageGroup(locale, 'businessProfile');
   const profileLogo = business.logoUrl ?? publicBrandLogo(business.name, business.publicBrandKey);
@@ -237,6 +252,11 @@ export default async function BusinessPage({ params }: { params: Promise<{ slug:
     url: `${SITE_URL}/b/${business.slug}`,
     telephone: business.primaryPhone ?? undefined,
     email: business.email ?? undefined,
+    // sameAs is how a search engine decides this page and a Facebook profile are the same
+    // business rather than two unrelated things with the same name. For an unclaimed record
+    // it is the only corroboration the page carries that comes from outside LocZ.
+    sameAs: business.socialLinks?.length ? business.socialLinks : undefined,
+    identifier: business.loczId ?? undefined,
     address: {
       '@type': 'PostalAddress',
       streetAddress: business.addressLine ?? undefined,
@@ -429,6 +449,14 @@ export default async function BusinessPage({ params }: { params: Promise<{ slug:
                 <span>
                   {p.onLoczSince} {new Date(business.createdAt).getFullYear()}
                 </span>
+                {business.loczId ? (
+                  // The same characters already sitting at the end of the URL, labelled. A
+                  // shopkeeper ringing up to claim their listing can read this out, and
+                  // support can find the record from it.
+                  <span className="business-profile-identity__id">
+                    {p.loczId} <code>{business.loczId}</code>
+                  </span>
+                ) : null}
               </div>
               <div className="business-profile-identity__actions" aria-label={p.talkBusiness}>
                 {directionsUrl ? (

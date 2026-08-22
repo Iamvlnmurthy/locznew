@@ -16,7 +16,8 @@ import { v7 as uuid } from 'uuid';
 import { findPublicBrand } from '@locz/public-brands';
 import { AuditService } from '../audit/audit.service';
 import { paginate, PaginatedDto } from '../common/dto/pagination.dto';
-import { slugify } from '../common/utils/slug.util';
+import { localizedName } from '../common/utils/localized-name';
+import { businessSlug, loczId } from '../common/utils/slug.util';
 import { categoryNameToArea } from '../common/utils/discovery-areas';
 import { attributionFor, describeBusiness } from './business-description';
 import { BusinessSearchService } from '../search/business-search.service';
@@ -44,8 +45,11 @@ const STAFF_PERMISSIONS: Record<string, string[]> = {
 };
 
 const BUSINESS_INCLUDE = {
-  category: { select: { name: true } },
-  city: { select: { name: true } },
+  // Telugu and Hindi names travel with the record because the profile is served at /te and
+  // /hi as well as /en. Without them those pages carry translated furniture around English
+  // content — which is what a reader sees, and what a search engine indexes.
+  category: { select: { name: true, nameTe: true, nameHi: true } },
+  city: { select: { name: true, nameTe: true, nameHi: true } },
   address: {
     select: {
       line1: true,
@@ -585,11 +589,30 @@ export class BusinessesService {
     return this.toDetail(business, userId);
   }
 
-  async getBySlug(slug: string, viewerId?: string): Promise<BusinessDetailDto> {
-    const business = await this.prisma.business.findFirst({
+  async getBySlug(slug: string, viewerId?: string, lang?: string): Promise<BusinessDetailDto> {
+    let business = await this.prisma.business.findFirst({
       where: { slug, deletedAt: null, isActive: true },
       include: BUSINESS_INCLUDE,
     });
+
+    // Not found under that slug? It may be one the business used to have. Imported records
+    // were re-slugged from `name-000j-hrcf` to something a person can read, and every old URL
+    // is already indexed and shared. Resolving the alias here — rather than 404ing — is what
+    // keeps those links alive; the caller compares the slug it asked for against the slug it
+    // gets back and redirects to the canonical one.
+    if (!business) {
+      const alias = await this.prisma.businessSlugAlias.findUnique({
+        where: { slug },
+        select: { businessId: true },
+      });
+      if (alias) {
+        business = await this.prisma.business.findFirst({
+          where: { id: alias.businessId, deletedAt: null, isActive: true },
+          include: BUSINESS_INCLUDE,
+        });
+      }
+    }
+
     if (!business) throw new NotFoundException('Business not found');
 
     // An owner opening their workspace is maintenance, not customer interest.
@@ -600,7 +623,7 @@ export class BusinessesService {
         .catch(() => undefined);
     }
 
-    return this.toDetail(business, viewerId);
+    return this.toDetail(business, viewerId, lang);
   }
 
   async listMine(userId: string): Promise<BusinessSummaryDto[]> {
@@ -957,19 +980,21 @@ export class BusinessesService {
   }
 
   /**
-   * Slugs include the city because "sri lakshmi electronics" exists in every town in
-   * the state. A numeric suffix is only added if that is still taken.
+   * Slugs include the city because "sri lakshmi electronics" exists in every town in the
+   * state, and end in a random reference code so every business — imported or created here —
+   * has a LocZ ID to quote.
+   *
+   * The code also removes the read-then-write race the old collision loop had: two people
+   * registering the same shop name in the same city at the same moment could both find the
+   * base slug free. It still retries, but only against an astronomically unlikely clash.
    */
   private async uniqueSlug(name: string, cityName: string): Promise<string> {
-    const base = `${slugify(name)}-${slugify(cityName)}`;
-
-    for (let attempt = 0; attempt < 20; attempt += 1) {
-      const candidate = attempt === 0 ? base : `${base}-${attempt + 1}`;
+    for (let attempt = 0; attempt < 5; attempt += 1) {
+      const candidate = businessSlug(name, cityName);
       const taken = await this.prisma.business.findUnique({ where: { slug: candidate } });
       if (!taken) return candidate;
     }
-
-    return `${base}-${Date.now().toString(36)}`;
+    return businessSlug(name, `${cityName}-${Date.now().toString(36)}`);
   }
 
   private toSummary(business: BusinessRow, distanceMeters?: number): BusinessSummaryDto {
@@ -1004,21 +1029,28 @@ export class BusinessesService {
     };
   }
 
-  private toDetail(business: BusinessRow, viewerId?: string): BusinessDetailDto {
+  private toDetail(business: BusinessRow, viewerId?: string, lang?: string): BusinessDetailDto {
     const localityName = business.address?.locality?.name ?? null;
     const landmark = business.address?.landmark ?? null;
+    // The description is composed from these two names, so localising them here is what
+    // makes the /te and /hi pages actually read in those languages.
+    const categoryName = localizedName(business.category, lang);
+    const cityName = localizedName(business.city, lang);
     const described = describeBusiness({
-      categoryName: business.category.name,
+      categoryName,
       localityName,
       landmark,
       pincode: business.pincodeCode,
-      cityName: business.city.name,
+      cityName,
       keywords: business.keywords,
       description: business.description,
     });
 
     return {
       ...this.toSummary(business),
+      // toSummary carries the English names; the profile page speaks the reader's language.
+      categoryName,
+      cityName,
       // An imported record has no description of its own, so one is composed from what the
       // record actually holds. Never stored: it is a view of the business, not a fact about
       // it, and the day somebody claims the shop their words simply replace it.
@@ -1030,6 +1062,8 @@ export class BusinessesService {
       keywords: business.keywords,
       localityName,
       landmark,
+      socialLinks: business.socialLinks,
+      loczId: loczId(business.slug),
       categoryId: business.categoryId,
       cityId: business.cityId,
       addressLine:

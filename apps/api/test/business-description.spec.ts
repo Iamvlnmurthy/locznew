@@ -61,25 +61,30 @@ describe('describeBusiness', () => {
     expect(text).not.toContain('item6');
   });
 
-  it('places it by landmark and pincode — both facts from the address', () => {
+  it('places it by landmark — a fact from the address', () => {
     const { text } = describeBusiness({
       ...imported,
       landmark: 'Inorbit Mall',
       pincode: '500081',
     });
 
-    // "near X" and "in the NNNNNN area" are drawn straight from the address, so they locate the
-    // business precisely without asserting anything about it.
-    expect(text).toContain('Located near Inorbit Mall, in the 500081 area.');
+    // "near X" is drawn straight from the address, so it locates the business precisely
+    // without asserting anything about it.
+    expect(text).toContain('Located near Inorbit Mall.');
     expect(text).not.toMatch(/\bbest\b|\bleading\b|\btrusted\b|\bpopular\b/i);
   });
 
-  it('uses the pincode alone when there is no landmark', () => {
+  it('never writes the pincode into the prose', () => {
+    // Every imported record has a pincode, so "in the NNNNNN area" was the one sentence
+    // millions of pages had in common — filler that says nothing a reader wants and makes the
+    // pages look duplicated. It belongs in the address block, not in a description.
     const { text } = describeBusiness({ ...imported, pincode: '500081' });
-    expect(text).toContain('Located in the 500081 area.');
+
+    expect(text).not.toContain('500081');
+    expect(text).not.toContain('Located');
   });
 
-  it('adds no location line when neither landmark nor pincode is known', () => {
+  it('adds no location line when no landmark is known', () => {
     const { text } = describeBusiness(imported);
     expect(text).not.toContain('Located');
   });
