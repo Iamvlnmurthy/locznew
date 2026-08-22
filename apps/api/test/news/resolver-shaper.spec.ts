@@ -57,13 +57,13 @@ describe('location resolver', () => {
     expect(resolved.map((r) => r.name)).toEqual(['Gachibowli', 'Hyderabad']);
     const p = primaryPlace(resolved)!;
     expect(p.entityType).toBe('LOCALITY');
-    expect(p.confidence).toBeGreaterThanOrEqual(resolved[1].confidence);
+    expect(p.confidence).toBeGreaterThanOrEqual(resolved[1]!.confidence);
   });
 
   it('resolves a Telugu locality alias to the same entity + coordinates', () => {
     const resolved = resolvePlaces('మాదాపూర్‌లో భారీ వర్షం', gaz);
-    expect(resolved[0].entityId).toBe('loc-madhapur');
-    expect(resolved[0].lat).toBeCloseTo(17.4483, 3);
+    expect(resolved[0]!.entityId).toBe('loc-madhapur');
+    expect(resolved[0]!.lat).toBeCloseTo(17.4483, 3);
   });
 
   it('returns [] when no known place is mentioned', () => {
@@ -105,7 +105,7 @@ describe('event shaper', () => {
       imageUrl: 'https://cdn/x.jpg',
       categories: [],
     };
-    const place = resolvePlaces(item.title, gaz)[0];
+    const place = resolvePlaces(item.title, gaz)[0] ?? null;
     const card = toFeedEvent(item, place, { language: 'en', viewer: GACHIBOWLI });
     expect(card.category).toBe('weather');
     expect(card.locality).toBe('Gachibowli');

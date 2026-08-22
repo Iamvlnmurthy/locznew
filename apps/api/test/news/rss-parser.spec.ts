@@ -18,7 +18,7 @@ describe('parseFeed', () => {
         <enclosure url="https://cdn.example.com/flood.jpg" type="image/jpeg"/>
       </item>
     </channel></rss>`;
-    const [item] = parseFeed(xml);
+    const item = parseFeed(xml)[0]!;
     expect(item.title).toBe('Heavy rain floods Gachibowli'); // " - The Hindu" suffix trimmed
     expect(item.link).toBe('https://example.com/a');
     expect(item.guid).toBe('guid-1');
@@ -34,7 +34,7 @@ describe('parseFeed', () => {
       <link>https://te.example.com/x</link>
       <description>గచ్చిబౌలి &#8211; హైదరాబాద్</description>
     </item></channel></rss>`;
-    const [item] = parseFeed(xml);
+    const item = parseFeed(xml)[0]!;
     expect(item.title).toBe('మాదాపూర్‌లో భారీ వర్షం');
     expect(item.summary).toContain('గచ్చిబౌలి');
     expect(item.summary).toContain('–'); // &#8211; → en dash
@@ -52,7 +52,7 @@ describe('parseFeed', () => {
         <category term="utility"/>
       </entry>
     </feed>`;
-    const [item] = parseFeed(xml);
+    const item = parseFeed(xml)[0]!;
     expect(item.title).toBe('Power cut in Kukatpally');
     expect(item.link).toBe('https://example.com/atom');
     expect(item.guid).toBe('atom-1');
@@ -67,7 +67,7 @@ describe('parseFeed', () => {
     </channel></rss>`;
     const items = parseFeed(xml);
     expect(items).toHaveLength(1);
-    expect(items[0].title).toBe('Good one');
+    expect(items[0]!.title).toBe('Good one');
   });
 
   it('extracts a body <img> when no media/enclosure is present', () => {
@@ -76,7 +76,7 @@ describe('parseFeed', () => {
       <link>https://example.com/i</link>
       <description>&lt;img src="https://cdn.example.com/body.jpg"/&gt;Diversion in effect</description>
     </item></channel></rss>`;
-    const [item] = parseFeed(xml);
+    const item = parseFeed(xml)[0]!;
     expect(item.imageUrl).toBe('https://cdn.example.com/body.jpg');
   });
 

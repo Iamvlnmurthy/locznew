@@ -10,6 +10,7 @@
     "db:generate-load": "ts-node prisma/generate-load.ts",
     "db:import-pincodes": "ts-node prisma/import-pincodes.ts",
     "db:import-villages": "ts-node prisma/import-villages.ts",
+    "db:seed-tiers": "ts-node prisma/seed-city-tiers.ts",
     "db:migrate": "prisma migrate dev",
     "db:migrate:deploy": "prisma migrate deploy",
     "db:seed": "ts-node prisma/seed.ts",

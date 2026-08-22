@@ -627,6 +627,7 @@ model City {
   isActive   Boolean                                @default(true)
   isLaunched Boolean                                @default(false) // controls which cities the app offers at launch
   population Int?
+  tier       Int? // 7th CPC HRA class: 1 = Tier 1 / X, 2 = Tier 2 / Y, 3 = Tier 3 / Z
   createdAt  DateTime                               @default(now())
   updatedAt  DateTime                               @updatedAt
 
