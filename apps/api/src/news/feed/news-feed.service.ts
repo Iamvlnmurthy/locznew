@@ -3,10 +3,10 @@ import { GeoRepository } from '../../prisma/geo.repository';
 import { NewsRefineService } from '../refine/news-refine.service';
 import { cleanText, stripPublisherSuffix } from './event-shaper';
 import {
+  areDuplicateTitles,
   type CoverageScope,
   dedupeRanked,
   type FeedFacets,
-  paginate,
   rankFeed,
   type RankableEvent,
 } from './ranking';
@@ -91,18 +91,19 @@ export class NewsFeedService {
       topOnly: q.topOnly,
     };
     const ranked = rankFeed(events, { lat: q.latitude, lng: q.longitude }, facets, nowMs);
-    // Collapse the many-publishers-one-story duplicates before paginating, so a page isn't filled
-    // with the same event. sourceCount rides along for a "N reports" hint on the card.
+    // Pass 1: collapse same-language, same-wording duplicates on the RAW headline. sourceCount rides
+    // along for a "N reports" hint.
     const deduped = dedupeRanked(ranked);
-
-    // Paginate, then refine ONLY this page (lazy + cached) into the viewer's language — most events
-    // are never viewed, so we never pay to refine them.
-    const { page, hasMore } = paginate(deduped, offset, limit);
     const lang = q.lang ?? 'en';
     const byId = new Map(rows.map((r) => [r.id, r]));
 
-    const cards = await Promise.all(
-      page.map(async (e): Promise<FeedCard> => {
+    // Refine a window a bit larger than the page (parallel, lazy + cached), then run a SECOND dedup
+    // on the REFINED/display titles. Cross-language and reworded reports of one story only look
+    // identical after refinement — a Telugu and an English article both become "Gachibowli Building
+    // Collapse Kills Two" — which pass 1 (raw titles) cannot see. Pass 2 catches it.
+    const window = deduped.slice(offset, offset + limit + 15);
+    const refinedCards = await Promise.all(
+      window.map(async (e): Promise<FeedCard> => {
         const row = byId.get(e.id)!;
         const sourceText = `${row.title}\n${row.summary ?? ''}`.trim();
         const refined = await this.refine.refine(e.id, lang, sourceText);
@@ -122,6 +123,20 @@ export class NewsFeedService {
         };
       }),
     );
+
+    const cards: FeedCard[] = [];
+    let consumed = 0;
+    for (const card of refinedCards) {
+      if (cards.length >= limit) break;
+      consumed += 1;
+      const dup = cards.find((k) => areDuplicateTitles(k.title, card.title));
+      if (dup) {
+        dup.sources += card.sources;
+        continue;
+      }
+      cards.push(card);
+    }
+    const hasMore = offset + consumed < deduped.length;
 
     return { cards, hasMore };
   }
