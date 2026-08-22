@@ -128,6 +128,19 @@ Guardrails, because AI rewriting is where both the legal and the cost risk live:
 - **Full text is the exception** — government / official / explicitly-licensed / LocZ-owned
   sources may carry full body verbatim; everything else is LocZ-regenerated summary + attribution.
 
+**Regeneration provider (current):** a **local Ollama** on the dev machine —
+`qwen2.5:7b-instruct` (4.7 GB, fits the RTX 5060 8 GB), reached at `http://localhost:11434`.
+Verified on real Telugu news: faithful comprehension + Telugu/English generation, ~4 s per event
+warm (~59 tok/s), zero marginal cost. Behind a provider interface (`RegenerationProvider`) so a
+hosted model can replace it later without touching the pipeline. Caveats to design for:
+(1) the machine is on ~09:30–21:00 only, so regeneration is a queue that drains during those
+hours — events still ingest + geo-resolve + appear (headline + "via source") when the brain is
+offline, and get their LocZ summary when it comes back; (2) **UTF-8 must reach Ollama through the
+HTTP JSON body, never a shell arg** — Indic text passed inline via a shell is corrupted and the
+model then hallucinates; the Nest HTTP client sends UTF-8 natively, so this only bit the CLI test;
+(3) low temperature (~0.2) + a tight "only facts in the source" prompt, and still keep a
+faithfulness check — an early run mislabelled an IT employee as "businessman".
+
 ---
 
 ## 3. Files & modules to create or change
