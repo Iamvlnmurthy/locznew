@@ -1,5 +1,12 @@
 # Release status
 
+> ⚠️ **STALE — do not use as current release evidence.** This document certifies candidate
+> `f3e51dc`. HEAD has since moved many major UI, search, business, storefront, mobile and
+> SEO releases ahead of it, and its figures no longer describe the project: the test count,
+> migration count, vulnerability count and keystore status are all out of date. Treat it as
+> a historical snapshot only. A fresh gate run must be produced and this file regenerated
+> before it can be cited as release evidence again.
+
 ## Where the candidate stands
 
 Candidate `f3e51dc` produced a **valid, complete evidence run**: 17 of 18 gates passed, one

@@ -173,6 +173,11 @@ export const envSchema = z.object({
    */
   SCHEDULER_ENABLED: booleanish.default(true),
 
+  // Grace period between a deletion request and the anonymisation sweep scrubbing the record.
+  // Long enough for dispute/moderation history and a change of mind; short enough to honour
+  // the deletion. Reactivation-on-login only works inside this window (see AuthService).
+  ACCOUNT_DELETION_RETENTION_DAYS: z.coerce.number().int().positive().max(365).default(30),
+
   RATE_LIMIT_TTL_SECONDS: z.coerce.number().int().positive().default(60),
   RATE_LIMIT_MAX_REQUESTS: z.coerce.number().int().positive().default(120),
 });

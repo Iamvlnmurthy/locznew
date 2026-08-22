@@ -136,7 +136,6 @@ network alone.
 2. **The remaining listing types.** Rental, event, service and business-listing tables
    exist and the engine handles them; only marketplace has full client flows.
 3. **AI moderation** behind the existing `ModerationProvider` interface.
-4. **Saved-search alerts** — `SearchSubscription` is modelled; the matcher job is not built.
-5. **Read replicas** once city count grows; the geo queries are the first to feel it.
-6. **Splitting the worker out** if image processing starts competing for CPU — the queue
+4. **Read replicas** once city count grows; the geo queries are the first to feel it.
+5. **Splitting the worker out** if image processing starts competing for CPU — the queue
    boundary already exists.

@@ -1,7 +1,7 @@
 name: locz
 description: LocZ — location-first local discovery for India.
 publish_to: 'none'
-version: 0.20.1+27
+version: 0.20.2+28
 
 environment:
   sdk: '>=3.5.0 <4.0.0'
@@ -23,6 +23,7 @@ dependencies:
   # Networking. Dio is chosen over http for interceptors: token refresh and correlation
   # ids belong in one place rather than at every call site.
   dio: ^5.7.0
+  crypto: ^3.0.6
 
   # In-app update: download the new APK in-process and hand it to the system installer,
   # rather than bouncing the user out to a browser.

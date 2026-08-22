@@ -1,8 +1,9 @@
 import { Processor, WorkerHost } from '@nestjs/bullmq';
 import { Logger } from '@nestjs/common';
-import { ListingStatus, MediaStatus, NotificationType } from '@prisma/client';
+import { ListingStatus, MediaStatus, NotificationType, UserStatus } from '@prisma/client';
 import { Job } from 'bullmq';
 import {
+  JOB_ANONYMIZE_DELETED_ACCOUNTS,
   JOB_EXPIRE_LISTINGS,
   JOB_SWEEP_ORPHAN_MEDIA,
   JOB_SWEEP_SESSIONS,
@@ -11,6 +12,7 @@ import {
   JOB_WARN_EXPIRING,
   QUEUE_LIFECYCLE,
 } from '../queue/queue.constants';
+import { AppConfig } from '../config/config.module';
 import { NotificationsService } from '../notifications/notifications.service';
 import { ModerationService } from '../moderation/moderation.service';
 import { PrismaService } from '../prisma/prisma.service';
@@ -31,6 +33,7 @@ export class LifecycleProcessor extends WorkerHost {
     private readonly notifications: NotificationsService,
     private readonly storage: StorageService,
     private readonly moderation: ModerationService,
+    private readonly config: AppConfig,
   ) {
     super();
   }
@@ -49,6 +52,8 @@ export class LifecycleProcessor extends WorkerHost {
         return this.moderation.liftExpiredSuspensions();
       case JOB_TRIM_RECENTLY_VIEWED:
         return this.trimRecentlyViewed();
+      case JOB_ANONYMIZE_DELETED_ACCOUNTS:
+        return this.anonymizeDeletedAccounts();
       default:
         this.logger.error(`Unknown job "${job.name}" on the ${QUEUE_LIFECYCLE} queue`);
         return undefined;
@@ -188,6 +193,64 @@ export class LifecycleProcessor extends WorkerHost {
       this.logger.log(`Trimmed ${removed} recently-viewed rows`);
     }
     return { removed };
+  }
+
+  /**
+   * Completes account deletions. `requestDeletion` only *marks* an account (status
+   * DELETION_REQUESTED) so dispute and moderation history survives the grace period; this is
+   * the job that comment promised — once the retention window has passed it scrubs the PII
+   * and stamps `deletedAt`, which is the terminal, non-recoverable state (a later login can no
+   * longer reactivate it — see AuthService). Referential rows (reports, moderation, messages)
+   * are kept but no longer point at a real person. Bounded per run so a backlog stays cheap.
+   */
+  private async anonymizeDeletedAccounts(): Promise<{ anonymized: number }> {
+    const retentionDays = this.config.get('ACCOUNT_DELETION_RETENTION_DAYS');
+    const cutoff = new Date(Date.now() - retentionDays * 24 * 60 * 60 * 1000);
+
+    const due = await this.prisma.user.findMany({
+      where: {
+        status: UserStatus.DELETION_REQUESTED,
+        deletedAt: null,
+        deletionRequestedAt: { lte: cutoff },
+      },
+      select: { id: true },
+      take: 200,
+    });
+
+    if (due.length === 0) return { anonymized: 0 };
+
+    const now = new Date();
+    for (const { id } of due) {
+      // One transaction per user: drop the remaining identifiers, then blank the profile
+      // itself. Sessions were already revoked at request time; deleting them before devices
+      // keeps the foreign key happy.
+      await this.prisma.$transaction([
+        this.prisma.session.deleteMany({ where: { userId: id } }),
+        this.prisma.device.deleteMany({ where: { userId: id } }),
+        this.prisma.passwordResetToken.deleteMany({ where: { userId: id } }),
+        this.prisma.savedLocation.deleteMany({ where: { userId: id } }),
+        this.prisma.notificationPreference.deleteMany({ where: { userId: id } }),
+        this.prisma.searchSubscription.deleteMany({ where: { userId: id } }),
+        this.prisma.user.update({
+          where: { id },
+          data: {
+            phoneE164: null,
+            phoneVerifiedAt: null,
+            email: null,
+            emailVerifiedAt: null,
+            passwordHash: null,
+            displayName: 'Deleted user',
+            avatarMediaId: null,
+            bio: null,
+            lastActiveAt: null,
+            deletedAt: now,
+          },
+        }),
+      ]);
+    }
+
+    this.logger.log(`Anonymised ${due.length} deleted account(s)`);
+    return { anonymized: due.length };
   }
 
   /** Expired and revoked sessions have no further purpose; keeping them only grows the table. */

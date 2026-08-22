@@ -12,12 +12,18 @@ class AvailableUpdate {
     required this.versionCode,
     required this.url,
     required this.sizeBytes,
+    required this.sha256,
   });
 
   final String versionName;
   final int versionCode;
   final String url;
   final int sizeBytes;
+
+  /// Lower-case hex SHA-256 of the published APK, from the manifest. The installer verifies
+  /// the downloaded file against this before handing it to the system installer, so a
+  /// tampered manifest or a man-in-the-middle on the download cannot install a foreign APK.
+  final String sha256;
 
   String get sizeLabel => '${(sizeBytes / 1048576).toStringAsFixed(0)} MB';
 }
@@ -67,7 +73,10 @@ class AppUpdateChecker {
 
       final code = body['versionCode'];
       final url = body['url'];
-      if (code is! int || url is! String) return null;
+      final sha = body['sha256'];
+      // Without a checksum we cannot verify the download, so treat the manifest as unusable
+      // rather than installing an unverifiable APK.
+      if (code is! int || url is! String || sha is! String || sha.isEmpty) return null;
 
       // Only ever offer a *newer* build. Equal means up to date; lower means the phone is
       // ahead of the manifest, which happens while a release is mid-publish and must not
@@ -79,6 +88,7 @@ class AppUpdateChecker {
         versionCode: code,
         url: url,
         sizeBytes: body['sizeBytes'] as int? ?? 0,
+        sha256: sha.toLowerCase(),
       );
     } on DioException {
       return null;

@@ -3,6 +3,7 @@ import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { Queue } from 'bullmq';
 import { AppConfig } from '../config/config.module';
 import {
+  JOB_ANONYMIZE_DELETED_ACCOUNTS,
   JOB_EXPIRE_LISTINGS,
   JOB_REINDEX_ALL,
   JOB_SWEEP_ORPHAN_MEDIA,
@@ -89,6 +90,13 @@ export class LifecycleScheduler implements OnModuleInit {
       JOB_LIFT_EXPIRED_SUSPENSIONS,
       {},
       { repeat: { pattern: '5 * * * *' }, jobId: 'repeat:lift-expired-suspensions' },
+    );
+
+    // Nightly, off-peak: scrub the PII of accounts whose deletion grace period has passed.
+    await this.lifecycle.add(
+      JOB_ANONYMIZE_DELETED_ACCOUNTS,
+      {},
+      { repeat: { pattern: '15 4 * * *', tz: 'Asia/Kolkata' }, jobId: 'repeat:anonymize-deleted' },
     );
 
     // Nightly consistency rebuild. This is what makes it safe for the index publisher to

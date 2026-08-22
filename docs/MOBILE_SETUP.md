@@ -160,14 +160,20 @@ replace every placeholder, or provide these CI secrets:
 The keystore and `key.properties` are gitignored. Back up the upload key in a secure
 credential vault; never send it through chat or commit it.
 
+> **Canonical endpoints (do not drift):** the app talks to the API at
+> `https://api.locz.in/api/v1` and links to the site at `https://locz.in`. These are the
+> values `scripts/publish-apk.sh` uses and every published APK is built with; keep every
+> `--dart-define` and doc in agreement with them. (`https://locz.in/api/v1` also resolves in
+> production via path routing, but `api.locz.in` is the one release config.)
+
 ```bash
 flutter build appbundle --release \
-  --dart-define=API_BASE_URL=https://locz.in/api/v1 \
+  --dart-define=API_BASE_URL=https://api.locz.in/api/v1 \
   --dart-define=SITE_URL=https://locz.in \
   --dart-define=GOOGLE_CLIENT_ID=327351912011-9332b953dn137qsnukmgbrljj0g3u1t5.apps.googleusercontent.com
 
 flutter build ipa --release \
-  --dart-define=API_BASE_URL=https://locz.in/api/v1 \
+  --dart-define=API_BASE_URL=https://api.locz.in/api/v1 \
   --dart-define=SITE_URL=https://locz.in
 ```
 

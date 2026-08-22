@@ -88,8 +88,11 @@ psql_do --dbname="${TARGET_DB}" -c "CREATE EXTENSION IF NOT EXISTS citext;" > /d
 
 echo "Restoring ${DUMP_FILE} into ${TARGET_DB}…"
 
-# --clean --if-exists makes the restore repeatable. Errors are not suppressed: extension
-# ownership produces noise, but a genuine failure must be visible.
+# --clean --if-exists makes the restore repeatable. We capture pg_restore's exit code rather
+# than letting `|| echo` swallow it: the row-count and spatial checks below stay useful for
+# diagnosis, but a non-zero restore must make the whole script fail (see the final exit), so a
+# broken restore can never be mistaken for a good one.
+RESTORE_STATUS=0
 pg_restore \
   --host="${POSTGRES_HOST}" \
   --port="${POSTGRES_PORT}" \
@@ -98,7 +101,10 @@ pg_restore \
   --clean --if-exists \
   --no-owner --no-privileges \
   --jobs=4 \
-  "${DUMP_FILE}" || echo "pg_restore reported errors — review them above before trusting this restore" >&2
+  "${DUMP_FILE}" || RESTORE_STATUS=$?
+if [ "${RESTORE_STATUS}" -ne 0 ]; then
+  echo "pg_restore exited ${RESTORE_STATUS} — review the errors above before trusting this restore" >&2
+fi
 
 echo
 echo "Row counts after restore:"
@@ -122,5 +128,15 @@ psql_do --dbname="${TARGET_DB}" -c "
 "
 
 echo
-echo "Restore complete. If listings_with_geo is 0 but listings exist, the geography"
-echo "column did not survive — check that PostGIS was installed before pg_restore ran."
+echo "If listings_with_geo is 0 but listings exist, the geography column did not survive —"
+echo "check that PostGIS was installed before pg_restore ran."
+
+# The script's exit status must reflect the restore, not just that it ran to the end. A
+# non-zero pg_restore means the database is not trustworthy, so fail loudly here.
+if [ "${RESTORE_STATUS}" -ne 0 ]; then
+  echo
+  echo "Restore FAILED: pg_restore exited ${RESTORE_STATUS}. Do not trust this database." >&2
+  exit 1
+fi
+echo
+echo "Restore complete."

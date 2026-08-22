@@ -51,5 +51,6 @@ class _UpdateChecker extends AppUpdateChecker {
         versionCode: 240,
         url: 'https://locz.in/download/locz.apk',
         sizeBytes: 25 * 1048576,
+        sha256: '0000000000000000000000000000000000000000000000000000000000000000',
       );
 }

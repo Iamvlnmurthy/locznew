@@ -6,14 +6,14 @@ person typed, searched for, or sent.
 
 ## Signals
 
-| Surface       | Signal                                                      | Destination                                |
-| ------------- | ----------------------------------------------------------- | ------------------------------------------ |
-| API           | `http_request` with route, status, duration, correlation ID | structured runtime logs                    |
-| API           | unexpected exceptions                                       | configured Sentry-compatible DSN           |
-| Public web    | page views and Core Web Vitals                              | Vercel Web Analytics and Speed Insights    |
-| Web and admin | `next_server_error`                                         | Vercel runtime logs                        |
-| Web and admin | `next_client_error`                                         | same-origin ingestion route → runtime logs |
-| Mobile        | uncaught Flutter, platform and zone errors                  | optional Sentry-compatible DSN             |
+| Surface       | Signal                                                      | Destination                                                             |
+| ------------- | ----------------------------------------------------------- | ----------------------------------------------------------------------- |
+| API           | `http_request` with route, status, duration, correlation ID | structured runtime logs                                                 |
+| API           | unexpected exceptions                                       | configured Sentry-compatible DSN                                        |
+| Public web    | page views and Core Web Vitals                              | client `web-vitals` beacon → same-origin ingestion route → runtime logs |
+| Web and admin | `next_server_error`                                         | Next.js process stdout → Docker/pm2 logs → Nginx access/error logs      |
+| Web and admin | `next_client_error`                                         | same-origin ingestion route → runtime logs                              |
+| Mobile        | uncaught Flutter, platform and zone errors                  | optional Sentry-compatible DSN                                          |
 
 API requests and responses use `X-Correlation-Id`. A support report should begin with
 that value or the error page's digest, then be filtered in runtime logs.
@@ -33,10 +33,13 @@ it never attaches a phone number, name, or email.
 - Mobile: set `MOBILE_SENTRY_DSN` and `APP_ENV=production` in the gitignored
   `firebase.json` build-definition file. This is a public ingestion DSN, never a
   Sentry auth token.
-- Vercel: enable Web Analytics for the public web project and Speed Insights for both
-  the web and admin projects. The packages are already mounted in their root layouts.
-- Configure a Vercel log drain on Pro/Enterprise, or retain a documented dashboard/CLI
-  review rotation on plans without drains.
+- Web/admin runtime: LocZ deploys on a VPS (Docker Compose / pm2 behind Nginx), **not
+  Vercel**. Server logs are the Next.js process stdout captured by pm2/Docker; Nginx
+  access and error logs sit in front. Ship these to your log store and rotate them; there
+  is no Vercel log drain, Web Analytics, or Speed Insights in this deployment.
+- Core Web Vitals: gather them client-side (e.g. a `web-vitals` beacon to a same-origin
+  route that writes a structured log) if you want field RUM without a third-party analytics
+  vendor.
 
 ## Release checks
 

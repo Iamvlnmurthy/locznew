@@ -14,6 +14,7 @@ COPY packages/ui-tokens/package.json packages/ui-tokens/
 COPY packages/config/package.json packages/config/
 COPY packages/validation/package.json packages/validation/
 COPY packages/api-client/package.json packages/api-client/
+COPY packages/public-brands/package.json packages/public-brands/
 
 RUN npm ci --workspace @locz/${APP} --include-workspace-root
 

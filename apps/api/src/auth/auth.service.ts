@@ -118,7 +118,13 @@ export class AuthService {
         throw new ForbiddenException('This account is suspended. Contact support.');
       }
       // Signing in reverses a self-service deactivation — the user has demonstrably returned.
-      if (user.status === UserStatus.DEACTIVATED || user.status === UserStatus.DELETION_REQUESTED) {
+      // But only during the grace period: once the retention window has passed and the
+      // anonymisation sweep has scrubbed the record (deletedAt set), the account is gone for
+      // good and a stray login must not resurrect an emptied profile.
+      if (
+        user.deletedAt == null &&
+        (user.status === UserStatus.DEACTIVATED || user.status === UserStatus.DELETION_REQUESTED)
+      ) {
         user = await this.prisma.user.update({
           where: { id: user.id },
           data: { status: UserStatus.ACTIVE, deletionRequestedAt: null },

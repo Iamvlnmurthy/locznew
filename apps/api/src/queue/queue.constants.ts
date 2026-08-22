@@ -42,6 +42,7 @@ export const JOB_SWEEP_ORPHAN_MEDIA = 'sweep-orphan-media';
 export const JOB_SWEEP_SESSIONS = 'sweep-sessions';
 export const JOB_TRIM_RECENTLY_VIEWED = 'trim-recently-viewed';
 export const JOB_LIFT_EXPIRED_SUSPENSIONS = 'lift-expired-suspensions';
+export const JOB_ANONYMIZE_DELETED_ACCOUNTS = 'anonymize-deleted-accounts';
 
 /** The job payload carries only an id — the worker re-reads current state (ADR-0005). */
 export interface IndexListingJob {

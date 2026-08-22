@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:io';
 
+import 'package:crypto/crypto.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:open_filex/open_filex.dart';
@@ -68,6 +69,16 @@ class _UpdateBannerState extends State<UpdateBanner> {
           if (total > 0 && mounted) setState(() => _progress = received / total);
         },
       );
+
+      // Verify the download against the checksum in the manifest before handing it to the
+      // system installer. A tampered manifest or a man-in-the-middle on the download would
+      // fail here rather than installing a foreign APK. Mismatch => delete and surface failure.
+      final digest = await sha256.bind(File(file).openRead()).first;
+      if (digest.toString() != update.sha256) {
+        await File(file).delete();
+        if (mounted) setState(() => _failed = true);
+        return;
+      }
 
       final result = await OpenFilex.open(file, type: 'application/vnd.android.package-archive');
       // The system installer now owns the flow; a non-'done' result means it could not be
