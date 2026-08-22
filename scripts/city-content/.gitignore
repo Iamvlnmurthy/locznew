@@ -1,3 +1,10 @@
 # Local SQLite staging DB — rebuilt from the CSV, not tracked
 *.db
 *.db-journal
+
+# Generated/pulled staging assets are local working files. Approved derivatives move to
+# object storage; keeping hundreds of high-resolution sources out of Git prevents the
+# repository and Android build context from growing by gigabytes.
+images/
+__pycache__/
+manifests/*-contact-sheet.*
