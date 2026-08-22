@@ -277,4 +277,45 @@ export class GeoRepository {
 
     return rows[0]?.distanceMeters ?? null;
   }
+
+  /**
+   * News events within `radiusMeters` of a point, published since `since`, nearest first.
+   * Powers the hyperlocal news feed (the app then ranks by ring + freshness). Uses the GIST
+   * index on NewsEvent.geo via ST_DWithin + the KNN <-> operator for ordering.
+   */
+  async findNearbyNewsEvents(
+    latitude: number,
+    longitude: number,
+    radiusMeters: number,
+    since: Date,
+    limit: number,
+  ): Promise<NearbyNewsEventRow[]> {
+    const point = Prisma.sql`ST_SetSRID(ST_MakePoint(${longitude}::double precision, ${latitude}::double precision), 4326)::geography`;
+
+    return this.prisma.$queryRaw<NearbyNewsEventRow[]>`
+      SELECT e."id", e."slug", e."title", e."summary", e."categories", e."severity",
+             e."trustScore", e."latitude", e."longitude", e."latestUpdateAt",
+             ST_Distance(e."geo", ${point}) AS "distanceMeters"
+      FROM "NewsEvent" e
+      WHERE e."geo" IS NOT NULL
+        AND ST_DWithin(e."geo", ${point}, ${radiusMeters})
+        AND e."latestUpdateAt" >= ${since}
+      ORDER BY e."geo" <-> ${point}
+      LIMIT ${limit}
+    `;
+  }
+}
+
+export interface NearbyNewsEventRow {
+  id: string;
+  slug: string;
+  title: string;
+  summary: string | null;
+  categories: string[];
+  severity: number;
+  trustScore: number;
+  latitude: number | null;
+  longitude: number | null;
+  latestUpdateAt: Date;
+  distanceMeters: number | null;
 }
