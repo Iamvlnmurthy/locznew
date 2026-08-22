@@ -128,11 +128,16 @@ Guardrails, because AI rewriting is where both the legal and the cost risk live:
 - **Full text is the exception** — government / official / explicitly-licensed / LocZ-owned
   sources may carry full body verbatim; everything else is LocZ-regenerated summary + attribution.
 
-**Regeneration provider (current):** a **local Ollama** on the dev machine —
-`qwen2.5:7b-instruct` (4.7 GB, fits the RTX 5060 8 GB), reached at `http://localhost:11434`.
-Verified on real Telugu news: faithful comprehension + Telugu/English generation, ~4 s per event
-warm (~59 tok/s), zero marginal cost. Behind a provider interface (`RegenerationProvider`) so a
-hosted model can replace it later without touching the pipeline. Caveats to design for:
+**Regeneration provider (current):** a **local Ollama** on the dev machine, reached at
+`http://localhost:11434`, zero marginal cost, behind a `RegenerationProvider` interface so a
+hosted model can replace it later. **Model split by language:** `gemma2:9b` (5.4 GB) for
+**Telugu/Indic** — qwen2.5:7b's Telugu grammar is not publishable, gemma2 writes natural,
+grammatical Telugu (~35 s/event, ~15 tok/s, acceptable for a once-per-event cached job);
+`qwen2.5:7b-instruct` (4.7 GB, ~4 s) for **English**. **Substance depends on the source, not the
+model:** a headline-only feed (Google News RSS) gives the model nothing to summarize, so it pads
+or hallucinates (it read "gold rally" as a protest and invented "fights broke out") — the fix is
+the HTML body-extraction phase feeding the real article body; model choice only fixes grammar.
+Caveats to design for:
 (1) the machine is on ~09:30–21:00 only, so regeneration is a queue that drains during those
 hours — events still ingest + geo-resolve + appear (headline + "via source") when the brain is
 offline, and get their LocZ summary when it comes back; (2) **UTF-8 must reach Ollama through the
