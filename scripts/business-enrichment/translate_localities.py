@@ -86,9 +86,12 @@ def main():
                 except Exception as e:
                     print(f"  batch {i//BATCH}: FAILED {type(e).__name__}", flush=True)
                     continue
-                good = [(v.strip(), lid) for lid, nm, _n in chunk
-                        if (v := got.get(nm) or "") and v.strip() != nm
-                        and in_script(v.strip(), block)]
+                # Carry the source name alongside, only so the sample line below can
+                # print a pair that is actually a pair.
+                accepted = [(nm, v.strip(), lid) for lid, nm, _n in chunk
+                            if (v := got.get(nm) or "") and v.strip() != nm
+                            and in_script(v.strip(), block)]
+                good = [(v, lid) for _nm, v, lid in accepted]
                 rejected += len(chunk) - len(good)
                 if good and not DRY:
                     with c.cursor() as cur:
@@ -97,7 +100,12 @@ def main():
                     c.commit()
                 written += len(good)
                 if i // BATCH % 20 == 0 or DRY:
-                    eg = f"  e.g. {chunk[0][1]} -> {good[0][0]}" if good else ""
+                    # This used to print chunk[0][1] -> good[0][0]: the first name
+                    # sent, against the first name accepted. When the first was
+                    # rejected those are two different localities, and the line read
+                    # as a hallucination - "Gurgaon South City II -> బోరా బజార్" -
+                    # in a run whose writes were all correct. Print one record.
+                    eg = f"  e.g. {accepted[0][0]} -> {accepted[0][1]}" if accepted else ""
                     print(f"  {written:,} written, {rejected:,} rejected{eg}", flush=True)
                 if DRY and i >= BATCH * 2:
                     print("  (dry run — stopping after 3 batches)"); break
