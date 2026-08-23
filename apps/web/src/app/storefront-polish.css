@@ -1441,3 +1441,17 @@
     flex: 0 0 58px;
   }
 }
+
+/* The shade over the banner.
+   The identity card is a frosted panel in the base design - white at 96% with
+   backdrop-filter: blur(20px) saturate(135%). Nesting it into the banner
+   removed its background and its border, but not its backdrop filter, so it
+   went on blurring and desaturating whatever was behind it. Over a photograph
+   that reads as a dark smeared rectangle sitting on the artwork, with the
+   sharp banner visible only in the strip above the card.
+   A background you have removed still has a backdrop. */
+.business-profile-cover > .business-profile-identity {
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+  border-radius: 0;
+}

@@ -506,7 +506,11 @@ function nearestBannerByWords(categoryName: string): PremiumCategoryBanner | nul
       .split(/[^a-z]+/)
       .filter((word) => word.length >= 4 && !UNHELPFUL.has(word));
     const score = keyWords.filter((word) => words.includes(word)).length;
-    if (score > 0 && (!best || score > best.score)) best = { key, score };
+    // Two shared words, not one. On one word 'Home developers' took the
+    // 'home & kitchen' banner and showed a property builder a rack of wooden
+    // spoons. A single word in common is a coincidence; it is weaker evidence
+    // than showing no artwork at all, and the plain panel now reads fine.
+    if (score >= 2 && (!best || score > best.score)) best = { key, score };
   }
   return best ? (categoryBanners[best.key] ?? null) : null;
 }
