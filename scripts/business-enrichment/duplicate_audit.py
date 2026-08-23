@@ -209,6 +209,25 @@ def main():
     io.open("var/duplicate_audit.txt", "w", encoding="utf-8").write(text + "\n")
     print("\nwritten to var/duplicate_audit.txt")
 
+    # The whole near-certain band, written out for review. Twenty-five examples show
+    # the shape of the problem and are not enough to decide anything: a merge
+    # redirects a real page away permanently, so whoever decides needs the list.
+    near = sorted([x for x in pairs if x[0] >= 0.90], key=lambda x: -x[0])
+    review = ['# Near-certain duplicate pairs (>= 0.90)',
+              '#',
+              '# Read before merging anything. A wrong call costs a real business',
+              '# its listing and every link pointing at it.',
+              f'# {len(near):,} pairs', '']
+    for prob, a, b, why in near:
+        review.append(f'{prob:.2f}  {why}')
+        review.append(f"  A  {a['name']}")
+        review.append(f"     https://locz.in/b/{a['slug']}   phone={a['phone'] or '-'}")
+        review.append(f"  B  {b['name']}")
+        review.append(f"     https://locz.in/b/{b['slug']}   phone={b['phone'] or '-'}")
+        review.append('')
+    io.open('var/duplicate_review.txt', 'w', encoding='utf-8').write(chr(10).join(review))
+    print(f'near-certain pairs written to var/duplicate_review.txt ({len(near):,})')
+
 
 if __name__ == "__main__":
     main()
