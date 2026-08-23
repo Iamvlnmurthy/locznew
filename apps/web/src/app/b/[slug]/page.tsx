@@ -17,6 +17,7 @@ import { ShareBusiness } from './share-business';
 import { BusinessBackButton } from './back-button';
 import { schemaTypeFor } from '@/lib/schema-type';
 import { AdSlot } from '@/components/ad-slot';
+import { BusinessActionTracker } from '@/components/business-action-tracker';
 
 interface BusinessHour {
   dayOfWeek: number;
@@ -501,6 +502,13 @@ export default async function BusinessPage({ params }: { params: Promise<{ slug:
         />
       ) : null}
 
+      <BusinessActionTracker
+        businessId={business.id}
+        category={business.categoryName}
+        city={business.cityName}
+        locality={business.localityName}
+      />
+
       <section className="business-profile-hero">
         <div className="container">
           <BusinessBackButton label={p.back} />
@@ -600,6 +608,7 @@ export default async function BusinessPage({ params }: { params: Promise<{ slug:
                   {directionsUrl ? (
                     <a
                       href={directionsUrl}
+                      data-track="directions_click"
                       target="_blank"
                       rel="noopener noreferrer"
                       className="is-primary"
@@ -608,12 +617,12 @@ export default async function BusinessPage({ params }: { params: Promise<{ slug:
                     </a>
                   ) : null}
                   {business.primaryPhone ? (
-                    <a href={`tel:${business.primaryPhone}`}>
+                    <a href={`tel:${business.primaryPhone}`} data-track="call_click">
                       <Icon name="phone" /> {p.callBusiness}
                     </a>
                   ) : null}
                   {!business.isOwner ? (
-                    <a href="#contact">
+                    <a href="#contact" data-track="enquiry_open">
                       <Icon name="message" /> {p.sendEnquiry}
                     </a>
                   ) : null}
@@ -697,7 +706,10 @@ export default async function BusinessPage({ params }: { params: Promise<{ slug:
                 business.isClaimable !== false &&
                 !business.isOwner ? (
                   <p className="business-profile-unclaimed">
-                    {p.unclaimed} <Link href={`/b/${business.slug}/claim`}>{p.claimAction}</Link>
+                    {p.unclaimed}{' '}
+                    <Link href={`/b/${business.slug}/claim`} data-track="claim_click">
+                      {p.claimAction}
+                    </Link>
                   </p>
                 ) : null}
               </aside>
@@ -746,7 +758,7 @@ export default async function BusinessPage({ params }: { params: Promise<{ slug:
                   {business.claimStatus === 'UNCLAIMED' &&
                   business.isClaimable !== false &&
                   !business.isOwner ? (
-                    <Link href={`/b/${business.slug}/claim`}>
+                    <Link href={`/b/${business.slug}/claim`} data-track="claim_click">
                       {p.claimAction} <Icon name="arrow" />
                     </Link>
                   ) : null}
@@ -776,18 +788,27 @@ export default async function BusinessPage({ params }: { params: Promise<{ slug:
                 {/* The three things somebody does with an address: go there, ring ahead, or
                     look the business up. They belong next to it, not in a sidebar. */}
                 {business.primaryPhone ? (
-                  <a href={`tel:${business.primaryPhone}`} className="btn btn--ghost btn--sm">
+                  <a
+                    href={`tel:${business.primaryPhone}`}
+                    data-track="call_click"
+                    className="btn btn--ghost btn--sm"
+                  >
                     <Icon name="phone" /> {formatPhone(business.primaryPhone)}
                   </a>
                 ) : null}
                 {business.email ? (
-                  <a href={`mailto:${business.email}`} className="btn btn--ghost btn--sm">
+                  <a
+                    href={`mailto:${business.email}`}
+                    data-track="email_click"
+                    className="btn btn--ghost btn--sm"
+                  >
                     <Icon name="mail" /> {business.email}
                   </a>
                 ) : null}
                 {business.website ? (
                   <a
                     href={business.website}
+                    data-track="website_click"
                     target="_blank"
                     rel="nofollow noopener noreferrer"
                     className="btn btn--ghost btn--sm"
@@ -798,6 +819,7 @@ export default async function BusinessPage({ params }: { params: Promise<{ slug:
                 {directionsUrl ? (
                   <a
                     href={directionsUrl}
+                    data-track="directions_click"
                     target="_blank"
                     rel="noopener noreferrer"
                     className="btn btn--primary btn--sm"
@@ -956,7 +978,7 @@ export default async function BusinessPage({ params }: { params: Promise<{ slug:
 
             <div className="business-profile-contact__direct">
               {business.primaryPhone ? (
-                <a href={`tel:${business.primaryPhone}`}>
+                <a href={`tel:${business.primaryPhone}`} data-track="call_click">
                   <Icon name="phone" />
                   <span>
                     <small>{p.callBusiness}</small>
@@ -978,7 +1000,12 @@ export default async function BusinessPage({ params }: { params: Promise<{ slug:
                 </a>
               ) : null}
               {business.website ? (
-                <a href={business.website} target="_blank" rel="noopener noreferrer nofollow">
+                <a
+                  href={business.website}
+                  data-track="website_click"
+                  target="_blank"
+                  rel="noopener noreferrer nofollow"
+                >
                   <Icon name="store" />
                   <span>
                     <small>{p.visit}</small>
@@ -987,7 +1014,7 @@ export default async function BusinessPage({ params }: { params: Promise<{ slug:
                 </a>
               ) : null}
               {business.email ? (
-                <a href={`mailto:${business.email}`}>
+                <a href={`mailto:${business.email}`} data-track="email_click">
                   <Icon name="message" />
                   <span>
                     <small>{p.sendAn}</small>
