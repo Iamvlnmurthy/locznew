@@ -147,20 +147,41 @@ function postalAddress(b: {
       .replace(/[^\p{L}\p{N}]+/gu, ' ')
       .trim();
 
+  // Compare whole comma-separated components, not loose words.
+  //
+  // Two failures bracket the right answer here. The original check asked whether
+  // an earlier part *ended with* the new one, and missed "Nanakramguda Circle,
+  // Hyderabad." because a full stop defeated it — the city printed twice. Fixing
+  // that by comparing every word went too far the other way: "University of
+  // Hyderabad" contains the word Hyderabad, so the city was suppressed entirely
+  // and the address read "University of Hyderabad, CUC, Serilingampally,
+  // Telangana" with no city in it at all.
+  //
+  // The distinction is whether the repeat is its own component. In "Nanakramguda
+  // Circle, Hyderabad" the city is a separate part and repeating it is noise; in
+  // "University of Hyderabad" it is a word inside a name and the city still needs
+  // saying.
+  const normalise = (value: string) =>
+    value
+      .toLowerCase()
+      .replace(/[^\p{L}\p{N}]+/gu, ' ')
+      .trim();
+
   const parts: string[] = [];
   const written = new Set<string>();
   for (const part of [b.addressLine, b.localityName, b.mandal, b.cityName, b.stateName, 'India']) {
     const value = (part ?? '').trim().replace(/[.,\s]+$/, '');
     if (!value) continue;
-    const words = asWords(value).split(' ').filter(Boolean);
-    if (words.length === 0) continue;
-    // Skip it only when every word of it has already been said. Comparing whole
-    // words rather than string endings is what catches both "Hyderabad." with a
-    // full stop and "Nanakramguda" sitting mid-line; requiring *all* of them
-    // keeps "Nanakramguda Circle" once "Nanakramguda" alone has appeared.
-    if (words.every((word) => written.has(word))) continue;
-    words.forEach((word) => written.add(word));
+    const key = normalise(value);
+    if (!key) continue;
+    if (written.has(key)) continue;
     parts.push(value);
+    // Index each component of what was written, so a later part matching one of
+    // them is recognised as a repeat.
+    for (const piece of value.split(',')) {
+      const pieceKey = normalise(piece);
+      if (pieceKey) written.add(pieceKey);
+    }
   }
   const line = parts.join(', ');
   return b.pincode ? `${line} — ${b.pincode}` : line;
