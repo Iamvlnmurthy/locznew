@@ -1691,3 +1691,60 @@
     margin-top: 12px;
   }
 }
+
+/* The `.has-banner` twins again - five of them set margin and padding on the
+   identity panel, each one class heavier than the panel-wide rule, so the card
+   never moved below the strip and the business name rendered dark-on-dark
+   across the artwork. Named explicitly rather than trusting file order.
+
+   This is the third time today this pattern has cost a deploy. The rule to take
+   from it: when a selector exists in a `.has-banner` variant, a later
+   panel-wide rule does not override it, however far down the file it sits. */
+@media (max-width: 760px) {
+  .business-profile-cover > .business-profile-identity,
+  .business-profile-cover.has-banner > .business-profile-identity {
+    display: block;
+    margin: 128px 0 0;
+    padding: 0 16px 18px;
+    border: 0;
+    background: none;
+    box-shadow: none;
+  }
+
+  .business-profile-cover.has-banner .business-profile-identity__content,
+  .business-profile-cover .business-profile-identity__content {
+    display: block;
+    width: auto;
+    min-width: 0;
+  }
+
+  .business-profile-cover.has-banner .business-profile-category {
+    display: inline-block;
+    margin-bottom: 2px;
+    padding: 0;
+    background: none;
+    color: var(--locz-coral);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+
+  .business-profile-cover.has-banner .business-profile-identity__content > h1 {
+    color: var(--locz-text);
+    text-shadow: none;
+  }
+
+  .business-profile-cover.has-banner
+    .business-profile-identity__content
+    > .business-profile-identity__address {
+    color: var(--locz-text-muted);
+    text-shadow: none;
+  }
+
+  .business-profile-cover.has-banner .business-profile-badges > span {
+    border-color: rgb(21 54 44 / 12%);
+    background: var(--locz-surface-muted);
+    color: var(--locz-text-muted);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+}
