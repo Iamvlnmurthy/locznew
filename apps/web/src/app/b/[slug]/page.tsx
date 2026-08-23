@@ -564,11 +564,11 @@ export default async function BusinessPage({ params }: { params: Promise<{ slug:
                   <p className="business-profile-about is-empty">{p.noStory}</p>
                 )}
 
-                {business.keywords.length > 0 ? (
-                  <p className="business-profile-keywords">
-                    {p.peopleLookFor} {business.keywords.slice(0, 8).join(', ')}
-                  </p>
-                ) : null}
+                {/* The keyword line used to live here as well as inside the description,
+                    so the page said "People look here for educational service and tutoring
+                    service." and then, on the very next line, "People look here for:
+                    educational service, tutoring service". The composed description already
+                    says it, in the reader's language and as a sentence. */}
               </div>
               <aside className="business-profile-about__place">
                 {/* This panel used to say "It is in Kokapet, Hyderabad." and then, two boxes
