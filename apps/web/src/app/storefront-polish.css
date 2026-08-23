@@ -1343,3 +1343,25 @@
     object-position: 72% center;
   }
 }
+
+/* The artwork is not badly cropped - it is drawn with the left 60% empty, for
+   the older layout where the identity card overlapped that side. The card now
+   runs along the bottom, so that half is simply blank wall.
+   Scaling from the right edge fills the panel with the half that was composed,
+   and the subject reads at a sensible size instead of sitting far off to one
+   side. This replaces the 12s drift rather than fighting it: both are the same
+   transform, and one infinite animation per storefront is worth removing. */
+.business-profile-cover.has-banner .business-profile-cover__banner {
+  animation: none;
+  object-position: 100% center;
+  transform: scale(1.32);
+  transform-origin: 100% 50%;
+}
+
+@media (max-width: 700px) {
+  .business-profile-cover.has-banner .business-profile-cover__banner {
+    object-position: 100% center;
+    transform: scale(1.5);
+    transform-origin: 100% 50%;
+  }
+}
