@@ -505,12 +505,24 @@ function nearestBannerByWords(categoryName: string): PremiumCategoryBanner | nul
     const keyWords = key
       .split(/[^a-z]+/)
       .filter((word) => word.length >= 4 && !UNHELPFUL.has(word));
-    const score = keyWords.filter((word) => words.includes(word)).length;
-    // Two shared words, not one. On one word 'Home developers' took the
-    // 'home & kitchen' banner and showed a property builder a rack of wooden
-    // spoons. A single word in common is a coincidence; it is weaker evidence
-    // than showing no artwork at all, and the plain panel now reads fine.
-    if (score >= 2 && (!best || score > best.score)) best = { key, score };
+    const shared = keyWords.filter((word) => words.includes(word));
+    const score = shared.length;
+    // It is not how many words two names share, it is which one.
+    //
+    //   Theme restaurants  <- Indian restaurants   share 'restaurants'  good
+    //   Home developers    <- Home & kitchen       share 'home'         wrong
+    //
+    // Both are one word. The difference is that 'restaurants' is the head noun
+    // of each name - the thing the business actually is - while 'home' is only
+    // a modifier on one side. In English the head noun is the last significant
+    // word, so a single shared word counts only when it ends both names. A
+    // modifier in common is a coincidence, and a coincidence showed a property
+    // builder a rack of wooden spoons.
+    const headMatches =
+      score > 0 &&
+      words[words.length - 1] === keyWords[keyWords.length - 1] &&
+      shared.includes(words[words.length - 1]);
+    if ((score >= 2 || headMatches) && (!best || score > best.score)) best = { key, score };
   }
   return best ? (categoryBanners[best.key] ?? null) : null;
 }
