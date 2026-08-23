@@ -1780,3 +1780,75 @@
     padding: 0;
   }
 }
+
+/* ---------------------------------------------------------------------------
+   Advertising containers.
+
+   Two jobs: hold the space before the ad arrives so the page does not jump, and
+   make it unmistakable that this is an advertisement and not something LocZ or
+   the business is telling you. Nothing here may resemble a business card, a
+   nearby result or a button - a reader who cannot tell the difference will click
+   the wrong thing once and trust the page less afterwards.
+   --------------------------------------------------------------------------- */
+
+.ad-slot {
+  display: block;
+  min-height: var(--ad-reserve-mobile, 280px);
+  margin: 18px 0;
+  padding: 8px;
+  border: 1px solid var(--locz-border);
+  border-radius: 14px;
+  /* Deliberately not the surface colour used by content cards. */
+  background: var(--locz-surface-muted);
+  text-align: center;
+}
+
+.ad-slot__label {
+  display: block;
+  margin-bottom: 6px;
+  color: var(--locz-text-muted);
+  font-size: 0.6rem;
+  font-weight: 600;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+}
+
+.ad-slot__unit {
+  display: block;
+  width: 100%;
+  overflow: hidden;
+}
+
+/* An unfilled slot collapses rather than leaving a hole. AdSense marks these
+   with data-ad-status="unfilled" once it has decided. */
+.ad-slot:has(.adsbygoogle[data-ad-status='unfilled']) {
+  display: none;
+}
+
+.ad-slot--mobile-only {
+  display: none;
+}
+
+@media (min-width: 761px) {
+  .ad-slot {
+    min-height: var(--ad-reserve-desktop, 250px);
+  }
+
+  .ad-slot--desktop-only {
+    display: block;
+  }
+
+  .ad-slot--mobile-only {
+    display: none;
+  }
+}
+
+@media (max-width: 760px) {
+  .ad-slot--desktop-only {
+    display: none;
+  }
+
+  .ad-slot--mobile-only {
+    display: block;
+  }
+}

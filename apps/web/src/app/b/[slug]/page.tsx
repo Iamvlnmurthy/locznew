@@ -16,6 +16,7 @@ import { BusinessEnquiry } from './business-enquiry';
 import { ShareBusiness } from './share-business';
 import { BusinessBackButton } from './back-button';
 import { schemaTypeFor } from '@/lib/schema-type';
+import { AdSlot } from '@/components/ad-slot';
 
 interface BusinessHour {
   dayOfWeek: number;
@@ -298,6 +299,18 @@ export default async function BusinessPage({ params }: { params: Promise<{ slug:
   // Whether this business has anything published. Used to decide whether the
   // listings section exists at all, and whether its tab is offered.
   const hasListings = Boolean(listings && listings.items.length > 0);
+
+  // How much this page actually has to say, counted in real fields. A business with
+  // a name and a phone number carries one advertisement; one with an address, a
+  // landmark, hours and neighbours can carry three. Nothing here can be satisfied by
+  // writing more words, which is the point - padding a page to qualify it for
+  // another ad unit would be the exact behaviour this is meant to prevent.
+  const adContentScore = [
+    Boolean(business.addressLine),
+    Boolean(business.landmark),
+    business.hours.length > 0,
+    Boolean(business.website),
+  ].filter(Boolean).length;
   const similar = (similarResponse?.items ?? [])
     .filter((b) => b.slug !== business.slug)
     .slice(0, 8);
@@ -742,6 +755,9 @@ export default async function BusinessPage({ params }: { params: Promise<{ slug:
             </section>
           ) : null}
 
+          {/* The reader has the identity, the description and the actions by now. */}
+          <AdSlot placement="BUSINESS_AFTER_ABOUT" contentScore={adContentScore} />
+
           <section className="business-profile-section business-profile-hours" id="hours">
             <div>
               <span className="section-kicker">{p.planVisit}</span>
@@ -829,6 +845,8 @@ export default async function BusinessPage({ params }: { params: Promise<{ slug:
                 know when this place is open, once, in three words. */}
           </section>
 
+          <AdSlot placement="BUSINESS_AFTER_LOCATION" contentScore={adContentScore} />
+
           {faqs.length > 0 ? (
             <section className="business-profile-section business-profile-faq" id="faq">
               <span className="section-kicker">{p.goodToKnow}</span>
@@ -843,6 +861,11 @@ export default async function BusinessPage({ params }: { params: Promise<{ slug:
               </dl>
             </section>
           ) : null}
+
+          {/* Before the list, never among it. Those are internal links people
+              navigate by, and an advertisement between two of them would read as a
+              result. */}
+          <AdSlot placement="BUSINESS_BEFORE_NEARBY" contentScore={adContentScore} />
 
           {similar.length > 0 ? (
             <section className="business-profile-section business-profile-similar" id="nearby">

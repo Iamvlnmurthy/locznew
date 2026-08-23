@@ -811,6 +811,14 @@ const categoryBanners: Readonly<Record<string, PremiumCategoryBanner>> = {
   'wholesale suppliers': banner('wholesale-distribution'),
   'wildlife sanctuaries': banner('wildlife-sanctuaries'),
   zoos: banner('zoos'),
+  'soccer fields': banner('sports-facilities'),
+  'child care and day care': banner('day-care-preschools'),
+  'landscaping services': banner('landscaping-services'),
+  'digitizing services': banner('digitizing-services'),
+  'music record labels': banner('music-production-studios'),
+  'telemarketing agencies': banner('telemarketing-agencies'),
+  'wig shops': banner('hair-replacement-clinics'),
+  'senior citizen services': banner('nursing-homes'),
 };
 
 export function premiumCategoryBanner(name?: string | null): PremiumCategoryBanner | null {
