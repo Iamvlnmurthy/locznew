@@ -17,8 +17,18 @@
   background: transparent;
 }
 
+/* The back button and the breadcrumb sit on one row, laid out rather than positioned.
+ *
+ * The breadcrumb used to be absolutely positioned at left: 86px, which assumed the back
+ * button was always exactly that wide. It is not: "Back" becomes "వెనుకకు" in Telugu and
+ * "वापस" in Hindi, and the breadcrumb then sat on top of the button. A row with a gap cannot
+ * collide, whatever the words turn out to be. */
 .business-profile-hero > .container {
   position: relative;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
 }
 
 .business-profile-back {
@@ -33,12 +43,9 @@
 }
 
 .business-profile-breadcrumbs {
-  position: absolute;
-  top: 3px;
-  left: 86px;
   z-index: 2;
   min-height: 26px;
-  margin: 0;
+  margin: 0 0 8px;
   color: #72837d;
   font-size: 0.59rem;
 }
@@ -807,7 +814,6 @@
   }
 
   .business-profile-breadcrumbs {
-    position: static;
     min-height: 28px;
     margin-bottom: 8px;
     font-size: 0.6rem;
