@@ -284,6 +284,17 @@ export class BusinessSearchQueryDto extends PaginationQueryDto {
   @IsUUID()
   categoryId?: string;
 
+  @ApiPropertyOptional({
+    example: 'nanakramguda',
+    description:
+      'Scope to one neighbourhood. This is what a directory can answer that a business ' +
+      'cannot: nobody\'s own listing ranks for "dental clinics in Nanakramguda", because ' +
+      'the question asks for a set rather than a place.',
+  })
+  @IsOptional()
+  @IsString()
+  localitySlug?: string;
+
   @ApiPropertyOptional({ description: 'Only administrator-verified businesses' })
   @IsOptional()
   @Type(() => Boolean)

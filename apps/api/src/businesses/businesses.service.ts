@@ -140,6 +140,21 @@ export class BusinessesService {
       ...(query.cityId ? { cityId: query.cityId } : {}),
       ...(query.pincode ? { pincodeCode: query.pincode } : {}),
       ...(query.categoryId ? { categoryId: query.categoryId } : {}),
+      // The neighbourhood filter, matched through the address rather than on the
+      // business, because a locality is a property of where a shop *is* and the
+      // address table is where that lives. Scoped by city as well when one is
+      // given: locality slugs are unique per city, not globally, so "gandhi-nagar"
+      // alone would gather shops from a dozen unrelated towns.
+      ...(query.localitySlug
+        ? {
+            address: {
+              locality: {
+                slug: query.localitySlug,
+                ...(query.cityId ? { cityId: query.cityId } : {}),
+              },
+            },
+          }
+        : {}),
       ...(query.verificationStatus
         ? { verificationStatus: query.verificationStatus }
         : query.verifiedOnly
