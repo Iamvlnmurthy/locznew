@@ -31,7 +31,7 @@ import _db  # noqa: E402
 _db.utf8_stdout()
 
 HOST = "locz.in"
-KEY = "d928b77b2748c06502cec7de59ea3772"
+KEY = "3240382ae0194feb8c45b27cd749a069"
 KEY_URL = f"https://{HOST}/{KEY}.txt"
 ENDPOINT = "https://api.indexnow.org/indexnow"
 
