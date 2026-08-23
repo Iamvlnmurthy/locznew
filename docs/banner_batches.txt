@@ -1,0 +1,372 @@
+### BATCH 1 (45 categories)
+Schools & colleges
+Petrol pumps
+Bakeries & sweet shops
+Tutoring centres & coaching classes
+Car repair & servicing workshops
+Shoe stores & footwear shops
+Religious organizations
+Arts & Entertainment
+Diagnostic imaging centres
+Book shops
+Coffee shops
+Dental clinics
+Private schools
+Special schools
+Farms
+Public schools
+Candy shops
+Chemical plants
+Auto detailers
+B2B energy services
+Plant nurseries
+Hardware companies
+Middle schools
+Health food stores
+Stadium arenas
+Barber shops
+Surgery hospitals
+Music production studios
+Camping grounds
+Glass and mirror shops
+Pet care services
+Vitamin shops
+Food distributors
+Audio visual shops
+Family practice clinics
+Lingerie shops
+E Commerce Services
+Shipping centres
+Plastics manufacturers
+Designer wear shops
+Urology clinics
+Countertop installers
+Amusement parks
+Fertility clinics
+Tobacco shops
+
+### BATCH 2 (45 categories)
+Banks & ATMs
+Medical shops
+Historic places
+Preschools & play schools
+Local manufacturers & producers
+Government & public services
+Building contractors
+Medical supply shops
+Pizza restaurants
+Lab testing centres
+Real estate agents
+Marketing agencies
+Movie theatres
+Engineering services
+Malls & department stores
+Tea rooms
+Music venues
+Convenience stores
+Chinese restaurants
+Research institutes
+Home cleaners
+Graphic designers
+Art galleries
+Electronic parts suppliers
+Internet marketing services
+Law firms & advocates
+Surgical equipment suppliers
+Pest control services
+Electrician services
+Mattress shops
+Media production houses
+Car manufacturers
+Holiday rental homes
+Camera and photo studios
+Meat shops
+Appliance manufacturers
+Pubs and bars
+Auto customization shops
+Arts & culture
+Courts & tribunals
+Commercial vehicle dealers
+Wholesale grocers
+Oncology clinics
+Electric utility providers
+Cupcake shops
+
+### BATCH 3 (45 categories)
+Schools
+Indian restaurants
+Credit unions & cooperative banks
+Women clothing & ethnic wear shops
+Two-wheeler showrooms & dealers
+Spas & wellness centres
+IT Companies
+Home developers
+Stock brokers
+Fashion boutiques
+Public parks
+Ad agencies
+Bars and pubs
+Tyre dealers
+Building material shops
+Law firms
+Web designers
+Fashion accessories shops
+Language schools
+Makeup artists
+Telecom companies
+Financial advisors
+Carpet stores
+Driving schools
+Finance & insurance
+Asian restaurants
+Appliance repair services
+Used car dealers
+AC And Cooling Services
+Skin care salons
+Guest houses
+Home security services
+Medical colleges
+Sign makers
+ENT specialists
+Plastic surgery centres
+Flight training schools
+Tile stores
+Brokers
+Solar panel installers
+Chocolatiers
+Breakfast and Brunch Restaurants
+Airports
+Service apartments
+Specialty food stores
+
+### BATCH 4 (45 categories)
+Event planners
+Beauty salons
+Hardware & building material shops
+Auto parts & spare parts shops
+Fast food & quick bite restaurants
+Places of worship
+Computer shops
+Flowers & Gift Shops
+Lodging services
+Tour operators
+Dessert shops
+Gas suppliers
+Test prep centres
+Mosques
+Accountants
+Auto companies
+B2B Marketing Agencies
+Day care preschools
+Childrens clothing stores
+School campus buildings
+Paint stores
+Employment agencies
+Eye care clinics
+Food stalls & eateries
+Optometry clinics
+Social media agencies
+Auditorium venues
+Sports and recreation
+Sports facilities
+Film studios
+Medical service centres
+Bed and breakfasts
+Stationery shops
+Cottage stays
+Musical instrument shops
+Patisserie cake shops
+Massage therapy centres
+Commercial real estate
+Italian restaurants
+Storage warehouses
+Beauty training institutes
+Women's Care Centres
+Aquatic pet shops
+Bottled water companies
+Carpenters
+
+### BATCH 5 (45 categories)
+Education centres
+Auto dealers
+Cafes & coffee shops
+Dental clinics & tooth care centres
+Primary schools & elementary schools
+Men's Clothing Shops
+Printing services
+Shopping malls
+Naturopathy centres
+Hair salons
+Agri service providers
+Jewellery makers
+Hardware shops
+Appliance shops
+Telecom services
+NGO Associations
+Caterers
+Pharmaceutical companies
+Vegetarian restaurants
+Corporate offices
+Wedding planners
+Loan providers
+Plastic manufacturers
+Clothing companies
+Bridal shops
+Lounges
+Passport services
+Machine shops
+Charity organisations
+Bar and grill restaurants
+Nursing schools
+Power companies
+Investment advisors
+Medical research institutes
+Motorsport vehicle dealers
+Seafood restaurants
+Home health care
+Cricket ground rentals
+Tractor dealers
+Blood donation centres
+Performing arts venues
+Dance clubs
+Watch shops
+Student unions
+Hair supply stores
+
+### BATCH 6 (44 categories)
+Financial services
+Resorts & stays
+Health care centres & clinics
+High schools & secondary schools
+Software development companies
+Computer coaching classes
+Property managers
+Student hostels
+Outpatient clinics
+Eyewear shops
+Police stations
+Construction & contractors
+Apparel stores
+Indian grocery shops
+Textile manufacturers
+Diagnostic labs & imaging
+Budget lodges
+Tyre shops
+Gynecology clinics
+Agriculture suppliers
+Orthopedic clinics
+Music schools
+Electronic equipment suppliers
+Car wash services
+Children's clinics
+Marketing consultants
+Veterinary clinics
+Organic grocery stores
+Truck dealers
+Mobile repair shops
+Burger restaurants
+Tattoo and piercing studios
+Cardiology clinics
+Sandwich shops
+Barbecue restaurants
+Cosmetic dentistry clinics
+Beauty product suppliers
+Uniform stores
+Laundry services
+Food truck stands
+Agricultural cooperatives
+Apparel manufacturers
+Museums
+Diagnostic laboratories
+
+### BATCH 7 (44 categories)
+Hindu temples
+Grocery stores
+Doctor clinics & consultation centres
+Furniture & home decor shops
+Industrial equipment manufacturers
+Fitness gyms
+IT Services & Repair
+Community centres
+Warehouse clubs
+Travel agencies
+B2B service providers
+Insurance agents
+Dance classes
+Two-wheeler showrooms
+Travel agents
+Cargo services
+Beauty supply shops
+Dermatology clinics
+Life insurance agents
+Fabric shops
+Motorcycle mechanics
+Food stores
+Food delivery services
+Taxi booking services
+Car rental services
+Dairy farms
+Money transfer services
+Diner restaurants
+Book publishers
+B2B water treatment services
+Sporting goods shops
+Theatre venues
+Theme restaurants
+Liquor shops
+Nail salons
+T-shirt printers
+Gift shops
+Immigration law firms
+B2B oil and gas
+Farmers markets
+B2B clinical labs
+Party supply shops
+Apartments
+Windows installation services
+
+### BATCH 8 (44 categories)
+Colleges & universities
+ATM Machines
+Post offices & courier counters
+Educational service providers
+Interior designers & decor studios
+Colleges
+Automotive services
+Vocational schools
+Industrial companies
+Event photographers
+Ice cream parlours
+Metal fabricators
+Physiotherapy centres
+Public libraries
+Yoga centres
+Home goods shops
+Architectural designers
+Dry cleaners
+Train stations
+Fitness trainers
+Lighting shops
+Chicken restaurants
+Metal suppliers
+Vegetable vendors
+Smoothie juice bars
+Internet service providers
+Granite suppliers
+Art schools
+Automation services
+Tailors and alterations
+Battery shops
+Painting services
+Timber lumber shops
+Town halls
+Sports clothing shops
+Milk bars
+B2B Tech Services
+Furniture manufacturers
+Hair replacement clinics
+Kitchen and Bath Stores
+Neurology clinics
+Speech therapy centres
+Cabin and kiosk rentals
+Craft shops
