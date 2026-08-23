@@ -118,6 +118,24 @@ export default async function RootLayout({ children }: { children: React.ReactNo
             document.documentElement.dataset.theme = 'light';
           }
         `}</Script>
+
+        {/* AdSense.
+
+            `afterInteractive` rather than `beforeInteractive`: Google's verifier
+            reads the tag out of the served HTML, which this still produces, but
+            the script itself does not need to run before the page paints and
+            blocking on a third-party host would cost the Core Web Vitals that
+            AdSense earnings depend on.
+
+            The publisher id is not a secret — it is public in the page source of
+            every AdSense site — so it sits here rather than in an env var. */}
+        <Script
+          id="google-adsense"
+          async
+          strategy="afterInteractive"
+          crossOrigin="anonymous"
+          src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-8770090838058652"
+        />
       </head>
       <body>
         <Header locale={locale} />
