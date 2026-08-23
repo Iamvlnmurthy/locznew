@@ -482,6 +482,38 @@ const UNHELPFUL = new Set([
 ]);
 
 /**
+ * Head nouns too generic to decide a match on their own.
+ *
+ * The head-noun rule is right in principle and wrong for these, because they
+ * name a shape of business rather than a trade, and unrelated trades land on
+ * the same word:
+ *
+ *   Dental clinics & tooth CARE centres  -> hair CARE
+ *   Police STATIONS                      -> ev charging STATIONS
+ *   Building MATERIAL shops              -> fabric & tailoring MATERIAL
+ *
+ * A dentist was being illustrated with combs and hair oil. These words may
+ * still count toward a two-word match, where a second word does the work -
+ * they just cannot carry a match by themselves.
+ */
+const GENERIC_HEADS = new Set([
+  'care',
+  'station',
+  'stations',
+  'material',
+  'materials',
+  'equipment',
+  'products',
+  'solutions',
+  'systems',
+  'items',
+  'accessories',
+  'training',
+  'institute',
+  'institutes',
+]);
+
+/**
  * The nearest banner by shared words, for a category the catalogue has never heard of.
  *
  * The catalogue is keyed by the 45 category names the directory had when the artwork was
@@ -518,10 +550,12 @@ function nearestBannerByWords(categoryName: string): PremiumCategoryBanner | nul
     // word, so a single shared word counts only when it ends both names. A
     // modifier in common is a coincidence, and a coincidence showed a property
     // builder a rack of wooden spoons.
+    const head = words[words.length - 1];
     const headMatches =
       score > 0 &&
-      words[words.length - 1] === keyWords[keyWords.length - 1] &&
-      shared.includes(words[words.length - 1]);
+      head === keyWords[keyWords.length - 1] &&
+      shared.includes(head) &&
+      !GENERIC_HEADS.has(head);
     if ((score >= 2 || headMatches) && (!best || score > best.score)) best = { key, score };
   }
   return best ? (categoryBanners[best.key] ?? null) : null;
