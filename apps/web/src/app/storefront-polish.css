@@ -1285,3 +1285,40 @@
     justify-content: center;
   }
 }
+
+/* The category label lost its contrast once it sat on a photograph rather than
+   a solid card - coral on pale gold is close to invisible. */
+.business-profile-cover.has-banner .business-profile-category {
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: rgb(9 26 21 / 55%);
+  color: #fff;
+  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
+}
+
+/* The section tabs are a four-item flex row with no wrap. On a phone they do
+   not fit, and because a grid track sizes to its content that pushed the whole
+   column wider than the screen - which is why every card ran off the right
+   edge, not just the tabs. min-width:0 lets the track shrink; the tabs scroll
+   inside it instead of stretching it. */
+.business-profile-layout,
+.business-profile-layout > main {
+  min-width: 0;
+}
+
+.business-profile-tabs {
+  min-width: 0;
+  max-width: 100%;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.business-profile-tabs::-webkit-scrollbar {
+  display: none;
+}
+
+.business-profile-tabs a {
+  flex: none;
+  white-space: nowrap;
+}
