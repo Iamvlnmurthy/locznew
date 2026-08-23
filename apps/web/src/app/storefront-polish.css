@@ -17,22 +17,29 @@
   background: transparent;
 }
 
-/* The back button and the breadcrumb sit on one row, laid out rather than positioned.
- *
- * The breadcrumb used to be absolutely positioned at left: 86px, which assumed the back
- * button was always exactly that wide. It is not: "Back" becomes "వెనుకకు" in Telugu and
- * "वापस" in Hindi, and the breadcrumb then sat on top of the button. A row with a gap cannot
- * collide, whatever the words turn out to be. */
 .business-profile-hero > .container {
   position: relative;
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 10px;
+}
+
+/* The back button and the breadcrumb share a line, without the container becoming a row.
+ *
+ * The breadcrumb was absolutely positioned at left: 86px, which assumed the back button was
+ * always exactly that wide — it is not, since "Back" becomes "వెనుకకు" in Telugu.
+ *
+ * The first fix made this container `display: flex`, which was wrong: the container also
+ * holds the cover banner, so the banner joined the same row and collapsed to a sliver. Two
+ * inline-flex siblings sit on one line by themselves and leave the banner as a block below,
+ * which is what it has to be. */
+.business-profile-breadcrumbs {
+  display: inline-flex;
+  vertical-align: middle;
 }
 
 .business-profile-back {
+  display: inline-flex;
+  vertical-align: middle;
   min-height: 32px;
+  margin-right: 10px;
   margin-bottom: 8px;
   padding: 6px 11px;
   border-color: var(--storefront-line);

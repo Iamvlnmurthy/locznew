@@ -44,6 +44,9 @@ interface BusinessDetail {
   cityId: string;
   localityName: string | null;
   landmark: string | null;
+  /** The state, and the sub-district. Absent on older API builds. */
+  stateName?: string | null;
+  mandal?: string | null;
   /** Public profiles elsewhere, emitted as schema.org sameAs. Absent on older API builds. */
   socialLinks?: string[] | null;
   /** Short public reference, e.g. "000J-HRCF". Absent on older API builds. */
@@ -101,6 +104,37 @@ function socialLabel(url: string): string | null {
     // Not a URL we can parse. A link we cannot name is not a link we should render.
     return null;
   }
+}
+
+/**
+ * The address as a person would write it: street, area, mandal, district, state, country,
+ * pincode.
+ *
+ * Deduplicated, because the parts overlap. `line1` frequently ends with the locality already
+ * — "…Chandra Reddy Circle, Kokapet" beside a locality of "Kokapet" printed "Kokapet,
+ * Kokapet" — and a mandal is often named after the town it sits in.
+ */
+function postalAddress(b: {
+  addressLine: string | null;
+  localityName: string | null;
+  mandal?: string | null;
+  cityName: string;
+  stateName?: string | null;
+  pincode: string | null;
+}): string {
+  const seen = new Set<string>();
+  const parts: string[] = [];
+  for (const part of [b.addressLine, b.localityName, b.mandal, b.cityName, b.stateName, 'India']) {
+    const value = (part ?? '').trim();
+    if (!value) continue;
+    const key = value.toLowerCase();
+    // A part already contained in what we have written is not worth repeating.
+    if (seen.has(key) || parts.some((p) => p.toLowerCase().endsWith(key))) continue;
+    seen.add(key);
+    parts.push(value);
+  }
+  const line = parts.join(', ');
+  return b.pincode ? `${line} — ${b.pincode}` : line;
 }
 
 const DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
@@ -648,13 +682,34 @@ export default async function BusinessPage({ params }: { params: Promise<{ slug:
             <div>
               <span className="section-kicker">{p.planVisit}</span>
               <h2>{p.hoursLocation}</h2>
-              <p>
-                <Icon name="location" />{' '}
-                {[business.addressLine, business.localityName, business.cityName, business.pincode]
-                  .filter(Boolean)
-                  .join(', ')}
+              <p className="business-profile-address">
+                <Icon name="location" /> <strong>{business.name}</strong>
+                {', '}
+                {postalAddress(business)}
               </p>
               <div className="business-profile-map-actions">
+                {/* The three things somebody does with an address: go there, ring ahead, or
+                    look the business up. They belong next to it, not in a sidebar. */}
+                {business.primaryPhone ? (
+                  <a href={`tel:${business.primaryPhone}`} className="btn btn--ghost btn--sm">
+                    <Icon name="phone" /> {formatPhone(business.primaryPhone)}
+                  </a>
+                ) : null}
+                {business.email ? (
+                  <a href={`mailto:${business.email}`} className="btn btn--ghost btn--sm">
+                    <Icon name="mail" /> {business.email}
+                  </a>
+                ) : null}
+                {business.website ? (
+                  <a
+                    href={business.website}
+                    target="_blank"
+                    rel="nofollow noopener noreferrer"
+                    className="btn btn--ghost btn--sm"
+                  >
+                    <Icon name="globe" /> {p.visitWebsite}
+                  </a>
+                ) : null}
                 {directionsUrl ? (
                   <a
                     href={directionsUrl}

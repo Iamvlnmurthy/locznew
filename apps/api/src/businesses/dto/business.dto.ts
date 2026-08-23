@@ -348,6 +348,21 @@ export class BusinessDetailDto extends BusinessSummaryDto {
   @ApiPropertyOptional({ description: 'A nearby landmark from the address, when known.' })
   landmark!: string | null;
 
+  @ApiPropertyOptional({
+    description:
+      'The state this business is in — the last line of a postal address before the country.',
+    example: 'Telangana',
+  })
+  stateName!: string | null;
+
+  @ApiPropertyOptional({
+    description:
+      'The sub-district: mandal in Telangana and Andhra, taluk in the south, tehsil in the ' +
+      'north. Known only where the locality came from the India Post data.',
+    example: 'Serilingampally',
+  })
+  mandal!: string | null;
+
   @ApiProperty({
     description:
       'Public profiles this business is known by elsewhere, emitted as schema.org sameAs. ' +

@@ -51,7 +51,11 @@ const BUSINESS_INCLUDE = {
   // /hi as well as /en. Without them those pages carry translated furniture around English
   // content — which is what a reader sees, and what a search engine indexes.
   category: { select: { name: true, nameTe: true, nameHi: true } },
-  city: { select: { name: true, nameTe: true, nameHi: true } },
+  // The state and the mandal complete a postal address. A LocZ "city" is a district, so the
+  // full chain a reader expects is street, area, mandal, district, state, pincode.
+  city: {
+    select: { name: true, nameTe: true, nameHi: true, state: { select: { name: true } } },
+  },
   address: {
     select: {
       line1: true,
@@ -59,7 +63,7 @@ const BUSINESS_INCLUDE = {
       landmark: true,
       // The neighbourhood is the most specific thing the page says about where a shop is,
       // so it travels in the reader's script too.
-      locality: { select: { name: true, nameTe: true, nameHi: true } },
+      locality: { select: { name: true, nameTe: true, nameHi: true, mandal: true } },
     },
   },
   hours: true,
@@ -1138,6 +1142,8 @@ export class BusinessesService {
       landmark,
       socialLinks: business.socialLinks,
       loczId: loczId(business.slug),
+      stateName: business.city.state?.name ?? null,
+      mandal: business.address?.locality?.mandal ?? null,
       categoryId: business.categoryId,
       cityId: business.cityId,
       addressLine:
