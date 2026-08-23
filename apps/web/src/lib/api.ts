@@ -43,6 +43,18 @@ export async function api<T>(path: string, options: RequestOptions = {}): Promis
 
   const headers: Record<string, string> = { 'Content-Type': 'application/json' };
 
+  // Identify server-side renders to the API's rate limiter.
+  //
+  // Every page rendered on the server calls this from one machine, so the API saw
+  // the whole site as a single client and throttled it at 120 requests a minute -
+  // roughly 120 page views. Real business pages then rendered the error boundary
+  // with "ThrottlerException: Too Many Requests", which is what users were seeing.
+  //
+  // This module imports next/headers, so it never runs in a browser and the key
+  // cannot leak to one. It is deliberately not NEXT_PUBLIC_.
+  const internalKey = process.env.INTERNAL_API_KEY;
+  if (internalKey) headers['x-locz-internal'] = internalKey;
+
   if (auth) {
     const token = (await cookies()).get(ACCESS_COOKIE)?.value;
     if (token) headers.Authorization = `Bearer ${token}`;

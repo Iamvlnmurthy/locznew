@@ -19160,6 +19160,18 @@ body {
   transform: scale(1.2) translateY(-1px);
 }
 
+.search-business-card__art--banner {
+  padding: 0;
+  object-fit: cover;
+  object-position: right center;
+  filter: none;
+  transform: none;
+}
+
+.search-business-card:hover .search-business-card__art--banner {
+  transform: scale(1.03);
+}
+
 .search-business-card__visual > img + span {
   position: absolute;
   right: 9px;

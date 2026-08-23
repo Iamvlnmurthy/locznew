@@ -1,4 +1,5 @@
 import { ExecutionContext, Injectable } from '@nestjs/common';
+import { Request } from 'express';
 import { ThrottlerGuard, ThrottlerLimitDetail } from '@nestjs/throttler';
 import { Response } from 'express';
 
@@ -24,6 +25,36 @@ export function retryAfterSeconds(
  */
 @Injectable()
 export class RetryAwareThrottlerGuard extends ThrottlerGuard {
+  /**
+   * The site's own server is not a client.
+   *
+   * Every server-rendered page calls this API from one machine, so the limiter
+   * counted all of locz.in as a single caller and cut it off at 120 requests a
+   * minute - about 120 page views. Beyond that, real business pages rendered the
+   * error boundary carrying `ThrottlerException: Too Many Requests`, which is a
+   * live page telling a reader something went wrong because the site was busy.
+   *
+   * The header is a shared secret, checked in constant time so a wrong guess
+   * cannot be narrowed down by timing, and it is only ever sent from the web
+   * server: apps/web/src/lib/api.ts imports next/headers and so never runs in a
+   * browser. Browsers and everything else stay rate limited exactly as before.
+   */
+  protected override async shouldSkip(context: ExecutionContext): Promise<boolean> {
+    const expected = process.env.INTERNAL_API_KEY;
+    if (!expected) return super.shouldSkip(context);
+
+    const header = context.switchToHttp().getRequest<Request>().headers['x-locz-internal'];
+    const given = Array.isArray(header) ? header[0] : header;
+    if (given && given.length === expected.length) {
+      let diff = 0;
+      for (let i = 0; i < expected.length; i += 1) {
+        diff |= expected.charCodeAt(i) ^ given.charCodeAt(i);
+      }
+      if (diff === 0) return true;
+    }
+    return super.shouldSkip(context);
+  }
+
   protected override async throwThrottlingException(
     context: ExecutionContext,
     detail: ThrottlerLimitDetail,

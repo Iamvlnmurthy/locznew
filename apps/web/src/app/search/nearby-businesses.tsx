@@ -5,7 +5,7 @@ import { publicBrandLogo } from '@locz/public-brands';
 import Link from 'next/link';
 import { Fragment, useCallback, useEffect, useRef, useState } from 'react';
 import { Icon } from '@/components/icons';
-import { premiumCategoryArtwork } from '@/lib/premium-icon-catalog';
+import { businessListingArtwork } from '@/lib/business-listing-artwork';
 import { loadNearbyBusinesses, type NearbyBusiness } from './businesses-actions';
 
 /**
@@ -236,6 +236,7 @@ export function NearbyBusinesses({
               nearYou;
             const businessLogo =
               business.logoUrl ?? publicBrandLogo(business.name, business.publicBrandKey);
+            const fallbackArtwork = businessListingArtwork(business.name, business.categoryName);
             return (
               <Fragment key={business.id}>
                 {showBand ? <h3 className="nearby-businesses__band">{bandLabel(band)}</h3> : null}
@@ -260,11 +261,12 @@ export function NearbyBusinesses({
                     ) : (
                       <>
                         <Image
-                          className="search-business-card__art"
-                          src={premiumCategoryArtwork({ name: business.categoryName })}
+                          className={`search-business-card__art search-business-card__art--${fallbackArtwork.kind}`}
+                          src={fallbackArtwork.src}
                           alt=""
                           width={88}
                           height={88}
+                          sizes="(max-width: 640px) 88px, 112px"
                         />
                         <span className="search-business-card__monogram">
                           {business.name.trim().charAt(0).toUpperCase()}
