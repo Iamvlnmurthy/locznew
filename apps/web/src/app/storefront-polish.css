@@ -1562,3 +1562,16 @@
     align-self: flex-start;
   }
 }
+
+/* Same trap, second time: the `.has-banner` copy of the logo rule carries an
+   extra class, so it outranks the panel-wide one no matter which comes last.
+   Both variants are named here rather than relying on file order. */
+@media (max-width: 760px) {
+  .business-profile-cover .business-profile-logo,
+  .business-profile-cover.has-banner .business-profile-logo {
+    align-self: flex-start;
+    width: 52px;
+    height: 52px;
+    flex: 0 0 52px;
+  }
+}
