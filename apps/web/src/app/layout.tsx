@@ -4,6 +4,9 @@ import Link from 'next/link';
 import localFont from 'next/font/local';
 import { Anek_Telugu } from 'next/font/google';
 import Script from 'next/script';
+
+// Public by design: this id appears in the network tab of every page that loads it.
+const GA_ID = process.env.NEXT_PUBLIC_GA_ID ?? 'G-47GLPVCGQ8';
 import { Header } from '@/components/header';
 import { Icon } from '@/components/icons';
 import { getTranslator } from '@/i18n';
@@ -138,6 +141,29 @@ export default async function RootLayout({ children }: { children: React.ReactNo
           src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-8770090838058652"
           crossOrigin="anonymous"
         />
+
+        {/* Google Analytics 4.
+
+            next/script with afterInteractive here, unlike the AdSense tag above.
+            The difference is what each one is for: AdSense's verifier *parses the
+            served HTML*, so its tag has to be in the document. Analytics only has
+            to *run in a browser*, and deferring it until after hydration keeps a
+            third-party connection off the critical path.
+
+            The measurement id is public - it is visible in the network tab of
+            every page that loads it - so it sits in configuration rather than a
+            secret store, with an env override for staging. */}
+        <Script
+          id="ga4-src"
+          strategy="afterInteractive"
+          src={`https://www.googletagmanager.com/gtag/js?id=${GA_ID}`}
+        />
+        <Script id="ga4-init" strategy="afterInteractive">{`
+          window.dataLayer = window.dataLayer || [];
+          function gtag(){dataLayer.push(arguments);}
+          gtag('js', new Date());
+          gtag('config', '${GA_ID}');
+        `}</Script>
       </head>
       <body>
         <Header locale={locale} />
