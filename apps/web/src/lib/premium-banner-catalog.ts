@@ -462,6 +462,23 @@ const UNHELPFUL = new Set([
   'local',
   'other',
   'and',
+  // "IT Services & Repair" was taking the bike-repair banner, because 'repair'
+  // was the only word the two shared. These are verbs a dozen unrelated trades
+  // have in common; they say what a business does, not what it looks like.
+  'repair',
+  'repairs',
+  'supply',
+  'supplies',
+  'dealer',
+  'dealers',
+  'agency',
+  'agencies',
+  'general',
+  'goods',
+  'works',
+  'point',
+  'house',
+  'company',
 ]);
 
 /**

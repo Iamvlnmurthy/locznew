@@ -1322,3 +1322,24 @@
   flex: none;
   white-space: nowrap;
 }
+
+/* The artwork is 2000x320 - a 6.25:1 strip. The panel is nearer 5:1, so cover
+   was throwing away a fifth of the width, split evenly off both ends. Every
+   banner is composed with its subject right of centre, so an even crop cuts
+   into exactly the part worth showing and leaves the deliberately empty left
+   filling the panel.
+   Anchoring at 78% keeps the subject in frame, and a shorter panel crops less
+   of the width to begin with. */
+.business-profile-cover.has-banner {
+  min-height: 244px;
+}
+
+.business-profile-cover.has-banner .business-profile-cover__banner {
+  object-position: 78% center;
+}
+
+@media (max-width: 700px) {
+  .business-profile-cover.has-banner .business-profile-cover__banner {
+    object-position: 72% center;
+  }
+}
