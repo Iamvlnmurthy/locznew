@@ -293,6 +293,10 @@ export default async function BusinessPage({ params }: { params: Promise<{ slug:
       revalidate: 900,
     }),
   ]);
+
+  // Whether this business has anything published. Used to decide whether the
+  // listings section exists at all, and whether its tab is offered.
+  const hasListings = Boolean(listings && listings.items.length > 0);
   const similar = (similarResponse?.items ?? [])
     .filter((b) => b.slug !== business.slug)
     .slice(0, 8);
@@ -607,9 +611,11 @@ export default async function BusinessPage({ params }: { params: Promise<{ slug:
             <a href="#about">
               <Icon name="user" /> {p.about}
             </a>
-            <a href="#listings">
-              <Icon name="store" /> {p.listingsOffers}
-            </a>
+            {hasListings ? (
+              <a href="#listings">
+                <Icon name="store" /> {p.listingsOffers}
+              </a>
+            ) : null}
             <a href="#hours">
               <Icon name="calendar" /> {p.hoursLocation}
             </a>
@@ -679,43 +685,56 @@ export default async function BusinessPage({ params }: { params: Promise<{ slug:
             </div>
           </section>
 
-          <section className="business-profile-section" id="listings">
-            <div className="business-profile-section__head">
-              <div>
-                <span className="section-kicker">{p.exploreAvailable}</span>
-                <h2>{p.listingsHeading}</h2>
-              </div>
-              {listings?.items.length ? (
-                <Link href={`/search?businessId=${business.id}`}>
-                  {p.seeAll} <Icon name="arrow" />
-                </Link>
-              ) : null}
-            </div>
-            {listings && listings.items.length > 0 ? (
-              <div className="card-grid business-profile-listings">
-                {listings.items.slice(0, 6).map((listing) => (
-                  <ListingCard key={listing.id} listing={listing} t={t} />
-                ))}
-              </div>
-            ) : (
-              <div className="business-profile-empty">
-                <span className="business-profile-empty__art">
-                  <Image src={categoryArtwork} alt="" width={92} height={92} />
-                </span>
+          {/* Rendered only when there is something in it.
+
+              No business in the directory has published a listing yet, so this
+              section's empty state - a picture, "Nothing published right now",
+              and a line explaining what would appear here - was rendering on
+              essentially all 2.9 million pages. That is boilerplate repeated
+              across the whole site, which is the opposite of what a page needs
+              to be worth indexing, and it told the reader nothing.
+
+              The claim prompt is not lost: the About panel above already says
+              the listing is unclaimed and offers the same link. */}
+          {hasListings ? (
+            <section className="business-profile-section" id="listings">
+              <div className="business-profile-section__head">
                 <div>
-                  <strong>{p.nothingPublished}</strong>
-                  <p>{p.nothingPublishedBody}</p>
+                  <span className="section-kicker">{p.exploreAvailable}</span>
+                  <h2>{p.listingsHeading}</h2>
                 </div>
-                {business.claimStatus === 'UNCLAIMED' &&
-                business.isClaimable !== false &&
-                !business.isOwner ? (
-                  <Link href={`/b/${business.slug}/claim`}>
-                    {p.claimAction} <Icon name="arrow" />
+                {listings?.items.length ? (
+                  <Link href={`/search?businessId=${business.id}`}>
+                    {p.seeAll} <Icon name="arrow" />
                   </Link>
                 ) : null}
               </div>
-            )}
-          </section>
+              {listings && listings.items.length > 0 ? (
+                <div className="card-grid business-profile-listings">
+                  {listings.items.slice(0, 6).map((listing) => (
+                    <ListingCard key={listing.id} listing={listing} t={t} />
+                  ))}
+                </div>
+              ) : (
+                <div className="business-profile-empty">
+                  <span className="business-profile-empty__art">
+                    <Image src={categoryArtwork} alt="" width={92} height={92} />
+                  </span>
+                  <div>
+                    <strong>{p.nothingPublished}</strong>
+                    <p>{p.nothingPublishedBody}</p>
+                  </div>
+                  {business.claimStatus === 'UNCLAIMED' &&
+                  business.isClaimable !== false &&
+                  !business.isOwner ? (
+                    <Link href={`/b/${business.slug}/claim`}>
+                      {p.claimAction} <Icon name="arrow" />
+                    </Link>
+                  ) : null}
+                </div>
+              )}
+            </section>
+          ) : null}
 
           <section className="business-profile-section business-profile-hours" id="hours">
             <div>
@@ -792,15 +811,16 @@ export default async function BusinessPage({ params }: { params: Promise<{ slug:
                   );
                 })}
               </dl>
-            ) : (
-              <div className="business-profile-hours__empty">
-                <Icon name="calendar" />
-                <span>
-                  <strong>{p.hoursMissing}</strong>
-                  {p.hoursMissingBody}
-                </span>
-              </div>
-            )}
+            ) : null}
+            {/* "Hours not added yet — send an enquiry before making a special trip" used
+                to sit here. Only about one business in the directory in a hundred has
+                published hours, so on nearly every page it was a paragraph saying that a
+                fact is missing, which is not itself a fact. The section stays, because
+                the address and the contact buttons above it are the reason anyone opens
+                it; only the notice about absent hours is gone.
+
+                The "Hours not listed" chip in the hero already tells a reader they do not
+                know when this place is open, once, in three words. */}
           </section>
 
           {faqs.length > 0 ? (
