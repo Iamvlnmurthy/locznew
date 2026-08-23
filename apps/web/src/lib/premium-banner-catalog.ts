@@ -445,6 +445,55 @@ const SUBTYPE_OVERRIDES: Readonly<Record<string, ReadonlyArray<{ test: RegExp; k
  * to the category banner (then the monogram) when the name says nothing specific — so it never
  * shows a worse banner than before, only a more fitting one.
  */
+/** Words that appear in half the category names and so identify nothing. */
+const UNHELPFUL = new Set([
+  'shop',
+  'shops',
+  'store',
+  'stores',
+  'centre',
+  'centres',
+  'center',
+  'centers',
+  'service',
+  'services',
+  'business',
+  'businesses',
+  'local',
+  'other',
+  'and',
+]);
+
+/**
+ * The nearest banner by shared words, for a category the catalogue has never heard of.
+ *
+ * The catalogue is keyed by the 45 category names the directory had when the artwork was
+ * made. It now has 69 parents and 1,375 subcategories, so "Spas & wellness centres" — a real
+ * category with real businesses in it — matched nothing and the storefront rendered a plain
+ * dark panel where its photograph should be.
+ *
+ * Matching on shared words finds "beauty & wellness" for that, and keeps working for
+ * categories added later without anybody having to remember this file exists. Words like
+ * "store" and "services" are ignored: they appear in half the names and would match anything.
+ */
+function nearestBannerByWords(categoryName: string): PremiumCategoryBanner | null {
+  const words = categoryName
+    .toLowerCase()
+    .split(/[^a-z]+/)
+    .filter((word) => word.length >= 4 && !UNHELPFUL.has(word));
+  if (words.length === 0) return null;
+
+  let best: { key: string; score: number } | null = null;
+  for (const key of Object.keys(categoryBanners)) {
+    const keyWords = key
+      .split(/[^a-z]+/)
+      .filter((word) => word.length >= 4 && !UNHELPFUL.has(word));
+    const score = keyWords.filter((word) => words.includes(word)).length;
+    if (score > 0 && (!best || score > best.score)) best = { key, score };
+  }
+  return best ? (categoryBanners[best.key] ?? null) : null;
+}
+
 export function premiumBusinessBanner(
   name?: string | null,
   categoryName?: string | null,
@@ -456,5 +505,8 @@ export function premiumBusinessBanner(
       if (test.test(name) && categoryBanners[key]) return categoryBanners[key]!;
     }
   }
-  return premiumCategoryBanner(categoryName);
+  return (
+    premiumCategoryBanner(categoryName) ??
+    (categoryName ? nearestBannerByWords(categoryName) : null)
+  );
 }

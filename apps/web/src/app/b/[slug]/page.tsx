@@ -519,10 +519,13 @@ export default async function BusinessPage({ params }: { params: Promise<{ slug:
                 {business.localityName ? ` · ${business.localityName}` : ''}
               </span>
               <h1>{business.name}</h1>
-              <p>
-                <Icon name="location" /> {business.addressLine ? `${business.addressLine}, ` : ''}
-                {placeLabel}
-                {business.pincode ? ` — ${business.pincode}` : ''}
+              {/* The whole address, here at the top.
+                  It read "Pune — 411013", which is the one part of an address nobody needs:
+                  the reader came from a page that already said the city. The street, the
+                  area, the mandal and the state are what tell them whether it is worth the
+                  journey, and they were buried in a section further down. */}
+              <p className="business-profile-identity__address">
+                <Icon name="location" /> {postalAddress(business)}
               </p>
               <div className="business-profile-badges">
                 {business.verificationStatus === 'VERIFIED' ? (
