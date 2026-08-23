@@ -65,3 +65,6 @@ key.properties
 
 # DuckDB spill files from local data work.
 /.tmp/
+
+# OSM extracts — 1.8GB, rebuildable from Geofabrik.
+/var/osm/
