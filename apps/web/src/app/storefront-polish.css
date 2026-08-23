@@ -998,3 +998,37 @@
     transition: none;
   }
 }
+
+/* The address block: pin, then name over address. */
+.business-profile-address {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+}
+
+.business-profile-address > span {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.business-profile-address strong {
+  font-weight: 700;
+}
+
+.business-profile-address svg {
+  margin-top: 3px;
+}
+
+/* The banner's category and city sit at the top of it, not the bottom.
+ *
+ * They were positioned at bottom: 60px, left: 34px — which is exactly where the identity
+ * card overlaps the banner, so the card covered them and "Pune" was sliced in half. The top
+ * of the banner is empty apart from the Share button on the right. */
+.business-profile-cover .business-profile-cover__copy,
+.business-profile-cover.has-banner .business-profile-cover__copy {
+  top: 20px;
+  bottom: auto;
+  left: 28px;
+  max-width: 52%;
+}

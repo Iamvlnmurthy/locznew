@@ -682,10 +682,15 @@ export default async function BusinessPage({ params }: { params: Promise<{ slug:
             <div>
               <span className="section-kicker">{p.planVisit}</span>
               <h2>{p.hoursLocation}</h2>
+              {/* The name on its own line, the address under it, the way it would be written
+                  on an envelope. Inline with a comma it wrapped mid-name and, for a business
+                  with no street line, opened with a stray comma. */}
               <p className="business-profile-address">
-                <Icon name="location" /> <strong>{business.name}</strong>
-                {', '}
-                {postalAddress(business)}
+                <Icon name="location" />
+                <span>
+                  <strong>{business.name}</strong>
+                  <span>{postalAddress(business)}</span>
+                </span>
               </p>
               <div className="business-profile-map-actions">
                 {/* The three things somebody does with an address: go there, ring ahead, or
