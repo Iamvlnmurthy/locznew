@@ -1455,3 +1455,80 @@
   backdrop-filter: none;
   border-radius: 0;
 }
+
+/* ---------------------------------------------------------------------------
+   Mobile hero: let the panel grow to its content.
+
+   The panel was given a minimum height and `align-items: flex-end`, which is
+   right on a desktop where the card is shorter than the banner. Stacked on a
+   phone the card is far taller - logo, category, a two-line name, a four-line
+   address, two rows of chips and three buttons - so the extra height went
+   upwards, out of the top of a box with `overflow: hidden`, and took the
+   business name with it.
+
+   A banner is decoration; the name and the address are the page. So on a phone
+   the panel is sized by the card and the artwork fills whatever that comes to.
+   --------------------------------------------------------------------------- */
+
+@media (max-width: 760px) {
+  .business-profile-cover,
+  .business-profile-cover.has-banner {
+    height: auto;
+    min-height: 0;
+    align-items: stretch;
+  }
+
+  .business-profile-cover > .business-profile-identity {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    /* Clear of the Share button, which floats at the top right. */
+    padding: 54px 16px 18px;
+    gap: 8px;
+  }
+
+  .business-profile-cover .business-profile-logo {
+    width: 52px;
+    height: 52px;
+    flex: 0 0 52px;
+  }
+
+  .business-profile-cover .business-profile-identity__content > h1 {
+    font-size: 1.5rem;
+    line-height: 1.2;
+  }
+
+  .business-profile-cover .business-profile-identity__address {
+    font-size: 0.8rem;
+    line-height: 1.45;
+  }
+
+  /* Two across rather than three stacked: the same actions in a third of the
+     height, which is the difference between the name fitting and not. */
+  .business-profile-cover .business-profile-identity__actions {
+    display: grid;
+    width: 100%;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+  }
+
+  .business-profile-cover .business-profile-identity__actions > a {
+    min-height: 42px;
+    justify-content: center;
+    padding: 0 10px;
+    font-size: 0.8rem;
+  }
+
+  /* An odd one out spans the row rather than leaving a gap beside it. */
+  .business-profile-cover .business-profile-identity__actions > a:last-child:nth-child(odd) {
+    grid-column: 1 / -1;
+  }
+
+  .business-profile-cover .business-profile-badges {
+    gap: 6px;
+  }
+
+  .business-profile-cover .business-profile-badges > span {
+    font-size: 0.62rem;
+  }
+}
