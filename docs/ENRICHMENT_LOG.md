@@ -222,3 +222,45 @@ c98f690  browsing the directory was taking three seconds
 e123d5f  three defects in the storefront redesign
 9636403  the back button and breadcrumb overlapped
 ```
+
+## 11. OpenStreetMap, without installing Nominatim (23 August)
+
+Nominatim needs ~100GB and neither machine had it. But Nominatim's answers come from OSM, and
+Geofabrik publishes the two layers that matter already extracted — so the same data was used
+directly, with local spatial joins, and only the results uploaded.
+
+    gis_osm_places_free_1   156,133 places — 102K villages, 46K hamlets, 3K suburbs
+    gis_osm_roads_free_1    148,697 named roads
+
+Matched against every business still missing something:
+
+|                           | matched | applied |
+| ------------------------- | ------- | ------- |
+| street name (within 300m) | 506,678 | all     |
+| locality (within 800m)    | 205,536 | all     |
+
+The two sources turned out to complement each other rather than compete. Overture's division
+points are stronger in towns; OSM's place nodes are overwhelmingly villages and hamlets, so
+they filled the rural records Overture had missed.
+
+**Localities were capped at 800m, not the 1500m the match allowed.** 195,022 of the matches
+sat between 800m and 1.5km, where the nearest village is often simply not the one the
+business is in. Roads needed no such caution — nearly all matched within 100m.
+
+Coverage after this, of 3,416,136 businesses:
+
+| field       | count     | %    |
+| ----------- | --------- | ---- |
+| keywords    | 3,416,136 | 100% |
+| address row | 3,066,344 | 90%  |
+| street line | 2,743,244 | 80%  |
+| phone       | 2,397,823 | 70%  |
+| socials     | 2,324,534 | 68%  |
+| locality    | 2,305,752 | 67%  |
+| landmark    | 1,891,634 | 55%  |
+
+Locality began the day at 19% and street at 65%.
+
+What is still missing needs Nominatim proper — the mandal, and the ~40% of localities where
+the coarser source returned a town name. `docs/NOMINATIM_PLAN.md` covers that, and opens by
+arguing it may not be worth the 100GB.
