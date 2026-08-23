@@ -15,6 +15,7 @@ import { premiumCategoryArtwork } from '@/lib/premium-icon-catalog';
 import { BusinessEnquiry } from './business-enquiry';
 import { ShareBusiness } from './share-business';
 import { BusinessBackButton } from './back-button';
+import { schemaTypeFor } from '@/lib/schema-type';
 
 interface BusinessHour {
   dayOfWeek: number;
@@ -350,7 +351,12 @@ export default async function BusinessPage({ params }: { params: Promise<{ slug:
 
   const jsonLd = {
     '@context': 'https://schema.org',
-    '@type': 'LocalBusiness',
+    // The narrowest true type rather than LocalBusiness for everything. A dentist
+    // marked up as Dentist tells a search engine what the page is about; marked
+    // up as LocalBusiness it only says a business exists somewhere. Falls back to
+    // LocalBusiness when nothing matches — an imprecise truth beats a precise
+    // guess, especially multiplied by four million pages.
+    '@type': schemaTypeFor(business.categoryName, business.parentCategoryName),
     name: business.name,
     image: profileLogo ? new URL(profileLogo, SITE_URL).toString() : undefined,
     description: business.description ?? undefined,
