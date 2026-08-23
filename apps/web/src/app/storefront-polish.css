@@ -1365,3 +1365,79 @@
     transform-origin: 100% 50%;
   }
 }
+
+/* The identity card moved inside the cover panel for every business, but the
+   layout that positions it was written only for .has-banner. A category with
+   no artwork of its own therefore had an unstyled card inside a fixed-height
+   panel, and it was clipped off the top edge.
+   These are the structural rules, shared by both cases. Only the image and the
+   scrim are specific to having a banner. */
+.business-profile-cover {
+  position: relative;
+  display: flex;
+  overflow: hidden;
+  height: auto;
+  min-height: 244px;
+  padding: 0;
+  align-items: flex-end;
+}
+
+.business-profile-cover > .business-profile-identity {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  width: 100%;
+  align-items: flex-end;
+  margin: 0;
+  padding: 26px 28px 24px;
+  gap: 18px;
+  border: 0;
+  background: none;
+  box-shadow: none;
+}
+
+.business-profile-cover .business-profile-logo {
+  position: static;
+  width: 76px;
+  height: 76px;
+  flex: 0 0 76px;
+  margin: 0;
+  align-self: flex-end;
+}
+
+.business-profile-cover .business-profile-identity__content {
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+/* Without artwork the panel is a plain gradient, and the decorative shape is
+   what stands in for a photograph - so it is centred behind the card rather
+   than left floating at its old coordinates. */
+.business-profile-cover:not(.has-banner) .business-profile-cover__shape {
+  position: absolute;
+  z-index: 0;
+  top: 18px;
+  right: 32px;
+  bottom: auto;
+  left: auto;
+  opacity: 0.5;
+}
+
+@media (max-width: 700px) {
+  .business-profile-cover {
+    min-height: 240px;
+  }
+
+  .business-profile-cover > .business-profile-identity {
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 20px 18px 18px;
+    gap: 10px;
+  }
+
+  .business-profile-cover .business-profile-logo {
+    width: 58px;
+    height: 58px;
+    flex: 0 0 58px;
+  }
+}
