@@ -3,6 +3,7 @@ import {
   ConflictException,
   ForbiddenException,
   Injectable,
+  Logger,
   NotFoundException,
 } from '@nestjs/common';
 import {
@@ -286,6 +287,27 @@ export class BusinessesService {
     if (this.sitemapCursorCache && now - this.sitemapCursorCache.at < 86_400_000) {
       return this.sitemapCursorCache.value;
     }
+
+    // Persisted, not just memoised in this process.
+    //
+    // Computing these walks 2.4 million index entries through a window function and takes
+    // about twenty-five seconds. A per-process memo meant every deploy threw the answer away,
+    // and the next crawler request paid the full cost — long enough that the web layer's fetch
+    // gave up, fell back to an empty slug list, and served a valid sitemap declaring the shard
+    // to have no pages. Search Console recorded that on 177 shards. Keeping the answer in the
+    // database means a restart no longer costs anything.
+    const stored = await this.prisma.$queryRaw<Array<{ cursor_id: string }>>(
+      Prisma.sql`SELECT cursor_id FROM sitemap_shard_cursors
+                 WHERE shard_size = ${shardSize}
+                   AND computed_at > now() - interval '24 hours'
+                 ORDER BY position`,
+    );
+    if (stored.length > 0) {
+      const value = stored.map((r) => r.cursor_id);
+      this.sitemapCursorCache = { value, at: now };
+      return value;
+    }
+
     const rows = await this.prisma.$queryRaw<Array<{ id: string }>>(
       Prisma.sql`
         SELECT id FROM (
@@ -297,6 +319,24 @@ export class BusinessesService {
         ORDER BY id`,
     );
     const value = rows.map((r) => r.id);
+
+    // Best effort: a sitemap must still be served if this write fails.
+    await this.prisma
+      .$executeRaw(
+        Prisma.sql`INSERT INTO sitemap_shard_cursors (shard_size, position, cursor_id, computed_at)
+                   SELECT ${shardSize}, ordinality::int - 1, value::uuid, now()
+                   FROM unnest(${value}::text[]) WITH ORDINALITY AS t(value, ordinality)
+                   ON CONFLICT (shard_size, position)
+                   DO UPDATE SET cursor_id = excluded.cursor_id, computed_at = excluded.computed_at`,
+      )
+      .catch((error: unknown) => {
+        new Logger(BusinessesService.name).warn(
+          `could not persist sitemap cursors: ${
+            error instanceof Error ? error.message : String(error)
+          }`,
+        );
+      });
+
     this.sitemapCursorCache = { value, at: now };
     return value;
   }
