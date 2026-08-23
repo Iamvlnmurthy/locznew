@@ -4,23 +4,35 @@ For a machine with disk to spare (4 TB is far more than enough; the import needs
 250 GB with room to work). This replaces the earlier `NOMINATIM_PLAN.md`, which was written
 to argue you probably should not bother. With a large machine available, you should.
 
-**What this buys you, concretely:** the mandal/taluk/tehsil for 4.2 million businesses, which
-is currently **0% populated** and which nothing else we have can provide, plus a better
-neighbourhood for roughly the 40% of localities where the coarser sources returned a town
-name instead.
+**What this buys you, concretely:** the mandal/taluk/tehsil, plus a better neighbourhood for
+roughly the 40% of localities where the coarser sources returned a town name instead.
+
+An earlier draft of this document said mandal was 0% populated. That was wrong, and the
+correction changes the case for doing this rather than removing it. 116,899 localities carry
+a mandal, reaching about 870,000 businesses — but the quality is mixed. A random sample
+returns real mandals (Surgana, Chikhli, Narsipatnam) alongside plain district names
+(Varanasi, Katihar, Karimnagar). Two provably useless classes have since been cleared: 578
+localities held the literal string "Nil", and 30,023 held a "mandal" identical to their own
+city, which tells a reader nothing the address had not already said.
+
+So the real position is: about a quarter of businesses have a mandal of uncertain quality,
+and three quarters have none. Nominatim is still worth running — it is the only source that
+distinguishes a mandal from the district containing it — but go in expecting to _correct_
+existing values as much as to fill gaps, and prefer Nominatim's answer where the two
+disagree.
 
 ---
 
 ## 1. What you get, and what you already have
 
-| field        | now    | after Nominatim                          |
-| ------------ | ------ | ---------------------------------------- |
-| city         | 100%   | unchanged — do not overwrite             |
-| pincode      | 100%   | unchanged — **do not trust Nominatim's** |
-| street       | 80%    | ~85%, marginal                           |
-| locality     | 67%    | ~90%, and more precise                   |
-| **mandal**   | **0%** | **~85% — this is the reason to do it**   |
-| house number | ~0%    | ~15%, where OSM has it                   |
+| field        | now                 | after Nominatim                                |
+| ------------ | ------------------- | ---------------------------------------------- |
+| city         | 100%                | unchanged — do not overwrite                   |
+| pincode      | 100%                | unchanged — **do not trust Nominatim's**       |
+| street       | 80%                 | ~85%, marginal                                 |
+| locality     | 67%                 | ~90%, and more precise                         |
+| **mandal**   | ~21%, mixed quality | **~85%, and consistent — the reason to do it** |
+| house number | ~0%                 | ~15%, where OSM has it                         |
 
 On a ten-point sample Nominatim was right 10/10 where Overture's division points were about
 6/10. The failure modes differ usefully: where Overture returns the town ("Ernakulam" for a
