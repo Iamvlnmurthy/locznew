@@ -135,12 +135,19 @@ export class BusinessesService {
         : {}),
     };
 
+    // "Recommended" used to lead with `listings._count`, which orders on a value Postgres has
+    // to compute per row: no index can answer it, so browsing cost a count of every listing
+    // for all 3.4M businesses and took over three seconds. It also achieved nothing — not one
+    // business has a listing yet, so every row sorted equal on it.
+    //
+    // Ordering by views first is the same result today and is index-backed. When businesses
+    // do start publishing, ranking by listing count needs a denormalised counter column on
+    // businesses that a trigger maintains; sorting on a relation count at this scale will
+    // never be fast enough, however the query is written.
     const orderBy: Prisma.BusinessOrderByWithRelationInput[] =
       query.sort === 'newest'
         ? [{ createdAt: 'desc' }]
-        : query.sort === 'popular'
-          ? [{ viewCount: 'desc' }, { createdAt: 'desc' }]
-          : [{ listings: { _count: 'desc' } }, { viewCount: 'desc' }, { createdAt: 'desc' }];
+        : [{ viewCount: 'desc' }, { createdAt: 'desc' }];
 
     const [businesses, total] = await Promise.all([
       this.prisma.business.findMany({
@@ -175,7 +182,10 @@ export class BusinessesService {
     Array<{ id: string; slug: string; name: string; count: number }>
   > {
     return this.prisma.$queryRaw<Array<{ id: string; slug: string; name: string; count: number }>>`
-      SELECT c.id, c.slug, c.name, count(b.*)::int AS count
+      -- count(*) rather than count(b.*): counting the row forces the heap to be read, which
+      -- turned this into a 3.5GB sequential scan once the category tree grew from 45 entries
+      -- to 1,581. count(*) can be answered from businesses_category_live_idx alone.
+      SELECT c.id, c.slug, c.name, count(*)::int AS count
       FROM categories c
       JOIN businesses b ON b."categoryId" = c.id AND b."deletedAt" IS NULL AND b."isActive"
       GROUP BY c.id, c.slug, c.name

@@ -524,18 +524,6 @@ export default async function BusinessPage({ params }: { params: Promise<{ slug:
                 ) : null}
               </div>
             </div>
-            <div className="business-profile-stats">
-              <span>
-                <Icon name="store" />
-                <strong>{business.listingCount}</strong>
-                {p.listings}
-              </span>
-              <span>
-                <Icon name="sparkles" />
-                <strong>{business.viewCount.toLocaleString('en-IN')}</strong>
-                {p.profileViews}
-              </span>
-            </div>
           </div>
         </div>
       </section>

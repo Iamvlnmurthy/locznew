@@ -31,14 +31,18 @@ const loadCursors = unstable_cache(
   { revalidate: 86400 },
 );
 
+// Returns null when the API could not answer, which the caller turns into a 503.
+//
+// It used to fall back to an empty slug list, which rendered a well-formed <urlset> with no
+// <url> in it. Search Console reports that as "Missing XML tag" and counts the shard as
+// having zero pages — a transient API failure was being cached for a day as a valid sitemap
+// that says this shard is empty. A 503 tells the crawler to come back instead.
 const loadSlugPage = unstable_cache(
-  async (fromId: string): Promise<SlugPage> =>
-    (await apiSafe<SlugPage>(
+  async (fromId: string): Promise<SlugPage | null> =>
+    await apiSafe<SlugPage>(
       `/businesses/sitemap-slugs?from=${encodeURIComponent(fromId)}&pageSize=${SHARD_SIZE}`,
       { revalidate },
-    )) ?? {
-      slugs: [],
-    },
+    ),
   ['business-sitemap-page'],
   { revalidate: 86400 },
 );
@@ -72,7 +76,17 @@ export async function GET(request: Request): Promise<Response> {
   // Shard: the business URLs from this shard's cursor onward.
   const page = Math.max(0, Number(pageParam) || 0);
   const fromId = cursors[page];
-  const { slugs } = fromId ? await loadSlugPage(fromId) : { slugs: [] };
+  if (!fromId) return new Response('Unknown sitemap shard', { status: 404 });
+
+  const loaded = await loadSlugPage(fromId);
+  if (loaded === null) {
+    // Never cache an empty sitemap as if it were the truth.
+    return new Response('Sitemap shard temporarily unavailable', {
+      status: 503,
+      headers: { 'Retry-After': '600', 'Cache-Control': 'no-store' },
+    });
+  }
+  const { slugs } = loaded;
   const urls = slugs
     .map(
       (b) =>
