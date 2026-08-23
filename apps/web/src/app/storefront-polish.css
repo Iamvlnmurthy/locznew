@@ -1748,3 +1748,15 @@
     backdrop-filter: none;
   }
 }
+
+/* The card sat 29px higher than its 128px margin asked for, because the
+   monogram's -30px top margin collapsed straight through it: a block box with
+   no top padding or border shares its child's top margin rather than containing
+   it. flow-root gives the card its own formatting context, so the monogram laps
+   onto the strip without dragging the whole card up with it. */
+@media (max-width: 760px) {
+  .business-profile-cover > .business-profile-identity,
+  .business-profile-cover.has-banner > .business-profile-identity {
+    display: flow-root;
+  }
+}
