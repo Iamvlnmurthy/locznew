@@ -7,7 +7,15 @@ import { readFileSync } from 'node:fs';
 const src = readFileSync('apps/web/src/lib/premium-banner-catalog.ts', 'utf8');
 
 // The catalogue keys, as written in the file.
-const keys = [...src.matchAll(/^\s*'([^']+)':\s*banner\(/gm)].map((m) => m[1]);
+// Keys are declared two ways in the catalogue - `'k': banner('slug')` and
+// `'k': someVariable` - so take every quoted key inside the categoryBanners
+// object rather than only the banner() form. Reading only one form under-counted
+// the catalogue and reported categories as uncovered when they were not.
+const body = src.slice(
+  src.indexOf('const categoryBanners'),
+  src.indexOf(String.fromCharCode(10) + '};', src.indexOf('const categoryBanners')),
+);
+const keys = [...body.matchAll(/^\s*'([^']+)':/gm)].map((m) => m[1]);
 if (!keys.length) throw new Error('no catalogue keys parsed');
 
 const UNHELPFUL = new Set(
