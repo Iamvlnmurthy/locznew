@@ -23,8 +23,16 @@ export function businessListingArtwork(
     };
   }
 
-  const banner = premiumBusinessBanner(businessName, categoryName);
-  if (banner) return { src: banner.mobile, kind: 'banner' };
+  // Deliberately not the category banner.
+  //
+  // Those are drawn as dark, low-key backgrounds for white text to sit on, at
+  // 1200x400. Shrunk into an 88px square they read as a dark smudge with a letter
+  // floating on it, whichever part you crop to - the artwork has nothing legible
+  // at that size because it was never meant to carry meaning on its own.
+  //
+  // A category without a purpose-built square icon therefore falls through to the
+  // monogram tile below, which is legible at 88px, differs per business, and does
+  // not pretend to be a photograph of the place.
 
   return {
     src: premiumCategoryArtwork({ name: categoryName }),
