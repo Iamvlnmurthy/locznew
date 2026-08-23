@@ -363,6 +363,18 @@ export class BusinessDetailDto extends BusinessSummaryDto {
   })
   stateName!: string | null;
 
+  @ApiProperty({
+    description: 'Slug of the city hub page, for breadcrumbs and internal links.',
+    example: 'hyderabad',
+  })
+  citySlug!: string;
+
+  @ApiProperty({
+    description: 'Slug of the category hub page, for breadcrumbs and internal links.',
+    example: 'dental-clinics',
+  })
+  categorySlug!: string;
+
   @ApiPropertyOptional({
     description:
       'The sub-district: mandal in Telangana and Andhra, taluk in the south, tehsil in the ' +

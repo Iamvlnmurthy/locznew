@@ -57,13 +57,20 @@ const BUSINESS_INCLUDE = {
       name: true,
       nameTe: true,
       nameHi: true,
+      slug: true,
       parent: { select: { name: true } },
     },
   },
   // The state and the mandal complete a postal address. A LocZ "city" is a district, so the
   // full chain a reader expects is street, area, mandal, district, state, pincode.
   city: {
-    select: { name: true, nameTe: true, nameHi: true, state: { select: { name: true } } },
+    select: {
+      name: true,
+      nameTe: true,
+      nameHi: true,
+      slug: true,
+      state: { select: { name: true } },
+    },
   },
   address: {
     select: {
@@ -1153,6 +1160,11 @@ export class BusinessesService {
       loczId: loczId(business.slug),
       parentCategoryName: business.category.parent?.name ?? null,
       stateName: business.city.state?.name ?? null,
+      // The slugs the hub pages are addressed by. Returned rather than derived,
+      // because slugifying the display name guesses right most of the time and a
+      // breadcrumb that guesses wrong is a 404 on the way out of the page.
+      citySlug: business.city.slug,
+      categorySlug: business.category.slug,
       mandal: business.address?.locality?.mandal ?? null,
       categoryId: business.categoryId,
       cityId: business.cityId,

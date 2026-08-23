@@ -49,6 +49,8 @@ interface BusinessDetail {
   landmark: string | null;
   /** The state, and the sub-district. Absent on older API builds. */
   stateName?: string | null;
+  citySlug: string;
+  categorySlug: string;
   /** The category's parent, for artwork lookup. Absent on older API builds. */
   parentCategoryName?: string | null;
   mandal?: string | null;
@@ -415,18 +417,27 @@ export default async function BusinessPage({ params }: { params: Promise<{ slug:
     '@context': 'https://schema.org',
     '@type': 'BreadcrumbList',
     itemListElement: [
+      // Both middle links used to point at /search, which robots.txt disallows -
+      // so the only internal links in the breadcrumb were ones Google is told not
+      // to follow, and the trail led nowhere. They now use the hub pages that
+      // already exist, in the order the directory is actually organised:
+      //
+      //   LocZ > Hyderabad > Dental clinics in Hyderabad > Finedent Dental Clinics
+      //
+      // The state is not a level because there is no state page to link to, and a
+      // breadcrumb item without a URL is a dead rung on the ladder.
       { '@type': 'ListItem', position: 1, name: 'LocZ', item: SITE_URL },
       {
         '@type': 'ListItem',
         position: 2,
-        name: business.categoryName,
-        item: `${SITE_URL}/search?q=${encodeURIComponent(business.categoryName)}`,
+        name: business.cityName,
+        item: `${SITE_URL}/in/${business.citySlug}`,
       },
       {
         '@type': 'ListItem',
         position: 3,
-        name: business.cityName,
-        item: `${SITE_URL}/search?cityId=${encodeURIComponent(business.cityId)}`,
+        name: `${business.categoryName} in ${business.cityName}`,
+        item: `${SITE_URL}/in/${business.citySlug}/${business.categorySlug}`,
       },
       { '@type': 'ListItem', position: 4, name: business.name },
     ],
@@ -515,11 +526,11 @@ export default async function BusinessPage({ params }: { params: Promise<{ slug:
           <nav className="business-profile-breadcrumbs" aria-label={p.breadcrumb}>
             <Link href="/">{t('nav.home')}</Link>
             <Icon name="arrow" />
-            <Link href={`/search?q=${encodeURIComponent(business.categoryName)}`}>
+            <Link href={`/in/${business.citySlug}`}>{business.cityName}</Link>
+            <Icon name="arrow" />
+            <Link href={`/in/${business.citySlug}/${business.categorySlug}`}>
               {business.categoryName}
             </Link>
-            <Icon name="arrow" />
-            <span>{business.cityName}</span>
           </nav>
 
           <div className={`business-profile-cover${categoryBanner ? ' has-banner' : ''}`}>
