@@ -1532,3 +1532,33 @@
     font-size: 0.62rem;
   }
 }
+
+/* Two things the browser had to tell me, because reading the file did not.
+
+   The address was rendering rgb(116,135,127) - grey-green on a photograph -
+   even though a rule three hundred lines up sets it white. That rule is
+   `.business-profile-cover .business-profile-identity__address`, two classes;
+   the storefront's own paragraph rule is
+   `.business-profile-identity > .business-profile-identity__content > p`,
+   three classes, and specificity does not care which one is more specific in
+   meaning. Matched here at equal weight so the later rule wins.
+
+   The monogram was sitting at the right-hand edge of a phone, half under the
+   Share button, because the desktop panel gives it `align-self: flex-end` to
+   drop it onto the floor of the banner. In a column that same line means the
+   right-hand edge - flex-end is the cross axis, and the cross axis turns with
+   the direction. */
+.business-profile-cover .business-profile-identity__content > .business-profile-identity__address {
+  color: #fff;
+  text-shadow: 0 1px 12px rgb(9 26 21 / 55%);
+}
+
+.business-profile-cover .business-profile-identity__content > .business-profile-identity__address svg {
+  color: rgb(255 255 255 / 80%);
+}
+
+@media (max-width: 760px) {
+  .business-profile-cover .business-profile-logo {
+    align-self: flex-start;
+  }
+}
