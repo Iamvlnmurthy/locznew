@@ -11,7 +11,9 @@ const body = src.slice(
   src.indexOf('const categoryBanners'),
   src.indexOf(String.fromCharCode(10) + '};', src.indexOf('const categoryBanners')),
 );
-const keys = [...body.matchAll(/^\s*'([^']+)':/gm)].map((m) => m[1]);
+const keys = [...body.matchAll(/^\s*(?:'([^']+)'|([A-Za-z_$][\w$]*)):/gm)].map(
+  (m) => m[1] ?? m[2],
+);
 if (!keys.length) throw new Error('no catalogue keys parsed');
 const setFrom = (name) => new Set(
   ((src.match(new RegExp('const ' + name + ' = new Set\\(\\[([\\s\\S]*?)\\]\\)')) || ['', ''])[1])

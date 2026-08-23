@@ -40,6 +40,32 @@ const RUNNABLE_JOBS: string[] = [
 export class AdminService {
   private readonly logger = new Logger(AdminService.name);
 
+  /**
+   * The business total, remembered for five minutes.
+   *
+   * Counting 4.2 million rows takes 2,494ms, against 44-48ms for every other
+   * counter on this dashboard - users, listings and reports are all in single
+   * or double figures. So one query was setting the load time for the whole
+   * page, and it was the one number that barely moves: the directory grows by
+   * an import every few weeks, not by the second.
+   *
+   * Five minutes rather than a day because an admin who has just run an import
+   * will reasonably expect the figure to change, and rather than an approximate
+   * count from pg_class.reltuples because a dashboard that disagrees with a
+   * SELECT count(*) is a dashboard people stop trusting.
+   */
+  private businessTotalCache: { value: number; at: number } | null = null;
+
+  private async businessTotal(): Promise<number> {
+    const now = Date.now();
+    if (this.businessTotalCache && now - this.businessTotalCache.at < 300_000) {
+      return this.businessTotalCache.value;
+    }
+    const value = await this.prisma.business.count({ where: { deletedAt: null } });
+    this.businessTotalCache = { value, at: now };
+    return value;
+  }
+
   constructor(
     private readonly prisma: PrismaService,
     private readonly redis: RedisService,
@@ -90,7 +116,7 @@ export class AdminService {
       this.prisma.report.count({
         where: { status: { in: [ReportStatus.OPEN, ReportStatus.UNDER_REVIEW] } },
       }),
-      this.prisma.business.count({ where: { deletedAt: null } }),
+      this.businessTotal(),
       this.prisma.business.count({ where: { verificationStatus: 'VERIFIED', deletedAt: null } }),
       this.prisma.listing.count({
         where: { type: 'JOB', status: ListingStatus.PUBLISHED, deletedAt: null },
