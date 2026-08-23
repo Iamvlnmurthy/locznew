@@ -228,7 +228,27 @@
   gap: 7px;
 }
 
+/* Every icon on the storefront needs an explicit size.
+ *
+ * `Icon` renders <svg viewBox="0 0 24 24"> with no width or height, so an unsized one does
+ * not fall back to 24px — it fills whatever box it is in. On these buttons that meant a
+ * location pin about two hundred pixels tall with the label stranded underneath.
+ *
+ * Scoped to the storefront's own action rows, all of which build their buttons from bare
+ * <a> elements rather than .btn, so nothing global was sizing them. */
+.business-profile-identity__actions a svg,
+.business-profile-map-actions a svg,
+.business-profile-address svg {
+  flex: none;
+  width: 15px;
+  height: 15px;
+}
+
 .business-profile-identity__actions a {
+  display: inline-flex;
+  gap: 6px;
+  align-items: center;
+  justify-content: center;
   min-height: 38px;
   padding: 8px 12px;
   border-color: rgb(18 102 83 / 18%);
