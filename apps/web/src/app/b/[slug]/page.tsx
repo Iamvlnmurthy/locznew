@@ -499,80 +499,80 @@ export default async function BusinessPage({ params }: { params: Promise<{ slug:
                 </Link>
               ) : null}
             </div>
-          </div>
 
-          <div className="business-profile-identity">
-            <span
-              className={`business-profile-logo ${
-                profileLogo ? 'business-profile-logo--image' : 'business-profile-logo--monogram'
-              }`}
-            >
-              {profileLogo ? (
-                <Image src={profileLogo} alt={`${business.name} logo`} width={112} height={112} />
-              ) : (
-                <span aria-hidden="true">{business.name.slice(0, 1).toUpperCase()}</span>
-              )}
-            </span>
-            <div className="business-profile-identity__content">
-              <span className="business-profile-category">
-                {displayCategory}
-                {business.localityName ? ` · ${business.localityName}` : ''}
+            <div className="business-profile-identity">
+              <span
+                className={`business-profile-logo ${
+                  profileLogo ? 'business-profile-logo--image' : 'business-profile-logo--monogram'
+                }`}
+              >
+                {profileLogo ? (
+                  <Image src={profileLogo} alt={`${business.name} logo`} width={112} height={112} />
+                ) : (
+                  <span aria-hidden="true">{business.name.slice(0, 1).toUpperCase()}</span>
+                )}
               </span>
-              <h1>{business.name}</h1>
-              {/* The whole address, here at the top.
+              <div className="business-profile-identity__content">
+                <span className="business-profile-category">
+                  {displayCategory}
+                  {business.localityName ? ` · ${business.localityName}` : ''}
+                </span>
+                <h1>{business.name}</h1>
+                {/* The whole address, here at the top.
                   It read "Pune — 411013", which is the one part of an address nobody needs:
                   the reader came from a page that already said the city. The street, the
                   area, the mandal and the state are what tell them whether it is worth the
                   journey, and they were buried in a section further down. */}
-              <p className="business-profile-identity__address">
-                <Icon name="location" /> {postalAddress(business)}
-              </p>
-              <div className="business-profile-badges">
-                {business.verificationStatus === 'VERIFIED' ? (
-                  <span className="is-verified">
-                    <Icon name="shield" /> {p.verifiedBusiness}
+                <p className="business-profile-identity__address">
+                  <Icon name="location" /> {postalAddress(business)}
+                </p>
+                <div className="business-profile-badges">
+                  {business.verificationStatus === 'VERIFIED' ? (
+                    <span className="is-verified">
+                      <Icon name="shield" /> {p.verifiedBusiness}
+                    </span>
+                  ) : (
+                    <span>
+                      <Icon name="store" /> {p.localBusiness}
+                    </span>
+                  )}
+                  <span className={openState.isOpen ? 'is-open' : ''}>
+                    <i /> {openState.label}
                   </span>
-                ) : (
                   <span>
-                    <Icon name="store" /> {p.localBusiness}
+                    {p.onLoczSince} {new Date(business.createdAt).getFullYear()}
                   </span>
-                )}
-                <span className={openState.isOpen ? 'is-open' : ''}>
-                  <i /> {openState.label}
-                </span>
-                <span>
-                  {p.onLoczSince} {new Date(business.createdAt).getFullYear()}
-                </span>
-                {business.loczId ? (
-                  // The same characters already sitting at the end of the URL, labelled. A
-                  // shopkeeper ringing up to claim their listing can read this out, and
-                  // support can find the record from it.
-                  <span className="business-profile-identity__id">
-                    {p.loczId} <code>{business.loczId}</code>
-                  </span>
-                ) : null}
-              </div>
-              <div className="business-profile-identity__actions" aria-label={p.talkBusiness}>
-                {directionsUrl ? (
-                  <a
-                    href={directionsUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="is-primary"
-                  >
-                    <Icon name="location" /> {p.getDirections}
-                  </a>
-                ) : null}
-                {business.primaryPhone ? (
-                  <a href={`tel:${business.primaryPhone}`}>
-                    <Icon name="phone" /> {p.callBusiness}
-                  </a>
-                ) : null}
-                {!business.isOwner ? (
-                  <a href="#contact">
-                    <Icon name="message" /> {p.sendEnquiry}
-                  </a>
-                ) : null}
+                  {business.loczId ? (
+                    // The same characters already sitting at the end of the URL, labelled. A
+                    // shopkeeper ringing up to claim their listing can read this out, and
+                    // support can find the record from it.
+                    <span className="business-profile-identity__id">
+                      {p.loczId} <code>{business.loczId}</code>
+                    </span>
+                  ) : null}
+                </div>
+                <div className="business-profile-identity__actions" aria-label={p.talkBusiness}>
+                  {directionsUrl ? (
+                    <a
+                      href={directionsUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="is-primary"
+                    >
+                      <Icon name="location" /> {p.getDirections}
+                    </a>
+                  ) : null}
+                  {business.primaryPhone ? (
+                    <a href={`tel:${business.primaryPhone}`}>
+                      <Icon name="phone" /> {p.callBusiness}
+                    </a>
+                  ) : null}
+                  {!business.isOwner ? (
+                    <a href="#contact">
+                      <Icon name="message" /> {p.sendEnquiry}
+                    </a>
+                  ) : null}
+                </div>
               </div>
             </div>
           </div>

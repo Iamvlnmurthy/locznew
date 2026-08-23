@@ -1032,3 +1032,196 @@
   left: 28px;
   max-width: 52%;
 }
+
+/* ---------------------------------------------------------------------------
+   The hero is one panel, not two.
+
+   The banner used to be a strip with the identity card stacked underneath it,
+   so the page opened with a photograph, then a separate dark box repeating the
+   category. The card now sits *on* the banner and the banner is its background.
+
+   Everything below exists to keep white text legible on an unknown photograph.
+   The artwork is composed with its subject right of centre and the left third
+   quiet, so the scrim is heaviest on the left where the name and address sit,
+   and lifts toward the right where the subject is.
+   --------------------------------------------------------------------------- */
+
+.business-profile-cover.has-banner {
+  position: relative;
+  display: flex;
+  overflow: hidden;
+  align-items: flex-end;
+  min-height: 280px;
+  padding: 0;
+  border-radius: 22px;
+}
+
+.business-profile-cover.has-banner .business-profile-cover__banner {
+  z-index: 0;
+  object-fit: cover;
+  object-position: center;
+}
+
+/* Two scrims. The horizontal one carries the text; the vertical one keeps the
+   bottom edge dark enough for the chips, which are the smallest type here. */
+.business-profile-cover.has-banner::after {
+  position: absolute;
+  z-index: 1;
+  background:
+    linear-gradient(100deg, rgb(12 34 28 / 92%) 0%, rgb(12 34 28 / 72%) 38%, rgb(12 34 28 / 18%) 72%, rgb(12 34 28 / 6%) 100%),
+    linear-gradient(to top, rgb(12 34 28 / 55%) 0%, transparent 55%);
+  content: '';
+  inset: 0;
+  pointer-events: none;
+}
+
+.business-profile-cover.has-banner > .business-profile-identity {
+  position: relative;
+  z-index: 2;
+  width: 100%;
+  margin: 0;
+  padding: 26px 28px 24px;
+  border: 0;
+  background: none;
+  box-shadow: none;
+}
+
+.business-profile-cover.has-banner .business-profile-cover__copy,
+.business-profile-cover.has-banner .business-profile-cover__actions {
+  z-index: 3;
+}
+
+/* The decorative circle is the no-artwork fallback. With a banner behind the
+   text it rendered as a giant white ring across the card. */
+.business-profile-cover.has-banner .business-profile-cover__shape {
+  display: none;
+}
+
+.business-profile-cover.has-banner .business-profile-identity__content > h1,
+.business-profile-cover.has-banner .business-profile-identity__address {
+  color: #fff;
+  text-shadow: 0 1px 12px rgb(9 26 21 / 55%);
+}
+
+.business-profile-cover.has-banner .business-profile-category {
+  color: rgb(255 255 255 / 86%);
+}
+
+.business-profile-cover.has-banner .business-profile-badges > span {
+  border-color: rgb(255 255 255 / 22%);
+  background: rgb(255 255 255 / 14%);
+  color: rgb(255 255 255 / 92%);
+  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
+}
+
+.business-profile-cover.has-banner .business-profile-logo--monogram {
+  border: 2px solid rgb(255 255 255 / 28%);
+  box-shadow: 0 10px 28px rgb(9 26 21 / 38%);
+}
+
+@media (max-width: 700px) {
+  /* Portrait crops toward the subject, so the text needs a flat wash rather
+     than a left-weighted one — there is no quiet third at this width. */
+  .business-profile-cover.has-banner {
+    min-height: 320px;
+  }
+
+  .business-profile-cover.has-banner::after {
+    background:
+      linear-gradient(to top, rgb(12 34 28 / 94%) 30%, rgb(12 34 28 / 62%) 65%, rgb(12 34 28 / 30%) 100%);
+  }
+
+  .business-profile-cover.has-banner > .business-profile-identity {
+    padding: 20px 18px 18px;
+  }
+}
+
+/* ---------------------------------------------------------------------------
+   Stitch rhythm.
+
+   What actually makes the Stitch mockup read as calmer is not its colour — it
+   is space. It uses a 8px base, 24px inside every card and 48px between
+   sections; the storefront was running 14-16px throughout, so every panel sat
+   at the same density and nothing grouped.
+
+   This layer changes spacing, radius and shadow only, and states all three in
+   existing tokens, so the dark theme picks it up without a second definition.
+   The forest-green and champagne-gold palette is deliberately not adopted: it
+   is a wellness brand's palette, it is shared with every other page and the
+   app, and a petrol pump should not be mint green.
+   --------------------------------------------------------------------------- */
+
+.business-profile-layout {
+  --storefront-gap: 24px;
+
+  margin-top: 24px;
+  gap: var(--storefront-gap);
+}
+
+.business-profile-layout > main {
+  gap: var(--storefront-gap);
+}
+
+.business-profile-section,
+.business-profile-contact > section {
+  padding: 24px;
+  border-radius: 16px;
+  /* Stitch's lift is a wide, very low-opacity shadow rather than a dark close
+     one — it reads as the card floating, not as an outline. */
+  box-shadow: 0 10px 30px rgb(21 54 44 / 6%);
+}
+
+.business-profile-section > h2,
+.business-profile-contact h2 {
+  margin-bottom: 16px;
+}
+
+.business-profile-about {
+  line-height: 1.7;
+}
+
+.business-profile-contact {
+  top: calc(var(--locz-header-height, 76px) + 16px);
+}
+
+.business-profile-contact > section + section {
+  margin-top: 16px;
+}
+
+/* The trust card set its type at 0.65rem/0.56rem — around 10px and 9px, below
+   the point where it can be read at arm's length on a phone. */
+.business-profile-contact__trust {
+  padding: 16px;
+  gap: 12px;
+  border-radius: 14px;
+}
+
+.business-profile-contact__trust strong {
+  font-size: 0.8rem;
+}
+
+.business-profile-contact__trust p {
+  font-size: 0.75rem;
+  line-height: 1.5;
+}
+
+@media (max-width: 900px) {
+  .business-profile-layout {
+    --storefront-gap: 16px;
+  }
+
+  .business-profile-section,
+  .business-profile-contact > section {
+    padding: 18px;
+  }
+}
+
+/* Dark: the scrim is already dark, so the banner panel needs no override. The
+   card shadow does — a green-tinted lift is invisible on a dark ground and the
+   panels lose their edge. */
+:root[data-theme='dark'] .business-profile-section,
+:root[data-theme='dark'] .business-profile-contact > section {
+  border-color: var(--locz-border);
+  box-shadow: 0 10px 30px rgb(0 0 0 / 28%);
+}
