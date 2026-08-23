@@ -350,6 +350,14 @@ export class BusinessDetailDto extends BusinessSummaryDto {
 
   @ApiPropertyOptional({
     description:
+      'The parent of this business category, when it has one. The artwork catalogue is keyed ' +
+      'by the original category names, so a subcategory falls back to its parent for a banner.',
+    example: 'Salons & spas',
+  })
+  parentCategoryName!: string | null;
+
+  @ApiPropertyOptional({
+    description:
       'The state this business is in — the last line of a postal address before the country.',
     example: 'Telangana',
   })

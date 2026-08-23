@@ -46,6 +46,8 @@ interface BusinessDetail {
   landmark: string | null;
   /** The state, and the sub-district. Absent on older API builds. */
   stateName?: string | null;
+  /** The category's parent, for artwork lookup. Absent on older API builds. */
+  parentCategoryName?: string | null;
   mandal?: string | null;
   /** Public profiles elsewhere, emitted as schema.org sameAs. Absent on older API builds. */
   socialLinks?: string[] | null;
@@ -409,11 +411,23 @@ export default async function BusinessPage({ params }: { params: Promise<{ slug:
         })),
       }
     : null;
-  const categoryBanner = premiumBusinessBanner(business.name, business.categoryName);
+  // Falls back to the parent category's artwork.
+  //
+  // The catalogue is keyed by the original 45 category names. Businesses now sit on one of
+  // 1,375 subcategories — "Wellness centres" rather than "Salons & spas" — and none of those
+  // have a banner of their own, so the page lost its photograph entirely.
+  const categoryBanner =
+    premiumBusinessBanner(business.name, business.categoryName) ??
+    premiumBusinessBanner(business.name, business.parentCategoryName);
   const displayCategory = storefrontCategoryLabel(business.name, business.categoryName);
-  const categoryArtwork = premiumCategoryArtwork({
-    name: storefrontArtworkCategory(business.name, business.categoryName),
-  });
+  // Same fallback: the small artwork is keyed on the original category names too.
+  const categoryArtwork =
+    premiumCategoryArtwork({
+      name: storefrontArtworkCategory(business.name, business.categoryName),
+    }) ??
+    premiumCategoryArtwork({
+      name: storefrontArtworkCategory(business.name, business.parentCategoryName ?? ''),
+    });
   const storefrontDescription =
     business.descriptionIsGenerated && displayCategory !== business.categoryName
       ? business.description?.replace(business.categoryName, displayCategory)

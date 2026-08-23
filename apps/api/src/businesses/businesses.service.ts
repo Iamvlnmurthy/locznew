@@ -50,7 +50,16 @@ const BUSINESS_INCLUDE = {
   // Telugu and Hindi names travel with the record because the profile is served at /te and
   // /hi as well as /en. Without them those pages carry translated furniture around English
   // content — which is what a reader sees, and what a search engine indexes.
-  category: { select: { name: true, nameTe: true, nameHi: true } },
+  // The parent too: the artwork catalogue is keyed by the original category names, and a
+  // business filed under a new subcategory has to fall back to its parent's banner.
+  category: {
+    select: {
+      name: true,
+      nameTe: true,
+      nameHi: true,
+      parent: { select: { name: true } },
+    },
+  },
   // The state and the mandal complete a postal address. A LocZ "city" is a district, so the
   // full chain a reader expects is street, area, mandal, district, state, pincode.
   city: {
@@ -1142,6 +1151,7 @@ export class BusinessesService {
       landmark,
       socialLinks: business.socialLinks,
       loczId: loczId(business.slug),
+      parentCategoryName: business.category.parent?.name ?? null,
       stateName: business.city.state?.name ?? null,
       mandal: business.address?.locality?.mandal ?? null,
       categoryId: business.categoryId,
