@@ -1068,8 +1068,8 @@
   position: absolute;
   z-index: 1;
   background:
-    linear-gradient(100deg, rgb(12 34 28 / 92%) 0%, rgb(12 34 28 / 72%) 38%, rgb(12 34 28 / 18%) 72%, rgb(12 34 28 / 6%) 100%),
-    linear-gradient(to top, rgb(12 34 28 / 55%) 0%, transparent 55%);
+    linear-gradient(100deg, rgb(12 34 28 / 74%) 0%, rgb(12 34 28 / 52%) 40%, rgb(12 34 28 / 16%) 74%, rgb(12 34 28 / 4%) 100%),
+    linear-gradient(to top, rgb(12 34 28 / 42%) 0%, transparent 62%);
   content: '';
   inset: 0;
   pointer-events: none;
@@ -1224,4 +1224,31 @@
 :root[data-theme='dark'] .business-profile-contact > section {
   border-color: var(--locz-border);
   box-shadow: 0 10px 30px rgb(0 0 0 / 28%);
+}
+
+/* The panel is a row: the monogram beside the name, both sitting on the floor
+   of the banner. Stacked, it landed on top of the category caption. */
+.business-profile-cover.has-banner > .business-profile-identity {
+  display: flex;
+  align-items: flex-end;
+  gap: 18px;
+}
+
+.business-profile-cover.has-banner .business-profile-logo {
+  width: 76px;
+  height: 76px;
+  flex: 0 0 76px;
+  align-self: flex-end;
+  margin: 0;
+}
+
+.business-profile-cover.has-banner .business-profile-identity__content {
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+/* The caption already names category and city, and the identity repeats both
+   two lines below it. One statement is enough, and the banner needs the room. */
+.business-profile-cover.has-banner .business-profile-cover__copy {
+  display: none;
 }
