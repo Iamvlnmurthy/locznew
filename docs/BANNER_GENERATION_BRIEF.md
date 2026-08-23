@@ -47,8 +47,15 @@ What they have in common, and what your output must share:
   three-quarter angle. No people. No faces.
 - **Warm, low-key lighting** with a dark, softly graded background, so white text and a
   floating card read clearly on top.
-- **The subject sits right of centre.** The left third stays quiet: the business identity
-  card overlaps it, and the category and city are printed at the top left.
+- **Fill the whole frame.** This is the one place not to copy the existing art. Those
+  banners were drawn for an older hero, where the identity card overlapped the left third,
+  so most of them are empty wall on the left with the subject crowded into the right 40%.
+  The card now runs along the _bottom_ of the panel, full width, so that empty half is
+  simply blank. The live page compensates by scaling the image from its right edge, which
+  is a workaround, not a design. Compose across the full 2000px.
+- **Keep the bottom third calm instead.** That is where the card sits now - name, address
+  and chips in white. Detail and highlights belong in the upper two thirds; the lower third
+  wants shadow, surface, and out-of-focus fall-off.
 - **No text, no logos, no signage, no watermarks.** Any lettering in the image will collide
   with the real text the page draws over it.
 
@@ -60,7 +67,8 @@ What they have in common, and what your output must share:
 - **The mobile crop is not the desktop image resized.** At 1200 × 400 the subject must sit
   around 70–76% across, because the phone layout crops toward the right. Generate it
   separately with the subject placed right of centre.
-- Keep the centre-bottom clear of important detail; the identity card overlaps it.
+- Keep the bottom third free of important detail across the full width - not just the
+  centre. The card spans the whole panel now.
 
 ## Prompt shape for the image engine
 
