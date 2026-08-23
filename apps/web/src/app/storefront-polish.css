@@ -1575,3 +1575,119 @@
     flex: 0 0 52px;
   }
 }
+
+/* ---------------------------------------------------------------------------
+   Mobile hero: a banner strip, then a card.
+
+   Behind-the-text works on a desktop, where the panel is wide and short and the
+   card covers a third of it. On a phone the card is taller than the artwork, so
+   the image ends up entirely behind text and needs a scrim so heavy that
+   nothing of it survives - a dark slab filling the first screen, with the
+   picture you paid to generate invisible underneath.
+
+   So the two are separated at this width. The artwork gets a strip where it can
+   actually be seen, and the details sit on the page's own surface, dark on
+   light, which needs no scrim and reads at arm's length.
+   --------------------------------------------------------------------------- */
+
+@media (max-width: 760px) {
+  .business-profile-cover,
+  .business-profile-cover.has-banner {
+    display: block;
+    height: auto;
+    min-height: 0;
+    padding: 0;
+    border-radius: 18px;
+    background: var(--locz-surface);
+  }
+
+  /* The image is absolutely placed across the whole panel; pin it to the strip. */
+  .business-profile-cover > picture,
+  .business-profile-cover.has-banner .business-profile-cover__banner {
+    height: 128px;
+    bottom: auto;
+  }
+
+  .business-profile-cover.has-banner .business-profile-cover__banner {
+    transform: none;
+    object-position: 72% center;
+  }
+
+  /* Only enough wash to keep the Share button legible on a pale banner. */
+  .business-profile-cover.has-banner::after {
+    height: 128px;
+    bottom: auto;
+    background: linear-gradient(to bottom, rgb(9 26 21 / 34%) 0%, transparent 62%);
+  }
+
+  .business-profile-cover:not(.has-banner) .business-profile-cover__shape {
+    top: 26px;
+    right: 18px;
+    opacity: 0.55;
+  }
+
+  .business-profile-cover > .business-profile-identity {
+    position: relative;
+    z-index: 2;
+    display: block;
+    margin-top: 128px;
+    padding: 0 16px 18px;
+    background: none;
+  }
+
+  /* The monogram laps onto the strip, which ties the two halves together. */
+  .business-profile-cover .business-profile-logo,
+  .business-profile-cover.has-banner .business-profile-logo {
+    display: grid;
+    width: 60px;
+    height: 60px;
+    flex: none;
+    margin: -30px 0 10px;
+    border: 3px solid var(--locz-surface);
+    border-radius: 16px;
+    box-shadow: 0 8px 20px rgb(21 54 44 / 14%);
+  }
+
+  /* Dark on light again: there is no photograph behind this text any more. */
+  .business-profile-cover .business-profile-identity__content > h1 {
+    margin: 0 0 4px;
+    color: var(--locz-text);
+    font-size: 1.45rem;
+    line-height: 1.22;
+    text-shadow: none;
+  }
+
+  .business-profile-cover .business-profile-identity__content > .business-profile-identity__address {
+    color: var(--locz-text-muted);
+    font-size: 0.8rem;
+    line-height: 1.5;
+    text-shadow: none;
+  }
+
+  .business-profile-cover
+    .business-profile-identity__content
+    > .business-profile-identity__address
+    svg {
+    color: var(--locz-primary);
+  }
+
+  .business-profile-cover .business-profile-category {
+    padding: 0;
+    background: none;
+    color: var(--locz-coral);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+
+  .business-profile-cover .business-profile-badges > span {
+    border-color: var(--storefront-line, rgb(21 54 44 / 12%));
+    background: var(--locz-surface-muted);
+    color: var(--locz-text-muted);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+
+  .business-profile-cover .business-profile-identity__actions {
+    margin-top: 12px;
+  }
+}

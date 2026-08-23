@@ -124,15 +124,37 @@ function postalAddress(b: {
   stateName?: string | null;
   pincode: string | null;
 }): string {
-  const seen = new Set<string>();
+  // Written addresses already carry the area and the city, so appending our own
+  // columns repeats them. This read:
+  //
+  //   #3rd Floor, Rajpurohit Towers, Nanakramguda Circle, Hyderabad.,
+  //   Nanakramguda, Golconda, Hyderabad, Telangana, India — 500075
+  //
+  // Hyderabad three times and Nanakramguda twice. The previous check asked
+  // whether an earlier part *ended with* the new one, which fails on both counts
+  // here: the source line ends "Hyderabad." — a full stop is enough to miss it —
+  // and "Nanakramguda" sits in the middle of that line rather than at its end.
+  //
+  // So compare on words, not on string endings, with punctuation removed.
+  const asWords = (value: string) =>
+    value
+      .toLowerCase()
+      .replace(/[^\p{L}\p{N}]+/gu, ' ')
+      .trim();
+
   const parts: string[] = [];
+  const written = new Set<string>();
   for (const part of [b.addressLine, b.localityName, b.mandal, b.cityName, b.stateName, 'India']) {
-    const value = (part ?? '').trim();
+    const value = (part ?? '').trim().replace(/[.,\s]+$/, '');
     if (!value) continue;
-    const key = value.toLowerCase();
-    // A part already contained in what we have written is not worth repeating.
-    if (seen.has(key) || parts.some((p) => p.toLowerCase().endsWith(key))) continue;
-    seen.add(key);
+    const words = asWords(value).split(' ').filter(Boolean);
+    if (words.length === 0) continue;
+    // Skip it only when every word of it has already been said. Comparing whole
+    // words rather than string endings is what catches both "Hyderabad." with a
+    // full stop and "Nanakramguda" sitting mid-line; requiring *all* of them
+    // keeps "Nanakramguda Circle" once "Nanakramguda" alone has appeared.
+    if (words.every((word) => written.has(word))) continue;
+    words.forEach((word) => written.add(word));
     parts.push(value);
   }
   const line = parts.join(', ');
