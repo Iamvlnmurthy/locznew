@@ -52,6 +52,14 @@ export class GeoController {
   }
 
   @Public()
+  @Get('cities/:cityId/localities/:slug')
+  @ApiOperation({ summary: 'One locality by slug — backs the neighbourhood landing pages' })
+  @ApiResponse({ status: 200, type: LocalityDto })
+  getLocality(@Param('cityId') cityId: string, @Param('slug') slug: string): Promise<LocalityDto> {
+    return this.geo.getLocalityBySlug(cityId, slug);
+  }
+
+  @Public()
   @Get('cities/:cityId/localities')
   @ApiOperation({ summary: 'Localities within a city' })
   @ApiResponse({ status: 200, type: [LocalityDto] })

@@ -88,6 +88,29 @@ export class GeoService {
     return this.toCityDto(city);
   }
 
+  /**
+   * One neighbourhood, by slug, within a city.
+   *
+   * Scoped by city because locality slugs are unique per city and not globally:
+   * "gandhi-nagar" exists in dozens of towns, and resolving it on its own would
+   * pick an arbitrary one. `(cityId, slug)` is the unique constraint the table
+   * actually carries.
+   */
+  async getLocalityBySlug(cityId: string, slug: string): Promise<LocalityDto> {
+    const locality = await this.prisma.locality.findFirst({
+      where: { cityId, slug, isActive: true },
+    });
+    if (!locality) throw new NotFoundException('Locality not found');
+    return {
+      id: locality.id,
+      name: locality.name,
+      slug: locality.slug,
+      postalCode: locality.postalCode ?? null,
+      latitude: locality.latitude ? Number(locality.latitude) : null,
+      longitude: locality.longitude ? Number(locality.longitude) : null,
+    };
+  }
+
   async listLocalities(cityId: string): Promise<LocalityDto[]> {
     const localities = await this.prisma.locality.findMany({
       where: { cityId, isActive: true },
