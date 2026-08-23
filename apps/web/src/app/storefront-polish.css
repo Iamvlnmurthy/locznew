@@ -1252,3 +1252,36 @@
 .business-profile-cover.has-banner .business-profile-cover__copy {
   display: none;
 }
+
+/* The monogram is absolutely positioned in the base layout, so it kept its old
+   coordinates when the panel became a row and landed on the category label. */
+.business-profile-cover.has-banner .business-profile-logo {
+  position: static;
+}
+
+/* At 390px the chips and the two buttons were laid out on one line each and ran
+   off the side of the screen - "Send enquiry" was cut in half. */
+.business-profile-cover.has-banner .business-profile-badges,
+.business-profile-cover.has-banner .business-profile-identity__actions {
+  flex-wrap: wrap;
+}
+
+@media (max-width: 700px) {
+  .business-profile-cover.has-banner > .business-profile-identity {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+
+  .business-profile-cover.has-banner .business-profile-logo {
+    width: 58px;
+    height: 58px;
+    flex: 0 0 58px;
+  }
+
+  .business-profile-cover.has-banner .business-profile-identity__actions > a {
+    flex: 1 1 auto;
+    justify-content: center;
+  }
+}
