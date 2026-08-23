@@ -121,20 +121,22 @@ export default async function RootLayout({ children }: { children: React.ReactNo
 
         {/* AdSense.
 
-            `afterInteractive` rather than `beforeInteractive`: Google's verifier
-            reads the tag out of the served HTML, which this still produces, but
-            the script itself does not need to run before the page paints and
-            blocking on a third-party host would cost the Core Web Vitals that
-            AdSense earnings depend on.
+            A plain <script> rather than next/script.
 
-            The publisher id is not a secret — it is public in the page source of
-            every AdSense site — so it sits here rather than in an env var. */}
-        <Script
-          id="google-adsense"
+            This was written first with strategy="afterInteractive", reasoning
+            that a third-party script has no business blocking first paint. That
+            is true and it does not verify: afterInteractive emits only a
+            <link rel="preload"> into the HTML and injects the real tag from
+            JavaScript after hydration, so AdSense's verifier - which parses the
+            served HTML - found nothing, and reported "Couldn't verify your site".
+
+            A raw <script async> is in the document from the first byte, which is
+            what the verifier needs. `async` still keeps it off the parser's
+            critical path, so the cost is a preconnect, not blocked rendering. */}
+        <script
           async
-          strategy="afterInteractive"
-          crossOrigin="anonymous"
           src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-8770090838058652"
+          crossOrigin="anonymous"
         />
       </head>
       <body>
