@@ -52,6 +52,15 @@ export class GeoController {
   }
 
   @Public()
+  @Get('cities/:slug/content')
+  @ApiOperation({
+    summary: 'Full city profile for the /in/<city> page — intro, guide sections, images',
+  })
+  getCityContent(@Param('slug') slug: string) {
+    return this.geo.getCityContent(slug);
+  }
+
+  @Public()
   @Get('cities/:cityId/localities/:slug')
   @ApiOperation({ summary: 'One locality by slug — backs the neighbourhood landing pages' })
   @ApiResponse({ status: 200, type: LocalityDto })

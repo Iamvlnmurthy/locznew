@@ -89,6 +89,63 @@ export class GeoService {
   }
 
   /**
+   * Everything a rich /in/<city> page renders: the base city, the editorial profile, the sourced
+   * guide sections (each with its licence + source URL, because they are shown under that
+   * licence), and the hero/attraction/map images. Content is optional — a city with no profile
+   * yet still returns its name and location so the page is never empty.
+   */
+  async getCityContent(slug: string) {
+    const city = await this.prisma.city.findUnique({
+      where: { slug },
+      include: {
+        state: true,
+        district: true,
+        content: true,
+        sections: { orderBy: { sortOrder: 'asc' } },
+        images: { orderBy: [{ kind: 'asc' }, { sortOrder: 'asc' }] },
+      },
+    });
+    if (!city || !city.isActive) throw new NotFoundException('City not found');
+
+    return {
+      city: this.toCityDto(city),
+      population: city.population,
+      tier: city.tier,
+      content: city.content
+        ? {
+            shortIntro: city.content.shortIntro,
+            description: city.content.description,
+            famousFor: city.content.famousFor,
+            character: city.content.character,
+            economySummary: city.content.economySummary,
+            climate: city.content.climate,
+            knownFor: city.content.knownFor,
+            seoTitle: city.content.seoTitle,
+            metaDescription: city.content.metaDescription,
+          }
+        : null,
+      sections: city.sections.map((section) => ({
+        key: section.sectionKey,
+        title: section.title,
+        content: section.content,
+        sourceUrl: section.sourceUrl,
+        license: section.license,
+        source: section.source,
+      })),
+      images: city.images.map((image) => ({
+        kind: image.kind,
+        title: image.title,
+        url: image.storageUrl,
+        attribution: image.attribution,
+        license: image.license,
+        source: image.source,
+        width: image.width,
+        height: image.height,
+      })),
+    };
+  }
+
+  /**
    * One neighbourhood, by slug, within a city.
    *
    * Scoped by city because locality slugs are unique per city and not globally:
