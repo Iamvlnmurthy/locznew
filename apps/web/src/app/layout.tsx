@@ -7,6 +7,7 @@ import Script from 'next/script';
 
 // Public by design: this id appears in the network tab of every page that loads it.
 const GA_ID = process.env.NEXT_PUBLIC_GA_ID ?? 'G-47GLPVCGQ8';
+import { ADS_ENABLED } from '@/lib/ads/placements';
 import { Header } from '@/components/header';
 import { Icon } from '@/components/icons';
 import { getTranslator } from '@/i18n';
@@ -135,12 +136,20 @@ export default async function RootLayout({ children }: { children: React.ReactNo
 
             A raw <script async> is in the document from the first byte, which is
             what the verifier needs. `async` still keeps it off the parser's
-            critical path, so the cost is a preconnect, not blocked rendering. */}
-        <script
-          async
-          src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-8770090838058652"
-          crossOrigin="anonymous"
-        />
+            critical path, so the cost is a preconnect, not blocked rendering.
+
+            Gated on ADS_ENABLED. Verification was a one-time need and is done; with
+            ads switched off the script (and the Funding Choices consent stack it
+            pulls in) was ~280 KiB of main-thread work on every page for zero rendered
+            ads — the bulk of the site's Total Blocking Time. It returns the moment
+            ads are enabled, which is also the only time an ad slot renders. */}
+        {ADS_ENABLED && (
+          <script
+            async
+            src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-8770090838058652"
+            crossOrigin="anonymous"
+          />
+        )}
 
         {/* Google Analytics 4.
 

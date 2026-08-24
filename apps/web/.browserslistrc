@@ -1,0 +1,12 @@
+# Modern build target.
+#
+# PageSpeed flagged ~14 KiB of "legacy JavaScript" — polyfills for Array.prototype.at,
+# Array.prototype.flat / flatMap, Object.fromEntries, Object.hasOwn and String.prototype.trimEnd.
+# Every one of these is native in browsers from 2021 onward, so transpiling for older engines
+# ships dead weight. These floors are 2021–2022 browsers, which cover effectively all 2026
+# traffic (Chrome/Edge auto-update on Android, the bulk of the Indian install base).
+chrome >= 93
+edge >= 93
+firefox >= 92
+safari >= 15.4
+not dead
