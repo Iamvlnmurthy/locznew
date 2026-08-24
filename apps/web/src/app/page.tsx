@@ -284,17 +284,20 @@ export default async function HomePage({
   // (never stored). Display-only: headline + publisher + a link back to the original.
   // Our own regenerated news (news_stories), nearest-first for the reader's area — not raw Google
   // News. Links go to the LocZ article, never the source.
-  const newsQuery = new URLSearchParams({ limit: '5', lang: locale });
+  // Pull a wider recent pool (cached), then show a random handful in the sidebar so the "Latest
+  // around" tiles vary on each visit instead of always the same top three.
+  const newsQuery = new URLSearchParams({ limit: '20', lang: locale });
   if (city?.latitude && city?.longitude) {
     newsQuery.set('latitude', String(city.latitude));
     newsQuery.set('longitude', String(city.longitude));
   }
-  const newsHeadlines =
+  const newsPool =
     (
       await apiSafe<{ cards: NewsHeadline[] }>(`/news/stories?${newsQuery.toString()}`, {
         revalidate: 120,
       })
     )?.cards ?? [];
+  const newsHeadlines = [...newsPool].sort(() => Math.random() - 0.5);
 
   // "Local Now" alerts — official NDMA SACHET public-safety warnings naming the area. Verbatim,
   // display-only, hidden when there is nothing.
