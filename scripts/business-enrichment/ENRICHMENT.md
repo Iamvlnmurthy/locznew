@@ -24,11 +24,16 @@ pip install duckdb "psycopg[binary]"
 Two env vars (never commit them):
 
 ```bash
-export DATABASE_URL="postgresql://USER:PASS@HOST:5432/locz"   # prod Postgres
+export DATABASE_URL="postgresql://USER:PASS@HOST:5433/locz"   # prod Postgres — note port 5433
 export SARVAM_KEY="sk_..."                                    # Sarvam API key
 ```
 
-- `DATABASE_URL` = the same prod DB the API uses (on the VPS: `ssh onrol`, read `/home/locz/app/apps/api/.env`).
+- `DATABASE_URL` = the same prod DB the API uses. Copy it verbatim from the VPS (`ssh onrol`,
+  read `/home/locz/app/.env`) rather than composing it by hand.
+- **`locz-postgres` publishes on `127.0.0.1:5433`, not 5432** — port 5432 on that host belongs
+  to a different application. A tunnel or URL pointing at 5432 reaches the wrong database. See
+  `docs/HANDOFF.md` §2, and prefer `scripts/business-enrichment/_db.py` (statement timeout +
+  memory ceiling + keyset paging) for any bulk work.
 - Cost is ~₹0.0025 / business (~250 tokens). Full 3.4M ≈ ₹9,000. A batch of a few thousand is paise.
 
 ## 1. Column check (10 seconds)
