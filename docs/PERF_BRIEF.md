@@ -46,11 +46,31 @@ already argued for contextual permission: ask when the user does something locat
 on refusal show the pincode fallback (which already exists). Cold-start prompts are granted ~half
 as often and Play flags them.
 
-## 3. Render-blocking + unused CSS — ~600 ms + 60 KiB (lower priority, yours)
+## 3. Render-blocking + unused CSS — ~1,240 ms + 61 KiB — **now the #1 MOBILE lever**
 
-Two Next CSS chunks block first render (`chunks/…css`, 74.8 KiB, 1,300 ms) and ~60 KiB is unused
-above the fold. Mostly Next's CSS handling; realistic wins are trimming global CSS and keeping
-route-level styles out of the shared chunk. Do this after 1 and 2 — they move the score most.
+Two Next CSS chunks block first render (`chunks/…css`, 74.8 KiB, ~1,240 ms) and ~61 KiB is unused
+above the fold. On desktop this was minor; **on mobile it's the top issue** (see mobile update
+below). Trim global CSS and keep route-level styles out of the shared chunk.
+
+---
+
+## Mobile update — 2026-08-24, 10:58 (Performance 72)
+
+Desktop is fixed (**93** — the ad-gating + your LCP `priority` landed). Mobile tells a different
+story: **TBT 20 ms, CLS 0** (the ad-gating carried over — great), but **LCP 8.0 s** is the whole
+score. Two causes, both yours:
+
+1. **The LCP `priority` isn't landing on the mobile-LCP image.** Desktop improved, mobile didn't.
+   The bento grid reorders visually with CSS, so on the single-column mobile layout the
+   _visually-first_ card is probably **not** source-index 0 — so `priority={i === 0}` prioritises
+   the wrong image. Confirm which element PageSpeed reports as LCP on mobile and put `priority`
+   on that one (or `priority` on whichever card renders first at mobile width).
+2. **Render-blocking CSS (~1,240 ms)** — #3 above. On mobile's throttled CPU/network this is over
+   a second before LCP can even paint. This is now the biggest single lever on mobile.
+3. **Image delivery — 42 KiB.** The discovery-card art can be compressed harder / served at a
+   smaller size for mobile (they're 72px but the source webp is larger than needed).
+
+TBT/ads are done; nothing more from Claude's side. These three are CSS/image work in `apps/web`.
 
 ## Not doing (deliberate)
 
