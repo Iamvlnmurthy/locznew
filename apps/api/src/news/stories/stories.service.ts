@@ -17,6 +17,7 @@ export interface StoryFeedQuery {
 
 export interface StoryCard {
   id: string;
+  slug: string;
   category: string;
   title: string;
   dek: string | null;
@@ -114,7 +115,7 @@ export class StoriesService {
 
     const order = hasPoint ? 'dist_m ASC NULLS LAST, published_at DESC' : 'published_at DESC';
     const sql = `
-      SELECT id, category, title_en, dek_en, title_hi, body_hi, title_sl, body_sl, body_en,
+      SELECT id, slug, category, title_en, dek_en, title_hi, body_hi, title_sl, body_sl, body_en,
              state_lang, image_url, image_credit, city, state, published_at,
              ${distSql} AS dist_m
       FROM news_stories
@@ -131,6 +132,7 @@ export class StoriesService {
       const { title, body } = this.pick(row, lang);
       return {
         id: row.id as string,
+        slug: row.slug as string,
         category: row.category as string,
         title,
         dek: (row.dek_en as string) ?? null,
@@ -148,16 +150,18 @@ export class StoriesService {
     return { cards, hasMore };
   }
 
-  async byId(id: string, lang = 'en'): Promise<Record<string, unknown> | null> {
+  async byIdOrSlug(key: string, lang = 'en'): Promise<Record<string, unknown> | null> {
+    const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(key);
     const rows = await this.prisma.$queryRawUnsafe<Record<string, unknown>[]>(
-      `SELECT * FROM news_stories WHERE id = $1 AND status = 'PUBLISHED' LIMIT 1`,
-      id,
+      `SELECT * FROM news_stories WHERE ${isUuid ? 'id' : 'slug'} = $1 AND status = 'PUBLISHED' LIMIT 1`,
+      key,
     );
     const row = rows[0];
     if (!row) return null;
     const { title, body } = this.pick(row, lang);
     return {
       id: row.id,
+      slug: row.slug,
       category: row.category,
       lang,
       title,

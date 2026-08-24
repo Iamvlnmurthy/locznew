@@ -1,4 +1,4 @@
-import { Controller, Get, NotFoundException, Param, ParseUUIDPipe, Query } from '@nestjs/common';
+import { Controller, Get, NotFoundException, Param, Query } from '@nestjs/common';
 import { ApiOperation, ApiPropertyOptional, ApiTags } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
 import { IsIn, IsLatitude, IsLongitude, IsOptional, IsString, MaxLength } from 'class-validator';
@@ -81,10 +81,10 @@ export class StoriesController {
   }
 
   @Public()
-  @Get(':id')
-  @ApiOperation({ summary: 'One LocZ story in the requested language' })
-  async byId(@Param('id', ParseUUIDPipe) id: string, @Query('lang') lang?: string) {
-    const story = await this.stories.byId(id, lang ?? 'en');
+  @Get(':key')
+  @ApiOperation({ summary: 'One LocZ story by slug or id, in the requested language' })
+  async byKey(@Param('key') key: string, @Query('lang') lang?: string) {
+    const story = await this.stories.byIdOrSlug(key, lang ?? 'en');
     if (!story) throw new NotFoundException('Story not found');
     return story;
   }
