@@ -1,7 +1,7 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import { Fragment } from 'react';
-import { notFound } from 'next/navigation';
+import { notFound, redirect } from 'next/navigation';
 import type { ListingSummary } from '@locz/shared-types';
 import { Icon } from '@/components/icons';
 import { ListingCard } from '@/components/listing-card';
@@ -90,6 +90,9 @@ export const dynamic = 'force-dynamic';
 
 export default async function DiscoveryAreaPage({ params }: { params: Promise<{ area: string }> }) {
   const { area: rawArea } = await params;
+  // The dedicated /news section (regenerated bodies, translations, topic/date filters) supersedes
+  // the old discover news feed — consolidate to one news surface and avoid duplicate content.
+  if (rawArea === 'news') redirect('/news');
   if (!destinations.includes(rawArea as Destination)) notFound();
   const area = rawArea as Destination;
 
