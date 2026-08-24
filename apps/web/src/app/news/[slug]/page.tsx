@@ -7,6 +7,7 @@ import { getTranslator } from '@/i18n';
 import { apiSafe, SITE_URL } from '@/lib/api';
 import { getLocale, localizedAlternates } from '@/lib/session';
 import { AdSlot } from '@/components/ad-slot';
+import { TrackView } from './track-view';
 
 // LocZ-regenerated news event. Content is OUR OWN rewrite (no redirect to the source publisher);
 // original outlets are credited at the foot of the article for attribution only.
@@ -19,40 +20,43 @@ interface NewsEvent {
   categories: string[];
   publishedAt: string | null;
   locz: boolean;
+  imageUrl?: string | null;
+  imageCredit?: string | null;
   sources: Array<{ publisher: string | null; url: string | null }>;
 }
 
 interface NewsStory {
   id: string;
+  slug: string;
   category: string;
   title: string;
   dek: string | null;
   body: string | null;
+  imageUrl: string | null;
+  imageCredit: string | null;
   publishedAt: string | null;
 }
 
-const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-
 async function loadEvent(slug: string, lang: string): Promise<NewsEvent | null> {
-  // The regenerated news_stories engine uses UUIDs and carries a proper article body. Keep
-  // legacy event slugs working during migration, but never manufacture body copy from a summary.
-  if (UUID.test(slug)) {
-    const story = await apiSafe<NewsStory>(
-      `/news/stories/${encodeURIComponent(slug)}?lang=${encodeURIComponent(lang)}`,
-      { revalidate: 300 },
-    );
-    if (story) {
-      return {
-        slug: story.id,
-        title: story.title,
-        summary: story.dek ?? story.body?.split(/\n{2,}/)[0]?.slice(0, 240) ?? null,
-        body: story.body,
-        categories: [story.category],
-        publishedAt: story.publishedAt,
-        locz: true,
-        sources: [],
-      };
-    }
+  // The regenerated news_stories engine carries a proper article body, image and translations, and
+  // resolves by slug or id. Try it first for every slug; fall back to a legacy NewsEvent otherwise.
+  const story = await apiSafe<NewsStory>(
+    `/news/stories/${encodeURIComponent(slug)}?lang=${encodeURIComponent(lang)}`,
+    { revalidate: 300 },
+  );
+  if (story) {
+    return {
+      slug: story.slug ?? story.id,
+      title: story.title,
+      summary: story.dek ?? story.body?.split(/\n{2,}/)[0]?.slice(0, 240) ?? null,
+      body: story.body,
+      imageUrl: story.imageUrl ?? null,
+      imageCredit: story.imageCredit ?? null,
+      categories: [story.category],
+      publishedAt: story.publishedAt,
+      locz: true,
+      sources: [],
+    };
   }
   return apiSafe<NewsEvent>(`/news/${encodeURIComponent(slug)}?lang=${encodeURIComponent(lang)}`, {
     revalidate: 300,
@@ -103,7 +107,7 @@ export default async function NewsEventPage({ params }: { params: Promise<{ slug
   return (
     <main className="news-article-page">
       <div className="container news-article">
-        <Link href="/discover/news" className="news-article__back">
+        <Link href="/news" className="news-article__back">
           <Icon name="arrow" /> {t('discoveryAreas.news')}
         </Link>
 
@@ -117,8 +121,18 @@ export default async function NewsEventPage({ params }: { params: Promise<{ slug
         </div>
 
         <h1 className="news-article__title">{event.title}</h1>
+        {event.summary ? <p className="news-article__dek">{event.summary}</p> : null}
 
         <AdSlot placement="NEWS_ARTICLE_TOP" contentScore={wordCount} />
+
+        {event.imageUrl ? (
+          <figure className="news-article__hero">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={event.imageUrl} alt="" />
+            {event.imageCredit ? <figcaption>Photo: {event.imageCredit}</figcaption> : null}
+          </figure>
+        ) : null}
+        <TrackView slug={event.slug} />
 
         {paragraphs.length > 0 ? (
           <div className="news-article__body">

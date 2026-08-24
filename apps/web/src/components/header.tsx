@@ -33,6 +33,7 @@ export async function Header({ locale }: { locale: Locale }) {
   const pathname = (await headers()).get('x-pathname') ?? '';
   const primaryLinks = [
     { href: '/discover/local-now', label: discoveryLabels['local-now'] },
+    { href: '/news', label: discoveryLabels.news },
     { href: '/business', label: discoveryLabels.businesses },
     { href: '/discover/jobs', label: discoveryLabels.jobs },
     { href: '/discover/services', label: discoveryLabels.services },
