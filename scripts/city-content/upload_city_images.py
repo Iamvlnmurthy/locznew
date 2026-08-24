@@ -30,7 +30,8 @@ IMG_ROOT = "/home/locz/city-images"  # holds images/<slug>/<file>
 
 ALIAS = {"prayagraj": "allahabad", "delhi": "new-delhi", "gurugram": "gurgaon",
          "bokaro-steel-city": "bokaro", "hubballi-dharwad": "dharwad",
-         "puducherry": "pondicherry", "kanpur": "kanpur-nagar"}
+         "puducherry": "pondicherry", "kanpur": "kanpur-nagar",
+         "bilaspur": "bilaspur-cgh"}
 
 src = sqlite3.connect("/home/locz/locz_cities.db"); src.row_factory = sqlite3.Row
 prod = psycopg.connect(open("/tmp/locz_dburl").read().strip(), connect_timeout=60)

@@ -15,6 +15,7 @@ ALIAS = {
     "prayagraj": "allahabad", "allahabad": "prayagraj",
     "delhi": "new-delhi", "gurugram": "gurgaon", "bokaro-steel-city": "bokaro",
     "hubballi-dharwad": "dharwad", "puducherry": "pondicherry", "kanpur": "kanpur-nagar",
+    "bilaspur": "bilaspur-cgh",
 }
 
 PROFILE = {

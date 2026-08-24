@@ -71,7 +71,18 @@ export class AdminUserDto {
   @ApiProperty() displayName!: string;
   @ApiProperty() status!: string;
   @ApiProperty({ type: [String] }) roles!: string[];
+  /** From the account's default saved location — the closest thing a user has to a "city". */
+  @ApiProperty({ nullable: true }) cityName!: string | null;
+  @ApiProperty({ nullable: true }) stateName!: string | null;
+  @ApiProperty({ nullable: true }) localityName!: string | null;
+  @ApiProperty() phoneVerified!: boolean;
+  @ApiProperty() emailVerified!: boolean;
+  @ApiProperty({ description: 'EN / TE / HI' }) preferredLanguage!: string;
+  @ApiProperty({ description: 'How they sell when not trading as a business' })
+  sellerType!: string;
   @ApiProperty() listingCount!: number;
+  @ApiProperty({ description: 'Businesses this account owns' }) businessCount!: number;
+  @ApiProperty({ description: 'Business claims this account has filed' }) claimCount!: number;
   @ApiProperty() reportsAgainst!: number;
   @ApiProperty() createdAt!: Date;
   @ApiProperty({ nullable: true }) lastActiveAt!: Date | null;

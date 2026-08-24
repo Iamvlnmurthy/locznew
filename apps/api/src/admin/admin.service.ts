@@ -407,7 +407,21 @@ export class AdminService {
         where,
         include: {
           roles: { include: { role: { select: { name: true } } } },
-          _count: { select: { listings: true } },
+          _count: {
+            select: { listings: true, ownedBusinesses: true, businessClaims: true },
+          },
+          // Where the person is, in their own terms: their default saved location's city
+          // (falling back to their most recent one). This is the closest thing a user has
+          // to a "city" — the account itself carries no address.
+          savedLocations: {
+            orderBy: [{ isDefault: 'desc' }, { createdAt: 'desc' }],
+            take: 1,
+            select: {
+              label: true,
+              city: { select: { name: true, slug: true, state: { select: { name: true } } } },
+              locality: { select: { name: true } },
+            },
+          },
         },
         orderBy: { createdAt: 'desc' },
         skip: (page - 1) * limit,
@@ -431,18 +445,30 @@ export class AdminService {
       );
     }
 
-    const items: AdminUserDto[] = users.map((user) => ({
-      id: user.id,
-      phone: user.phoneE164,
-      email: user.email,
-      displayName: user.displayName,
-      status: user.status,
-      roles: user.roles.map((assignment) => assignment.role.name),
-      listingCount: user._count.listings,
-      reportsAgainst: reportsByOwner.get(user.id) ?? 0,
-      createdAt: user.createdAt,
-      lastActiveAt: user.lastActiveAt,
-    }));
+    const items: AdminUserDto[] = users.map((user) => {
+      const location = user.savedLocations[0] ?? null;
+      return {
+        id: user.id,
+        phone: user.phoneE164,
+        email: user.email,
+        displayName: user.displayName,
+        status: user.status,
+        roles: user.roles.map((assignment) => assignment.role.name),
+        cityName: location?.city.name ?? null,
+        stateName: location?.city.state.name ?? null,
+        localityName: location?.locality?.name ?? null,
+        phoneVerified: user.phoneVerifiedAt != null,
+        emailVerified: user.emailVerifiedAt != null,
+        preferredLanguage: user.preferredLanguage,
+        sellerType: user.sellerType,
+        listingCount: user._count.listings,
+        businessCount: user._count.ownedBusinesses,
+        claimCount: user._count.businessClaims,
+        reportsAgainst: reportsByOwner.get(user.id) ?? 0,
+        createdAt: user.createdAt,
+        lastActiveAt: user.lastActiveAt,
+      };
+    });
 
     return { items, total };
   }

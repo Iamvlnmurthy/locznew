@@ -11,7 +11,16 @@ interface AdminUser {
   displayName: string;
   status: string;
   roles: string[];
+  cityName: string | null;
+  stateName: string | null;
+  localityName: string | null;
+  phoneVerified: boolean;
+  emailVerified: boolean;
+  preferredLanguage: string;
+  sellerType: string;
   listingCount: number;
+  businessCount: number;
+  claimCount: number;
   reportsAgainst: number;
   createdAt: string;
   lastActiveAt: string | null;
@@ -92,10 +101,15 @@ export default async function UsersPage({
             <thead>
               <tr>
                 <th>Name</th>
+                <th>Location</th>
                 <th>Phone</th>
+                <th>Verified</th>
                 <th>Status</th>
                 <th>Roles</th>
+                <th>Type</th>
                 <th style={{ textAlign: 'right' }}>Listings</th>
+                <th style={{ textAlign: 'right' }}>Businesses</th>
+                <th style={{ textAlign: 'right' }}>Claims</th>
                 <th style={{ textAlign: 'right' }}>Reports</th>
                 <th>Joined</th>
               </tr>
@@ -111,9 +125,29 @@ export default async function UsersPage({
                       </div>
                     ) : null}
                   </td>
+                  {/* The account's default saved location — its "city". Null when the person
+                      has not set one yet; an em dash keeps the cell from reading as a fault. */}
+                  <td>
+                    {user.cityName ? (
+                      <>
+                        {user.cityName}
+                        <div className="metric__hint" style={{ margin: 0 }}>
+                          {[user.localityName, user.stateName].filter(Boolean).join(', ')}
+                        </div>
+                      </>
+                    ) : (
+                      '—'
+                    )}
+                  </td>
                   {/* Null on an account created by Google sign-up. An empty cell reads as
                       a rendering fault; an em dash says the platform does not have one. */}
                   <td style={{ fontVariantNumeric: 'tabular-nums' }}>{user.phone ?? '—'}</td>
+                  {/* Trust signals: a verified phone or email is what separates a real
+                      account from a throwaway. Shown as text, never colour alone. */}
+                  <td style={{ fontSize: '0.7rem', color: 'var(--locz-text-secondary)' }}>
+                    <div>{user.phoneVerified ? '✓ phone' : '— phone'}</div>
+                    <div>{user.emailVerified ? '✓ email' : '— email'}</div>
+                  </td>
                   <td>
                     <span className={statusBadge(user.status)}>{user.status.toLowerCase()}</span>
                   </td>
@@ -123,8 +157,18 @@ export default async function UsersPage({
                       .map((role) => role.toLowerCase().replace(/_/g, ' '))
                       .join(', ') || 'user'}
                   </td>
+                  <td style={{ fontSize: '0.7rem', color: 'var(--locz-text-secondary)' }}>
+                    <div>{user.sellerType.toLowerCase()}</div>
+                    <div>{user.preferredLanguage.toLowerCase()}</div>
+                  </td>
                   <td style={{ textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>
                     {user.listingCount}
+                  </td>
+                  <td style={{ textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>
+                    {user.businessCount}
+                  </td>
+                  <td style={{ textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>
+                    {user.claimCount}
                   </td>
                   <td
                     style={{
