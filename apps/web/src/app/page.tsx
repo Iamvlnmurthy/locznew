@@ -22,9 +22,10 @@ interface LocalWeather {
 }
 
 interface NewsHeadline {
+  slug: string;
   title: string;
-  url: string;
-  source: string;
+  category: string;
+  ring: 'local' | 'city' | 'district' | 'state' | 'national';
   publishedAt: string | null;
 }
 
@@ -279,13 +280,19 @@ export default async function HomePage({
 
   // "Local Now" news — live local headlines for the area, pulled on demand and cached server-side
   // (never stored). Display-only: headline + publisher + a link back to the original.
-  const newsHeadlines = feedCity
-    ? ((
-        await apiSafe<{ headlines: NewsHeadline[] }>(
-          `/local-now/news?q=${encodeURIComponent(feedCity)}`,
-        )
-      )?.headlines ?? [])
-    : [];
+  // Our own regenerated news (news_stories), nearest-first for the reader's area — not raw Google
+  // News. Links go to the LocZ article, never the source.
+  const newsQuery = new URLSearchParams({ limit: '5', lang: locale });
+  if (city?.latitude && city?.longitude) {
+    newsQuery.set('latitude', String(city.latitude));
+    newsQuery.set('longitude', String(city.longitude));
+  }
+  const newsHeadlines =
+    (
+      await apiSafe<{ cards: NewsHeadline[] }>(`/news/stories?${newsQuery.toString()}`, {
+        revalidate: 120,
+      })
+    )?.cards ?? [];
 
   // "Local Now" alerts — official NDMA SACHET public-safety warnings naming the area. Verbatim,
   // display-only, hidden when there is nothing.
@@ -556,7 +563,7 @@ export default async function HomePage({
                   <span className="section-kicker">{t('home.localNewsKicker')}</span>
                   <h2 id="local-news-title">{t('home.localNewsTitle', { city: feedCity })}</h2>
                 </div>
-                <Link href="/discover/local-now" className="local-city-panel__action">
+                <Link href="/news" className="local-city-panel__action">
                   {t('feed.seeAll')} <Icon name="arrow" />
                 </Link>
               </div>
@@ -564,24 +571,25 @@ export default async function HomePage({
                 {newsHeadlines.slice(0, 5).map((item) => {
                   const when = relativeTime(item.publishedAt, locale);
                   return (
-                    <li key={item.url}>
-                      <a href={item.url} target="_blank" rel="noopener noreferrer">
+                    <li key={item.slug}>
+                      <Link href={`/news/${item.slug}`}>
                         <span className="local-news__dot" aria-hidden="true" />
                         <span className="local-news__body">
-                          <strong>{item.title}</strong>
+                          <strong className={locale === 'te' ? 'te' : undefined}>
+                            {item.title}
+                          </strong>
                           <span className="local-news__meta">
-                            {item.source}
+                            <span style={{ textTransform: 'capitalize' }}>{item.category}</span>
                             {when ? ` · ${when}` : ''}
                           </span>
                         </span>
                         <Icon name="arrow" />
-                      </a>
+                      </Link>
                     </li>
                   );
                 })}
               </ul>
-              {/* Google News is a brand name — identical in every language. */}
-              <p className="local-news__attribution">{'Google News'}</p>
+              <p className="local-news__attribution">LocZ News</p>
             </section>
           ) : null}
 
