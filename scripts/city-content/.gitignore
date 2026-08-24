@@ -8,3 +8,4 @@
 images/
 __pycache__/
 manifests/*-contact-sheet.*
+data/
