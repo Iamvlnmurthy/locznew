@@ -16,7 +16,9 @@ import io, json, os, sys, time, urllib.request, psycopg
 KEY = os.environ["SARVAM_KEY"]
 API = "https://api.sarvam.ai/v1/chat/completions"
 DRY = "apply" not in sys.argv
-BATCH = 40
+# 20, not 40: a 40-name response overran max_tokens and truncated the JSON, so a whole batch
+# came back either unparseable (Hindi) or with most keys missing and counted as "rejected".
+BATCH = 20
 TARGETS = {"nameTe": ("Telugu", range(0x0C00, 0x0C80)),
            "nameHi": ("Hindi (Devanagari)", range(0x0900, 0x0980))}
 
@@ -35,7 +37,7 @@ def ask(names, script_name):
               "mapping each input name to its transliteration.\n\n"
               + json.dumps(names, ensure_ascii=False))
     body = json.dumps({"model": "sarvam-105b-conversations", "temperature": 0,
-                       "max_tokens": 3000,
+                       "max_tokens": 8000,
                        "messages": [{"role": "user", "content": prompt}]}).encode()
     req = urllib.request.Request(API, body,
         {"Content-Type": "application/json", "Authorization": f"Bearer {KEY}"})
@@ -81,10 +83,17 @@ def main():
             written = rejected = 0
             for i in range(0, len(rows), BATCH):
                 chunk = rows[i:i + BATCH]
-                try:
-                    got = ask([r[1] for r in chunk], script_name)
-                except Exception as e:
-                    print(f"  batch {i//BATCH}: FAILED {type(e).__name__}", flush=True)
+                got = None
+                for attempt in range(3):  # Sarvam intermittently returns malformed JSON; retry
+                    try:
+                        got = ask([r[1] for r in chunk], script_name)
+                        break
+                    except Exception as e:
+                        if attempt == 2:
+                            print(f"  batch {i//BATCH}: FAILED {type(e).__name__}", flush=True)
+                        else:
+                            time.sleep(2)
+                if got is None:
                     continue
                 # Carry the source name alongside, only so the sample line below can
                 # print a pair that is actually a pair.
