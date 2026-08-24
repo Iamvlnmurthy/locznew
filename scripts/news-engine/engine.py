@@ -284,8 +284,8 @@ def cycle(limit=None):
                 src_url=src, src_publisher=it.get("source") or "", src_lang="en",
                 published_at=it.get("published"), status="PUBLISHED"))
             kept += 1; kept_here += 1
-            if kept % 10 == 0:
-                push(stories); stories = []      # flush in batches so a long cycle isn't all-or-nothing
+            if kept % 1 == 0:
+                push(stories); stories = []      # push each story immediately (incremental, nothing lost on interrupt)
             print(f"  KEEP [{feed['category']}/{feed['city']}] {title[:55]}", flush=True)
     n_final = push(stories)
     print(f"cycle done: kept {kept}, dropped {dropped}, final-batch {n_final}", flush=True)
