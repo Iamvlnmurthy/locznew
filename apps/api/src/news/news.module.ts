@@ -21,7 +21,9 @@ import { NewsProcessor } from './news.processor';
  */
 @Module({
   imports: [BullModule.registerQueue({ name: QUEUE_NEWS })],
-  controllers: [NewsController, StoriesController],
+  // StoriesController first: its static `news/stories` path must register before
+  // NewsController's `news/:slug`, or `:slug` swallows "stories".
+  controllers: [StoriesController, NewsController],
   providers: [
     StoriesService,
     GazetteerService,
