@@ -218,10 +218,24 @@ export class BusinessesService {
    * marketplace category tree), with a live count each — powers the city × category hub pages and
    * their cross-links. Ordered by size so the busiest categories lead.
    */
+  // The category tree + live counts change slowly (a new business shifts one count by 1) but the
+  // query aggregates 4.2M businesses (~10s cold). Home and every hub page hit it, so memoise it in
+  // the process for 30 min: the first caller pays, everyone else is instant, and it self-refreshes.
+  private categoriesCache: {
+    at: number;
+    data: Array<{ id: string; slug: string; name: string; count: number }>;
+  } | null = null;
+
   async businessCategories(): Promise<
     Array<{ id: string; slug: string; name: string; count: number }>
   > {
-    return this.prisma.$queryRaw<Array<{ id: string; slug: string; name: string; count: number }>>`
+    const TTL_MS = 30 * 60 * 1000;
+    if (this.categoriesCache && Date.now() - this.categoriesCache.at < TTL_MS) {
+      return this.categoriesCache.data;
+    }
+    const data = await this.prisma.$queryRaw<
+      Array<{ id: string; slug: string; name: string; count: number }>
+    >`
       -- count(*) rather than count(b.*): counting the row forces the heap to be read, which
       -- turned this into a 3.5GB sequential scan once the category tree grew from 45 entries
       -- to 1,581. count(*) can be answered from businesses_category_live_idx alone.
@@ -231,6 +245,8 @@ export class BusinessesService {
       GROUP BY c.id, c.slug, c.name
       ORDER BY count DESC
     `;
+    this.categoriesCache = { at: Date.now(), data };
+    return data;
   }
 
   async categoryCounts(scope: {
