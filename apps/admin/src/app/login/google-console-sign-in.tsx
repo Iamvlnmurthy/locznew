@@ -1,13 +1,15 @@
 'use client';
 
-import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { googleLoginAction } from './actions';
 
 interface GoogleIdentity {
   accounts: {
     id: {
-      initialize(config: { client_id: string; callback: (r: { credential: string }) => void }): void;
+      initialize(config: {
+        client_id: string;
+        callback: (r: { credential: string }) => void;
+      }): void;
       renderButton(parent: HTMLElement, options: Record<string, unknown>): void;
     };
   };
@@ -24,7 +26,6 @@ interface GoogleIdentity {
  * may use the console: the API verifies Google's signature, and the role check runs after.
  */
 export function GoogleConsoleSignIn({ clientId }: { clientId: string }) {
-  const router = useRouter();
   const container = useRef<HTMLDivElement>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -32,15 +33,19 @@ export function GoogleConsoleSignIn({ clientId }: { clientId: string }) {
     const result = await googleLoginAction(response.credential);
 
     if (result.redirectTo) {
-      // Navigated here rather than in the action: a server action called from a click
-      // handler cannot redirect, because Next signals redirects by throwing and only acts
-      // on that when the action runs through a form.
-      router.replace(result.redirectTo);
+      // A HARD navigation, not router.replace. The action can't redirect (Next signals a
+      // redirect by throwing, only honoured through a form), but a soft client navigation
+      // races the session cookie the action just set: the destination RSC is fetched before
+      // the Set-Cookie lands, the middleware sees no session, and bounces back to /login — which
+      // looked exactly like "signed in with Google but nothing happened". A full page load sends
+      // the cookie, so the middleware lets you in. (Email/password already works because it exits
+      // through a server redirect(), which is a hard navigation.)
+      window.location.assign(result.redirectTo);
       return;
     }
 
     setError(result.error ?? 'Could not sign in with Google.');
-  }, [router]);
+  }, []);
 
   useEffect(() => {
     if (!clientId || !container.current) return;
