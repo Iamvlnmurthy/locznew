@@ -1,4 +1,3 @@
-import { premiumBusinessBanner } from '@/lib/premium-banner-catalog';
 import { premiumCategoryArtwork, premiumCategoryNameToSlug } from '@/lib/premium-icon-catalog';
 
 export type BusinessListingArtwork = Readonly<{

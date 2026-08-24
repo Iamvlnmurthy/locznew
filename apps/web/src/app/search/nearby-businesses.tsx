@@ -7,6 +7,8 @@ import { Fragment, useCallback, useEffect, useRef, useState } from 'react';
 import { Icon } from '@/components/icons';
 import { businessListingArtwork } from '@/lib/business-listing-artwork';
 import { loadNearbyBusinesses, type NearbyBusiness } from './businesses-actions';
+import { AdSlot } from '@/components/ad-slot';
+import type { PlacementId } from '@/lib/ads/placements';
 
 /**
  * "Businesses near you" — infinite scroll, 20 at a time, scoped to the viewer's pincode.
@@ -64,6 +66,7 @@ export function NearbyBusinesses({
   allCategoriesLabel,
   verifiedOnlyLabel,
   emptyLabel,
+  adPlacement,
 }: {
   q?: string;
   pincode?: string;
@@ -86,6 +89,8 @@ export function NearbyBusinesses({
   allCategoriesLabel: string;
   verifiedOnlyLabel: string;
   emptyLabel: string;
+  /** A single curated unit after the fifth organic card; it never repeats on pagination. */
+  adPlacement?: PlacementId;
 }) {
   const bandLabel = (index: number): string =>
     index === 0
@@ -320,6 +325,9 @@ export function NearbyBusinesses({
                     </div>
                   </div>
                 </article>
+                {adPlacement && index === 4 && items.length >= 6 ? (
+                  <AdSlot placement={adPlacement} contentScore={items.length} />
+                ) : null}
               </Fragment>
             );
           });

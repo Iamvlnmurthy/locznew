@@ -4,13 +4,10 @@ AdSense is approved. The kill-switch and client id are already set on the VPS (`
 so ads go live the moment `apps/web` builds and deploys. This brief is the `apps/web` work to make the
 placements correct. **Owner: Codex** (it's all `apps/web` + the `AdSlot` component). Backend/env is done.
 
-## 0. BLOCKER first — master's web build is broken
+## 0. Build blocker — resolved 2026-08-24
 
-`npm run build -w @locz/web` currently fails prerendering `/_global-error`:
-`TypeError: Cannot read properties of null (reading 'useContext')`. It fails with ads **off** too, so
-it is **not** the ad change — it's a pre-existing `apps/web` issue, and your verified `/cities` tree is
-not yet on master (master HEAD is the news-engine commit). **Push your building tree / fix the
-`/_global-error` prerender first** — nothing about ads can deploy until web builds.
+The custom `global-error.tsx` boundary is present and `npm run build -w @locz/web` now passes with
+the curated ad configuration enabled. Keep the production build in the deployment gate.
 
 ## 1. The 4 ad units you created (client `ca-pub-8770090838058652`)
 
@@ -21,8 +18,7 @@ not yet on master (master HEAD is the news-engine commit). **Push your building 
 | `5110853266` | **In-article** (native, in body) | `data-ad-format="fluid"` `data-ad-layout="in-article"`          |
 | `4022956703` | **Multiplex** (related grid)     | `data-ad-format="autorelaxed"`                                  |
 
-Today `AdSlot` (`apps/web/src/components/ad-slot.tsx`) hard-codes only the **display** attributes, so only
-`2908301106` renders correctly. The other three render wrong until the component emits their attributes.
+`AdSlot` (`apps/web/src/components/ad-slot.tsx`) now emits the exact attributes for all four formats.
 
 ## 2. Extend `AdSlot` to support formats (small, contained change)
 
@@ -57,7 +53,7 @@ New placements for the **news pages** (coming — the `news_stories` feed + arti
 | ---------------------- | ---------- | ------------ | ------------------------------------------ |
 | `NEWS_ARTICLE_TOP`     | display    | `2908301106` | `NEXT_PUBLIC_AD_SLOT_NEWS_ARTICLE_TOP`     |
 | `NEWS_ARTICLE_IN_BODY` | in-article | `5110853266` | `NEXT_PUBLIC_AD_SLOT_NEWS_ARTICLE_IN_BODY` |
-| `NEWS_FEED_IN_LIST`    | in-feed    | `5039640428` | `NEWS_FEED_IN_LIST`                        |
+| `NEWS_FEED_IN_LIST`    | in-feed    | `5039640428` | `NEXT_PUBLIC_AD_SLOT_NEWS_FEED_IN_LIST`    |
 | `NEWS_ARTICLE_RELATED` | multiplex  | `4022956703` | `NEXT_PUBLIC_AD_SLOT_NEWS_ARTICLE_RELATED` |
 
 The **in-article** unit is the important one for news: one ad after ~paragraph 2, never more than the body

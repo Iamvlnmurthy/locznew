@@ -7,11 +7,12 @@ import Script from 'next/script';
 
 // Public by design: this id appears in the network tab of every page that loads it.
 const GA_ID = process.env.NEXT_PUBLIC_GA_ID ?? 'G-47GLPVCGQ8';
-import { ADS_ENABLED } from '@/lib/ads/placements';
+import { ADS_CLIENT, ADS_ENABLED } from '@/lib/ads/placements';
 import { Header } from '@/components/header';
 import { Icon } from '@/components/icons';
 import { getTranslator } from '@/i18n';
 import { SITE_URL } from '@/lib/api';
+import { CITY_GUIDE_CATALOG } from '@/lib/city-guide-catalog';
 import { headers } from 'next/headers';
 import { getLocale, getSelectedCity, localizedAlternates } from '@/lib/session';
 import { LocationPrompt } from '@/components/location-prompt';
@@ -99,6 +100,7 @@ export const viewport: Viewport = {
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
   const [locale, selectedCity] = await Promise.all([getLocale(), getSelectedCity()]);
   const t = getTranslator(locale);
+  const guideCities = CITY_GUIDE_CATALOG.filter((city) => city.tier === 1);
 
   return (
     // `lang` is set from the user's locale so screen readers pronounce Telugu and Hindi
@@ -143,10 +145,10 @@ export default async function RootLayout({ children }: { children: React.ReactNo
             pulls in) was ~280 KiB of main-thread work on every page for zero rendered
             ads — the bulk of the site's Total Blocking Time. It returns the moment
             ads are enabled, which is also the only time an ad slot renders. */}
-        {ADS_ENABLED && (
+        {ADS_ENABLED && ADS_CLIENT && (
           <script
             async
-            src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-8770090838058652"
+            src={`https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${encodeURIComponent(ADS_CLIENT)}`}
             crossOrigin="anonymous"
           />
         )}
@@ -208,6 +210,21 @@ export default async function RootLayout({ children }: { children: React.ReactNo
               </div>
             </nav>
           </div>
+          {guideCities.length ? (
+            <nav className="container footer__cities" aria-label={t('footer.cities')}>
+              <strong>
+                <Link href="/cities">{t('footer.cities')}</Link>
+              </strong>
+              <div>
+                {guideCities.map((city) => (
+                  <Link key={city.slug} href={`/in/${city.slug}`}>
+                    {city.name}
+                  </Link>
+                ))}
+                <Link href="/cities">{t('cityDirectory.allTitle')} →</Link>
+              </div>
+            </nav>
+          ) : null}
           <div className="container footer__bottom">
             <p>© {new Date().getFullYear()} LocZ</p>
             <span className="footer__local-promise">

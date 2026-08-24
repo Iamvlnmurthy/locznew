@@ -10,11 +10,40 @@ import { Icon } from './icons';
  */
 export function LocationChip({
   cityName,
+  citySlug,
+  cityTier,
   changeLabel,
+  exploreLabel,
 }: {
   cityName: string | null;
+  citySlug?: string | null;
+  cityTier?: 1 | 2 | 3;
   changeLabel: string;
+  exploreLabel?: string;
 }) {
+  const hasGuide = Boolean(citySlug && (cityTier === 1 || cityTier === 2));
+
+  if (hasGuide) {
+    return (
+      <div className="location-chip location-chip--guide">
+        <Link
+          href={`/in/${citySlug}`}
+          className="location-chip__city"
+          title={exploreLabel ?? cityName ?? changeLabel}
+          aria-label={exploreLabel ?? cityName ?? changeLabel}
+        >
+          <Icon name="location" width="15" height="15" />
+          <span>{cityName}</span>
+        </Link>
+        <Link href="/location" className="location-chip__change" aria-label={changeLabel}>
+          <span className="location-chip__chevron" aria-hidden="true">
+            ⌄
+          </span>
+        </Link>
+      </div>
+    );
+  }
+
   return (
     <Link
       href="/location"

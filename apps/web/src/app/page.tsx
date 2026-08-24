@@ -11,6 +11,7 @@ import { loadNearbyBusinesses } from './search/businesses-actions';
 import { RADIUS_OPTIONS_KM, getLocale, getSelectedCity, getSelectedRadius } from '@/lib/session';
 import { RadiusSelector } from '@/components/radius-selector';
 import { DiscoveryMotionLink } from '@/components/discovery-motion-link';
+import { AdSlot } from '@/components/ad-slot';
 
 interface LocalWeather {
   tempC: number;
@@ -218,12 +219,24 @@ export default async function HomePage({
   const homeCity =
     city ??
     (
-      await apiSafe<Array<{ id: string; name: string; slug: string }>>(
+      await apiSafe<Array<{ id: string; name: string; slug: string; tier: 1 | 2 | 3 }>>(
         '/locations/cities?launchedOnly=true&limit=1',
         { revalidate: 3600 },
       )
     )?.[0] ??
     null;
+  const homeCityRecord =
+    homeCity?.slug && homeCity.tier === undefined
+      ? await apiSafe<{ tier: 1 | 2 | 3 }>(
+          `/locations/cities/${encodeURIComponent(homeCity.slug)}`,
+          { revalidate: 86400 },
+        )
+      : null;
+  const hasCityGuide = Boolean(
+    homeCity?.slug &&
+    ((homeCity.tier ?? homeCityRecord?.tier) === 1 ||
+      (homeCity.tier ?? homeCityRecord?.tier) === 2),
+  );
   const [bizCategories, cityCatCounts] = await Promise.all([
     apiSafe<Array<{ id: string; slug: string; name: string }>>('/businesses/categories', {
       revalidate: 86400,
@@ -315,9 +328,20 @@ export default async function HomePage({
         <div className="container home-hero__inner">
           <div className="home-hero__copy">
             <span className="home-hero__eyebrow">{t('home.heroEyebrow')}</span>
-            <span className="home-discovery__location">
-              <Icon name="location" /> {feedCity}
-            </span>
+            {hasCityGuide && homeCity ? (
+              <Link
+                href={`/in/${homeCity.slug}`}
+                className="home-discovery__location home-discovery__location--guide"
+                aria-label={t('location.exploreCity', { city: homeCity.name })}
+              >
+                <Icon name="location" /> {feedCity}
+                <small>{t('location.exploreCity', { city: homeCity.name })} →</small>
+              </Link>
+            ) : (
+              <span className="home-discovery__location">
+                <Icon name="location" /> {feedCity}
+              </span>
+            )}
             <h1>{t('home.exploreTitle', { city: feedCity })}</h1>
             <p className="home-hero__subtitle">{t('home.heroSubtitle', { city: feedCity })}</p>
             <RadiusSelector
@@ -612,6 +636,11 @@ export default async function HomePage({
               </>
             )}
 
+            <AdSlot
+              placement="HOME_AFTER_LOCAL_NOW"
+              contentScore={newsHeadlines.length + visibleFeedItems.length}
+            />
+
             {homeBusinesses.items.length > 0 ? (
               <section className="search-businesses" aria-labelledby="home-businesses-title">
                 <div className="search-businesses__head">
@@ -650,6 +679,8 @@ export default async function HomePage({
                 />
               </section>
             ) : null}
+
+            <AdSlot placement="HOME_AFTER_BUSINESSES" contentScore={homeBusinesses.items.length} />
 
             <section className="home-intents" aria-labelledby="home-intents-title">
               <div className="home-intents__intro">

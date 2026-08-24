@@ -13,6 +13,7 @@
  */
 
 export type Device = 'mobile' | 'desktop' | 'both';
+export type AdFormat = 'display' | 'in-feed' | 'in-article' | 'multiplex';
 
 export type PlacementId =
   | 'BUSINESS_AFTER_ABOUT'
@@ -20,9 +21,15 @@ export type PlacementId =
   | 'BUSINESS_BEFORE_NEARBY'
   | 'HOME_AFTER_LOCAL_NOW'
   | 'HOME_AFTER_BUSINESSES'
-  | 'SEARCH_IN_FEED';
+  | 'SEARCH_IN_FEED'
+  | 'NEWS_ARTICLE_TOP'
+  | 'NEWS_ARTICLE_IN_BODY'
+  | 'NEWS_FEED_IN_LIST'
+  | 'NEWS_ARTICLE_RELATED';
 
 export interface Placement {
+  /** The AdSense unit family controls the exact data attributes emitted by AdSlot. */
+  readonly format: AdFormat;
   /** Which devices may show this one. Mobile is deliberately more restricted. */
   readonly device: Device;
   /**
@@ -48,6 +55,7 @@ export interface Placement {
 export const PLACEMENTS: Readonly<Record<PlacementId, Placement>> = {
   // After the reader has the identity, the description and the primary actions.
   BUSINESS_AFTER_ABOUT: {
+    format: 'in-article',
     device: 'both',
     reserve: { mobile: 280, desktop: 280 },
     lazy: false,
@@ -57,6 +65,7 @@ export const PLACEMENTS: Readonly<Record<PlacementId, Placement>> = {
   // the FAQ, which is a lot of advertising for a page someone opened to get a
   // phone number.
   BUSINESS_AFTER_LOCATION: {
+    format: 'display',
     device: 'desktop',
     reserve: { mobile: 280, desktop: 280 },
     lazy: true,
@@ -65,28 +74,60 @@ export const PLACEMENTS: Readonly<Record<PlacementId, Placement>> = {
   // Before the nearby list, never inside it. Those internal links matter for both
   // navigation and SEO, and an ad among them would read as a result.
   BUSINESS_BEFORE_NEARBY: {
+    format: 'multiplex',
     device: 'both',
-    reserve: { mobile: 280, desktop: 250 },
+    reserve: { mobile: 360, desktop: 340 },
     lazy: true,
     minContentScore: 1,
   },
   HOME_AFTER_LOCAL_NOW: {
+    format: 'display',
     device: 'both',
     reserve: { mobile: 280, desktop: 250 },
     lazy: true,
-    minContentScore: 0,
+    minContentScore: 4,
   },
   HOME_AFTER_BUSINESSES: {
+    format: 'in-feed',
     device: 'both',
-    reserve: { mobile: 280, desktop: 250 },
+    reserve: { mobile: 190, desktop: 190 },
     lazy: true,
-    minContentScore: 0,
+    minContentScore: 6,
   },
   SEARCH_IN_FEED: {
+    format: 'in-feed',
+    device: 'both',
+    reserve: { mobile: 190, desktop: 190 },
+    lazy: true,
+    minContentScore: 6,
+  },
+  NEWS_ARTICLE_TOP: {
+    format: 'display',
     device: 'both',
     reserve: { mobile: 280, desktop: 250 },
+    lazy: false,
+    minContentScore: 250,
+  },
+  NEWS_ARTICLE_IN_BODY: {
+    format: 'in-article',
+    device: 'both',
+    reserve: { mobile: 260, desktop: 280 },
     lazy: true,
-    minContentScore: 0,
+    minContentScore: 500,
+  },
+  NEWS_FEED_IN_LIST: {
+    format: 'in-feed',
+    device: 'both',
+    reserve: { mobile: 190, desktop: 190 },
+    lazy: true,
+    minContentScore: 5,
+  },
+  NEWS_ARTICLE_RELATED: {
+    format: 'multiplex',
+    device: 'both',
+    reserve: { mobile: 360, desktop: 340 },
+    lazy: true,
+    minContentScore: 700,
   },
 };
 
@@ -113,6 +154,10 @@ const SLOT_ENV: Record<PlacementId, string> = {
   HOME_AFTER_LOCAL_NOW: 'NEXT_PUBLIC_AD_SLOT_HOME_AFTER_LOCAL_NOW',
   HOME_AFTER_BUSINESSES: 'NEXT_PUBLIC_AD_SLOT_HOME_AFTER_BUSINESSES',
   SEARCH_IN_FEED: 'NEXT_PUBLIC_AD_SLOT_SEARCH_IN_FEED',
+  NEWS_ARTICLE_TOP: 'NEXT_PUBLIC_AD_SLOT_NEWS_ARTICLE_TOP',
+  NEWS_ARTICLE_IN_BODY: 'NEXT_PUBLIC_AD_SLOT_NEWS_ARTICLE_IN_BODY',
+  NEWS_FEED_IN_LIST: 'NEXT_PUBLIC_AD_SLOT_NEWS_FEED_IN_LIST',
+  NEWS_ARTICLE_RELATED: 'NEXT_PUBLIC_AD_SLOT_NEWS_ARTICLE_RELATED',
 };
 
 export function slotIdFor(placement: PlacementId): string {

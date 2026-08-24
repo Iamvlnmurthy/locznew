@@ -327,6 +327,7 @@ class City {
     required this.latitude,
     required this.longitude,
     required this.isLaunched,
+    this.tier,
     this.nameTe,
     this.nameHi,
   });
@@ -338,6 +339,7 @@ class City {
   final double latitude;
   final double longitude;
   final bool isLaunched;
+  final int? tier;
   final String? nameTe;
   final String? nameHi;
 
@@ -349,6 +351,7 @@ class City {
         latitude: (json['latitude'] as num).toDouble(),
         longitude: (json['longitude'] as num).toDouble(),
         isLaunched: json['isLaunched'] as bool? ?? false,
+        tier: (json['tier'] as num?)?.toInt(),
         nameTe: json['nameTe'] as String?,
         nameHi: json['nameHi'] as String?,
       );

@@ -9,6 +9,7 @@ import '../../features/auth/presentation/register_screen.dart';
 import '../../features/explore/presentation/explore_screen.dart';
 import '../../features/auth/presentation/sign_in_screen.dart';
 import '../../features/chat/presentation/chat_screens.dart';
+import '../../features/city_guide/presentation/city_guide_screen.dart';
 import '../../features/feed/presentation/home_screen.dart';
 import '../../features/listings/presentation/business_detail_screen.dart';
 import '../../features/listings/presentation/listing_detail_screen.dart';
@@ -156,6 +157,14 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/location',
         pageBuilder: (context, state) => _motionPage(context, state, const CityPickerScreen()),
+      ),
+      GoRoute(
+        path: '/in/:city',
+        pageBuilder: (context, state) => _motionPage(
+          context,
+          state,
+          CityGuideScreen(slug: state.pathParameters['city']!),
+        ),
       ),
       GoRoute(
         path: '/notifications',

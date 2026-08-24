@@ -226,6 +226,8 @@ export interface City {
   districtName: string | null;
   latitude: number;
   longitude: number;
+  /** Discovery tier returned by every city and coordinate-resolution endpoint. */
+  tier: 1 | 2 | 3;
   isLaunched: boolean;
   distanceMeters?: number;
 }

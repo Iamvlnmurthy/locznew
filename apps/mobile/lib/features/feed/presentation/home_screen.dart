@@ -83,6 +83,17 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                           kmLabel: strings('common.km'),
                         ),
                       ),
+                      if (city?.slug != null && (city?.tier == 1 || city?.tier == 2)) ...[
+                        const SizedBox(height: 14),
+                        LoczEntrance(
+                          delay: const Duration(milliseconds: 55),
+                          offset: const Offset(0, 9),
+                          child: _CityGuideHomeCard(
+                            city: city!.name,
+                            onTap: () => context.push('/in/${city.slug}'),
+                          ),
+                        ),
+                      ],
                       const SizedBox(height: 18),
                       LoczEntrance(
                         delay: const Duration(milliseconds: 90),
@@ -126,6 +137,81 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               ],
             );
           },
+        ),
+      ),
+    );
+  }
+}
+
+class _CityGuideHomeCard extends StatelessWidget {
+  const _CityGuideHomeCard({required this.city, required this.onTap});
+
+  final String city;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final strings = Strings.of(context);
+    final scheme = Theme.of(context).colorScheme;
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(18),
+        child: Ink(
+          padding: const EdgeInsets.fromLTRB(15, 13, 13, 13),
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [
+                scheme.primaryContainer.withValues(alpha: .82),
+                scheme.surface,
+              ],
+            ),
+            borderRadius: BorderRadius.circular(18),
+            border: Border.all(color: scheme.primary.withValues(alpha: .15)),
+          ),
+          child: Row(
+            children: [
+              Container(
+                width: 42,
+                height: 42,
+                decoration: BoxDecoration(
+                  color: scheme.primary,
+                  borderRadius: BorderRadius.circular(13),
+                ),
+                child: Icon(
+                  Icons.location_city_rounded,
+                  color: scheme.onPrimary,
+                  size: 21,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      strings('cityGuide.exploreCity', {'city': city}),
+                      style: Theme.of(context).textTheme.titleSmall,
+                    ),
+                    const SizedBox(height: 3),
+                    Text(
+                      strings('cityGuide.homeHint'),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: Theme.of(context).textTheme.labelSmall,
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 8),
+              Icon(
+                Icons.arrow_forward_rounded,
+                color: scheme.primary,
+                size: 19,
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -2064,7 +2150,10 @@ class _LocalDealsSectionState extends ConsumerState<_LocalDealsSection> {
                                 ),
                                 if (deal.couponCode != null && deal.couponCode!.isNotEmpty)
                                   Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 8,
+                                      vertical: 3,
+                                    ),
                                     decoration: BoxDecoration(
                                       borderRadius: BorderRadius.circular(999),
                                       border: Border.all(

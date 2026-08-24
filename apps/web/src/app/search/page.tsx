@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { Fragment } from 'react';
 import Link from 'next/link';
 import type { Category, ListingSummary } from '@locz/shared-types';
 import { ListingCard } from '@/components/listing-card';
@@ -18,6 +19,7 @@ import { SaveSearch } from './save-search';
 import { NearbyBusinesses } from './nearby-businesses';
 import { loadNearbyBusinesses } from './businesses-actions';
 import { RecentSearchInput } from '@/components/recent-search-input';
+import { AdSlot } from '@/components/ad-slot';
 
 interface SearchResult {
   items: ListingSummary[];
@@ -315,6 +317,7 @@ export default async function SearchPage({
                   allCategoriesLabel={s.allCategories}
                   verifiedOnlyLabel={s.verifiedOnly}
                   emptyLabel={s.noBusinessesMatch}
+                  adPlacement="SEARCH_IN_FEED"
                 />
               </section>
             ) : null}
@@ -363,13 +366,19 @@ export default async function SearchPage({
                   </Link>
                 </div>
                 <div className={`card-grid${isSparse ? ' card-grid--sparse' : ''}`}>
-                  {result.items.map((listing) => (
-                    <ListingCard
-                      key={listing.id}
-                      listing={listing}
-                      t={t}
-                      variant={isSparse ? 'wide' : 'standard'}
-                    />
+                  {result.items.map((listing, index) => (
+                    <Fragment key={listing.id}>
+                      <ListingCard
+                        listing={listing}
+                        t={t}
+                        variant={isSparse ? 'wide' : 'standard'}
+                      />
+                      {businessPage.items.length === 0 &&
+                      index === 4 &&
+                      result.items.length >= 6 ? (
+                        <AdSlot placement="SEARCH_IN_FEED" contentScore={result.items.length} />
+                      ) : null}
+                    </Fragment>
                   ))}
                 </div>
 

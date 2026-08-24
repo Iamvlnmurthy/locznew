@@ -1819,10 +1819,14 @@
   overflow: hidden;
 }
 
-/* An unfilled slot collapses rather than leaving a hole. AdSense marks these
-   with data-ad-status="unfilled" once it has decided. */
+/* Preserve the reserved box when AdSense declines a request. Collapsing it after
+   it entered the viewport creates the exact layout shift the reservation prevents. */
 .ad-slot:has(.adsbygoogle[data-ad-status='unfilled']) {
-  display: none;
+  visibility: hidden;
+}
+
+.ad-slot--in-feed {
+  grid-column: 1 / -1;
 }
 
 .ad-slot--mobile-only {

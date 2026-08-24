@@ -91,6 +91,7 @@ export function LocationPicker({
         id: city.id,
         name: city.name,
         slug: city.slug,
+        tier: city.tier,
         latitude: city.latitude,
         longitude: city.longitude,
       });
@@ -117,6 +118,7 @@ export function LocationPicker({
         id: resolved.cityId ?? '',
         name: resolved.cityName ?? `${resolved.name}, ${resolved.districtName}`,
         slug: resolvedCity?.slug ?? '',
+        tier: resolvedCity?.tier,
         latitude: resolved.latitude,
         longitude: resolved.longitude,
         pincode: resolved.code,
@@ -160,6 +162,7 @@ export function LocationPicker({
             id: result.city.id,
             name: displayName,
             slug: result.city.slug,
+            tier: result.city.tier,
             latitude: position.coords.latitude,
             longitude: position.coords.longitude,
             pincode: result.pincode?.code,

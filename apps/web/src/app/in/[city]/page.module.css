@@ -1,0 +1,219 @@
+.page {
+  --city-ink: #12372f;
+  --city-green: #0d6657;
+  --city-mint: #eaf4ef;
+  --city-coral: #f36b56;
+  --city-brass: #c99942;
+  --city-paper: #fbfaf6;
+  color: var(--city-ink);
+  background:
+    radial-gradient(circle at 8% 26%, rgb(216 234 224 / 55%), transparent 25rem),
+    var(--city-paper);
+}
+
+.hero {
+  min-height: min(680px, calc(100svh - 72px));
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  display: grid;
+  color: white;
+  background: #102e28;
+}
+
+.heroImage { object-fit: cover; object-position: center; z-index: -3; }
+.heroFallback { position: absolute; inset: 0; z-index: -3; background: radial-gradient(circle at 74% 24%, rgb(201 153 66 / 42%), transparent 25%), linear-gradient(125deg, #0d3029 0%, #176c5a 56%, #0b2823 100%); }
+.heroFallback::before { content: ''; position: absolute; inset: 0; background: repeating-linear-gradient(115deg, transparent 0 44px, rgb(255 255 255 / 3%) 45px 46px); }
+.heroVeil { position: absolute; inset: 0; z-index: -2; background: linear-gradient(90deg, rgb(6 31 27 / 92%) 0%, rgb(7 34 29 / 78%) 38%, rgb(7 26 23 / 25%) 72%, rgb(7 26 23 / 48%) 100%), linear-gradient(0deg, rgb(6 29 25 / 72%) 0%, transparent 44%); }
+.heroInner { position: relative; width: 100%; min-height: inherit; padding-block: clamp(32px, 5vw, 72px) clamp(80px, 8vw, 120px); display: flex; flex-direction: column; justify-content: space-between; }
+.breadcrumbs { display: flex; gap: 10px; align-items: center; color: rgb(255 255 255 / 72%); font-size: 13px; font-weight: 600; }
+.breadcrumbs a { color: white; }
+.heroCopy { width: min(730px, 66vw); margin-top: auto; }
+.kicker, .sectionKicker { display: block; color: var(--city-coral); font-size: 12px; line-height: 1.2; font-weight: 800; letter-spacing: .13em; text-transform: uppercase; }
+.heroCopy h1 { max-width: 12ch; margin: 13px 0 18px; font-size: clamp(58px, 7.4vw, 112px); line-height: .87; letter-spacing: -.065em; color: white; text-wrap: balance; }
+.heroCopy p { max-width: 650px; margin: 0; color: rgb(255 255 255 / 83%); font-size: clamp(18px, 1.45vw, 23px); line-height: 1.55; }
+.heroActions { margin-top: 32px; display: flex; align-items: center; gap: 16px; }
+.heroActions :global(.btn) { min-height: 52px; padding-inline: 23px; box-shadow: 0 16px 36px rgb(0 0 0 / 20%); }
+.secondaryAction { min-height: 52px; padding: 0 19px; display: inline-flex; align-items: center; gap: 10px; border: 1px solid rgb(255 255 255 / 32%); border-radius: 999px; color: white; font-weight: 700; backdrop-filter: blur(12px); background: rgb(255 255 255 / 8%); }
+.heroPlace { position: absolute; right: 0; bottom: clamp(78px, 8vw, 116px); min-width: 220px; padding: 15px 18px; display: flex; gap: 12px; align-items: center; border: 1px solid rgb(255 255 255 / 26%); border-radius: 18px; background: rgb(10 39 33 / 65%); box-shadow: 0 24px 60px rgb(0 0 0 / 22%); backdrop-filter: blur(18px); }
+.heroPlace > svg { color: #f3c26e; }
+.heroPlace span { display: grid; gap: 3px; }
+.heroPlace strong { font-size: 15px; }
+.heroPlace small { color: rgb(255 255 255 / 65%); }
+.imageCredit { display: block; color: #6f7e79; font-size: 10px; line-height: 1.4; }
+.hero > .imageCredit { position: absolute; right: 18px; bottom: 14px; z-index: 2; }
+.imageCreditDark { color: rgb(255 255 255 / 64%); text-shadow: 0 1px 2px rgb(0 0 0 / 65%); }
+
+.facts { position: relative; z-index: 3; margin-top: -42px; display: grid; grid-template-columns: repeat(4, 1fr); border: 1px solid rgb(25 80 68 / 13%); border-radius: 24px; overflow: hidden; background: rgb(255 255 255 / 96%); box-shadow: 0 24px 70px rgb(27 57 49 / 12%); }
+.fact { min-height: 104px; padding: 22px 25px; display: flex; align-items: center; gap: 15px; }
+.fact + .fact { border-left: 1px solid rgb(25 80 68 / 12%); }
+.fact > span { width: 42px; height: 42px; flex: 0 0 auto; display: grid; place-items: center; border-radius: 13px; color: var(--city-green); background: var(--city-mint); }
+.fact svg { width: 19px; height: 19px; }
+.fact div { min-width: 0; display: grid; gap: 4px; }
+.fact small { color: #72827d; font-size: 11px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
+.fact strong { overflow: hidden; color: var(--city-ink); font-size: 17px; text-overflow: ellipsis; white-space: nowrap; }
+
+.body { padding-block: clamp(72px, 8vw, 120px); display: grid; gap: clamp(76px, 9vw, 132px); }
+.about { display: grid; grid-template-columns: minmax(0, 1.45fr) minmax(320px, .75fr); gap: clamp(50px, 8vw, 120px); align-items: start; }
+.about h2, .sectionHeading h2, .mapCopy h2, .directory h2 { margin: 12px 0 23px; color: var(--city-ink); font-size: clamp(34px, 4vw, 58px); line-height: 1.02; letter-spacing: -.045em; text-wrap: balance; }
+.about > div > p { color: #50645e; font-size: 17px; line-height: 1.8; }
+.famousCard { position: relative; overflow: hidden; padding: 38px; border: 1px solid rgb(201 153 66 / 32%); border-radius: 28px; background: linear-gradient(145deg, #fffdf7, #f5efe1); box-shadow: 0 24px 60px rgb(72 54 21 / 10%); }
+.famousCard::after { content: ''; position: absolute; width: 160px; height: 160px; right: -70px; bottom: -75px; border: 1px solid rgb(201 153 66 / 28%); border-radius: 50%; }
+.famousIcon { width: 52px; height: 52px; margin-bottom: 28px; display: grid; place-items: center; border-radius: 16px; color: #6d4b11; background: #f3d697; box-shadow: inset 0 0 0 1px rgb(255 255 255 / 75%); }
+.famousIcon svg { width: 23px; }
+.famousCard h2 { margin: 9px 0 24px; font-size: clamp(28px, 2.4vw, 38px); }
+.famousCard ul { display: grid; gap: 14px; margin: 0; padding: 0; list-style: none; }
+.famousCard li { display: flex; gap: 10px; align-items: flex-start; color: #3f544e; line-height: 1.5; }
+.famousCard li svg { width: 17px; flex: 0 0 auto; margin-top: 3px; color: var(--city-green); }
+
+.sectionHeading { max-width: 760px; margin-bottom: 35px; }
+.sectionHeading p { color: #64746f; font-size: 16px; line-height: 1.7; }
+.landmarkGrid { display: grid; grid-template-columns: 1.25fr 1fr 1fr; gap: 18px; }
+.landmarkCard { min-width: 0; overflow: hidden; margin: 0; border: 1px solid rgb(23 67 58 / 12%); border-radius: 24px; background: white; box-shadow: 0 18px 46px rgb(24 54 47 / 8%); }
+.landmarkCard:first-child { grid-row: span 2; }
+.landmarkCard > div { position: relative; aspect-ratio: 4 / 3; overflow: hidden; }
+.landmarkCard:first-child > div { min-height: 420px; height: calc(100% - 80px); }
+.landmarkCard img { object-fit: cover; transition: transform .55s cubic-bezier(.2,.7,.2,1); }
+.landmarkCard:hover img { transform: scale(1.035); }
+.landmarkCard figcaption { min-height: 78px; padding: 17px 19px; display: grid; gap: 5px; }
+.landmarkCard strong { font-size: 15px; }
+
+.mapSection { display: grid; grid-template-columns: minmax(300px, .72fr) minmax(0, 1.28fr); border-radius: 32px; overflow: hidden; color: white; background: #103f36; box-shadow: 0 30px 75px rgb(19 62 53 / 18%); }
+.mapCopy { padding: clamp(36px, 5vw, 70px); }
+.mapCopy .sectionKicker { color: #ffc4b9; }
+.mapCopy h2 { color: white; }
+.mapCopy > p { color: rgb(255 255 255 / 70%); line-height: 1.7; }
+.mapCopy dl { margin: 28px 0; display: flex; gap: 36px; }
+.mapCopy dl div { display: grid; gap: 4px; }
+.mapCopy dt { color: rgb(255 255 255 / 54%); font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .08em; }
+.mapCopy dd { margin: 0; font-size: 17px; font-weight: 700; }
+.mapLink { display: inline-flex; align-items: center; gap: 9px; color: white; font-weight: 700; border-bottom: 1px solid rgb(255 255 255 / 35%); padding-bottom: 5px; }
+.mapVisual { position: relative; min-height: 430px; margin: 0; background: #e4eee8; }
+.mapVisual > img { object-fit: cover; }
+.mapVisual figcaption { position: absolute; left: 12px; bottom: 10px; padding: 6px 8px; border-radius: 7px; background: rgb(255 255 255 / 88%); }
+.mapFallback { position: absolute; inset: 0; overflow: hidden; display: grid; place-items: center; background: linear-gradient(135deg, #d7e8df, #f0eadc); }
+.mapGrid { position: absolute; inset: -40%; opacity: .48; transform: rotate(17deg); background-image: linear-gradient(rgb(18 90 74 / 18%) 1px, transparent 1px), linear-gradient(90deg, rgb(18 90 74 / 18%) 1px, transparent 1px); background-size: 38px 38px; }
+.mapPin { position: relative; min-width: 180px; padding: 19px 24px; display: grid; grid-template-columns: 28px 1fr; gap: 2px 12px; align-items: center; border: 1px solid rgb(16 81 68 / 15%); border-radius: 18px; color: var(--city-ink); background: rgb(255 255 255 / 92%); box-shadow: 0 22px 46px rgb(24 62 54 / 20%); }
+.mapPin svg { grid-row: 1 / 3; color: var(--city-coral); }
+.mapPin small { color: #6b7b76; }
+.mapCaveat { grid-column: 1 / -1; margin: 0; padding: 10px 18px; color: rgb(255 255 255 / 52%); font-size: 10px; text-align: center; background: rgb(0 0 0 / 12%); }
+
+.guideGrid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; }
+.guideCard { position: relative; padding: clamp(28px, 3vw, 42px); border: 1px solid rgb(19 67 57 / 12%); border-radius: 24px; background: rgb(255 255 255 / 83%); box-shadow: 0 16px 44px rgb(20 55 48 / 6%); }
+.guideNumber { display: block; margin-bottom: 26px; color: var(--city-brass); font-size: 12px; font-weight: 800; letter-spacing: .12em; }
+.guideCard h3 { margin: 0 0 17px; color: var(--city-ink); font-size: 26px; letter-spacing: -.03em; }
+.guideCard p { color: #586b65; line-height: 1.75; }
+.guideDetails { margin-top: 20px; }
+.guideDetails summary { width: fit-content; cursor: pointer; display: flex; align-items: center; gap: 8px; color: var(--city-green); font-size: 13px; font-weight: 800; list-style: none; }
+.guideDetails summary::-webkit-details-marker { display: none; }
+.guideDetails summary svg { width: 15px; transition: transform .2s ease; }
+.guideDetails[open] summary svg { transform: rotate(90deg); }
+.guideDetails > div { margin-top: 19px; padding-top: 4px; border-top: 1px solid rgb(20 64 55 / 10%); }
+.source { width: fit-content; margin-top: 24px; padding-top: 14px; display: block; border-top: 1px solid rgb(20 64 55 / 10%); color: #74827e; font-size: 11px; line-height: 1.5; }
+.source span { color: var(--city-green); }
+
+.directory { scroll-margin-top: 95px; padding: clamp(30px, 4vw, 54px); border: 1px solid rgb(19 67 57 / 12%); border-radius: 32px; background: linear-gradient(145deg, white 0%, #f5faf7 100%); box-shadow: 0 28px 70px rgb(19 60 51 / 10%); }
+.directoryIntro { display: grid; grid-template-columns: minmax(0, 1fr) minmax(320px, .75fr) auto; grid-template-areas: 'kicker search proof' 'title search proof' 'intro search proof'; column-gap: 30px; align-items: center; }
+.directoryIntro > .sectionKicker { grid-area: kicker; align-self: end; }
+.directoryIntro h2 { grid-area: title; margin-bottom: 8px; }
+.directoryIntro > p { grid-area: intro; color: #60716c; }
+.directorySearch { grid-area: search; height: 58px; padding: 5px 5px 5px 18px; display: flex; align-items: center; gap: 11px; border: 1px solid rgb(18 89 73 / 18%); border-radius: 17px; background: white; box-shadow: 0 13px 30px rgb(24 63 54 / 8%); }
+.directorySearch > svg { flex: 0 0 auto; color: var(--city-green); }
+.directorySearch input { width: 100%; min-width: 0; border: 0; outline: 0; color: var(--city-ink); background: transparent; }
+.directorySearch button { width: 47px; height: 47px; flex: 0 0 auto; display: grid; place-items: center; border: 0; border-radius: 13px; color: white; background: var(--city-green); }
+.directorySearch button svg { width: 18px; }
+.directoryProof { grid-area: proof; min-width: 100px; display: grid; justify-items: center; gap: 3px; }
+.directoryProof strong { color: var(--city-green); font-size: 28px; }
+.directoryProof span { color: #6b7b77; font-size: 11px; }
+.categoryRail { margin: 34px 0; padding-block: 6px; display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+.categoryRail a { min-width: 0; padding: 13px; display: grid; grid-template-columns: 52px 1fr 20px; gap: 11px; align-items: center; border: 1px solid rgb(20 70 59 / 11%); border-radius: 17px; color: var(--city-ink); background: white; transition: transform .2s ease, box-shadow .2s ease, border-color .2s ease; }
+.categoryRail a:hover { transform: translateY(-2px); border-color: rgb(13 102 87 / 26%); box-shadow: 0 12px 28px rgb(24 66 56 / 9%); }
+.categoryRail a > span { width: 52px; height: 52px; overflow: hidden; display: grid; place-items: center; border-radius: 13px; background: var(--city-mint); }
+.categoryRail img { width: 46px; height: 46px; object-fit: contain; }
+.categoryRail strong { overflow: hidden; font-size: 13px; text-overflow: ellipsis; white-space: nowrap; }
+.categoryRail svg { width: 15px; color: #71817c; }
+.listingGrid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.seeAll { width: fit-content; margin: 30px auto 0; padding: 12px 18px; display: flex; align-items: center; gap: 9px; border-radius: 999px; color: var(--city-green); font-weight: 750; background: var(--city-mint); }
+.seeAll svg { width: 16px; }
+.empty { padding: 25px; display: flex; align-items: center; justify-content: center; gap: 32px; border: 1px dashed rgb(18 94 78 / 22%); border-radius: 22px; background: rgb(235 246 240 / 65%); }
+.empty h3 { margin: 0 0 8px; font-size: 24px; }
+.empty p { color: #64736f; }
+.thinHero { min-height: 480px; }
+
+:global(:root[data-theme='dark']) .page { --city-ink: #edf7f3; --city-paper: #111817; --city-mint: #1c302b; background: #111817; }
+:global(:root[data-theme='dark']) .facts,
+:global(:root[data-theme='dark']) .guideCard,
+:global(:root[data-theme='dark']) .directory,
+:global(:root[data-theme='dark']) .landmarkCard { color: #eaf4f0; border-color: rgb(255 255 255 / 10%); background: #17211f; }
+:global(:root[data-theme='dark']) .fact + .fact { border-color: rgb(255 255 255 / 9%); }
+:global(:root[data-theme='dark']) .about > div > p,
+:global(:root[data-theme='dark']) .guideCard p,
+:global(:root[data-theme='dark']) .sectionHeading p,
+:global(:root[data-theme='dark']) .directoryIntro > p { color: #a9bbb5; }
+:global(:root[data-theme='dark']) .guideDetails > div { border-color: rgb(255 255 255 / 9%); }
+:global(:root[data-theme='dark']) .famousCard { border-color: rgb(231 190 111 / 22%); background: linear-gradient(145deg, #2b271d, #211f1a); }
+:global(:root[data-theme='dark']) .famousCard li { color: #cbd5d1; }
+:global(:root[data-theme='dark']) .categoryRail a,
+:global(:root[data-theme='dark']) .directorySearch { border-color: rgb(255 255 255 / 9%); color: #eaf4f0; background: #1d2926; }
+:global(:root[data-theme='dark']) .directorySearch input { color: #eaf4f0; }
+
+@media (max-width: 1050px) {
+  .heroCopy { width: min(720px, 80vw); }
+  .heroPlace { display: none; }
+  .facts { grid-template-columns: repeat(2, 1fr); }
+  .fact:nth-child(3) { border-left: 0; border-top: 1px solid rgb(25 80 68 / 12%); }
+  .fact:nth-child(4) { border-top: 1px solid rgb(25 80 68 / 12%); }
+  .about { grid-template-columns: 1fr; gap: 34px; }
+  .famousCard { display: grid; grid-template-columns: auto 1fr; column-gap: 20px; }
+  .famousCard .sectionKicker, .famousCard h2, .famousCard ul, .famousCard p { grid-column: 2; }
+  .famousIcon { grid-row: 1 / 5; }
+  .landmarkGrid { grid-template-columns: repeat(2, 1fr); }
+  .landmarkCard:first-child { grid-column: 1 / -1; grid-row: auto; }
+  .landmarkCard:first-child > div { min-height: 340px; height: auto; }
+  .directoryIntro { grid-template-columns: 1fr auto; grid-template-areas: 'kicker proof' 'title proof' 'intro proof' 'search search'; }
+  .directorySearch { margin-top: 20px; }
+  .categoryRail { grid-template-columns: repeat(2, 1fr); }
+  .listingGrid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+@media (max-width: 720px) {
+  .page { padding-bottom: 76px; }
+  .hero { min-height: 610px; }
+  .heroVeil { background: linear-gradient(0deg, rgb(6 30 26 / 95%) 0%, rgb(7 35 30 / 66%) 68%, rgb(7 26 23 / 36%) 100%); }
+  .heroInner { padding: 24px 18px 96px; }
+  .heroCopy { width: 100%; }
+  .heroCopy h1 { max-width: 10ch; font-size: clamp(50px, 17vw, 72px); line-height: .91; }
+  .heroCopy p { font-size: 16px; line-height: 1.55; }
+  .heroActions { align-items: stretch; flex-direction: column; }
+  .heroActions :global(.btn), .secondaryAction { justify-content: center; }
+  .facts { width: calc(100% - 28px); margin-top: -52px; grid-template-columns: repeat(2, minmax(0, 1fr)); border-radius: 20px; }
+  .fact { min-height: 92px; padding: 16px 13px; gap: 10px; }
+  .fact > span { width: 36px; height: 36px; border-radius: 11px; }
+  .fact small { font-size: 9px; }
+  .fact strong { font-size: 13px; }
+  .body { padding: 64px 14px 84px; gap: 72px; }
+  .about h2, .sectionHeading h2, .mapCopy h2, .directory h2 { font-size: 34px; }
+  .about > div > p { font-size: 16px; line-height: 1.7; }
+  .famousCard { padding: 27px; display: block; }
+  .famousIcon { margin-bottom: 22px; }
+  .famousCard .sectionKicker, .famousCard h2, .famousCard ul, .famousCard p { grid-column: auto; }
+  .landmarkGrid { grid-template-columns: 1fr; }
+  .landmarkCard:first-child { grid-column: auto; }
+  .landmarkCard:first-child > div { min-height: 0; aspect-ratio: 4 / 3; }
+  .mapSection { grid-template-columns: 1fr; border-radius: 24px; }
+  .mapCopy { padding: 31px 25px; }
+  .mapVisual { min-height: 310px; }
+  .guideGrid { grid-template-columns: 1fr; }
+  .guideCard { padding: 27px 24px; }
+  .guideCard h3 { font-size: 23px; }
+  .directory { padding: 27px 14px; border-radius: 24px; }
+  .directoryIntro { padding-inline: 7px; grid-template-columns: 1fr auto; }
+  .directoryProof strong { font-size: 22px; }
+  .directoryProof span { max-width: 64px; text-align: center; }
+  .categoryRail { grid-template-columns: 1fr; gap: 9px; }
+  .listingGrid { grid-template-columns: 1fr; }
+  .empty { text-align: center; flex-direction: column; }
+  .thinHero { min-height: 540px; }
+}
+
+@media (prefers-reduced-motion: reduce) { .landmarkCard img, .categoryRail a { transition: none; } }

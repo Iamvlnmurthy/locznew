@@ -1,6 +1,7 @@
 import type { MetadataRoute } from 'next';
-import type { Category, City } from '@locz/shared-types';
+import type { Category } from '@locz/shared-types';
 import { SITE_URL, apiSafe } from '@/lib/api';
+import { CITY_GUIDE_CATALOG } from '@/lib/city-guide-catalog';
 
 /**
  * Sitemap covering the indexable surfaces: home, launched cities and categories — each in all
@@ -15,10 +16,11 @@ export const revalidate = 3600;
 const LOCALES = ['en', 'te', 'hi'] as const;
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const [cities, categories, businessCategories] = await Promise.all([
-    apiSafe<City[]>('/locations/cities?launchedOnly=true&limit=50', { revalidate: 3600 }),
+  const [categories, businessCategories] = await Promise.all([
     apiSafe<Category[]>('/categories', { revalidate: 3600 }),
-    apiSafe<Array<{ slug: string; name: string }>>('/businesses/categories', { revalidate: 3600 }),
+    apiSafe<Array<{ slug: string; name: string; count?: number }>>('/businesses/categories', {
+      revalidate: 3600,
+    }),
   ]);
 
   const now = new Date();
@@ -65,11 +67,12 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     '/safety',
     '/terms',
     '/privacy',
+    '/cities',
   ]) {
     entries.push(...localized(path, { changeFrequency: 'monthly', priority: 0.3 }));
   }
 
-  for (const city of cities ?? []) {
+  for (const city of CITY_GUIDE_CATALOG) {
     entries.push(...localized(`/in/${city.slug}`, { changeFrequency: 'hourly', priority: 0.9 }));
   }
 
@@ -86,10 +89,16 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   }
 
   // City × business-category hub pages ("Restaurants & food in Hyderabad") — the surfaces that
-  // capture "{category} in {area}" demand. Launched cities × the business taxonomy; the busiest
-  // categories are broadly populated across every district.
-  for (const city of cities ?? []) {
-    for (const category of businessCategories ?? []) {
+  // capture "{category} in {area}" demand. The endpoint also contains 1,000+ imported granular
+  // labels, so only the 45 highest-volume service-taxonomy entries belong here. Expanding every
+  // imported label would breach the 50,000 URL limit for a single sitemap and mostly index thin
+  // city/category combinations.
+  const indexableBusinessCategories = (businessCategories ?? [])
+    .filter((category) => category.slug)
+    .sort((a, b) => (b.count ?? 0) - (a.count ?? 0))
+    .slice(0, 45);
+  for (const city of CITY_GUIDE_CATALOG) {
+    for (const category of indexableBusinessCategories) {
       entries.push(
         ...localized(`/in/${city.slug}/${category.slug}`, {
           changeFrequency: 'daily',

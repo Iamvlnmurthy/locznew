@@ -140,13 +140,6 @@ function postalAddress(b: {
   // here: the source line ends "Hyderabad." — a full stop is enough to miss it —
   // and "Nanakramguda" sits in the middle of that line rather than at its end.
   //
-  // So compare on words, not on string endings, with punctuation removed.
-  const asWords = (value: string) =>
-    value
-      .toLowerCase()
-      .replace(/[^\p{L}\p{N}]+/gu, ' ')
-      .trim();
-
   // Compare whole comma-separated components, not loose words.
   //
   // Two failures bracket the right answer here. The original check asked whether

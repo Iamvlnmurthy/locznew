@@ -1,3 +1,4 @@
+import { cache } from 'react';
 import type { Metadata } from 'next';
 import Image from 'next/image';
 import Link from 'next/link';
@@ -5,23 +6,86 @@ import { notFound } from 'next/navigation';
 import type { Category, City, ListingSummary } from '@locz/shared-types';
 import { ListingCard } from '@/components/listing-card';
 import { Icon } from '@/components/icons';
-import { getTranslator } from '@/i18n';
+import { getTranslator, type Locale } from '@/i18n';
 import { ApiError, api, apiSafe } from '@/lib/api';
 import { localizedName } from '@/lib/localized-name';
 import { premiumCategoryArtwork } from '@/lib/premium-icon-catalog';
 import { getLocale, localizedAlternates } from '@/lib/session';
+import styles from './page.module.css';
 
-async function loadCity(slug: string): Promise<City | null> {
+interface CityEditorial {
+  shortIntro: string | null;
+  description: string | null;
+  famousFor: string | null;
+  character: string | null;
+  economySummary: string | null;
+  climate: string | null;
+  knownFor: string | null;
+  seoTitle: string | null;
+  metaDescription: string | null;
+}
+
+interface CityGuideSection {
+  key: string;
+  title: string;
+  content: string;
+  sourceUrl: string | null;
+  license: string | null;
+  source: string | null;
+}
+
+interface CityGuideImage {
+  kind: 'HERO' | 'ATTRACTION' | 'MAP';
+  title: string | null;
+  url: string;
+  attribution: string | null;
+  license: string | null;
+  source: string | null;
+  width: number | null;
+  height: number | null;
+}
+
+interface CityPageData {
+  city: City;
+  population: number | null;
+  tier: 1 | 2 | 3;
+  content: CityEditorial | null;
+  sections: CityGuideSection[];
+  images: CityGuideImage[];
+}
+
+interface SearchResult {
+  items: ListingSummary[];
+  total: number;
+}
+
+const loadCityPage = cache(async (slug: string): Promise<CityPageData | null> => {
   try {
-    return await api<City>(`/locations/cities/${encodeURIComponent(slug)}`, {
+    return await api<CityPageData>(`/locations/cities/${encodeURIComponent(slug)}/content`, {
       revalidate: 86400,
-      tags: ['cities'],
+      tags: ['cities', `city:${slug}`],
     });
   } catch (error) {
     if (error instanceof ApiError && error.status === 404) return null;
-    throw error;
+    try {
+      const city = await api<City>(`/locations/cities/${encodeURIComponent(slug)}`, {
+        revalidate: 3600,
+        tags: ['cities'],
+      });
+      return {
+        city,
+        population: null,
+        tier: city.tier,
+        content: null,
+        sections: [],
+        images: [],
+      };
+    } catch (fallbackError) {
+      if (fallbackError instanceof ApiError && fallbackError.status === 404) return null;
+      throw fallbackError;
+    }
   }
-}
+});
 
 export async function generateMetadata({
   params,
@@ -29,59 +93,552 @@ export async function generateMetadata({
   params: Promise<{ city: string }>;
 }): Promise<Metadata> {
   const { city: slug } = await params;
-  const [city, locale] = await Promise.all([loadCity(slug).catch(() => null), getLocale()]);
+  const [data, locale] = await Promise.all([loadCityPage(slug).catch(() => null), getLocale()]);
   const t = getTranslator(locale);
-  if (!city) {
-    return {
-      title: t('discovery.cityNotFound'),
-      robots: { index: false, follow: false },
-    };
+  if (!data) {
+    return { title: t('discovery.cityNotFound'), robots: { index: false, follow: false } };
   }
 
-  // The city name in the reader's script. Only 8 of 640 cities are translated so far, so this
-  // is English for most of them — by design, since a blank name is worse than an English one.
-  const cityName = localizedName(city, locale);
-  const title = t('discovery.cityMetadataTitle', { city: cityName });
-  const description = t('discovery.cityMetadataDescription', {
-    city: cityName,
-    state: city.stateName,
-  });
+  const cityName = localizedName(data.city, locale);
+  const title = data.content?.seoTitle ?? t('discovery.cityMetadataTitle', { city: cityName });
+  const description =
+    data.content?.metaDescription ??
+    t('discovery.cityMetadataDescription', { city: cityName, state: data.city.stateName });
+  const hero = data.images.find((image) => image.kind === 'HERO');
 
   return {
     title,
     description,
-    alternates: await localizedAlternates(`/in/${city.slug}`),
-    openGraph: { title, description, type: 'website', locale: `${locale}_IN` },
+    alternates: await localizedAlternates(`/in/${data.city.slug}`),
+    openGraph: {
+      title,
+      description,
+      type: 'website',
+      locale: `${locale}_IN`,
+      ...(hero ? { images: [{ url: hero.url, alt: hero.title ?? cityName }] } : {}),
+    },
   };
 }
 
-/**
- * City landing page — the primary indexable surface. "used bikes in warangal" is the
- * query LocZ needs to win, and a cached page per launched city is how.
- */
 export default async function CityPage({ params }: { params: Promise<{ city: string }> }) {
   const { city: slug } = await params;
-  const [locale, city] = await Promise.all([getLocale(), loadCity(slug)]);
+  const [locale, data] = await Promise.all([getLocale(), loadCityPage(slug)]);
+  if (!data) notFound();
 
-  if (!city) notFound();
-
+  const { city, content, sections, images } = data;
   const cityName = localizedName(city, locale);
-
-  const t = getTranslator(locale);
-
   const [result, categories] = await Promise.all([
-    apiSafe<{ items: ListingSummary[]; total: number }>(
-      `/search?cityId=${city.id}&limit=24&sort=newest`,
-      { revalidate: 300 },
-    ),
+    apiSafe<SearchResult>(`/search?cityId=${city.id}&limit=12&sort=newest`, { revalidate: 300 }),
     apiSafe<Category[]>('/categories', { revalidate: 3600 }),
   ]);
 
-  // Place structured data helps Google associate the page with the city itself.
-  const jsonLd = {
+  if (!content) {
+    return (
+      <ThinCityPage
+        city={city}
+        cityName={cityName}
+        locale={locale}
+        categories={categories ?? []}
+        result={result}
+      />
+    );
+  }
+
+  const t = getTranslator(locale);
+  const hero = images.find((image) => image.kind === 'HERO');
+  const attractions = images.filter((image) => image.kind === 'ATTRACTION');
+  const mapImage = images.find((image) => image.kind === 'MAP');
+  const highlights = splitHighlights(content.famousFor ?? content.knownFor);
+  const jsonLd = cityJsonLd(city, cityName, content.description, hero?.url);
+
+  return (
+    <main className={styles.page}>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd).replace(/</g, '\\u003c') }}
+      />
+
+      <section className={styles.hero}>
+        {hero ? (
+          <Image
+            src={hero.url}
+            alt={hero.title ?? `${cityName} city view`}
+            fill
+            sizes="100vw"
+            priority
+            className={styles.heroImage}
+          />
+        ) : (
+          <div className={styles.heroFallback} aria-hidden="true" />
+        )}
+        <div className={styles.heroVeil} />
+        <div className={`container ${styles.heroInner}`}>
+          <nav className={styles.breadcrumbs} aria-label={t('common.breadcrumb')}>
+            <Link href="/">{t('nav.home')}</Link>
+            <span>›</span>
+            <Link href="/cities">{t('cityDirectory.title')}</Link>
+            <span>›</span>
+            <span>{cityName}</span>
+          </nav>
+          <div className={styles.heroCopy}>
+            <span className={styles.kicker}>{t('cityGuide.kicker')}</span>
+            <h1>{cityName}</h1>
+            <p>{heroIntro(content)}</p>
+            <div className={styles.heroActions}>
+              <Link href="#city-directory" className="btn btn--primary">
+                {t('cityGuide.exploreLocal')} <Icon name="arrow" width="17" height="17" />
+              </Link>
+              <Link href="#city-guide" className={styles.secondaryAction}>
+                {t('cityGuide.readGuide')} <Icon name="arrow" width="16" height="16" />
+              </Link>
+            </div>
+          </div>
+          <div className={styles.heroPlace}>
+            <Icon name="location" width="18" height="18" />
+            <span>
+              <strong>{cityName}</strong>
+              <small>{city.stateName}</small>
+            </span>
+          </div>
+        </div>
+        {hero ? <ImageCredit image={hero} dark /> : null}
+      </section>
+
+      <section className={`container ${styles.facts}`} aria-label={t('cityGuide.quickFacts')}>
+        <Fact
+          icon="user"
+          label={t('cityGuide.population')}
+          value={formatPopulation(data.population, locale)}
+        />
+        <Fact icon="sparkles" label={t('cityGuide.cityTier')} value={`Tier ${data.tier}`} />
+        <Fact
+          icon="location"
+          label={t('cityGuide.region')}
+          value={city.districtName ?? city.stateName}
+        />
+        <Fact
+          icon="weather"
+          label={t('cityGuide.climate')}
+          value={content.climate ?? t('cityGuide.localClimate')}
+        />
+      </section>
+
+      <div className={`container ${styles.body}`}>
+        <section className={styles.about} aria-labelledby="city-about-title">
+          <div>
+            <span className={styles.sectionKicker}>{t('cityGuide.aboutKicker')}</span>
+            <h2 id="city-about-title">{t('cityGuide.aboutTitle', { city: cityName })}</h2>
+            {paragraphs(content.description).map((paragraph, index) => (
+              <p key={index}>{normalizeCityCopy(paragraph)}</p>
+            ))}
+            {content.character ? <p>{normalizeCityCopy(content.character)}</p> : null}
+          </div>
+          <aside className={styles.famousCard}>
+            <span className={styles.famousIcon}>
+              <Icon name="sparkles" />
+            </span>
+            <span className={styles.sectionKicker}>{t('cityGuide.famousKicker')}</span>
+            <h2>{t('cityGuide.famousTitle', { city: cityName })}</h2>
+            {highlights.length ? (
+              <ul>
+                {highlights.map((item) => (
+                  <li key={item}>
+                    <Icon name="check" />
+                    {item}
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p>{content.knownFor}</p>
+            )}
+          </aside>
+        </section>
+
+        {attractions.length ? (
+          <section className={styles.landmarks} aria-labelledby="city-landmarks-title">
+            <SectionHeading
+              kicker={t('cityGuide.landmarksKicker')}
+              title={t('cityGuide.landmarksTitle', { city: cityName })}
+            />
+            <div className={styles.landmarkGrid}>
+              {attractions.slice(0, 6).map((image, index) => (
+                <figure key={`${image.url}-${index}`} className={styles.landmarkCard}>
+                  <div>
+                    <Image
+                      src={image.url}
+                      alt={image.title ?? ''}
+                      fill
+                      sizes="(max-width: 720px) 88vw, 31vw"
+                    />
+                  </div>
+                  <figcaption>
+                    <strong>{image.title ?? cityName}</strong>
+                    <ImageCredit image={image} />
+                  </figcaption>
+                </figure>
+              ))}
+            </div>
+          </section>
+        ) : null}
+
+        <section className={styles.mapSection} aria-labelledby="city-location-title">
+          <div className={styles.mapCopy}>
+            <span className={styles.sectionKicker}>{t('cityGuide.locationKicker')}</span>
+            <h2 id="city-location-title">{t('cityGuide.locationTitle', { city: cityName })}</h2>
+            <p>{t('cityGuide.locationText', { city: cityName, state: city.stateName })}</p>
+            <dl>
+              <div>
+                <dt>{t('cityGuide.latitude')}</dt>
+                <dd>{city.latitude.toFixed(4)}°</dd>
+              </div>
+              <div>
+                <dt>{t('cityGuide.longitude')}</dt>
+                <dd>{city.longitude.toFixed(4)}°</dd>
+              </div>
+            </dl>
+            <a
+              href={`https://www.openstreetmap.org/?mlat=${city.latitude}&mlon=${city.longitude}#map=11/${city.latitude}/${city.longitude}`}
+              target="_blank"
+              rel="noreferrer"
+              className={styles.mapLink}
+            >
+              {t('cityGuide.openMap')} <Icon name="arrow" width="15" height="15" />
+            </a>
+          </div>
+          <figure className={styles.mapVisual}>
+            {mapImage ? (
+              <Image
+                src={mapImage.url}
+                alt={mapImage.title ?? `${cityName} map`}
+                fill
+                sizes="(max-width: 800px) 100vw, 48vw"
+              />
+            ) : (
+              <MapFallback city={city} cityName={cityName} />
+            )}
+            {mapImage ? (
+              <figcaption>
+                <ImageCredit image={mapImage} />
+              </figcaption>
+            ) : null}
+          </figure>
+          <p className={styles.mapCaveat}>{t('cityGuide.mapCaveat')}</p>
+        </section>
+
+        {sections.length ? (
+          <section id="city-guide" className={styles.guide} aria-labelledby="city-guide-title">
+            <SectionHeading
+              kicker={t('cityGuide.guideKicker')}
+              title={t('cityGuide.guideTitle', { city: cityName })}
+              intro={t('cityGuide.guideIntro')}
+            />
+            <div className={styles.guideGrid}>
+              {sections.map((section, index) => (
+                <GuideCard
+                  key={`${section.key}-${index}`}
+                  section={section}
+                  index={index}
+                  readMore={t('cityGuide.readFullSection')}
+                />
+              ))}
+            </div>
+          </section>
+        ) : null}
+
+        <CityDirectory
+          city={city}
+          cityName={cityName}
+          locale={locale}
+          categories={categories ?? []}
+          result={result}
+        />
+      </div>
+    </main>
+  );
+}
+
+function ThinCityPage({
+  city,
+  cityName,
+  locale,
+  categories,
+  result,
+}: {
+  city: City;
+  cityName: string;
+  locale: Locale;
+  categories: Category[];
+  result: SearchResult | null;
+}) {
+  const t = getTranslator(locale);
+  return (
+    <main className={styles.page}>
+      <section className={`${styles.hero} ${styles.thinHero}`}>
+        <div className={styles.heroFallback} />
+        <div className={styles.heroVeil} />
+        <div className={`container ${styles.heroInner}`}>
+          <nav className={styles.breadcrumbs} aria-label={t('common.breadcrumb')}>
+            <Link href="/">{t('nav.home')}</Link>
+            <span>›</span>
+            <Link href="/cities">{t('cityDirectory.title')}</Link>
+            <span>›</span>
+            <span>{cityName}</span>
+          </nav>
+          <div className={styles.heroCopy}>
+            <span className={styles.kicker}>{t('discovery.cityEyebrow', { city: cityName })}</span>
+            <h1>{t('discovery.cityTitle', { city: cityName })}</h1>
+            <p>{t('discovery.citySubtitle', { city: cityName, state: city.stateName })}</p>
+          </div>
+        </div>
+      </section>
+      <div className={`container ${styles.body}`}>
+        <CityDirectory
+          city={city}
+          cityName={cityName}
+          locale={locale}
+          categories={categories}
+          result={result}
+        />
+      </div>
+    </main>
+  );
+}
+
+function CityDirectory({
+  city,
+  cityName,
+  locale,
+  categories,
+  result,
+}: {
+  city: City;
+  cityName: string;
+  locale: Locale;
+  categories: Category[];
+  result: SearchResult | null;
+}) {
+  const t = getTranslator(locale);
+  return (
+    <section
+      id="city-directory"
+      className={styles.directory}
+      aria-labelledby="city-directory-title"
+    >
+      <div className={styles.directoryIntro}>
+        <span className={styles.sectionKicker}>{t('cityGuide.directoryKicker')}</span>
+        <h2 id="city-directory-title">{t('cityGuide.directoryTitle', { city: cityName })}</h2>
+        <p>{t('cityGuide.directoryIntro', { city: cityName })}</p>
+        <form className={styles.directorySearch} action="/search" method="get" role="search">
+          <input type="hidden" name="cityId" value={city.id} />
+          <Icon name="search" width="19" height="19" />
+          <input
+            name="q"
+            type="search"
+            aria-label={t('search.submit')}
+            placeholder={t('discovery.searchCity', { city: cityName })}
+          />
+          <button type="submit" aria-label={t('search.submit')}>
+            <Icon name="arrow" />
+          </button>
+        </form>
+        <div className={styles.directoryProof}>
+          <strong>{(result?.total ?? 0).toLocaleString(`${locale}-IN`)}</strong>
+          <span>{t('discovery.localListings')}</span>
+        </div>
+      </div>
+      {categories.length ? (
+        <nav className={styles.categoryRail} aria-label={t('feed.browseCategories')}>
+          {categories.slice(0, 8).map((category) => (
+            <Link key={category.id} href={`/in/${city.slug}/${category.slug}`}>
+              <span>
+                <Image
+                  src={premiumCategoryArtwork({ slug: category.slug, name: category.name })}
+                  alt=""
+                  width="58"
+                  height="58"
+                />
+              </span>
+              <strong>{category.name}</strong>
+              <Icon name="arrow" />
+            </Link>
+          ))}
+        </nav>
+      ) : null}
+      {!result || result.items.length === 0 ? (
+        <div className={styles.empty}>
+          <Image src="/illustrations/empty-neighbourhood.webp" alt="" width="220" height="180" />
+          <div>
+            <h3>{t('discovery.beFirst', { city: cityName })}</h3>
+            <p>{t('feed.empty')}</p>
+            <Link href="/post" className="btn btn--primary">
+              <Icon name="plus" /> {t('nav.post')}
+            </Link>
+          </div>
+        </div>
+      ) : (
+        <div className={`card-grid ${styles.listingGrid}`}>
+          {result.items.map((listing) => (
+            <ListingCard key={listing.id} listing={listing} t={t} />
+          ))}
+        </div>
+      )}
+      <Link href={`/search?cityId=${city.id}`} className={styles.seeAll}>
+        {t('feed.seeAll')} {t('discovery.localListings')} <Icon name="arrow" />
+      </Link>
+    </section>
+  );
+}
+
+function Fact({ icon, label, value }: { icon: string; label: string; value: string }) {
+  return (
+    <div className={styles.fact}>
+      <span>
+        <Icon name={icon} />
+      </span>
+      <div>
+        <small>{label}</small>
+        <strong>{value}</strong>
+      </div>
+    </div>
+  );
+}
+function SectionHeading({
+  kicker,
+  title,
+  intro,
+}: {
+  kicker: string;
+  title: string;
+  intro?: string;
+}) {
+  return (
+    <div className={styles.sectionHeading}>
+      <span className={styles.sectionKicker}>{kicker}</span>
+      <h2>{title}</h2>
+      {intro ? <p>{intro}</p> : null}
+    </div>
+  );
+}
+function GuideCard({
+  section,
+  index,
+  readMore,
+}: {
+  section: CityGuideSection;
+  index: number;
+  readMore: string;
+}) {
+  const parts = paragraphs(section.content);
+  const preview = parts.slice(0, 1);
+  const remainder = parts.slice(1);
+  return (
+    <article className={styles.guideCard}>
+      <span className={styles.guideNumber}>{String(index + 1).padStart(2, '0')}</span>
+      <h3>{section.title}</h3>
+      {preview.map((paragraph, partIndex) => (
+        <p key={partIndex}>{paragraph}</p>
+      ))}
+      {remainder.length ? (
+        <details className={styles.guideDetails}>
+          <summary>
+            {readMore} <Icon name="arrow" />
+          </summary>
+          <div>
+            {remainder.map((paragraph, partIndex) => (
+              <p key={partIndex}>{paragraph}</p>
+            ))}
+          </div>
+        </details>
+      ) : null}
+      <SourceCredit section={section} />
+    </article>
+  );
+}
+function SourceCredit({ section }: { section: CityGuideSection }) {
+  const label = [section.source, section.license].filter(Boolean).join(' · ') || 'Source';
+  return section.sourceUrl ? (
+    <a href={section.sourceUrl} target="_blank" rel="noreferrer" className={styles.source}>
+      Reference text from {label} <span>↗</span>
+    </a>
+  ) : (
+    <span className={styles.source}>Reference text from {label}</span>
+  );
+}
+function ImageCredit({ image, dark = false }: { image: CityGuideImage; dark?: boolean }) {
+  const label = [image.attribution, image.source, image.license].filter(Boolean).join(' · ');
+  if (!label) return null;
+  return (
+    <small className={`${styles.imageCredit} ${dark ? styles.imageCreditDark : ''}`}>{label}</small>
+  );
+}
+function MapFallback({ city, cityName }: { city: City; cityName: string }) {
+  return (
+    <div className={styles.mapFallback}>
+      <span className={styles.mapGrid} />
+      <span className={styles.mapPin}>
+        <Icon name="location" />
+        <strong>{cityName}</strong>
+        <small>{city.stateName}</small>
+      </span>
+    </div>
+  );
+}
+function paragraphs(value: string | null): string[] {
+  if (!value) return [];
+  const explicit = value
+    .split(/\n{2,}/)
+    .map((part) => part.trim())
+    .filter(Boolean);
+  if (explicit.length > 1 || value.length < 620) return explicit;
+  const sentences = value
+    .match(/[^.!?]+[.!?]+(?:[”’"']|$)?|[^.!?]+$/g)
+    ?.map((part) => part.trim())
+    .filter(Boolean) ?? [value];
+  const grouped: string[] = [];
+  let current = '';
+  let words = 0;
+  for (const sentence of sentences) {
+    const sentenceWords = sentence.split(/\s+/).length;
+    if (current && words + sentenceWords > 105) {
+      grouped.push(current);
+      current = sentence;
+      words = sentenceWords;
+    } else {
+      current = `${current} ${sentence}`.trim();
+      words += sentenceWords;
+    }
+  }
+  if (current) grouped.push(current);
+  return grouped;
+}
+function splitHighlights(value: string | null): string[] {
+  if (!value) return [];
+  return value
+    .split(/\s*[•|;,]\s*/)
+    .map((part) => normalizeCityCopy(part))
+    .filter((part) => part.length > 1)
+    .slice(0, 6);
+}
+function normalizeCityCopy(value: string): string {
+  return value
+    .replace(/\bknown for it\b/gi, 'known for IT')
+    .replace(/\bmix of it\b/gi, 'mix of IT')
+    .replace(/;\s*/g, ', ');
+}
+function heroIntro(content: CityEditorial): string {
+  const descriptionLead = content.description?.match(/^.*?[.!?](?:\s|$)/)?.[0]?.trim();
+  return normalizeCityCopy(descriptionLead ?? content.shortIntro ?? content.description ?? '');
+}
+function formatPopulation(value: number | null, locale: Locale): string {
+  return value ? value.toLocaleString(`${locale}-IN`) : '—';
+}
+function cityJsonLd(city: City, cityName: string, description: string | null, image?: string) {
+  return {
     '@context': 'https://schema.org',
     '@type': 'CollectionPage',
-    name: t('discovery.cityCollectionName', { city: cityName }),
+    name: `${cityName} city guide`,
+    description,
+    ...(image ? { image } : {}),
     about: {
       '@type': 'City',
       name: cityName,
@@ -94,160 +651,4 @@ export default async function CityPage({ params }: { params: Promise<{ city: str
       geo: { '@type': 'GeoCoordinates', latitude: city.latitude, longitude: city.longitude },
     },
   };
-
-  return (
-    <>
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd).replace(/</g, '\\u003c') }}
-      />
-
-      <section className="discovery-hero discovery-hero--city">
-        <div className="container discovery-hero__inner">
-          <div className="discovery-hero__copy">
-            <nav className="breadcrumbs breadcrumbs--light" aria-label={t('common.breadcrumb')}>
-              <Link href="/">{t('nav.home')}</Link>
-              <span>›</span>
-              <span>{cityName}</span>
-            </nav>
-            <span className="eyebrow">
-              <i /> {t('discovery.cityEyebrow', { city: cityName })}
-            </span>
-            <h1>{t('discovery.cityTitle', { city: cityName })}</h1>
-            <p>{t('discovery.citySubtitle', { city: cityName, state: city.stateName })}</p>
-
-            <form className="discovery-search" action="/search" method="get" role="search">
-              <input type="hidden" name="cityId" value={city.id} />
-              <Icon name="search" width="20" height="20" />
-              <label htmlFor="city-discovery-search" className="sr-only">
-                {t('search.submit')}
-              </label>
-              <input
-                id="city-discovery-search"
-                name="q"
-                type="search"
-                placeholder={t('discovery.searchCity', { city: cityName })}
-              />
-              <button type="submit">
-                {t('search.submit')} <Icon name="arrow" width="16" height="16" />
-              </button>
-            </form>
-
-            <div className="discovery-hero__proof">
-              <span>
-                <strong>{result?.total.toLocaleString(`${locale}-IN`) ?? '0'}</strong>
-                {t('discovery.localListings')}
-              </span>
-              <span>
-                <strong>₹0</strong>
-                {t('discovery.toPost')}
-              </span>
-              <span>
-                <strong>24/7</strong>
-                {t('discovery.localDiscovery')}
-              </span>
-            </div>
-          </div>
-
-          <div className="discovery-hero__art" aria-hidden="true">
-            <Image
-              src="/illustrations/hero-neighbourhood-mobile.webp"
-              alt=""
-              width="900"
-              height="900"
-              priority
-            />
-            <span className="discovery-pin">
-              <Icon name="location" width="18" height="18" />
-              {cityName}
-            </span>
-          </div>
-        </div>
-      </section>
-
-      <div className="container discovery-body">
-        {categories && categories.length > 0 ? (
-          <section className="discovery-categories">
-            <div className="section__head">
-              <div>
-                <span className="section-kicker">{t('discovery.startWithCategory')}</span>
-                <h2>{t('feed.browseCategories')}</h2>
-              </div>
-              <Link href={`/search?cityId=${city.id}`} className="section-link">
-                {t('feed.seeAll')} <Icon name="arrow" />
-              </Link>
-            </div>
-            <nav className="discovery-category-grid" aria-label={t('feed.browseCategories')}>
-              {categories.slice(0, 8).map((category, index) => (
-                <Link
-                  key={category.id}
-                  href={`/c/${category.slug}`}
-                  className={`discovery-category discovery-category--${(index % 4) + 1}`}
-                >
-                  <span>
-                    <Image
-                      src={premiumCategoryArtwork({ slug: category.slug, name: category.name })}
-                      alt=""
-                      width="76"
-                      height="76"
-                    />
-                  </span>
-                  <strong>{category.name}</strong>
-                  <i aria-hidden="true">→</i>
-                </Link>
-              ))}
-            </nav>
-          </section>
-        ) : null}
-
-        <section className="discovery-results">
-          <div className="section__head">
-            <div>
-              <span className="section-kicker">{t('discovery.freshIn', { city: cityName })}</span>
-              <h2>{t('discovery.latestNearYou')}</h2>
-            </div>
-            <Link href={`/search?cityId=${city.id}&sort=newest`} className="section-link">
-              {t('feed.seeAll')} <Icon name="arrow" />
-            </Link>
-          </div>
-
-          {!result || result.items.length === 0 ? (
-            <div className="empty-state discovery-empty">
-              <Image
-                className="empty-state__art"
-                src="/illustrations/empty-neighbourhood.webp"
-                alt=""
-                width="280"
-                height="230"
-              />
-              <h2>{t('discovery.beFirst', { city: cityName })}</h2>
-              <p>{t('feed.empty')}</p>
-              <Link href="/post" className="btn btn--primary">
-                <Icon name="plus" width="18" height="18" /> {t('nav.post')}
-              </Link>
-            </div>
-          ) : (
-            <div className="card-grid discovery-results__grid">
-              {result.items.map((listing) => (
-                <ListingCard key={listing.id} listing={listing} t={t} />
-              ))}
-            </div>
-          )}
-        </section>
-
-        <aside className="discovery-community">
-          <span className="discovery-community__icon">
-            <Icon name="shield" width="23" height="23" />
-          </span>
-          <div>
-            <strong>{t('discovery.communityTitle')}</strong>
-            <p>{t('discovery.communityText')}</p>
-          </div>
-          <Link href="/safety">
-            {t('discovery.safetyTips')} <Icon name="arrow" width="15" height="15" />
-          </Link>
-        </aside>
-      </div>
-    </>
-  );
 }

@@ -1,5 +1,6 @@
 import Image from 'next/image';
 import Link from 'next/link';
+import { Fragment } from 'react';
 import { notFound } from 'next/navigation';
 import type { ListingSummary } from '@locz/shared-types';
 import { Icon } from '@/components/icons';
@@ -10,6 +11,7 @@ import { premiumDiscoveryArtwork } from '@/lib/premium-icon-catalog';
 import { getLocale, getSelectedCity, getSelectedRadius } from '@/lib/session';
 import { NearbyBusinesses } from '../../search/nearby-businesses';
 import { loadNearbyBusinesses } from '../../search/businesses-actions';
+import { AdSlot } from '@/components/ad-slot';
 
 interface Feed {
   cityId: string;
@@ -281,32 +283,36 @@ export default async function DiscoveryAreaPage({ params }: { params: Promise<{ 
                 <span>{d.localNews}</span>
                 <small>{'LocZ'}</small>
               </div>
-              {news.map((item) => (
-                <Link
-                  key={item.slug}
-                  href={`/news/${item.slug}`}
-                  className="discovery-text-card discovery-news-card"
-                >
-                  <span className="discovery-text-card__dot" />
-                  <div>
-                    <strong>{item.title}</strong>
-                    {item.summary ? (
-                      <p className="discovery-news-card__summary">{item.summary}</p>
-                    ) : null}
-                    <small>
-                      {[
-                        item.distanceKm != null
-                          ? `${item.distanceKm.toFixed(item.distanceKm < 10 ? 1 : 0)} ${t('common.km')}`
-                          : null,
-                        item.category,
-                        item.sources > 1 ? `${item.sources} ${d.reports}` : null,
-                      ]
-                        .filter(Boolean)
-                        .join(' · ')}
-                    </small>
-                  </div>
-                  <Icon name="arrow" />
-                </Link>
+              {news.map((item, index) => (
+                <Fragment key={item.slug}>
+                  <Link
+                    href={`/news/${item.slug}`}
+                    className="discovery-text-card discovery-news-card"
+                  >
+                    <span className="discovery-text-card__dot" />
+                    <div>
+                      <strong>{item.title}</strong>
+                      {item.summary ? (
+                        <p className="discovery-news-card__summary">{item.summary}</p>
+                      ) : null}
+                      <small>
+                        {[
+                          item.distanceKm != null
+                            ? `${item.distanceKm.toFixed(item.distanceKm < 10 ? 1 : 0)} ${t('common.km')}`
+                            : null,
+                          item.category,
+                          item.sources > 1 ? `${item.sources} ${d.reports}` : null,
+                        ]
+                          .filter(Boolean)
+                          .join(' · ')}
+                      </small>
+                    </div>
+                    <Icon name="arrow" />
+                  </Link>
+                  {index === 4 && news.length >= 5 ? (
+                    <AdSlot placement="NEWS_FEED_IN_LIST" contentScore={news.length} />
+                  ) : null}
+                </Fragment>
               ))}
             </section>
           ) : null}
@@ -355,7 +361,6 @@ export default async function DiscoveryAreaPage({ params }: { params: Promise<{ 
                     className="discovery-deal-card"
                   >
                     {deal.imageUrl ? (
-                      // eslint-disable-next-line @next/next/no-img-element
                       <img
                         className="discovery-deal-card__media"
                         src={deal.imageUrl}

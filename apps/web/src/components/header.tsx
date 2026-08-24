@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import { headers } from 'next/headers';
+import type { City } from '@locz/shared-types';
 import { getMessageGroup, getTranslator, type Locale } from '@/i18n';
 import { apiSafe } from '@/lib/api';
 import { getCurrentUser, getSelectedCity } from '@/lib/session';
@@ -18,6 +19,14 @@ export async function Header({ locale }: { locale: Locale }) {
   const t = getTranslator(locale);
   const discoveryLabels = getMessageGroup(locale, 'discoveryAreas');
   const [user, city] = await Promise.all([getCurrentUser(), getSelectedCity()]);
+  // Cookies written before city tiers were introduced remain valid for a year. Resolve those
+  // once through the cached city endpoint so existing visitors receive the guide affordance too.
+  const selectedCityRecord =
+    city?.slug && city.tier === undefined
+      ? await apiSafe<City>(`/locations/cities/${encodeURIComponent(city.slug)}`, {
+          revalidate: 86400,
+        })
+      : null;
   const unreadNotifications = user
     ? await apiSafe<{ count: number }>('/notifications/unread-count', { auth: true })
     : null;
@@ -50,7 +59,10 @@ export async function Header({ locale }: { locale: Locale }) {
             we have. A bare pincode was being squeezed to an unreadable "50…" in the chip. */}
           <LocationChip
             cityName={city?.name || city?.pincode || null}
+            citySlug={city?.slug}
+            cityTier={city?.tier ?? selectedCityRecord?.tier}
             changeLabel={t('location.change')}
+            exploreLabel={city?.name ? t('location.exploreCity', { city: city.name }) : undefined}
           />
 
           <nav className="header__primary" aria-label={t('nav.primary')}>

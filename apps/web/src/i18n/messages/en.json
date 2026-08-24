@@ -118,6 +118,7 @@
   "location": {
     "label": "Location",
     "change": "Change",
+    "exploreCity": "Explore {city}",
     "useCurrent": "Use my current location",
     "searchCity": "Search for a city",
     "selectLocality": "Choose a locality",
@@ -137,7 +138,7 @@
     "pincodeArea": "{name}, {district} — {count} ads nearby",
     "pageEyebrow": "Choose your neighbourhood",
     "pageTitle": "Tell us where local means to you.",
-    "pageSubtitle": "Sign in to talk to sellers, save useful finds and post anything local.",
+    "pageSubtitle": "Choose a city, pincode or current location to make every result more relevant.",
     "benefitLocalTitle": "Results that feel nearby",
     "benefitLocalText": "See what is useful around your chosen area first.",
     "benefitPrivateTitle": "Your exact address stays private",
@@ -186,6 +187,61 @@
     "communityTitle": "Neighbourhood-first, safety always.",
     "communityText": "Meet in public, inspect before paying and keep conversations on LocZ whenever possible.",
     "safetyTips": "Read safety tips"
+  },
+  "cityGuide": {
+    "kicker": "The LocZ city guide",
+    "exploreLocal": "Explore nearby",
+    "readGuide": "Read the city guide",
+    "quickFacts": "City quick facts",
+    "population": "Population",
+    "cityTier": "City tier",
+    "region": "Region",
+    "climate": "Climate",
+    "localClimate": "Local climate",
+    "aboutKicker": "Meet the city",
+    "aboutTitle": "About {city}",
+    "famousKicker": "Known and loved for",
+    "famousTitle": "What makes {city} special",
+    "landmarksKicker": "See the city",
+    "landmarksTitle": "Landmarks and places in {city}",
+    "locationKicker": "Find your bearings",
+    "locationTitle": "Where is {city}?",
+    "locationText": "Explore {city} in {state} and discover what is useful around you.",
+    "latitude": "Latitude",
+    "longitude": "Longitude",
+    "openMap": "Open interactive map",
+    "mapCaveat": "Map boundaries are indicative and do not represent a position on disputed borders.",
+    "guideKicker": "Know before you go",
+    "guideTitle": "The {city} city guide",
+    "guideIntro": "A practical, sourced introduction to the city — from its history and culture to transport, education and local life.",
+    "readFullSection": "Continue reading",
+    "directoryKicker": "Useful things, close by",
+    "directoryTitle": "Businesses near you in {city}",
+    "directoryIntro": "Move from learning about the city to finding trusted shops, services, work and everyday essentials nearby."
+  },
+  "cityDirectory": {
+    "metadataTitle": "Cities on LocZ — local guides across India",
+    "metadataDescription": "Explore 96 detailed Tier-1 and Tier-2 Indian city guides, then find nearby businesses, services, jobs and useful local information.",
+    "kicker": "Explore India locally",
+    "title": "Cities on LocZ",
+    "subtitle": "Go beyond a city name. Learn what makes each place distinctive, then move directly into useful businesses, services, work and everyday life nearby.",
+    "searchPlaceholder": "Search a city or state",
+    "cityGuides": "city guides",
+    "tierOne": "Tier 1 cities",
+    "tierTwo": "Tier 2 cities",
+    "states": "states and UTs",
+    "featuredKicker": "India's major urban centres",
+    "featuredTitle": "Start with Tier 1",
+    "featuredText": "Eight major city hubs with sourced guides, visual landmarks and a direct path into their local directories.",
+    "directoryKicker": "The complete directory",
+    "allTitle": "Every city guide",
+    "resultsTitle": "Results for “{query}”",
+    "resultCount": "{count} city guides",
+    "citiesInState": "{count} cities",
+    "tierLabel": "Tier {tier} guide",
+    "noResults": "No city matches “{query}”",
+    "noResultsText": "Try another city, state or spelling.",
+    "clearSearch": "View every city"
   },
   "search": {
     "placeholder": "Search for anything — phones, jobs, rooms, plumbers",
@@ -337,7 +393,7 @@
     "previewTitle": "Buyer preview",
     "closePreview": "Close preview",
     "attributes": {
-      "title": "Post your ad",
+      "title": "Useful details",
       "hint": "A few specific details help the right people find your listing.",
       "select": "Select an option",
       "yes": "Yes",
@@ -529,7 +585,7 @@
       "EVENT": "An event"
     },
     "field": {
-      "title": "Post your ad",
+      "title": "Title",
       "titleHint": "Say what it is in a few words",
       "description": "Description",
       "descriptionHint": "Condition, age, reason for selling — buyers ask these first",
@@ -795,6 +851,7 @@
     "tuesday": "Tuesday",
     "verifiedBusiness": "Verified business",
     "visit": "Visit",
+    "visitWebsite": "Visit website",
     "website": "Website",
     "wednesday": "Wednesday",
     "yourMessage": "Your message",
@@ -1086,7 +1143,7 @@
     "inspectTitle": "Inspect before you pay",
     "linksBody": "Never open a shortened link a stranger sends you. And never enter your UPI PIN to receive money—a PIN is only ever needed to send it. Anyone telling you otherwise is stealing from you.",
     "linksTitle": "Be careful with links and UPI",
-    "metadataDescription": "Find it here.. Deal it near.. LocZ is a location-first local discovery platform for India—classifieds, jobs, offers and services near you.",
+    "metadataDescription": "Practical safety guidance for buying, selling and messaging locally on LocZ.",
     "metadataTitle": "Staying safe on LocZ",
     "privateBody": "You do not have to share your phone number. LocZ messages let you talk to a buyer or seller without either of you giving anything away, and your number stays hidden unless you choose to display it on your ad.",
     "privateTitle": "Keep your number private",
@@ -1094,8 +1151,8 @@
     "publicTitle": "Meet in a public place",
     "reportBody": "Every ad has a Report this ad link. Reports go to a real person, and several reports about the same ad pull it out of public view while we look. You will be told the outcome in your notifications.",
     "reportTitle": "Report anything wrong",
-    "subtitle": "Buy and sell near you. Join in a minute.",
-    "title": "Post your ad"
+    "subtitle": "Simple habits for safer local buying, selling and messaging.",
+    "title": "Stay safe on LocZ"
   },
   "aboutPage": {
     "cleanBody": "Open posting attracts spam, so every new account’s first ads are reviewed by a person before they go live, and anything our checks flag goes to the same queue. Read more about",
@@ -1107,10 +1164,10 @@
     "languageTitle": "Your language",
     "localBody": "Everything on LocZ is anchored to a place. You can browse a whole city, narrow to a locality, or search within one, three, five, ten, twenty-five or fifty kilometres of where you are. Sharing your precise location is optional—city-level browsing works just as well.",
     "localTitle": "Local first",
-    "metadataDescription": "Find it here.. Deal it near.. LocZ is a location-first local discovery platform for India—classifieds, jobs, offers and services near you.",
+    "metadataDescription": "Learn how LocZ helps people discover, buy, sell, work and find trusted services nearby.",
     "safetyLink": "staying safe on LocZ",
     "tagline": "Find it here.. Deal it near..",
-    "title": "Post your ad"
+    "title": "About LocZ"
   },
   "helpPage": {
     "a1": "No. Posting ads, jobs, offers and business profiles costs nothing today, and there is no charge to be found in search.",
@@ -1122,7 +1179,7 @@
     "a7": "Use Report this ad, or block them from the conversation. Blocking stops contact in both directions immediately.",
     "a8": "Go to Account, then delete account. Your ads are removed straight away. We keep a minimal record for a short period so we can handle any dispute, then anonymise it.",
     "contact": "Still stuck? Write to",
-    "metadataDescription": "Find it here.. Deal it near.. LocZ is a location-first local discovery platform for India—classifieds, jobs, offers and services near you.",
+    "metadataDescription": "Get answers about posting, moderation, privacy, safety and managing your LocZ account.",
     "q1": "Does it cost anything to post?",
     "q2": "Why is my ad “under review”?",
     "q3": "Why was my ad not approved?",
@@ -1131,7 +1188,7 @@
     "q6": "How do I mark something as sold?",
     "q7": "Someone is behaving badly. What do I do?",
     "q8": "How do I delete my account?",
-    "title": "Post your ad"
+    "title": "Help centre"
   },
   "privacyPage": {
     "choiceDeactivate": "Deactivate your account, which hides your content and is reversible.",
@@ -1148,7 +1205,7 @@
     "draftNotice": "This is a plain-language draft written for launch. Have it reviewed against the Digital Personal Data Protection Act, 2023 before operating commercially.",
     "locationBody": "the city you choose. If you allow precise location, we use it to sort results by distance; we do not keep a history of where you have been.",
     "locationTitle": "Location",
-    "metadataDescription": "Find it here.. Deal it near.. LocZ is a location-first local discovery platform for India—classifieds, jobs, offers and services near you.",
+    "metadataDescription": "Read how LocZ collects, uses and protects your personal information.",
     "mobileBody": "this is how you sign in. It is never shown on your ads unless you choose to display it.",
     "mobileTitle": "Your mobile number",
     "notDoBody": "We do not sell your personal data. We do not show your phone number to anyone unless you chose to publish it. And we strip the location data out of the photos you upload before anyone else can see them—a photo taken at home should not tell a stranger where you live.",
@@ -1157,7 +1214,7 @@
     "postsTitle": "What you post",
     "retentionBody": "Listings are removed when you delete them or when they expire. Messages are kept while the conversation exists. Security and moderation records are kept for a limited period so we can investigate abuse and settle disputes.",
     "retentionTitle": "How long we keep it",
-    "title": "Post your ad",
+    "title": "Privacy policy",
     "updated": "Last updated 26 July 2026",
     "visibilityBody": "Your listings, display name and the city you post in are public. Your phone number, email address and messages are not, unless you publish the number yourself.",
     "visibilityTitle": "Who can see what"
@@ -1172,14 +1229,14 @@
     "eligibilityTitle": "Who may use LocZ",
     "endingBody": "You may delete your account at any time. We may close an account that repeatedly breaches these terms.",
     "endingTitle": "Ending your use",
-    "metadataDescription": "Find it here.. Deal it near.. LocZ is a location-first local discovery platform for India—classifieds, jobs, offers and services near you.",
+    "metadataDescription": "Read the terms that apply when you use LocZ, post listings or contact people nearby.",
     "moderationBody": "We may review, refuse, pause or remove any listing, and suspend an account, where our rules or the law require it. Where we remove something we tell you why, and you can ask us to look again.",
     "moderationTitle": "Moderation",
     "platformBody": "We connect buyers and sellers. We do not own, inspect, guarantee or deliver anything listed here, we hold no payments, and we are not a party to any agreement you make. As an intermediary we act on notice: report something and we will review it.",
     "platformTitle": "LocZ is a platform, not a party to your deal",
     "prohibitedBody": "Weapons, drugs, wildlife, counterfeit goods, stolen property, identity documents, prescription medicines, adult services, financial products you are not licensed to offer, or anything prohibited by Indian law. No spam, no misleading prices, no advance-fee schemes, and no impersonating another person or business.",
     "prohibitedTitle": "What you may not post",
-    "title": "Post your ad",
+    "title": "Terms of use",
     "updated": "Last updated 26 July 2026"
   },
   "chatUi": {
@@ -1267,7 +1324,7 @@
     "seeAll": "See all notifications",
     "suspiciousBody": "Simple habits for safer local deals.",
     "suspiciousTitle": "Spot suspicious activity",
-    "title": "Post your ad",
+    "title": "Notifications",
     "today": "Today",
     "typeBusinessUpdate": "Business update",
     "typeJobEnquiry": "Job enquiry",
@@ -1317,7 +1374,7 @@
     "local": "Local",
     "homeBusiness": "Home business",
     "localResults": "Local businesses in {area}",
-    "metadataDescription": "Find it here.. Deal it near.. LocZ is a location-first local discovery platform for India—classifieds, jobs, offers and services near you.",
+    "metadataDescription": "Discover trusted local businesses, shops and professionals near you on LocZ.",
     "metadataTitle": "Local businesses near you",
     "mostViewed": "Most viewed",
     "nearYou": "near you",
@@ -1341,8 +1398,8 @@
     "searchPlaceholder": "Try “electrician” or “bakery” in {area}",
     "showAll": "Show all businesses",
     "showBusinesses": "Show businesses",
-    "subtitle": "Buy and sell near you. Join in a minute.",
-    "title": "Post your ad",
+    "subtitle": "Discover useful shops, services and professionals close to home.",
+    "title": "Local businesses near you",
     "trustFree": "Always local",
     "trustPrivate": "Private in-app enquiries",
     "trustVerification": "Verification shown clearly",
@@ -1528,7 +1585,7 @@
     "emailTaken": "That email already has an account. Sign in instead."
   },
   "dashboard": {
-    "title": "Post your ad",
+    "title": "My LocZ",
     "myAds": "My ads",
     "savedAds": "Saved ads",
     "noAds": "You haven't posted anything yet",
@@ -1581,21 +1638,22 @@
     "safety": "Staying safe",
     "terms": "Terms",
     "privacy": "Privacy",
-    "postFree": "Post an ad"
+    "postFree": "Post an ad",
+    "cities": "Cities on LocZ"
   },
   "errorPage": {
     "body": "Your details are safe. Try the page once more, or return home and continue browsing nearby.",
     "goHome": "Go home",
     "kicker": "A small detour",
     "reference": "Support reference: {digest}",
-    "title": "Post your ad",
+    "title": "Something went wrong",
     "tryAgain": "Try again"
   },
   "notFoundPage": {
     "back": "Back to LocZ",
     "body": "The listing may have moved, expired, or found a new home.",
     "kicker": "Lost locally?",
-    "title": "Post your ad"
+    "title": "We couldn't find that page"
   },
   "getApp": {
     "title": "Your neighbourhood, in your pocket",
@@ -1616,7 +1674,7 @@
     "iosNote": "An iPhone version is not available yet."
   },
   "register": {
-    "title": "Post your ad",
+    "title": "Create your LocZ account",
     "subtitle": "Buy and sell near you. Join in a minute.",
     "name": "Your name",
     "nameHint": "Shown to buyers and sellers you talk to.",
@@ -1644,7 +1702,7 @@
     "phoneIdentityHint": "Buyers use this to reach you. You will not sign in with it."
   },
   "verifyPhone": {
-    "title": "Post your ad",
+    "title": "Verify your phone number",
     "intro": "We send a six-digit code. Confirming your number lets you claim a business and tells buyers they can reach you.",
     "phone": "Mobile number",
     "phoneHint": "10-digit Indian mobile number",

@@ -27,6 +27,8 @@ export interface SelectedCity {
   id: string;
   name: string;
   slug: string;
+  /** Used to expose rich city-guide entry points only for Tier-1/2 cities. */
+  tier?: 1 | 2 | 3;
   latitude?: number;
   longitude?: number;
   radiusKm?: number;

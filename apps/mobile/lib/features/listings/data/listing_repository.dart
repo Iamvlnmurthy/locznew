@@ -88,7 +88,9 @@ class ListingRepository {
           )
           .toList(),
       businesses: (json['businesses'] as List<dynamic>? ?? const [])
-          .map((entry) => BusinessSummary.fromJson(entry as Map<String, dynamic>))
+          .map(
+            (entry) => BusinessSummary.fromJson(entry as Map<String, dynamic>),
+          )
           .toList(),
       businessTotal: (json['businessTotal'] as num?)?.toInt() ?? 0,
     );
@@ -128,7 +130,9 @@ class ListingRepository {
     return SearchResults(
       listings: const [],
       businesses: (json['businesses'] as List<dynamic>? ?? const [])
-          .map((entry) => BusinessSummary.fromJson(entry as Map<String, dynamic>))
+          .map(
+            (entry) => BusinessSummary.fromJson(entry as Map<String, dynamic>),
+          )
           .toList(),
       businessTotal: (json['businessTotal'] as num?)?.toInt() ?? 0,
     );
@@ -170,7 +174,9 @@ class ListingRepository {
     final meta = (json['meta'] as Map<String, dynamic>?) ?? const {};
     return (
       items: (json['items'] as List<dynamic>? ?? const [])
-          .map((entry) => BusinessSummary.fromJson(entry as Map<String, dynamic>))
+          .map(
+            (entry) => BusinessSummary.fromJson(entry as Map<String, dynamic>),
+          )
           .toList(),
       hasNextPage: meta['hasNextPage'] as bool? ?? false,
       total: (meta['total'] as num?)?.toInt() ?? 0,
@@ -178,7 +184,10 @@ class ListingRepository {
   }
 
   /// Active-business count per category for an area, for the Explore tiles.
-  Future<Map<String, int>> businessCategoryCounts({String? cityId, String? pincode}) async {
+  Future<Map<String, int>> businessCategoryCounts({
+    String? cityId,
+    String? pincode,
+  }) async {
     final json = await _api.get<List<dynamic>>(
       '/businesses/category-counts',
       query: {
@@ -195,7 +204,10 @@ class ListingRepository {
 
   /// "Around you" — how many known places sit in each discovery area, rolled up from the POIs
   /// LocZ already holds. Makes a brand-new area look alive before anyone posts. Ordered by count.
-  Future<List<({String area, int count})>> areaSummary({String? cityId, String? pincode}) async {
+  Future<List<({String area, int count})>> areaSummary({
+    String? cityId,
+    String? pincode,
+  }) async {
     final json = await _api.get<Map<String, dynamic>>(
       '/local-now/area-summary',
       query: {
@@ -276,7 +288,9 @@ class ListingRepository {
         slug: json['slug'] as String? ?? slug,
         title: json['title'] as String? ?? '',
         summary: json['summary'] as String?,
-        categories: [for (final c in (json['categories'] as List<dynamic>? ?? [])) c as String],
+        categories: [
+          for (final c in (json['categories'] as List<dynamic>? ?? [])) c as String,
+        ],
         publishedAt: json['publishedAt'] as String?,
         sources: [
           for (final s in (json['sources'] as List<dynamic>? ?? []))
@@ -750,6 +764,7 @@ class ListingRepository {
           latitude: city.latitude,
           longitude: city.longitude,
           isLaunched: city.isLaunched,
+          tier: city.tier,
           nameTe: city.nameTe,
           nameHi: city.nameHi,
         );

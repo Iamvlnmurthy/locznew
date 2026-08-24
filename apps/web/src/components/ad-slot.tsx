@@ -6,6 +6,7 @@ import {
   PLACEMENTS,
   isPlacementLive,
   slotIdFor,
+  type AdFormat,
   type PlacementId,
 } from '@/lib/ads/placements';
 
@@ -40,6 +41,24 @@ interface Props {
   contentScore?: number;
   className?: string;
 }
+
+const FORMAT_ATTRIBUTES: Readonly<Record<AdFormat, Readonly<Record<string, string>>>> = {
+  display: {
+    'data-ad-format': 'auto',
+    'data-full-width-responsive': 'true',
+  },
+  'in-feed': {
+    'data-ad-format': 'fluid',
+    'data-ad-layout-key': '-6t+ed+2i-1n-4w',
+  },
+  'in-article': {
+    'data-ad-format': 'fluid',
+    'data-ad-layout': 'in-article',
+  },
+  multiplex: {
+    'data-ad-format': 'autorelaxed',
+  },
+};
 
 export function AdSlot({ placement, contentScore = 0, className }: Props) {
   const ref = useRef<HTMLModElement>(null);
@@ -91,7 +110,7 @@ export function AdSlot({ placement, contentScore = 0, className }: Props) {
 
   return (
     <aside
-      className={`ad-slot ${deviceClass} ${className ?? ''}`.trim()}
+      className={`ad-slot ad-slot--${config.format} ${deviceClass} ${className ?? ''}`.trim()}
       // Not part of the document's meaning. A screen reader announcing an
       // advertisement between the address and the opening hours is noise, and
       // ads must never read as LocZ content.
@@ -111,8 +130,7 @@ export function AdSlot({ placement, contentScore = 0, className }: Props) {
         style={{ display: 'block' }}
         data-ad-client={ADS_CLIENT}
         data-ad-slot={slotIdFor(placement)}
-        data-ad-format="auto"
-        data-full-width-responsive="true"
+        {...FORMAT_ATTRIBUTES[config.format]}
       />
     </aside>
   );

@@ -56,7 +56,11 @@ class _CityPickerScreenState extends ConsumerState<CityPickerScreen> {
         return;
       }
 
-      await ref.read(selectedCityProvider.notifier).selectPincode(area);
+      final knownCities = ref.read(citiesProvider).valueOrNull ?? const [];
+      final resolvedCity = area.cityId == null
+          ? null
+          : knownCities.where((city) => city.id == area.cityId).firstOrNull;
+      await ref.read(selectedCityProvider.notifier).selectPincode(area, city: resolvedCity);
       if (mounted) context.pop();
     } finally {
       if (mounted) setState(() => _checkingPincode = false);

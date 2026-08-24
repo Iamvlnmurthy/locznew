@@ -22451,3 +22451,33 @@ h4,
   background: rgb(48 177 141 / 12%) !important;
   color: var(--locz-text-primary) !important;
 }
+
+/* A selected Tier-1/2 city has two distinct actions: open its guide or change location. */
+.location-chip--guide {
+  padding: 0 !important;
+  display: inline-flex;
+  overflow: hidden;
+}
+.location-chip--guide .location-chip__city,
+.location-chip--guide .location-chip__change {
+  min-width: 0;
+  min-height: 100%;
+  display: inline-flex;
+  align-items: center;
+  color: inherit;
+}
+.location-chip--guide .location-chip__city { padding: 0 7px 0 13px; gap: 8px; }
+.location-chip--guide .location-chip__city span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.location-chip--guide .location-chip__change { width: 34px; flex: 0 0 auto; justify-content: center; border-left: 1px solid rgb(16 101 84 / 12%); }
+
+.home-discovery__location--guide { gap: 7px; transition: transform 180ms ease, box-shadow 180ms ease; }
+.home-discovery__location--guide small { margin-left: 5px; padding-left: 10px; border-left: 1px solid rgb(16 101 84 / 18%); color: var(--locz-primary); font-size: 10px; font-weight: 800; letter-spacing: .02em; }
+.home-discovery__location--guide:hover { transform: translateY(-1px); box-shadow: 0 10px 24px rgb(18 73 62 / 10%); }
+@media (max-width: 560px) { .home-discovery__location--guide small { max-width: 112px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; } }
+
+.footer__cities { padding-block: 22px; border-top: 1px solid rgb(255 255 255 / 12%); display: grid; grid-template-columns: 180px 1fr; gap: 24px; }
+.footer__cities > strong { color: white; font-size: 13px; }
+.footer__cities > div { display: flex; flex-wrap: wrap; gap: 8px 18px; }
+.footer__cities a { color: rgb(255 255 255 / 64%); font-size: 12px; transition: color 160ms ease; }
+.footer__cities a:hover { color: white; }
+@media (max-width: 720px) { .footer__cities { grid-template-columns: 1fr; gap: 14px; } .footer__cities > div { gap: 10px 16px; } }

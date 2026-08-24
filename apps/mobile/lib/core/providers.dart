@@ -5,6 +5,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../features/auth/data/auth_repository.dart';
 import '../features/chat/data/chat_repository.dart';
+import '../features/city_guide/data/city_guide_repository.dart';
 import '../features/listings/data/listing_repository.dart';
 import '../features/listings/domain/models.dart';
 import 'i18n/strings.dart';
@@ -37,6 +38,14 @@ final listingRepositoryProvider = Provider<ListingRepository>(
 
 final chatRepositoryProvider = Provider<ChatRepository>(
   (ref) => ChatRepository(ref.watch(apiClientProvider)),
+);
+
+final cityGuideRepositoryProvider = Provider<CityGuideRepository>(
+  (ref) => CityGuideRepository(ref.watch(apiClientProvider)),
+);
+
+final cityGuideProvider = FutureProvider.autoDispose.family<CityGuideData, String>(
+  (ref, slug) => ref.watch(cityGuideRepositoryProvider).load(slug),
 );
 
 // ---------------------------------------------------------------------------
@@ -87,6 +96,8 @@ class SelectedCity {
   const SelectedCity({
     required this.id,
     required this.name,
+    this.slug,
+    this.tier,
     this.latitude,
     this.longitude,
     this.pincode,
@@ -96,6 +107,8 @@ class SelectedCity {
   /// search still works, so there is no reason to force a city on them.
   final String id;
   final String name;
+  final String? slug;
+  final int? tier;
   final double? latitude;
   final double? longitude;
 
@@ -110,6 +123,8 @@ class CityNotifier extends StateNotifier<SelectedCity?> {
 
   static const _keyId = 'locz.city.id';
   static const _keyName = 'locz.city.name';
+  static const _keySlug = 'locz.city.slug';
+  static const _keyTier = 'locz.city.tier';
   static const _keyLat = 'locz.city.lat';
   static const _keyLng = 'locz.city.lng';
   static const _keyPincode = 'locz.city.pincode';
@@ -125,6 +140,8 @@ class CityNotifier extends StateNotifier<SelectedCity?> {
       state = SelectedCity(
         id: id,
         name: name,
+        slug: prefs.getString(_keySlug),
+        tier: prefs.getInt(_keyTier),
         latitude: prefs.getDouble(_keyLat),
         longitude: prefs.getDouble(_keyLng),
         pincode: prefs.getString(_keyPincode),
@@ -136,6 +153,12 @@ class CityNotifier extends StateNotifier<SelectedCity?> {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(_keyId, city.id);
     await prefs.setString(_keyName, city.name);
+    await prefs.setString(_keySlug, city.slug);
+    if (city.tier != null) {
+      await prefs.setInt(_keyTier, city.tier!);
+    } else {
+      await prefs.remove(_keyTier);
+    }
     await prefs.setDouble(_keyLat, latitude ?? city.latitude);
     await prefs.setDouble(_keyLng, longitude ?? city.longitude);
     // Choosing a city clears any earlier pincode: the two are alternative answers to
@@ -145,24 +168,64 @@ class CityNotifier extends StateNotifier<SelectedCity?> {
     state = SelectedCity(
       id: city.id,
       name: city.name,
+      slug: city.slug,
+      tier: city.tier,
       latitude: latitude ?? city.latitude,
       longitude: longitude ?? city.longitude,
     );
   }
 
+  /// Makes a city guide's directory CTA honest: deep-linked guides can switch
+  /// the active discovery context before opening businesses for that city.
+  Future<void> selectGuideCity({
+    required String id,
+    required String name,
+    required String slug,
+    required int tier,
+    required double latitude,
+    required double longitude,
+  }) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_keyId, id);
+    await prefs.setString(_keyName, name);
+    await prefs.setString(_keySlug, slug);
+    await prefs.setInt(_keyTier, tier);
+    await prefs.setDouble(_keyLat, latitude);
+    await prefs.setDouble(_keyLng, longitude);
+    await prefs.remove(_keyPincode);
+
+    state = SelectedCity(
+      id: id,
+      name: name,
+      slug: slug,
+      tier: tier,
+      latitude: latitude,
+      longitude: longitude,
+    );
+  }
+
   /// Location stated as a pincode — the answer most people can give without hesitating,
   /// and one that costs no permission prompt.
-  Future<void> selectPincode(PincodeArea area) async {
+  Future<void> selectPincode(PincodeArea area, {City? city}) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(_keyId, area.cityId ?? '');
     await prefs.setString(_keyName, area.cityName ?? area.label);
     await prefs.setDouble(_keyLat, area.latitude);
     await prefs.setDouble(_keyLng, area.longitude);
     await prefs.setString(_keyPincode, area.code);
+    if (city != null) {
+      await prefs.setString(_keySlug, city.slug);
+      if (city.tier != null) await prefs.setInt(_keyTier, city.tier!);
+    } else {
+      await prefs.remove(_keySlug);
+      await prefs.remove(_keyTier);
+    }
 
     state = SelectedCity(
       id: area.cityId ?? '',
       name: area.cityName ?? area.label,
+      slug: city?.slug,
+      tier: city?.tier,
       latitude: area.latitude,
       longitude: area.longitude,
       pincode: area.code,
