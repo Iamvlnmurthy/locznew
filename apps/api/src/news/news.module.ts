@@ -2,6 +2,8 @@ import { BullModule } from '@nestjs/bullmq';
 import { Module } from '@nestjs/common';
 import { QUEUE_NEWS } from '../queue/queue.constants';
 import { NewsController } from './news.controller';
+import { StoriesController } from './stories/stories.controller';
+import { StoriesService } from './stories/stories.service';
 import { GazetteerService } from './geo/gazetteer.service';
 import { NewsIngestService } from './ingest/news-ingest.service';
 import { NewsFeedService } from './feed/news-feed.service';
@@ -19,8 +21,9 @@ import { NewsProcessor } from './news.processor';
  */
 @Module({
   imports: [BullModule.registerQueue({ name: QUEUE_NEWS })],
-  controllers: [NewsController],
+  controllers: [NewsController, StoriesController],
   providers: [
+    StoriesService,
     GazetteerService,
     NewsIngestService,
     NewsFeedService,
