@@ -7,9 +7,8 @@
  * business template is on ~3 million URLs, and swapping AdSense for Ad Manager, or for a
  * directly-sold local campaign, must not mean editing a page component.
  *
- * Everything defaults to OFF. Deploying this code changes nothing until the environment
- * turns a placement on, which is what makes it safe to ship before AdSense has approved
- * the site.
+ * Everything defaults to OFF. Deploying this code changes nothing until the build environment
+ * turns a placement on, which is what makes it safe to ship before AdSense has approved the site.
  */
 
 export type Device = 'mobile' | 'desktop' | 'both';
@@ -134,34 +133,37 @@ export const PLACEMENTS: Readonly<Record<PlacementId, Placement>> = {
 /**
  * Environment, read once.
  *
- * `NEXT_PUBLIC_ADS_ENABLED` is the global kill switch — one variable and a restart
- * turns off every advertisement on the site without a frontend deploy, which is what
- * you want when a policy warning arrives at nine on a Sunday evening.
+ * `NEXT_PUBLIC_ADS_ENABLED` is the global build-time kill switch. Like every `NEXT_PUBLIC_*`
+ * value, Next.js freezes it into the browser bundle during `next build`, so changing it requires
+ * a rebuild and restart. Keep the VPS deployment script as the single path for doing both.
  *
  * Per-placement slot ids come from AdSense and are public (they appear in the markup
  * of every page that carries an ad), so they belong in NEXT_PUBLIC_ configuration
  * rather than a secret store. A placement with no slot id stays dark.
  */
-const env = (name: string) => process.env[name]?.trim() || '';
+const clean = (value: string | undefined) => value?.trim() ?? '';
 
-export const ADS_ENABLED = env('NEXT_PUBLIC_ADS_ENABLED') === 'true';
-export const ADS_CLIENT = env('NEXT_PUBLIC_ADSENSE_CLIENT');
+// These references must stay explicit. Next.js does not inline dynamic lookups such as
+// `process.env[name]` into client bundles. A dynamic lookup works during server rendering but
+// becomes empty in the browser, which makes React remove the server-rendered ad during hydration.
+export const ADS_ENABLED = process.env.NEXT_PUBLIC_ADS_ENABLED === 'true';
+export const ADS_CLIENT = clean(process.env.NEXT_PUBLIC_ADSENSE_CLIENT);
 
-const SLOT_ENV: Record<PlacementId, string> = {
-  BUSINESS_AFTER_ABOUT: 'NEXT_PUBLIC_AD_SLOT_BUSINESS_AFTER_ABOUT',
-  BUSINESS_AFTER_LOCATION: 'NEXT_PUBLIC_AD_SLOT_BUSINESS_AFTER_LOCATION',
-  BUSINESS_BEFORE_NEARBY: 'NEXT_PUBLIC_AD_SLOT_BUSINESS_BEFORE_NEARBY',
-  HOME_AFTER_LOCAL_NOW: 'NEXT_PUBLIC_AD_SLOT_HOME_AFTER_LOCAL_NOW',
-  HOME_AFTER_BUSINESSES: 'NEXT_PUBLIC_AD_SLOT_HOME_AFTER_BUSINESSES',
-  SEARCH_IN_FEED: 'NEXT_PUBLIC_AD_SLOT_SEARCH_IN_FEED',
-  NEWS_ARTICLE_TOP: 'NEXT_PUBLIC_AD_SLOT_NEWS_ARTICLE_TOP',
-  NEWS_ARTICLE_IN_BODY: 'NEXT_PUBLIC_AD_SLOT_NEWS_ARTICLE_IN_BODY',
-  NEWS_FEED_IN_LIST: 'NEXT_PUBLIC_AD_SLOT_NEWS_FEED_IN_LIST',
-  NEWS_ARTICLE_RELATED: 'NEXT_PUBLIC_AD_SLOT_NEWS_ARTICLE_RELATED',
+const SLOT_IDS: Readonly<Record<PlacementId, string>> = {
+  BUSINESS_AFTER_ABOUT: clean(process.env.NEXT_PUBLIC_AD_SLOT_BUSINESS_AFTER_ABOUT),
+  BUSINESS_AFTER_LOCATION: clean(process.env.NEXT_PUBLIC_AD_SLOT_BUSINESS_AFTER_LOCATION),
+  BUSINESS_BEFORE_NEARBY: clean(process.env.NEXT_PUBLIC_AD_SLOT_BUSINESS_BEFORE_NEARBY),
+  HOME_AFTER_LOCAL_NOW: clean(process.env.NEXT_PUBLIC_AD_SLOT_HOME_AFTER_LOCAL_NOW),
+  HOME_AFTER_BUSINESSES: clean(process.env.NEXT_PUBLIC_AD_SLOT_HOME_AFTER_BUSINESSES),
+  SEARCH_IN_FEED: clean(process.env.NEXT_PUBLIC_AD_SLOT_SEARCH_IN_FEED),
+  NEWS_ARTICLE_TOP: clean(process.env.NEXT_PUBLIC_AD_SLOT_NEWS_ARTICLE_TOP),
+  NEWS_ARTICLE_IN_BODY: clean(process.env.NEXT_PUBLIC_AD_SLOT_NEWS_ARTICLE_IN_BODY),
+  NEWS_FEED_IN_LIST: clean(process.env.NEXT_PUBLIC_AD_SLOT_NEWS_FEED_IN_LIST),
+  NEWS_ARTICLE_RELATED: clean(process.env.NEXT_PUBLIC_AD_SLOT_NEWS_ARTICLE_RELATED),
 };
 
 export function slotIdFor(placement: PlacementId): string {
-  return env(SLOT_ENV[placement]);
+  return SLOT_IDS[placement];
 }
 
 /**
