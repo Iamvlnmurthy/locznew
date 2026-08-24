@@ -1,7 +1,13 @@
 import { BadRequestException, Injectable, Logger } from '@nestjs/common';
 import { InjectQueue } from '@nestjs/bullmq';
 import { Queue } from 'bullmq';
-import { ListingStatus, ModerationStatus, ReportStatus, UserStatus } from '@prisma/client';
+import {
+  ListingStatus,
+  ListingType,
+  ModerationStatus,
+  ReportStatus,
+  UserStatus,
+} from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import {
   JOB_EXPIRE_LISTINGS,
@@ -17,6 +23,7 @@ import {
   AdminMetricsDto,
   AdminUserDto,
   AuditLogDto,
+  DemandMetricsDto,
   ListingsByBucketDto,
   QueueHealthDto,
   TopListingDto,
@@ -148,6 +155,81 @@ export class AdminService {
       openJobs,
       liveOffers,
     };
+  }
+
+  /**
+   * The demand side, for the console. Every count runs concurrently, like getMetrics — the
+   * requirement/response tables are small and single-column-counted, so this stays fast.
+   */
+  async getDemandMetrics(): Promise<DemandMetricsDto> {
+    const weekAgo = new Date(Date.now() - 7 * 24 * 3_600_000);
+    const publishedListing = { status: ListingStatus.PUBLISHED, deletedAt: null };
+
+    const [
+      openRequirements,
+      fulfilledRequirements,
+      unansweredRequirements,
+      totalResponses,
+      newRequirementsThisWeek,
+    ] = await Promise.all([
+      this.prisma.buyerRequirementDetail.count({
+        where: { fulfilledAt: null, listing: publishedListing },
+      }),
+      this.prisma.buyerRequirementDetail.count({
+        where: { fulfilledAt: { not: null }, listing: { deletedAt: null } },
+      }),
+      // The supply gap: open, published, and nobody has answered.
+      this.prisma.buyerRequirementDetail.count({
+        where: { fulfilledAt: null, responseCount: 0, listing: publishedListing },
+      }),
+      this.prisma.requirementResponse.count({ where: { withdrawnAt: null } }),
+      this.prisma.listing.count({
+        where: {
+          type: ListingType.BUYER_REQUIREMENT,
+          deletedAt: null,
+          createdAt: { gte: weekAgo },
+        },
+      }),
+    ]);
+
+    return {
+      openRequirements,
+      fulfilledRequirements,
+      unansweredRequirements,
+      totalResponses,
+      newRequirementsThisWeek,
+    };
+  }
+
+  /**
+   * Categories with the most unanswered requirements — demand nobody nearby is meeting, named.
+   * This is the list that tells operations which supply to go and recruit.
+   */
+  async getUnmetDemandByCategory(limit = 10): Promise<ListingsByBucketDto[]> {
+    const grouped = await this.prisma.listing.groupBy({
+      by: ['categoryId'],
+      where: {
+        type: ListingType.BUYER_REQUIREMENT,
+        status: ListingStatus.PUBLISHED,
+        deletedAt: null,
+        buyerRequirement: { fulfilledAt: null, responseCount: 0 },
+      },
+      _count: { _all: true },
+      orderBy: { _count: { categoryId: 'desc' } },
+      take: limit,
+    });
+
+    const categories = await this.prisma.category.findMany({
+      where: { id: { in: grouped.map((entry) => entry.categoryId) } },
+      select: { id: true, name: true },
+    });
+    const nameById = new Map(categories.map((category) => [category.id, category.name]));
+
+    return grouped.map((entry) => ({
+      id: entry.categoryId,
+      label: nameById.get(entry.categoryId) ?? 'Unknown',
+      count: entry._count._all,
+    }));
   }
 
   /** Listing volume by city — which markets are actually alive. */

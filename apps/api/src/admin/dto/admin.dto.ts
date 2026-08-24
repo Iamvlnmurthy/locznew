@@ -24,6 +24,21 @@ export class ListingsByBucketDto {
   @ApiProperty() count!: number;
 }
 
+/**
+ * The demand half of the marketplace, for the admin console. `unansweredRequirements` is the
+ * number that matters most: open requirements nobody nearby has answered name demand the area
+ * cannot currently meet — the strongest supply-gap signal the platform collects (VISION §25).
+ */
+export class DemandMetricsDto {
+  @ApiProperty({ description: 'Published, not yet fulfilled' }) openRequirements!: number;
+  @ApiProperty({ description: 'Closed by the buyer' }) fulfilledRequirements!: number;
+  @ApiProperty({ description: 'Open with zero seller responses — the supply gap' })
+  unansweredRequirements!: number;
+  @ApiProperty({ description: 'Live seller responses across all requirements' })
+  totalResponses!: number;
+  @ApiProperty() newRequirementsThisWeek!: number;
+}
+
 export class TopListingDto {
   @ApiProperty() id!: string;
   @ApiProperty() title!: string;

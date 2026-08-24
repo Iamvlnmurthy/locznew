@@ -8,6 +8,7 @@ import {
   AdminMetricsDto,
   AdminUserDto,
   AuditLogDto,
+  DemandMetricsDto,
   ListingsByBucketDto,
   QueueHealthDto,
   StorageStatsDto,
@@ -42,6 +43,22 @@ export class AdminController {
   @ApiResponse({ status: 200, type: [ListingsByBucketDto] })
   listingsByCategory(@Query('limit') limit?: string): Promise<ListingsByBucketDto[]> {
     return this.admin.getListingsByCategory(limit ? Number(limit) : 10);
+  }
+
+  @Get('metrics/demand')
+  @RequirePermissions('metrics:read')
+  @ApiOperation({ summary: 'Buyer-demand counters — open, fulfilled and unanswered requirements' })
+  @ApiResponse({ status: 200, type: DemandMetricsDto })
+  demand(): Promise<DemandMetricsDto> {
+    return this.admin.getDemandMetrics();
+  }
+
+  @Get('metrics/unmet-demand')
+  @RequirePermissions('metrics:read')
+  @ApiOperation({ summary: 'Categories with the most unanswered requirements — the supply gap' })
+  @ApiResponse({ status: 200, type: [ListingsByBucketDto] })
+  unmetDemand(@Query('limit') limit?: string): Promise<ListingsByBucketDto[]> {
+    return this.admin.getUnmetDemandByCategory(limit ? Number(limit) : 10);
   }
 
   @Get('metrics/daily-listings')
