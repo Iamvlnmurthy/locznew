@@ -29,9 +29,21 @@ Drops any story with: a fabricated quote (quotes not verbatim in source), an inv
 (not present in source), or an out-of-range body length. When a human reviewer is assigned, flip the
 drop to `status='HELD'` for the review queue instead of discarding.
 
+## Feed API (DONE, live) — for Codex's news pages
+
+`GET /api/v1/news/stories` — the distance-increasing feed over `news_stories`:
+
+- Query: `latitude`,`longitude` (anchor; omit → recency order), `category`, `state`, `city`,
+  `when` (`today|yesterday|week|month|all`), `lang` (`en|hi|te`…), `limit` (≤50), `offset`.
+- Returns `{ cards: [{ id, category, title, dek, summary, lang, imageUrl, imageCredit, city,
+state, distanceKm, ring: local|city|district|state|national, publishedAt }], hasMore }`.
+- Rings fill outward (nearest first) so a quiet area still returns a full page.
+  `GET /api/v1/news/stories/:id?lang=te` — one story (title/dek/body in the chosen language).
+  Build the news list + article pages against this shape. In-article ad slot goes in the body
+  (see ADS_PLACEMENT_BRIEF.md). `image_credit` renders **under** the image; no source is shown.
+
 ## Still TODO (not built yet)
 
-- Feed API reading `news_stories` (rings + time window + place + category) — switch the live feed over.
 - News sitemap (Google News `<news:>` sitemap, <48h) + sharded archive sitemaps in robots.txt +
   Google Publisher Center. IndexNow already works but only reaches Bing/Yandex, **not Google**.
 - Scale FEEDS to 30+ states × 8 categories; add all STATE_LANG entries.
