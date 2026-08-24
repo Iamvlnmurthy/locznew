@@ -65,12 +65,15 @@ async function loadEvent(slug: string, lang: string): Promise<NewsEvent | null> 
 
 export async function generateMetadata({
   params,
+  searchParams,
 }: {
   params: Promise<{ slug: string }>;
+  searchParams: Promise<{ lang?: string }>;
 }): Promise<Metadata> {
   const { slug } = await params;
+  const { lang: langParam } = await searchParams;
   const locale = await getLocale();
-  const event = await loadEvent(slug, locale);
+  const event = await loadEvent(slug, langParam || locale || 'en');
   if (!event) return { title: 'News' };
   const description = event.summary?.slice(0, 160) ?? event.title;
   const canonical = `${SITE_URL}/news/${event.slug}`;
@@ -85,11 +88,25 @@ export async function generateMetadata({
 
 export const dynamic = 'force-dynamic';
 
-export default async function NewsEventPage({ params }: { params: Promise<{ slug: string }> }) {
+const ART_LANGS: Array<{ code: string; label: string; te?: boolean }> = [
+  { code: 'en', label: 'English' },
+  { code: 'te', label: 'తెలుగు', te: true },
+  { code: 'hi', label: 'हिन्दी' },
+];
+
+export default async function NewsEventPage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ slug: string }>;
+  searchParams: Promise<{ lang?: string }>;
+}) {
   const { slug } = await params;
+  const { lang: langParam } = await searchParams;
   const locale = await getLocale();
+  const lang = langParam || locale || 'en';
   const t = getTranslator(locale);
-  const event = await loadEvent(slug, locale);
+  const event = await loadEvent(slug, lang);
   if (!event) notFound();
 
   const published = event.publishedAt
@@ -107,9 +124,22 @@ export default async function NewsEventPage({ params }: { params: Promise<{ slug
   return (
     <main className="news-article-page">
       <div className="container news-article">
-        <Link href="/news" className="news-article__back">
-          <Icon name="arrow" /> {t('discoveryAreas.news')}
-        </Link>
+        <div className="news-article__top">
+          <Link href="/news" className="news-article__back">
+            <Icon name="arrow" /> {t('discoveryAreas.news')}
+          </Link>
+          <nav className="news-article__langs" aria-label="Language">
+            {ART_LANGS.map((l) => (
+              <Link
+                key={l.code}
+                href={`/news/${event.slug}${l.code === 'en' ? '' : `?lang=${l.code}`}`}
+                className={`news-article__lang${lang === l.code ? ' news-article__lang--on' : ''}${l.te ? ' te' : ''}`}
+              >
+                {l.label}
+              </Link>
+            ))}
+          </nav>
+        </div>
 
         <div className="news-article__meta">
           {event.categories.slice(0, 3).map((c) => (

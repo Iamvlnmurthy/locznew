@@ -164,7 +164,7 @@ export default async function NewsFeedPage({
             {cards.map((s, i) => (
               <Fragment key={s.id}>
                 <Link
-                  href={`/news/${s.slug}`}
+                  href={`/news/${s.slug}${lang !== 'en' ? `?lang=${lang}` : ''}`}
                   className={`news-card${i === 0 ? ' news-card--lead' : ''}`}
                 >
                   {s.imageUrl ? (

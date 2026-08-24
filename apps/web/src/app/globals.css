@@ -22590,3 +22590,13 @@ h4,
   .news-card--lead { flex-direction: column; }
   .news-card--lead .news-card__img { width: 100%; aspect-ratio: 16 / 10; min-height: 0; }
 }
+
+/* News article language switcher */
+.news-article__top { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-bottom: 8px; }
+.news-article__langs { display: inline-flex; gap: 6px; }
+.news-article__lang {
+  border: 1px solid var(--locz-border, #e6e2d8); background: var(--locz-surface, #fff);
+  color: var(--locz-text, #14201b); border-radius: 999px; padding: 5px 13px; font-size: 0.82rem;
+  text-decoration: none; min-height: 32px; display: inline-flex; align-items: center;
+}
+.news-article__lang--on { background: var(--locz-primary, #0b3d2e); color: #fff; border-color: var(--locz-primary, #0b3d2e); font-weight: 600; }

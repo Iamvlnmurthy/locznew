@@ -101,6 +101,13 @@ export class StoriesController {
   }
 
   @Public()
+  @Get('sitemap')
+  @ApiOperation({ summary: 'Recent stories (48h) for the Google News sitemap' })
+  sitemap() {
+    return this.stories.sitemap();
+  }
+
+  @Public()
   @Get(':key')
   @ApiOperation({ summary: 'One LocZ story by slug or id, in the requested language' })
   async byKey(@Param('key') key: string, @Query('lang') lang?: string) {

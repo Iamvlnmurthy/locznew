@@ -151,6 +151,14 @@ export class GeoService {
    * location is selected or detected, to swap the hero background. Returns null (no error) when the
    * city has no hero, so the client simply keeps its default illustration.
    */
+  /** How many cities are actually launched — for the "N live now" label on the city picker. */
+  async launchedCityCount(): Promise<{ launchedCities: number }> {
+    const launchedCities = await this.prisma.city.count({
+      where: { isLaunched: true, isActive: true },
+    });
+    return { launchedCities };
+  }
+
   async getCityHero(slug: string) {
     const city = await this.prisma.city.findUnique({
       where: { slug },

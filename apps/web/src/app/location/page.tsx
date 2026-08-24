@@ -13,10 +13,11 @@ export const metadata: Metadata = {
 };
 
 export default async function LocationPage() {
-  const [locale, cities, current] = await Promise.all([
+  const [locale, cities, current, stats] = await Promise.all([
     getLocale(),
     apiSafe<City[]>('/locations/cities?limit=50', { revalidate: 3600 }),
     getSelectedCity(),
+    apiSafe<{ launchedCities: number }>('/locations/city-stats', { revalidate: 3600 }),
   ]);
 
   const t = getTranslator(locale);
@@ -75,6 +76,7 @@ export default async function LocationPage() {
           </div>
           <LocationPicker
             cities={cities ?? []}
+            liveCount={stats?.launchedCities}
             currentCityId={current?.id ?? null}
             labels={{
               useCurrent: t('location.useCurrent'),

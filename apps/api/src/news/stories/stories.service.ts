@@ -183,6 +183,26 @@ export class StoriesService {
     };
   }
 
+  /**
+   * Recent stories for the Google News sitemap — articles from the last 48h (Google News only
+   * indexes fresh items), capped at 1000 URLs per the spec.
+   */
+  async sitemap(): Promise<Array<{ slug: string; title: string; publishedAt: string }>> {
+    const rows = await this.prisma.$queryRawUnsafe<
+      Array<{ slug: string; title: string; published_at: string }>
+    >(
+      `SELECT slug, title_en AS title, published_at FROM news_stories
+       WHERE status = 'PUBLISHED' AND slug IS NOT NULL
+         AND published_at >= now() - interval '48 hours'
+       ORDER BY published_at DESC LIMIT 1000`,
+    );
+    return rows.map((r) => ({
+      slug: r.slug,
+      title: r.title,
+      publishedAt: new Date(r.published_at).toISOString(),
+    }));
+  }
+
   /** Count a read. Fire-and-forget from the client when a story opens; drives 'popular' sort. */
   async trackView(key: string): Promise<void> {
     const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(key);

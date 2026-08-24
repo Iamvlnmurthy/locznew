@@ -44,6 +44,13 @@ export class GeoController {
   }
 
   @Public()
+  @Get('city-stats')
+  @ApiOperation({ summary: 'Aggregate city stats — launched count for the "N live now" label' })
+  cityStats() {
+    return this.geo.launchedCityCount();
+  }
+
+  @Public()
   @Get('cities/:slug')
   @ApiOperation({ summary: 'One city by slug — backs the /:city landing pages' })
   @ApiResponse({ status: 200, type: CityDto })

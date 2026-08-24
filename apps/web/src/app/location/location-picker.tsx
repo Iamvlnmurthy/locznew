@@ -31,10 +31,12 @@ export function LocationPicker({
   cities,
   currentCityId,
   labels,
+  liveCount,
 }: {
   cities: City[];
   currentCityId: string | null;
   labels: LocationLabels;
+  liveCount?: number;
 }) {
   const router = useRouter();
   const [query, setQuery] = useState('');
@@ -250,7 +252,8 @@ export function LocationPicker({
       <div className="location-picker__cities-head">
         <strong>{labels.citiesLabel}</strong>
         <span>
-          {cities.filter((city) => city.isLaunched).length} {labels.liveNow}
+          {(liveCount ?? cities.filter((city) => city.isLaunched).length).toLocaleString('en-IN')}{' '}
+          {labels.liveNow}
         </span>
       </div>
 
