@@ -1,7 +1,7 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { useTransition } from 'react';
+import { useEffect, useRef, useTransition } from 'react';
 import { LOCALES, LOCALE_LABELS, type Locale } from '@/i18n';
 import { changeLocaleAction } from '@/app/actions';
 
@@ -13,6 +13,14 @@ import { changeLocaleAction } from '@/app/actions';
 export function LocaleSwitcher({ current, label }: { current: Locale; label: string }) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
+  const startedNavigation = useRef(false);
+
+  useEffect(() => {
+    if (isPending) return;
+    if (!startedNavigation.current) return;
+    startedNavigation.current = false;
+    window.dispatchEvent(new Event('locz:navigation-end'));
+  }, [isPending]);
 
   return (
     <>
@@ -25,6 +33,8 @@ export function LocaleSwitcher({ current, label }: { current: Locale; label: str
         disabled={isPending}
         onChange={(event) => {
           const next = event.target.value as Locale;
+          startedNavigation.current = true;
+          window.dispatchEvent(new Event('locz:navigation-start'));
           startTransition(async () => {
             await changeLocaleAction(next);
             router.refresh();

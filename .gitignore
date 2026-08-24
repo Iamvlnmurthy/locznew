@@ -68,3 +68,4 @@ key.properties
 
 # OSM extracts — 1.8GB, rebuildable from Geofabrik.
 /var/osm/
+.artifacts/

@@ -61,27 +61,64 @@ const FORMAT_ATTRIBUTES: Readonly<Record<AdFormat, Readonly<Record<string, strin
 };
 
 export function AdSlot({ placement, contentScore = 0, className }: Props) {
-  const ref = useRef<HTMLModElement>(null);
-  const [pushed, setPushed] = useState(false);
   const config = PLACEMENTS[placement];
   const live = isPlacementLive(placement, contentScore);
+  const containerRef = useRef<HTMLElement>(null);
+  const unitRef = useRef<HTMLModElement>(null);
+  const pushedRef = useRef(false);
+  const [adState, setAdState] = useState<'idle' | 'requesting' | 'filled' | 'unfilled'>(
+    config.lazy ? 'idle' : 'requesting',
+  );
 
   useEffect(() => {
-    if (!live || pushed || !ref.current) return;
+    if (!live || !unitRef.current || !containerRef.current) return;
+
+    const unit = unitRef.current;
+    let settleTimer: ReturnType<typeof setTimeout> | undefined;
+
+    const readStatus = () => {
+      const status = unit.dataset.adStatus;
+      if (status === 'filled') {
+        setAdState('filled');
+        if (settleTimer) clearTimeout(settleTimer);
+      } else if (status?.startsWith('unfill')) {
+        setAdState('unfilled');
+        if (settleTimer) clearTimeout(settleTimer);
+      }
+    };
+
+    const statusObserver = new MutationObserver(readStatus);
+    statusObserver.observe(unit, {
+      attributes: true,
+      attributeFilter: ['data-ad-status'],
+    });
+    readStatus();
 
     const push = () => {
+      if (pushedRef.current) return;
+      pushedRef.current = true;
+      setAdState('requesting');
+
       try {
         (window.adsbygoogle = window.adsbygoogle || []).push({});
-        setPushed(true);
       } catch {
-        // A failed push must never surface. An empty container is a tidy page;
-        // "Ad failed" is a broken one, and the reader did not come here for ads.
+        setAdState('unfilled');
+        return;
       }
+
+      // A blocker or interrupted provider script may never write data-ad-status.
+      // Do not let that leave a permanent blank floor in the document.
+      settleTimer = setTimeout(() => {
+        setAdState((current) => (current === 'requesting' ? 'unfilled' : current));
+      }, 8000);
     };
 
     if (!config.lazy) {
       push();
-      return;
+      return () => {
+        statusObserver.disconnect();
+        if (settleTimer) clearTimeout(settleTimer);
+      };
     }
 
     // Below the fold: wait until it is close to being seen, so advertising is not
@@ -95,9 +132,13 @@ export function AdSlot({ placement, contentScore = 0, className }: Props) {
       },
       { rootMargin: '400px' },
     );
-    io.observe(ref.current);
-    return () => io.disconnect();
-  }, [live, pushed, config.lazy]);
+    io.observe(containerRef.current);
+    return () => {
+      io.disconnect();
+      statusObserver.disconnect();
+      if (settleTimer) clearTimeout(settleTimer);
+    };
+  }, [live, config.lazy]);
 
   if (!live) return null;
 
@@ -110,11 +151,14 @@ export function AdSlot({ placement, contentScore = 0, className }: Props) {
 
   return (
     <aside
+      ref={containerRef}
       className={`ad-slot ad-slot--${config.format} ${deviceClass} ${className ?? ''}`.trim()}
       // Not part of the document's meaning. A screen reader announcing an
       // advertisement between the address and the opening hours is noise, and
       // ads must never read as LocZ content.
       aria-label="Advertisement"
+      aria-hidden={adState === 'unfilled' ? true : undefined}
+      data-ad-state={adState}
       data-placement={placement}
       style={
         {
@@ -125,7 +169,7 @@ export function AdSlot({ placement, contentScore = 0, className }: Props) {
     >
       <span className="ad-slot__label">Advertisement</span>
       <ins
-        ref={ref}
+        ref={unitRef}
         className="adsbygoogle ad-slot__unit"
         style={{ display: 'block' }}
         data-ad-client={ADS_CLIENT}

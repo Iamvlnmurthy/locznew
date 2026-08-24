@@ -1068,7 +1068,13 @@
   position: absolute;
   z-index: 1;
   background:
-    linear-gradient(100deg, rgb(12 34 28 / 74%) 0%, rgb(12 34 28 / 52%) 40%, rgb(12 34 28 / 16%) 74%, rgb(12 34 28 / 4%) 100%),
+    linear-gradient(
+      100deg,
+      rgb(12 34 28 / 74%) 0%,
+      rgb(12 34 28 / 52%) 40%,
+      rgb(12 34 28 / 16%) 74%,
+      rgb(12 34 28 / 4%) 100%
+    ),
     linear-gradient(to top, rgb(12 34 28 / 42%) 0%, transparent 62%);
   content: '';
   inset: 0;
@@ -1128,8 +1134,12 @@
   }
 
   .business-profile-cover.has-banner::after {
-    background:
-      linear-gradient(to top, rgb(12 34 28 / 94%) 30%, rgb(12 34 28 / 62%) 65%, rgb(12 34 28 / 30%) 100%);
+    background: linear-gradient(
+      to top,
+      rgb(12 34 28 / 94%) 30%,
+      rgb(12 34 28 / 62%) 65%,
+      rgb(12 34 28 / 30%) 100%
+    );
   }
 
   .business-profile-cover.has-banner > .business-profile-identity {
@@ -1553,7 +1563,10 @@
   text-shadow: 0 1px 12px rgb(9 26 21 / 55%);
 }
 
-.business-profile-cover .business-profile-identity__content > .business-profile-identity__address svg {
+.business-profile-cover
+  .business-profile-identity__content
+  > .business-profile-identity__address
+  svg {
   color: rgb(255 255 255 / 80%);
 }
 
@@ -1657,7 +1670,9 @@
     text-shadow: none;
   }
 
-  .business-profile-cover .business-profile-identity__content > .business-profile-identity__address {
+  .business-profile-cover
+    .business-profile-identity__content
+    > .business-profile-identity__address {
     color: var(--locz-text-muted);
     font-size: 0.8rem;
     line-height: 1.5;
@@ -1819,10 +1834,31 @@
   overflow: hidden;
 }
 
-/* Preserve the reserved box when AdSense declines a request. Collapsing it after
-   it entered the viewport creates the exact layout shift the reservation prevents. */
-.ad-slot:has(.adsbygoogle[data-ad-status='unfilled']) {
-  visibility: hidden;
+/* Lazy placements are one-pixel sentinels until they approach the viewport.
+   Only then do they reserve the provider's expected height. A declined,
+   interrupted or blocked request must collapse completely; otherwise a sparse
+   storefront becomes a stack of empty 280-340px floors. */
+.ad-slot[data-ad-state='idle'] {
+  min-height: 1px;
+  margin-block: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  overflow: hidden;
+}
+
+.ad-slot[data-ad-state='idle'] .ad-slot__label {
+  display: none;
+}
+
+.ad-slot[data-ad-state='unfilled'],
+.ad-slot:has(.adsbygoogle[data-ad-status='unfilled']),
+.ad-slot:has(.adsbygoogle[data-ad-status='unfill-optimized']) {
+  display: none !important;
+  min-height: 0 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  border: 0 !important;
 }
 
 .ad-slot--in-feed {
@@ -1854,5 +1890,760 @@
 
   .ad-slot--mobile-only {
     display: block;
+  }
+}
+
+/* ---------------------------------------------------------------------------
+   Storefront refinement — calm retail hierarchy, readable at real size.
+
+   The banner supplies the theatre. Everything below it should feel like a
+   trustworthy shop counter: spacious, legible and action-led. These final
+   rules deliberately replace the compressed dashboard scale above without
+   touching the image composition that already works.
+   --------------------------------------------------------------------------- */
+
+.business-profile {
+  --storefront-card-radius: 24px;
+  --storefront-card-shadow: 0 18px 54px rgb(21 54 44 / 8%);
+  background:
+    radial-gradient(circle at 5% 2%, rgb(221 238 229 / 74%), transparent 34rem),
+    linear-gradient(180deg, #f5f8f4 0%, #f0f5f2 100%);
+}
+
+.business-profile-cover {
+  box-shadow: 0 28px 72px rgb(12 39 31 / 18%);
+}
+
+.business-profile-back {
+  min-height: 38px;
+  padding: 8px 13px;
+  border-radius: 12px;
+  font-size: 0.74rem;
+  font-weight: 680;
+}
+
+.business-profile-breadcrumbs {
+  min-height: 38px;
+  margin-bottom: 10px;
+  gap: 8px;
+  color: var(--storefront-muted);
+  font-size: 0.72rem;
+}
+
+.business-profile-cover .business-profile-identity__content > h1 {
+  max-width: 24ch;
+  font-size: clamp(2rem, 3.1vw, 3.25rem);
+  line-height: 0.98;
+  letter-spacing: -0.045em;
+}
+
+.business-profile-cover .business-profile-category {
+  font-size: 0.72rem;
+  font-weight: 760;
+  letter-spacing: 0.055em;
+  text-transform: uppercase;
+}
+
+.business-profile-cover .business-profile-identity__content > .business-profile-identity__address {
+  max-width: 76ch;
+  margin-top: 8px;
+  font-size: 0.86rem;
+  line-height: 1.55;
+}
+
+.business-profile-cover .business-profile-badges {
+  gap: 7px;
+  margin-top: 12px;
+}
+
+.business-profile-cover .business-profile-badges > span {
+  min-height: 29px;
+  padding: 6px 9px;
+  font-size: 0.67rem;
+  font-weight: 650;
+}
+
+.business-profile-cover .business-profile-identity__actions > a {
+  min-height: 44px;
+  padding: 10px 15px;
+  border-radius: 12px;
+  font-size: 0.76rem;
+  font-weight: 720;
+  transition:
+    transform 160ms ease,
+    box-shadow 180ms ease,
+    border-color 160ms ease;
+}
+
+.business-profile-cover .business-profile-identity__actions > a:hover {
+  box-shadow: 0 12px 28px rgb(15 81 65 / 14%);
+  transform: translateY(-2px);
+}
+
+.business-profile-layout {
+  max-width: 1440px;
+  margin-top: 24px;
+  grid-template-columns: minmax(0, 1fr) 340px;
+  gap: 24px;
+}
+
+.business-profile-layout > main {
+  grid-template-columns: minmax(0, 1fr);
+  gap: 22px;
+}
+
+.business-profile-tabs {
+  top: calc(var(--locz-header-height, 76px) + 12px);
+  z-index: 20;
+  padding: 7px;
+  gap: 5px;
+  border-radius: 18px;
+  background: color-mix(in srgb, var(--locz-surface) 92%, transparent);
+  box-shadow: 0 14px 38px rgb(21 54 44 / 10%);
+  backdrop-filter: blur(18px) saturate(150%);
+}
+
+.business-profile-tabs a,
+.business-profile-tabs a:first-child {
+  min-height: 43px;
+  padding: 10px 15px;
+  border: 1px solid transparent;
+  border-radius: 12px;
+  background: transparent;
+  color: var(--storefront-muted);
+  font-size: 0.78rem;
+  font-weight: 680;
+  transition:
+    color 160ms ease,
+    background 160ms ease,
+    border-color 160ms ease;
+}
+
+.business-profile-tabs a:hover {
+  color: var(--storefront-ink);
+  background: color-mix(in srgb, var(--locz-primary) 6%, transparent);
+}
+
+.business-profile-tabs a.is-active,
+.business-profile-tabs a:first-child.is-active {
+  border-color: color-mix(in srgb, var(--locz-primary) 18%, transparent);
+  color: var(--locz-primary);
+  background: color-mix(in srgb, var(--locz-primary) 10%, var(--locz-surface));
+}
+
+.business-profile-tabs svg {
+  width: 17px;
+  height: 17px;
+}
+
+.business-profile-section {
+  scroll-margin-top: calc(var(--locz-header-height, 76px) + 82px);
+  min-height: 0 !important;
+  padding: clamp(28px, 3.2vw, 42px);
+  border-color: color-mix(in srgb, var(--storefront-line) 88%, transparent);
+  border-radius: var(--storefront-card-radius);
+  background: linear-gradient(145deg, rgb(255 255 255 / 98%), rgb(252 253 251 / 94%));
+  box-shadow: var(--storefront-card-shadow);
+}
+
+.business-profile-section::before {
+  left: clamp(28px, 3.2vw, 42px);
+  width: 62px;
+  height: 4px;
+}
+
+.business-profile-section .section-kicker,
+.business-profile-contact .section-kicker {
+  font-size: 0.7rem;
+  font-weight: 800;
+  letter-spacing: 0.11em;
+}
+
+.business-profile-section h2 {
+  max-width: 29ch;
+  margin: 10px 0 18px;
+  font-size: clamp(1.6rem, 2.4vw, 2.25rem);
+  line-height: 1.08;
+  letter-spacing: -0.04em;
+}
+
+.business-profile-about-grid {
+  margin-top: 0;
+  grid-template-columns: minmax(0, 1.45fr) minmax(280px, 0.55fr);
+  gap: clamp(24px, 4vw, 52px);
+}
+
+.business-profile-about {
+  max-width: 74ch;
+  color: #4f645c;
+  font-size: 1rem;
+  line-height: 1.75;
+}
+
+.business-profile-about.is-empty {
+  color: var(--storefront-muted);
+  font-style: normal;
+}
+
+.business-profile-about__place {
+  padding: 16px;
+  align-content: center;
+  border-color: rgb(199 149 78 / 24%);
+  border-radius: 18px;
+  background: linear-gradient(145deg, #fffaf0, #f6f1e6);
+}
+
+.business-profile-where,
+.business-profile-social {
+  font-size: 0.82rem;
+  line-height: 1.55;
+}
+
+.business-profile-unclaimed {
+  min-height: 72px;
+  padding: 13px 14px;
+  gap: 14px;
+  border-radius: 14px;
+  font-size: 0.8rem;
+  line-height: 1.5;
+}
+
+.business-profile-unclaimed a {
+  padding: 10px 13px;
+  border-radius: 10px;
+  font-size: 0.72rem;
+  font-weight: 730;
+}
+
+.business-profile-hours {
+  grid-template-columns: minmax(0, 1fr) minmax(300px, 0.72fr);
+  gap: clamp(28px, 4vw, 58px);
+}
+
+.business-profile-address {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  color: var(--storefront-muted);
+  font-size: 0.88rem !important;
+  line-height: 1.55;
+}
+
+.business-profile-address strong {
+  display: block;
+  margin-bottom: 3px;
+  color: var(--storefront-ink);
+  font-size: 0.98rem;
+}
+
+.business-profile-map-actions {
+  margin-top: 18px;
+  gap: 9px;
+}
+
+.business-profile-map-actions .btn {
+  min-height: 42px;
+  padding: 9px 13px;
+  border-radius: 11px;
+  font-size: 0.76rem;
+}
+
+.business-profile-hours dl {
+  min-height: 0;
+  padding: 16px;
+  border-radius: 18px;
+  background: linear-gradient(145deg, #edf7f3, #f5faf7);
+}
+
+.business-profile-hours dl > div {
+  min-height: 38px;
+  padding: 8px 10px;
+  font-size: 0.78rem;
+}
+
+.business-profile-faq__list {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.business-profile-faq__list > div {
+  min-height: 112px;
+  padding: 18px;
+  border-radius: 16px;
+  background: linear-gradient(145deg, #faf8fc, #f5f2f8);
+}
+
+.business-profile-faq__list dt {
+  font-size: 0.9rem;
+  line-height: 1.4;
+}
+
+.business-profile-faq__list dd {
+  margin-top: 8px;
+  color: var(--storefront-muted);
+  font-size: 0.82rem;
+  line-height: 1.55;
+}
+
+.business-profile-similar__grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.business-profile-similar__grid li:nth-child(n + 5) {
+  display: list-item;
+}
+
+.business-profile-similar__grid a {
+  min-height: 104px;
+  padding: 13px;
+  gap: 13px;
+  border-radius: 17px;
+  background: linear-gradient(145deg, #fbfdfb, #f4f8f5);
+  transition:
+    transform 170ms ease,
+    box-shadow 190ms ease,
+    border-color 170ms ease;
+}
+
+.business-profile-similar__grid a:hover {
+  border-color: rgb(17 108 88 / 24%);
+  box-shadow: 0 15px 34px rgb(21 54 44 / 9%);
+  transform: translateY(-2px);
+}
+
+.business-profile-similar__logo {
+  width: 66px;
+  height: 66px;
+  flex-basis: 66px;
+  overflow: hidden;
+  border: 1px solid rgb(17 82 66 / 10%);
+  border-radius: 17px;
+  background: linear-gradient(145deg, #edf5f0, #fff8ed);
+}
+
+.business-profile-similar__logo img {
+  width: 58px;
+  height: 58px;
+  object-fit: contain;
+}
+
+.business-profile-similar__logo.has-logo img {
+  padding: 7px;
+}
+
+.business-profile-similar__body {
+  gap: 4px;
+}
+
+.business-profile-similar__body > span {
+  overflow: hidden;
+  color: var(--storefront-coral);
+  font-size: 0.66rem;
+  font-weight: 760;
+  letter-spacing: 0.045em;
+  text-overflow: ellipsis;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.business-profile-similar__body strong {
+  font-size: 0.92rem;
+  line-height: 1.3;
+}
+
+.business-profile-similar__body small {
+  font-size: 0.72rem;
+  line-height: 1.45;
+  white-space: normal;
+}
+
+.business-profile-safety {
+  padding: 20px 22px;
+  border-radius: 18px;
+  background: linear-gradient(135deg, #0e5b4c, #17735f);
+  color: #fff;
+  box-shadow: 0 17px 42px rgb(14 91 76 / 18%);
+}
+
+.business-profile-safety > svg {
+  color: #f4d18a;
+}
+
+.business-profile-safety p,
+.business-profile-safety > a {
+  color: rgb(255 255 255 / 78%);
+}
+
+.business-profile-contact {
+  top: calc(var(--locz-header-height, 76px) + 18px);
+  gap: 14px;
+}
+
+.business-profile-contact > section {
+  padding: 26px;
+  border-radius: 24px;
+  background: radial-gradient(circle at 100% 0%, rgb(218 235 226 / 70%), transparent 15rem), #fff;
+  box-shadow: 0 24px 62px rgb(21 54 44 / 13%);
+}
+
+.business-profile-contact__brand {
+  margin-bottom: 22px;
+  padding-bottom: 18px;
+  gap: 12px;
+}
+
+.business-profile-contact__brand > span {
+  width: 54px;
+  height: 54px;
+  flex-basis: 54px;
+  display: grid;
+  overflow: hidden;
+  place-items: center;
+  border-radius: 15px;
+  background: #edf5f0;
+}
+
+.business-profile-contact__brand img {
+  width: 50px;
+  height: 50px;
+  object-fit: contain;
+}
+
+.business-profile-contact__brand strong {
+  font-size: 0.84rem;
+  line-height: 1.3;
+  white-space: normal;
+}
+
+.business-profile-contact__brand small {
+  font-size: 0.68rem;
+}
+
+.business-profile-contact h2 {
+  margin: 9px 0 8px;
+  font-size: 1.65rem;
+  line-height: 1.08;
+  letter-spacing: -0.04em;
+}
+
+.business-profile-contact > section > p {
+  margin-bottom: 18px;
+  font-size: 0.78rem;
+  line-height: 1.55;
+}
+
+.business-profile-contact .btn {
+  min-height: 50px;
+  border-radius: 13px;
+  font-size: 0.84rem;
+}
+
+.business-profile-contact__direct {
+  margin-top: 16px;
+  padding-top: 16px;
+  gap: 8px;
+}
+
+.business-profile-contact__direct > a {
+  min-height: 58px;
+  padding: 8px;
+  grid-template-columns: 38px minmax(0, 1fr);
+  gap: 10px;
+  border-radius: 12px;
+}
+
+.business-profile-contact__direct > a > svg {
+  width: 38px;
+  height: 38px;
+  padding: 10px;
+  border-radius: 11px;
+}
+
+.business-profile-contact__direct small {
+  font-size: 0.69rem;
+}
+
+.business-profile-contact__direct strong {
+  font-size: 0.86rem;
+}
+
+.business-profile-contact__trust {
+  padding: 14px;
+  border-radius: 16px;
+}
+
+.business-profile-contact__trust strong {
+  font-size: 0.78rem;
+}
+
+.business-profile-contact__trust p {
+  font-size: 0.7rem;
+  line-height: 1.5;
+}
+
+.business-profile-enquiry {
+  gap: 9px;
+}
+
+.business-profile-enquiry label {
+  font-size: 0.74rem;
+  font-weight: 700;
+}
+
+.business-profile-enquiry textarea {
+  min-height: 120px;
+  padding: 13px;
+  border-radius: 13px;
+  font-size: 0.88rem;
+  line-height: 1.55;
+}
+
+.business-profile-enquiry > button:last-child {
+  min-height: 38px;
+  font-size: 0.74rem;
+  font-weight: 650;
+}
+
+.business-profile-report {
+  font-size: 0.72rem;
+}
+
+.business-profile-attribution {
+  padding-inline: 4px;
+  color: var(--storefront-muted);
+  font-size: 0.66rem;
+  line-height: 1.5;
+}
+
+.business-profile-layout .ad-slot {
+  grid-column: 1 / -1;
+  overflow: hidden;
+  margin: 0;
+  border-radius: 20px;
+}
+
+/* Storefront continuity. Older dashboard rules split the main column into two
+   tracks, leaving Hours & location stranded as a half-width island whenever
+   listings were absent. Every editorial section now occupies one calm reading
+   column; the contact rail remains the only secondary desktop column. */
+.business-profile-layout > main {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+}
+
+.business-profile-layout > main > * {
+  width: 100%;
+  min-width: 0;
+}
+
+.business-profile-section,
+.business-profile-section--about,
+.business-profile-hours,
+.business-profile-faq,
+.business-profile-similar {
+  grid-column: auto;
+}
+
+.business-profile-layout .ad-slot[data-ad-state='idle'],
+.business-profile-layout .ad-slot[data-ad-state='unfilled'] {
+  margin: 0;
+}
+
+:root[data-theme='dark'] .business-profile {
+  background:
+    radial-gradient(circle at 5% 2%, rgb(31 69 56 / 48%), transparent 34rem),
+    linear-gradient(180deg, #111b17, #0e1714);
+}
+
+:root[data-theme='dark'] .business-profile-section,
+:root[data-theme='dark'] .business-profile-contact > section {
+  background: linear-gradient(145deg, #192821, #15221d);
+}
+
+:root[data-theme='dark'] .business-profile-about,
+:root[data-theme='dark'] .business-profile-address {
+  color: #adc0b8;
+}
+
+:root[data-theme='dark'] .business-profile-about__place,
+:root[data-theme='dark'] .business-profile-hours dl,
+:root[data-theme='dark'] .business-profile-faq__list > div,
+:root[data-theme='dark'] .business-profile-similar__grid a {
+  border-color: #30493f;
+  background: linear-gradient(145deg, #1d3028, #182820);
+}
+
+@media (max-width: 1179px) {
+  .business-profile-layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .business-profile-contact {
+    grid-template-columns: minmax(0, 1.3fr) minmax(260px, 0.7fr);
+  }
+}
+
+@media (max-width: 760px) {
+  .business-profile {
+    background: #f3f6f2;
+  }
+
+  .business-profile-cover .business-profile-identity__content > h1 {
+    font-size: clamp(1.65rem, 8vw, 2.15rem);
+    line-height: 1.08;
+  }
+
+  .business-profile-cover .business-profile-category {
+    font-size: 0.68rem;
+  }
+
+  .business-profile-cover
+    .business-profile-identity__content
+    > .business-profile-identity__address {
+    margin-top: 7px;
+    font-size: 0.82rem;
+  }
+
+  .business-profile-cover .business-profile-badges > span {
+    min-height: 28px;
+    font-size: 0.65rem;
+  }
+
+  .business-profile-cover .business-profile-identity__actions > a {
+    min-height: 46px;
+    font-size: 0.76rem;
+  }
+
+  .business-profile-layout {
+    margin-top: 14px;
+    padding-inline: 12px;
+    gap: 16px;
+  }
+
+  .business-profile-layout > main {
+    gap: 16px;
+  }
+
+  .business-profile-tabs {
+    top: 62px;
+    margin-inline: 0;
+    padding: 5px;
+    border-radius: 15px;
+  }
+
+  .business-profile-tabs a,
+  .business-profile-tabs a:first-child {
+    min-height: 40px;
+    padding: 9px 12px;
+    font-size: 0.72rem;
+  }
+
+  .business-profile-section {
+    scroll-margin-top: 118px;
+    padding: 22px 18px;
+    border-radius: 20px;
+  }
+
+  .business-profile-section::before {
+    left: 18px;
+  }
+
+  .business-profile-section .section-kicker,
+  .business-profile-contact .section-kicker {
+    font-size: 0.66rem;
+  }
+
+  .business-profile-section h2 {
+    margin: 9px 0 15px;
+    font-size: 1.48rem;
+  }
+
+  .business-profile-about-grid,
+  .business-profile-hours {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 18px;
+  }
+
+  .business-profile-about {
+    font-size: 0.94rem;
+    line-height: 1.68;
+  }
+
+  .business-profile-about__place {
+    padding: 13px;
+  }
+
+  .business-profile-unclaimed {
+    align-items: flex-start;
+    flex-direction: column;
+    font-size: 0.78rem;
+  }
+
+  .business-profile-unclaimed a {
+    width: 100%;
+    text-align: center;
+  }
+
+  .business-profile-faq__list,
+  .business-profile-similar__grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .business-profile-faq__list > div {
+    min-height: 0;
+    padding: 15px;
+  }
+
+  .business-profile-similar__grid a {
+    min-height: 92px;
+    padding: 11px;
+  }
+
+  .business-profile-similar__logo {
+    width: 58px;
+    height: 58px;
+    flex-basis: 58px;
+  }
+
+  .business-profile-similar__logo img {
+    width: 52px;
+    height: 52px;
+  }
+
+  .business-profile-safety {
+    grid-template-columns: 34px minmax(0, 1fr);
+    padding: 17px;
+  }
+
+  .business-profile-safety > a {
+    grid-column: 2;
+  }
+
+  .business-profile-contact {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 10px;
+  }
+
+  .business-profile-contact > section {
+    padding: 22px 18px;
+    border-radius: 20px;
+  }
+
+  .business-profile-contact h2 {
+    font-size: 1.5rem;
+  }
+
+  .business-profile-layout .ad-slot {
+    border-radius: 16px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .business-profile-cover .business-profile-identity__actions > a,
+  .business-profile-similar__grid a,
+  .business-profile-tabs a {
+    transition: none;
   }
 }

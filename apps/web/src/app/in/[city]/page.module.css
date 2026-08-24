@@ -53,7 +53,7 @@
 .fact small { color: #72827d; font-size: 11px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
 .fact strong { overflow: hidden; color: var(--city-ink); font-size: 17px; text-overflow: ellipsis; white-space: nowrap; }
 
-.body { padding-block: clamp(72px, 8vw, 120px); display: grid; gap: clamp(76px, 9vw, 132px); }
+.body { padding-block: clamp(64px, 7vw, 104px); display: grid; gap: clamp(64px, 7vw, 96px); }
 .about { display: grid; grid-template-columns: minmax(0, 1.45fr) minmax(320px, .75fr); gap: clamp(50px, 8vw, 120px); align-items: start; }
 .about h2, .sectionHeading h2, .mapCopy h2, .directory h2 { margin: 12px 0 23px; color: var(--city-ink); font-size: clamp(34px, 4vw, 58px); line-height: 1.02; letter-spacing: -.045em; text-wrap: balance; }
 .about > div > p { color: #50645e; font-size: 17px; line-height: 1.8; }
@@ -98,22 +98,26 @@
 .mapPin small { color: #6b7b76; }
 .mapCaveat { grid-column: 1 / -1; margin: 0; padding: 10px 18px; color: rgb(255 255 255 / 52%); font-size: 10px; text-align: center; background: rgb(0 0 0 / 12%); }
 
-.guideGrid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; }
+.guideGrid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
 .guideAd { grid-column: 1 / -1; margin-block: 6px; }
-.guideCard { position: relative; padding: clamp(28px, 3vw, 42px); border: 1px solid rgb(19 67 57 / 12%); border-radius: 24px; background: rgb(255 255 255 / 83%); box-shadow: 0 16px 44px rgb(20 55 48 / 6%); }
-.guideNumber { display: block; margin-bottom: 26px; color: var(--city-brass); font-size: 12px; font-weight: 800; letter-spacing: .12em; }
-.guideCard h3 { margin: 0 0 17px; color: var(--city-ink); font-size: 26px; letter-spacing: -.03em; }
-.guideCard p { color: #586b65; line-height: 1.75; }
+.guideCard { position: relative; min-height: 300px; padding: 30px; display: flex; flex-direction: column; border: 1px solid rgb(19 67 57 / 12%); border-radius: 24px; background: linear-gradient(155deg, rgb(255 255 255 / 96%), rgb(248 250 247 / 88%)); box-shadow: 0 16px 44px rgb(20 55 48 / 6%); transition: transform .2s ease, box-shadow .2s ease, border-color .2s ease; }
+.guideCard:hover { transform: translateY(-3px); border-color: rgb(13 102 87 / 24%); box-shadow: 0 23px 55px rgb(20 55 48 / 10%); }
+.guideNumber { width: 38px; height: 38px; margin-bottom: 24px; display: grid; place-items: center; border-radius: 12px; color: #795719; background: #f7e8c6; font-size: 11px; font-weight: 850; letter-spacing: .1em; }
+.guideCard h3 { margin: 0 0 14px; color: var(--city-ink); font-size: 23px; line-height: 1.14; letter-spacing: -.03em; }
+.guideCard p { color: #586b65; line-height: 1.68; }
+.guidePreview { margin: 0; display: -webkit-box; overflow: hidden; -webkit-box-orient: vertical; -webkit-line-clamp: 4; }
 .guideDetails { margin-top: 20px; }
 .guideDetails summary { width: fit-content; cursor: pointer; display: flex; align-items: center; gap: 8px; color: var(--city-green); font-size: 13px; font-weight: 800; list-style: none; }
 .guideDetails summary::-webkit-details-marker { display: none; }
 .guideDetails summary svg { width: 15px; transition: transform .2s ease; }
 .guideDetails[open] summary svg { transform: rotate(90deg); }
 .guideDetails > div { margin-top: 19px; padding-top: 4px; border-top: 1px solid rgb(20 64 55 / 10%); }
-.source { width: fit-content; margin-top: 24px; padding-top: 14px; display: block; border-top: 1px solid rgb(20 64 55 / 10%); color: #74827e; font-size: 11px; line-height: 1.5; }
+.guideDetails[open] + .source { margin-top: 24px; }
+.source { width: fit-content; margin-top: auto; padding-top: 18px; display: block; border-top: 1px solid rgb(20 64 55 / 10%); color: #74827e; font-size: 11px; line-height: 1.5; }
 .source span { color: var(--city-green); }
 
-.directory { scroll-margin-top: 95px; padding: clamp(30px, 4vw, 54px); border: 1px solid rgb(19 67 57 / 12%); border-radius: 32px; background: linear-gradient(145deg, white 0%, #f5faf7 100%); box-shadow: 0 28px 70px rgb(19 60 51 / 10%); }
+.directory { scroll-margin-top: 95px; position: relative; overflow: hidden; padding: clamp(30px, 4vw, 54px); border: 1px solid rgb(19 67 57 / 12%); border-radius: 32px; background: linear-gradient(145deg, white 0%, #f2f8f4 100%); box-shadow: 0 28px 70px rgb(19 60 51 / 10%); }
+.directory::before { content: ''; position: absolute; width: 420px; height: 420px; right: -220px; top: -260px; pointer-events: none; border-radius: 50%; background: rgb(201 153 66 / 10%); }
 .directoryIntro { display: grid; grid-template-columns: minmax(0, 1fr) minmax(320px, .75fr) auto; grid-template-areas: 'kicker search proof' 'title search proof' 'intro search proof'; column-gap: 30px; align-items: center; }
 .directoryIntro > .sectionKicker { grid-area: kicker; align-self: end; }
 .directoryIntro h2 { grid-area: title; margin-bottom: 8px; }
@@ -127,13 +131,17 @@
 .directoryProof strong { color: var(--city-green); font-size: 28px; }
 .directoryProof span { color: #6b7b77; font-size: 11px; }
 .categoryRail { margin: 34px 0; padding-block: 6px; display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
-.categoryRail a { min-width: 0; padding: 13px; display: grid; grid-template-columns: 52px 1fr 20px; gap: 11px; align-items: center; border: 1px solid rgb(20 70 59 / 11%); border-radius: 17px; color: var(--city-ink); background: white; transition: transform .2s ease, box-shadow .2s ease, border-color .2s ease; }
+.categoryRail a { min-width: 0; padding: 13px; display: grid; grid-template-columns: 52px 1fr 20px; gap: 11px; align-items: center; border: 1px solid rgb(20 70 59 / 11%); border-radius: 17px; color: var(--city-ink); background: rgb(255 255 255 / 88%); transition: transform .2s ease, box-shadow .2s ease, border-color .2s ease; }
 .categoryRail a:hover { transform: translateY(-2px); border-color: rgb(13 102 87 / 26%); box-shadow: 0 12px 28px rgb(24 66 56 / 9%); }
 .categoryRail a > span { width: 52px; height: 52px; overflow: hidden; display: grid; place-items: center; border-radius: 13px; background: var(--city-mint); }
 .categoryRail img { width: 46px; height: 46px; object-fit: contain; }
+.categoryCopy { min-width: 0; display: grid; gap: 4px; }
 .categoryRail strong { overflow: hidden; font-size: 13px; text-overflow: ellipsis; white-space: nowrap; }
+.categoryRail small { color: #71817c; font-size: 10px; font-weight: 700; }
 .categoryRail svg { width: 15px; color: #71817c; }
-.listingGrid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.directoryListings { position: relative; padding-top: 4px; }
+.directoryListings :global(.business-filters) { margin-bottom: 22px; }
+.directoryListings :global(.search-businesses__grid) { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 .seeAll { width: fit-content; margin: 30px auto 0; padding: 12px 18px; display: flex; align-items: center; gap: 9px; border-radius: 999px; color: var(--city-green); font-weight: 750; background: var(--city-mint); }
 .seeAll svg { width: 16px; }
 .empty { padding: 25px; display: flex; align-items: center; justify-content: center; gap: 32px; border: 1px dashed rgb(18 94 78 / 22%); border-radius: 22px; background: rgb(235 246 240 / 65%); }
@@ -171,10 +179,11 @@
   .landmarkGrid { grid-template-columns: repeat(2, 1fr); }
   .landmarkCard:first-child { grid-column: 1 / -1; grid-row: auto; }
   .landmarkCard:first-child > div { min-height: 340px; height: auto; }
+  .guideGrid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .directoryIntro { grid-template-columns: 1fr auto; grid-template-areas: 'kicker proof' 'title proof' 'intro proof' 'search search'; }
   .directorySearch { margin-top: 20px; }
   .categoryRail { grid-template-columns: repeat(2, 1fr); }
-  .listingGrid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .directoryListings :global(.search-businesses__grid) { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 
 @media (max-width: 720px) {
@@ -212,9 +221,9 @@
   .directoryProof strong { font-size: 22px; }
   .directoryProof span { max-width: 64px; text-align: center; }
   .categoryRail { grid-template-columns: 1fr; gap: 9px; }
-  .listingGrid { grid-template-columns: 1fr; }
+  .directoryListings :global(.search-businesses__grid) { grid-template-columns: 1fr; }
   .empty { text-align: center; flex-direction: column; }
   .thinHero { min-height: 540px; }
 }
 
-@media (prefers-reduced-motion: reduce) { .landmarkCard img, .categoryRail a { transition: none; } }
+@media (prefers-reduced-motion: reduce) { .landmarkCard img, .categoryRail a, .guideCard { transition: none; } }

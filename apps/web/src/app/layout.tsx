@@ -4,6 +4,7 @@ import Link from 'next/link';
 import localFont from 'next/font/local';
 import { Anek_Telugu } from 'next/font/google';
 import Script from 'next/script';
+import { Suspense } from 'react';
 
 // Public by design: this id appears in the network tab of every page that loads it.
 const GA_ID = process.env.NEXT_PUBLIC_GA_ID ?? 'G-47GLPVCGQ8';
@@ -17,6 +18,7 @@ import { headers } from 'next/headers';
 import { getLocale, getSelectedCity, localizedAlternates } from '@/lib/session';
 import { LocationPrompt } from '@/components/location-prompt';
 import { MotionFrame } from '@/components/motion-frame';
+import { NavigationFeedback } from '@/components/navigation-feedback';
 import './globals.css';
 import './theme-overrides.css';
 import './premium-motion.css';
@@ -177,6 +179,9 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         `}</Script>
       </head>
       <body>
+        <Suspense fallback={null}>
+          <NavigationFeedback label={t('common.loading')} />
+        </Suspense>
         <Header locale={locale} />
         <LocationPrompt hasLocation={Boolean(selectedCity)} />
         <MotionFrame>{children}</MotionFrame>

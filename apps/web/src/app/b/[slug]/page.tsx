@@ -18,6 +18,7 @@ import { BusinessBackButton } from './back-button';
 import { schemaTypeFor } from '@/lib/schema-type';
 import { AdSlot } from '@/components/ad-slot';
 import { BusinessActionTracker } from '@/components/business-action-tracker';
+import { StorefrontTabs } from './storefront-tabs';
 
 interface BusinessHour {
   dayOfWeek: number;
@@ -35,6 +36,8 @@ interface SimilarBusiness {
   pincode: string | null;
   distanceMeters?: number;
   verificationStatus: string;
+  logoUrl?: string | null;
+  publicBrandKey?: string | null;
 }
 
 interface BusinessDetail {
@@ -660,24 +663,16 @@ export default async function BusinessPage({ params }: { params: Promise<{ slug:
 
       <div className="container business-profile-layout">
         <main>
-          <nav className="business-profile-tabs" aria-label={p.profileSections}>
-            <a href="#about">
-              <Icon name="user" /> {p.about}
-            </a>
-            {hasListings ? (
-              <a href="#listings">
-                <Icon name="store" /> {p.listingsOffers}
-              </a>
-            ) : null}
-            <a href="#hours">
-              <Icon name="calendar" /> {p.hoursLocation}
-            </a>
-            {similar.length > 0 ? (
-              <a href="#nearby">
-                <Icon name="location" /> {p.nearbyTab}
-              </a>
-            ) : null}
-          </nav>
+          <StorefrontTabs
+            label={p.profileSections}
+            items={[
+              { id: 'about', icon: 'user', label: p.about },
+              ...(hasListings ? [{ id: 'listings', icon: 'store', label: p.listingsOffers }] : []),
+              { id: 'hours', icon: 'calendar', label: p.hoursLocation },
+              ...(faqs.length ? [{ id: 'faq', icon: 'sparkles', label: p.goodToKnow }] : []),
+              ...(similar.length ? [{ id: 'nearby', icon: 'location', label: p.nearbyTab }] : []),
+            ]}
+          />
 
           <section className="business-profile-section business-profile-section--about" id="about">
             <span className="section-kicker">{p.meetBusiness}</span>
@@ -741,6 +736,9 @@ export default async function BusinessPage({ params }: { params: Promise<{ slug:
             </div>
           </section>
 
+          {/* The reader has the identity, primary actions and business story by now. */}
+          <AdSlot placement="BUSINESS_AFTER_ABOUT" contentScore={adContentScore} />
+
           {/* Rendered only when there is something in it.
 
               No business in the directory has published a listing yet, so this
@@ -791,9 +789,6 @@ export default async function BusinessPage({ params }: { params: Promise<{ slug:
               )}
             </section>
           ) : null}
-
-          {/* The reader has the identity, the description and the actions by now. */}
-          <AdSlot placement="BUSINESS_AFTER_ABOUT" contentScore={adContentScore} />
 
           <section className="business-profile-section business-profile-hours" id="hours">
             <div>
@@ -909,50 +904,63 @@ export default async function BusinessPage({ params }: { params: Promise<{ slug:
             </section>
           ) : null}
 
-          {/* Before the list, never among it. Those are internal links people
-              navigate by, and an advertisement between two of them would read as a
-              result. */}
-          <AdSlot placement="BUSINESS_BEFORE_NEARBY" contentScore={adContentScore} />
-
           {similar.length > 0 ? (
-            <section className="business-profile-section business-profile-similar" id="nearby">
-              <div className="business-profile-section__head">
-                <div>
-                  <span className="section-kicker">{p.exploreArea}</span>
-                  <h2>
-                    {p.similarHeading
-                      .replace('{category}', business.categoryName)
-                      .replace('{place}', placeLabel)}
-                  </h2>
+            <>
+              {/* Before the list, never among it. Those are internal links people
+                  navigate by, and an advertisement between two of them would read as a
+                  result. */}
+              <AdSlot placement="BUSINESS_BEFORE_NEARBY" contentScore={adContentScore} />
+              <section className="business-profile-section business-profile-similar" id="nearby">
+                <div className="business-profile-section__head">
+                  <div>
+                    <span className="section-kicker">{p.exploreArea}</span>
+                    <h2>
+                      {p.similarHeading
+                        .replace('{category}', business.categoryName)
+                        .replace('{place}', placeLabel)}
+                    </h2>
+                  </div>
                 </div>
-              </div>
-              <ul className="business-profile-similar__grid">
-                {similar.map((b) => (
-                  <li key={b.id}>
-                    <Link href={`/b/${b.slug}`}>
-                      <span className="business-profile-similar__logo" aria-hidden="true">
-                        {b.name.slice(0, 1).toUpperCase()}
-                      </span>
-                      <span className="business-profile-similar__body">
-                        <strong>{b.name}</strong>
-                        <small>
-                          {b.verificationStatus === 'VERIFIED' ? (
-                            <>
-                              <Icon name="shield" /> {p.verifiedBusiness} ·{' '}
-                            </>
-                          ) : null}
-                          {[b.categoryName, b.pincode].filter(Boolean).join(' · ')}
-                          {typeof b.distanceMeters === 'number'
-                            ? ` · ${formatDistance(b.distanceMeters, t)}`
-                            : ''}
-                        </small>
-                      </span>
-                      <Icon name="arrow" />
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-            </section>
+                <ul className="business-profile-similar__grid">
+                  {similar.map((b) => {
+                    const nearbyLogo = b.logoUrl ?? publicBrandLogo(b.name, b.publicBrandKey);
+                    return (
+                      <li key={b.id}>
+                        <Link href={`/b/${b.slug}`}>
+                          <span
+                            className={`business-profile-similar__logo${nearbyLogo ? ' has-logo' : ''}`}
+                            aria-hidden="true"
+                          >
+                            <Image
+                              src={nearbyLogo ?? premiumCategoryArtwork({ name: b.categoryName })}
+                              alt=""
+                              width={56}
+                              height={56}
+                            />
+                          </span>
+                          <span className="business-profile-similar__body">
+                            <span>{b.categoryName}</span>
+                            <strong>{b.name}</strong>
+                            <small>
+                              {b.verificationStatus === 'VERIFIED' ? (
+                                <>
+                                  <Icon name="shield" /> {p.verifiedBusiness} ·{' '}
+                                </>
+                              ) : null}
+                              {[b.cityName, b.pincode].filter(Boolean).join(' · ')}
+                              {typeof b.distanceMeters === 'number'
+                                ? ` · ${formatDistance(b.distanceMeters, t)}`
+                                : ''}
+                            </small>
+                          </span>
+                          <Icon name="arrow" />
+                        </Link>
+                      </li>
+                    );
+                  })}
+                </ul>
+              </section>
+            </>
           ) : null}
 
           <section className="business-profile-safety">

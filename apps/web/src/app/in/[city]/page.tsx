@@ -3,15 +3,16 @@ import type { Metadata } from 'next';
 import Image from 'next/image';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import type { Category, City, ListingSummary } from '@locz/shared-types';
+import type { City } from '@locz/shared-types';
 import { AdSlot } from '@/components/ad-slot';
-import { ListingCard } from '@/components/listing-card';
 import { Icon } from '@/components/icons';
-import { getTranslator, type Locale } from '@/i18n';
+import { getMessageGroup, getTranslator, type Locale } from '@/i18n';
 import { ApiError, api, apiSafe } from '@/lib/api';
 import { localizedName } from '@/lib/localized-name';
 import { premiumCategoryArtwork } from '@/lib/premium-icon-catalog';
 import { getLocale, localizedAlternates } from '@/lib/session';
+import { loadNearbyBusinesses, type BusinessPage } from '../../search/businesses-actions';
+import { NearbyBusinesses } from '../../search/nearby-businesses';
 import styles from './page.module.css';
 
 interface CityEditorial {
@@ -55,9 +56,11 @@ interface CityPageData {
   images: CityGuideImage[];
 }
 
-interface SearchResult {
-  items: ListingSummary[];
-  total: number;
+interface BusinessCategory {
+  id: string;
+  slug: string;
+  name: string;
+  count: number;
 }
 
 const loadCityPage = cache(async (slug: string): Promise<CityPageData | null> => {
@@ -128,10 +131,23 @@ export default async function CityPage({ params }: { params: Promise<{ city: str
 
   const { city, content, sections, images } = data;
   const cityName = localizedName(city, locale);
-  const [result, categories] = await Promise.all([
-    apiSafe<SearchResult>(`/search?cityId=${city.id}&limit=12&sort=newest`, { revalidate: 300 }),
-    apiSafe<Category[]>('/categories', { revalidate: 3600 }),
+  const [businesses, categoryRows, categoryCounts] = await Promise.all([
+    loadNearbyBusinesses({ cityId: city.id, page: 1 }),
+    apiSafe<Array<Omit<BusinessCategory, 'count'>>>('/businesses/categories', {
+      revalidate: 86400,
+    }),
+    apiSafe<Array<{ categoryId: string; count: number }>>(
+      `/businesses/category-counts?cityId=${city.id}`,
+      { revalidate: 3600 },
+    ),
   ]);
+  const countByCategory = new Map(
+    (categoryCounts ?? []).map(({ categoryId, count }) => [categoryId, count]),
+  );
+  const categories = (categoryRows ?? [])
+    .map((category) => ({ ...category, count: countByCategory.get(category.id) ?? 0 }))
+    .filter((category) => category.count > 0)
+    .sort((a, b) => b.count - a.count);
 
   if (!content) {
     return (
@@ -140,7 +156,7 @@ export default async function CityPage({ params }: { params: Promise<{ city: str
         cityName={cityName}
         locale={locale}
         categories={categories ?? []}
-        result={result}
+        businesses={businesses}
       />
     );
   }
@@ -225,7 +241,7 @@ export default async function CityPage({ params }: { params: Promise<{ city: str
       </section>
 
       <div className={`container ${styles.body}`}>
-        <section className={styles.about} aria-labelledby="city-about-title">
+        <section id="city-about" className={styles.about} aria-labelledby="city-about-title">
           <div>
             <span className={styles.sectionKicker}>{t('cityGuide.aboutKicker')}</span>
             <h2 id="city-about-title">{t('cityGuide.aboutTitle', { city: cityName })}</h2>
@@ -256,7 +272,11 @@ export default async function CityPage({ params }: { params: Promise<{ city: str
         </section>
 
         {attractions.length ? (
-          <section className={styles.landmarks} aria-labelledby="city-landmarks-title">
+          <section
+            id="city-landmarks"
+            className={styles.landmarks}
+            aria-labelledby="city-landmarks-title"
+          >
             <SectionHeading
               kicker={t('cityGuide.landmarksKicker')}
               title={t('cityGuide.landmarksTitle', { city: cityName })}
@@ -282,7 +302,19 @@ export default async function CityPage({ params }: { params: Promise<{ city: str
           </section>
         ) : null}
 
-        <section className={styles.mapSection} aria-labelledby="city-location-title">
+        <CityDirectory
+          city={city}
+          cityName={cityName}
+          locale={locale}
+          categories={categories ?? []}
+          businesses={businesses}
+        />
+
+        <section
+          id="city-location"
+          className={styles.mapSection}
+          aria-labelledby="city-location-title"
+        >
           <div className={styles.mapCopy}>
             <span className={styles.sectionKicker}>{t('cityGuide.locationKicker')}</span>
             <h2 id="city-location-title">{t('cityGuide.locationTitle', { city: cityName })}</h2>
@@ -363,14 +395,6 @@ export default async function CityPage({ params }: { params: Promise<{ city: str
             </div>
           </section>
         ) : null}
-
-        <CityDirectory
-          city={city}
-          cityName={cityName}
-          locale={locale}
-          categories={categories ?? []}
-          result={result}
-        />
       </div>
     </main>
   );
@@ -381,13 +405,13 @@ function ThinCityPage({
   cityName,
   locale,
   categories,
-  result,
+  businesses,
 }: {
   city: City;
   cityName: string;
   locale: Locale;
-  categories: Category[];
-  result: SearchResult | null;
+  categories: BusinessCategory[];
+  businesses: BusinessPage;
 }) {
   const t = getTranslator(locale);
   return (
@@ -416,7 +440,7 @@ function ThinCityPage({
           cityName={cityName}
           locale={locale}
           categories={categories}
-          result={result}
+          businesses={businesses}
         />
       </div>
     </main>
@@ -428,15 +452,16 @@ function CityDirectory({
   cityName,
   locale,
   categories,
-  result,
+  businesses,
 }: {
   city: City;
   cityName: string;
   locale: Locale;
-  categories: Category[];
-  result: SearchResult | null;
+  categories: BusinessCategory[];
+  businesses: BusinessPage;
 }) {
   const t = getTranslator(locale);
+  const searchLabels = getMessageGroup(locale, 'searchUi');
   return (
     <section
       id="city-directory"
@@ -447,7 +472,7 @@ function CityDirectory({
         <span className={styles.sectionKicker}>{t('cityGuide.directoryKicker')}</span>
         <h2 id="city-directory-title">{t('cityGuide.directoryTitle', { city: cityName })}</h2>
         <p>{t('cityGuide.directoryIntro', { city: cityName })}</p>
-        <form className={styles.directorySearch} action="/search" method="get" role="search">
+        <form className={styles.directorySearch} action="/business" method="get" role="search">
           <input type="hidden" name="cityId" value={city.id} />
           <Icon name="search" width="19" height="19" />
           <input
@@ -461,7 +486,7 @@ function CityDirectory({
           </button>
         </form>
         <div className={styles.directoryProof}>
-          <strong>{(result?.total ?? 0).toLocaleString(`${locale}-IN`)}</strong>
+          <strong>{businesses.total.toLocaleString(`${locale}-IN`)}</strong>
           <span>{t('discovery.localListings')}</span>
         </div>
       </div>
@@ -477,13 +502,16 @@ function CityDirectory({
                   height="58"
                 />
               </span>
-              <strong>{category.name}</strong>
+              <span className={styles.categoryCopy}>
+                <strong>{category.name}</strong>
+                <small>{category.count.toLocaleString(`${locale}-IN`)}</small>
+              </span>
               <Icon name="arrow" />
             </Link>
           ))}
         </nav>
       ) : null}
-      {!result || result.items.length === 0 ? (
+      {businesses.items.length === 0 ? (
         <div className={styles.empty}>
           <Image src="/illustrations/empty-neighbourhood.webp" alt="" width="220" height="180" />
           <div>
@@ -495,13 +523,27 @@ function CityDirectory({
           </div>
         </div>
       ) : (
-        <div className={`card-grid ${styles.listingGrid}`}>
-          {result.items.map((listing) => (
-            <ListingCard key={listing.id} listing={listing} t={t} />
-          ))}
+        <div className={styles.directoryListings}>
+          <NearbyBusinesses
+            cityId={city.id}
+            initial={businesses.items.slice(0, 9)}
+            initialHasMore={false}
+            verifiedLabel={searchLabels.businessVerified}
+            claimLabel={searchLabels.businessClaim}
+            directionsLabel={searchLabels.directions}
+            viewProfileLabel={searchLabels.viewProfile}
+            listingsLabel={searchLabels.listingCount}
+            nearYou={searchLabels.nearYou}
+            loadingLabel={searchLabels.loadingMoreBusinesses}
+            kmLabel={t('common.km')}
+            withinKm={searchLabels.withinKm}
+            allCategoriesLabel={searchLabels.allCategories}
+            verifiedOnlyLabel={searchLabels.verifiedOnly}
+            emptyLabel={searchLabels.noBusinessesMatch}
+          />
         </div>
       )}
-      <Link href={`/search?cityId=${city.id}`} className={styles.seeAll}>
+      <Link href={`/business?cityId=${city.id}`} className={styles.seeAll}>
         {t('feed.seeAll')} {t('discovery.localListings')} <Icon name="arrow" />
       </Link>
     </section>
@@ -547,23 +589,19 @@ function GuideCard({
   index: number;
   readMore: string;
 }) {
-  const parts = paragraphs(section.content);
-  const preview = parts.slice(0, 1);
-  const remainder = parts.slice(1);
+  const preview = sectionPreview(section.content);
   return (
     <article className={styles.guideCard}>
       <span className={styles.guideNumber}>{String(index + 1).padStart(2, '0')}</span>
       <h3>{section.title}</h3>
-      {preview.map((paragraph, partIndex) => (
-        <p key={partIndex}>{paragraph}</p>
-      ))}
-      {remainder.length ? (
+      <p className={styles.guidePreview}>{preview}</p>
+      {section.content.length > preview.length ? (
         <details className={styles.guideDetails}>
           <summary>
             {readMore} <Icon name="arrow" />
           </summary>
           <div>
-            {remainder.map((paragraph, partIndex) => (
+            {paragraphs(section.content).map((paragraph, partIndex) => (
               <p key={partIndex}>{paragraph}</p>
             ))}
           </div>
@@ -629,6 +667,17 @@ function paragraphs(value: string | null): string[] {
   }
   if (current) grouped.push(current);
   return grouped;
+}
+function sectionPreview(value: string): string {
+  const clean = normalizeCityCopy(value.replace(/\s+/g, ' ').trim());
+  const sentences = clean.match(/[^.!?]+[.!?]+(?:[”’"']|$)?|[^.!?]+$/g) ?? [clean];
+  const lead = sentences.slice(0, 2).join(' ').trim();
+  if (lead.length <= 280) return lead;
+  const clipped = lead
+    .slice(0, 277)
+    .replace(/\s+\S*$/, '')
+    .trim();
+  return `${clipped}…`;
 }
 function splitHighlights(value: string | null): string[] {
   if (!value) return [];

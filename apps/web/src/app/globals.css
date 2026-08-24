@@ -22470,10 +22470,10 @@ h4,
 .location-chip--guide .location-chip__city span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .location-chip--guide .location-chip__change { width: 34px; flex: 0 0 auto; justify-content: center; border-left: 1px solid rgb(16 101 84 / 12%); }
 
-.home-discovery__location--guide { gap: 7px; transition: transform 180ms ease, box-shadow 180ms ease; }
-.home-discovery__location--guide small { margin-left: 5px; padding-left: 10px; border-left: 1px solid rgb(16 101 84 / 18%); color: var(--locz-primary); font-size: 10px; font-weight: 800; letter-spacing: .02em; }
+.home-discovery__location--guide { gap: 7px; padding-right: 5px; transition: transform 180ms ease, box-shadow 180ms ease; }
+.home-discovery__location--guide small { margin-left: 5px; padding: 8px 12px; border: 1px solid rgb(255 255 255 / 24%); border-radius: 999px; color: #fff; background: #f26452; box-shadow: 0 6px 14px rgb(81 25 16 / 22%); font-size: 10px; font-weight: 850; letter-spacing: .01em; }
 .home-discovery__location--guide:hover { transform: translateY(-1px); box-shadow: 0 10px 24px rgb(18 73 62 / 10%); }
-@media (max-width: 560px) { .home-discovery__location--guide small { max-width: 112px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; } }
+@media (max-width: 560px) { .home-discovery__location--guide { width: fit-content; max-width: 100%; } .home-discovery__location--guide small { max-width: 145px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; } }
 
 .footer__cities { padding-block: 22px; border-top: 1px solid rgb(255 255 255 / 12%); display: grid; grid-template-columns: 180px 1fr; gap: 24px; }
 .footer__cities > strong { color: white; font-size: 13px; }
