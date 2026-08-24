@@ -1,4 +1,4 @@
-import { Controller, Get, NotFoundException, Param, Query } from '@nestjs/common';
+import { Controller, Get, HttpCode, NotFoundException, Param, Post, Query } from '@nestjs/common';
 import { ApiOperation, ApiPropertyOptional, ApiTags } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
 import { IsIn, IsLatitude, IsLongitude, IsOptional, IsString, MaxLength } from 'class-validator';
@@ -51,6 +51,11 @@ class StoryFeedDto {
   @MaxLength(8)
   lang?: string;
 
+  @ApiPropertyOptional({ enum: ['recent', 'popular', 'nearby'] })
+  @IsOptional()
+  @IsIn(['recent', 'popular', 'nearby'])
+  sort?: 'recent' | 'popular' | 'nearby';
+
   @ApiPropertyOptional({ default: 20, maximum: 50 })
   @IsOptional()
   @Type(() => Number)
@@ -78,6 +83,21 @@ export class StoriesController {
   @ApiOperation({ summary: 'LocZ news feed: distance rings + time window + place + category' })
   feed(@Query() q: StoryFeedDto) {
     return this.stories.feed(q);
+  }
+
+  @Public()
+  @Get('facets')
+  @ApiOperation({ summary: 'Filter options with counts: topics, areas, languages, date buckets' })
+  facets(@Query('state') state?: string) {
+    return this.stories.facets({ state });
+  }
+
+  @Public()
+  @Post(':key/view')
+  @HttpCode(204)
+  @ApiOperation({ summary: 'Count a read (fire-and-forget) — drives the popular sort' })
+  async track(@Param('key') key: string) {
+    await this.stories.trackView(key);
   }
 
   @Public()

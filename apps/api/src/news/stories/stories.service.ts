@@ -11,6 +11,7 @@ export interface StoryFeedQuery {
   city?: string;
   when?: TimeWindow;
   lang?: 'en' | 'hi' | 'te' | string;
+  sort?: 'recent' | 'popular' | 'nearby';
   limit?: number;
   offset?: number;
 }
@@ -113,7 +114,14 @@ export class StoriesService {
     }
     where.push(this.sinceClause(q.when ?? 'all'));
 
-    const order = hasPoint ? 'dist_m ASC NULLS LAST, published_at DESC' : 'published_at DESC';
+    const order =
+      q.sort === 'popular'
+        ? 'view_count DESC, published_at DESC'
+        : q.sort === 'recent'
+          ? 'published_at DESC'
+          : hasPoint
+            ? 'dist_m ASC NULLS LAST, published_at DESC' // 'nearby' (default when a point is given)
+            : 'published_at DESC';
     const sql = `
       SELECT id, slug, category, title_en, dek_en, title_hi, body_hi, title_sl, body_sl, body_en,
              state_lang, image_url, image_credit, city, state, published_at,
@@ -172,6 +180,70 @@ export class StoriesService {
       city: row.city,
       state: row.state,
       publishedAt: row.published_at ? new Date(row.published_at as string).toISOString() : null,
+    };
+  }
+
+  /** Count a read. Fire-and-forget from the client when a story opens; drives 'popular' sort. */
+  async trackView(key: string): Promise<void> {
+    const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(key);
+    await this.prisma.$executeRawUnsafe(
+      `UPDATE news_stories SET view_count = view_count + 1 WHERE ${isUuid ? 'id' : 'slug'} = $1`,
+      key,
+    );
+  }
+
+  /**
+   * The filter options a news UI needs, with counts, so it can build chips that show how much is
+   * behind each: topics (category), areas (state/city), languages, and the date buckets. Optionally
+   * scoped by state so "Telangana → topics" shows only Telangana counts.
+   */
+  async facets(opts: { state?: string } = {}): Promise<{
+    topics: { key: string; count: number }[];
+    states: { name: string; count: number }[];
+    cities: { name: string; count: number }[];
+    languages: string[];
+    dates: { today: number; yesterday: number; week: number; month: number };
+  }> {
+    const where = ["status = 'PUBLISHED'"];
+    const params: unknown[] = [];
+    if (opts.state) {
+      where.push(`lower(state) = lower($1)`);
+      params.push(opts.state);
+    }
+    const w = where.join(' AND ');
+    const q = <T>(sql: string) => this.prisma.$queryRawUnsafe<T[]>(sql, ...params);
+
+    const [topics, states, cities, langs, dates] = await Promise.all([
+      q<{ category: string; n: bigint }>(
+        `SELECT category, count(*) n FROM news_stories WHERE ${w} GROUP BY category ORDER BY n DESC`,
+      ),
+      q<{ state: string; n: bigint }>(
+        `SELECT state, count(*) n FROM news_stories WHERE ${w} AND state IS NOT NULL GROUP BY state ORDER BY n DESC LIMIT 40`,
+      ),
+      q<{ city: string; n: bigint }>(
+        `SELECT city, count(*) n FROM news_stories WHERE ${w} AND city IS NOT NULL GROUP BY city ORDER BY n DESC LIMIT 40`,
+      ),
+      q<{ lang: string }>(
+        `SELECT DISTINCT state_lang lang FROM news_stories WHERE ${w} AND state_lang IS NOT NULL`,
+      ),
+      q<{ today: bigint; yesterday: bigint; week: bigint; month: bigint }>(
+        `SELECT
+           count(*) FILTER (WHERE published_at >= date_trunc('day', now())) today,
+           count(*) FILTER (WHERE published_at >= date_trunc('day', now()) - interval '1 day'
+                              AND published_at < date_trunc('day', now())) yesterday,
+           count(*) FILTER (WHERE published_at >= now() - interval '7 days') week,
+           count(*) FILTER (WHERE published_at >= now() - interval '30 days') month
+         FROM news_stories WHERE ${w}`,
+      ),
+    ]);
+    const n = (v: bigint | number) => Number(v);
+    const d = dates[0] ?? { today: 0n, yesterday: 0n, week: 0n, month: 0n };
+    return {
+      topics: topics.map((t) => ({ key: t.category, count: n(t.n) })),
+      states: states.map((s) => ({ name: s.state, count: n(s.n) })),
+      cities: cities.map((c) => ({ name: c.city, count: n(c.n) })),
+      languages: ['en', 'hi', ...langs.map((l) => l.lang).filter((l) => l && l !== 'hi')],
+      dates: { today: n(d.today), yesterday: n(d.yesterday), week: n(d.week), month: n(d.month) },
     };
   }
 }
