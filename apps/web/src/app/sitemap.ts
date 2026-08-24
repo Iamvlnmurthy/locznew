@@ -72,6 +72,9 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     entries.push(...localized(path, { changeFrequency: 'monthly', priority: 0.3 }));
   }
 
+  // News hub — updates hourly (the engine publishes continuously), so a high-priority daily crawl.
+  entries.push(...localized('/news', { changeFrequency: 'hourly', priority: 0.9 }));
+
   for (const city of CITY_GUIDE_CATALOG) {
     entries.push(...localized(`/in/${city.slug}`, { changeFrequency: 'hourly', priority: 0.9 }));
   }
