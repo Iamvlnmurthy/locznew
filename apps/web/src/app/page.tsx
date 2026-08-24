@@ -237,6 +237,15 @@ export default async function HomePage({
     ((homeCity.tier ?? homeCityRecord?.tier) === 1 ||
       (homeCity.tier ?? homeCityRecord?.tier) === 2),
   );
+  // A tier-1/2 city has a hero image — theme the home hero background to the detected city.
+  const cityHero =
+    hasCityGuide && homeCity?.slug
+      ? await apiSafe<{ heroImageUrl: string | null }>(
+          `/locations/cities/${encodeURIComponent(homeCity.slug)}/hero`,
+          { revalidate: 86400 },
+        )
+      : null;
+  const cityHeroImage = cityHero?.heroImageUrl ?? null;
   const [bizCategories, cityCatCounts] = await Promise.all([
     apiSafe<Array<{ id: string; slug: string; name: string }>>('/businesses/categories', {
       revalidate: 86400,
@@ -324,7 +333,16 @@ export default async function HomePage({
 
   return (
     <>
-      <section className="home-hero home-hero--discovery" id="home-top">
+      <section
+        className={`home-hero home-hero--discovery${cityHeroImage ? ' home-hero--city' : ''}`}
+        id="home-top"
+        style={
+          cityHeroImage
+            ? ({ '--city-hero-image': `url("${cityHeroImage}")` } as React.CSSProperties)
+            : undefined
+        }
+      >
+        {cityHeroImage ? <div className="home-hero__citybg" aria-hidden="true" /> : null}
         <div className="container home-hero__inner">
           <div className="home-hero__copy">
             <span className="home-hero__eyebrow">{t('home.heroEyebrow')}</span>
