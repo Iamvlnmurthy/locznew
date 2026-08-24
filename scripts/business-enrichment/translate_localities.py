@@ -48,8 +48,13 @@ def ask(names, script_name):
 
 def in_script(text, block):
     letters = [c for c in text if c.isalpha()]
-    if not letters or any("a" <= c.lower() <= "z" for c in letters):
+    if not letters:
         return False
+    # A MAJORITY of letters must be in the target script — not zero Latin. A good transliteration
+    # legitimately keeps a minority of Latin: Roman numerals ("Lajpat Nagar II"), block letters
+    # ("Block A") and postal/acronym suffixes ("Perumbavoor H.O", "STV Nagar", "DLF-IV"). The old
+    # "any Latin -> reject" threw away correct results and rejected almost the entire tail (the
+    # clean top-51k names had none, which hid it); only a mostly-untransliterated string now fails.
     return sum(1 for c in letters if ord(c) in block) >= len(letters) / 2
 
 # Only localities a reader can actually reach, most-used first.
