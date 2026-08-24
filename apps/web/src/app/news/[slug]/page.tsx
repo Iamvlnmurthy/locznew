@@ -121,8 +121,34 @@ export default async function NewsEventPage({
     .filter(Boolean);
   const wordCount = articleText ? articleText.split(/\s+/).filter(Boolean).length : 0;
 
+  // NewsArticle structured data — what Google News / rich results read. Publisher is LocZ (our own
+  // rewrite); no source is claimed as author. Language matches the requested translation.
+  const jsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'NewsArticle',
+    headline: event.title.slice(0, 110),
+    description: event.summary ?? undefined,
+    datePublished: event.publishedAt ?? undefined,
+    dateModified: event.publishedAt ?? undefined,
+    inLanguage: lang,
+    articleSection: event.categories[0],
+    image: event.imageUrl ? [event.imageUrl] : undefined,
+    mainEntityOfPage: { '@type': 'WebPage', '@id': `${SITE_URL}/news/${event.slug}` },
+    author: { '@type': 'Organization', name: 'LocZ', url: SITE_URL },
+    publisher: {
+      '@type': 'Organization',
+      name: 'LocZ',
+      logo: { '@type': 'ImageObject', url: `${SITE_URL}/brand/locz-logo.webp` },
+    },
+  };
+
   return (
     <main className="news-article-page">
+      <script
+        type="application/ld+json"
+        // eslint-disable-next-line react/no-danger
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
       <div className="container news-article">
         <div className="news-article__top">
           <Link href="/news" className="news-article__back">
