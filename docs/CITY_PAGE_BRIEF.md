@@ -48,7 +48,13 @@ the guide from `sections`, images from `images`, and `seoTitle`/`metaDescription
 Today `/in/<city>` is only reachable from a business breadcrumb and from Google — the home page
 never links to it. With the pages now rich, add:
 
-1. **The location chip → the city guide.** When a city is selected, make its name link to
+1. **On select OR auto-detect of a Tier-1/2 location → offer "About this city".** When the user
+   picks a city or their location is auto-detected, and the resolved city is **tier 1 or 2**, show
+   an "About <City>" affordance (chip/banner) that links to `/in/<slug>`. Only tier 1/2 have a rich
+   guide page, so gate on tier. **`CityDto` now returns `tier`** (1/2/3) on every city response
+   (search, `cities/:slug`, and the `resolve` endpoints) — store it with the selected city and
+   check `tier === 1 || tier === 2`. For a tier-3 / unlaunched pincode, don't offer it.
+2. **The location chip → the city guide.** When a tier-1/2 city is selected, make its name link to
    `/in/<slug>` (an "Explore <City>" affordance). The chip currently only _sets_ the feed city.
-2. **A "Cities on LocZ" section / footer list** linking the tier-1/2 city pages — also strong SEO
+3. **A "Cities on LocZ" section / footer list** linking the tier-1/2 city pages — also strong SEO
    internal linking (96 crawlable hubs the home page currently doesn't point to).

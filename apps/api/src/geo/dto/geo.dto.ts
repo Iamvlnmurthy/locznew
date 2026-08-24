@@ -72,6 +72,12 @@ export class CityDto {
   @ApiProperty() longitude!: number;
   @ApiProperty() isLaunched!: boolean;
   @ApiPropertyOptional({
+    description:
+      'HRA class: 1 = Tier 1, 2 = Tier 2, 3 = Tier 3. Tier 1 and 2 have a rich /in/<slug> guide ' +
+      'page, so the client can offer an "About this city" link when one is selected or detected.',
+  })
+  tier!: number | null;
+  @ApiPropertyOptional({
     description: 'Metres from the supplied coordinates, when resolving by location',
   })
   distanceMeters?: number;

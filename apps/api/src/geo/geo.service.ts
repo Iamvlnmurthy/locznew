@@ -48,6 +48,7 @@ export class GeoService {
       latitude: Number(city.latitude),
       longitude: Number(city.longitude),
       isLaunched: city.isLaunched,
+      tier: city.tier,
       ...(distanceMeters !== undefined ? { distanceMeters: Math.round(distanceMeters) } : {}),
     };
   }
