@@ -42,3 +42,13 @@ match the mockup's structure, not its literal CSS.
 `apps/web/src/app/in/[city]/` already exists (thin). Enrich it: hero + intro + facts from `content`,
 the guide from `sections`, images from `images`, and `seoTitle`/`metaDescription` into
 `generateMetadata`. Mobile gets the equivalent. Cities without `content` keep the current thin page.
+
+## Entry points from the home page (currently missing)
+
+Today `/in/<city>` is only reachable from a business breadcrumb and from Google — the home page
+never links to it. With the pages now rich, add:
+
+1. **The location chip → the city guide.** When a city is selected, make its name link to
+   `/in/<slug>` (an "Explore <City>" affordance). The chip currently only _sets_ the feed city.
+2. **A "Cities on LocZ" section / footer list** linking the tier-1/2 city pages — also strong SEO
+   internal linking (96 crawlable hubs the home page currently doesn't point to).
