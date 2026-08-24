@@ -1,9 +1,8 @@
 #!/usr/bin/env bash
-# Safe web deploy for the VPS. Handles the known Next 16.2.12 `/_global-error` prerender failure
-# (see memory locz-web-build-stopgap): the build compiles fully and only that one page's export
-# fails, leaving a complete .next for LocZ's dynamic routes. This script injects the stub manifest
-# ONLY for that specific failure and restores the previous build for any OTHER failure — so a real
-# breakage can never take the site down.
+# Safe web deploy for the VPS. Production mode is enforced after loading the shared environment;
+# this prevents the historical Next 16.2.12 `/_global-error` prerender failure caused by the
+# development React runtime. The narrowly scoped stub remains only as an emergency fallback, and
+# any other failure restores the previous build so a real breakage cannot take the site down.
 #
 # Run on the VPS:  sudo -u locz bash scripts/deploy-web.sh
 set -uo pipefail
@@ -23,6 +22,11 @@ npm install >/tmp/deploy-npm.log 2>&1 || { echo "npm install FAILED"; tail -5 /t
 
 echo ">> build web"
 set -a; . ./.env; set +a
+# `.env` is also used by local development and currently declares NODE_ENV=development. A
+# production Next build must never inherit that value: it selects development React internals
+# while Next is prerendering production special pages, which crashes `/_global-error` with a
+# null `useContext`. Public variables stay sourced above; only the execution mode is corrected.
+export NODE_ENV=production
 rm -rf apps/web/.next
 set +e
 npm run build -w @locz/web >/tmp/deploy-web.log 2>&1

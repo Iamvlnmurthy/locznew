@@ -59,6 +59,18 @@ New placements for the **news pages** (coming — the `news_stories` feed + arti
 The **in-article** unit is the important one for news: one ad after ~paragraph 2, never more than the body
 length justifies (see policy below).
 
+City-guide placements added 2026-08-24:
+
+| Placement             | Format     | Initial unit | Rule                                                  |
+| --------------------- | ---------- | ------------ | ----------------------------------------------------- |
+| `CITY_AFTER_LOCATION` | display    | `2908301106` | After the map; requires at least three guide sections |
+| `CITY_GUIDE_IN_BODY`  | in-article | `5110853266` | After guide card two; requires at least four sections |
+
+The existing same-format units are the launch fallback, so the placements work with the current VPS
+environment. Dedicated `NEXT_PUBLIC_AD_SLOT_CITY_AFTER_LOCATION` and
+`NEXT_PUBLIC_AD_SLOT_CITY_GUIDE_IN_BODY` values can override them later for city-specific reporting.
+No city advertisement is allowed in the hero, facts strip, introduction, or directory results.
+
 ## 4. Two requirements that BLOCK monetization if missed
 
 1. **`apps/web/public/ads.txt`** must exist and be served at `https://locz.in/ads.txt` with exactly:

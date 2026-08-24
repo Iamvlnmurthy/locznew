@@ -24,7 +24,9 @@ export type PlacementId =
   | 'NEWS_ARTICLE_TOP'
   | 'NEWS_ARTICLE_IN_BODY'
   | 'NEWS_FEED_IN_LIST'
-  | 'NEWS_ARTICLE_RELATED';
+  | 'NEWS_ARTICLE_RELATED'
+  | 'CITY_AFTER_LOCATION'
+  | 'CITY_GUIDE_IN_BODY';
 
 export interface Placement {
   /** The AdSense unit family controls the exact data attributes emitted by AdSlot. */
@@ -128,6 +130,24 @@ export const PLACEMENTS: Readonly<Record<PlacementId, Placement>> = {
     lazy: true,
     minContentScore: 700,
   },
+  // City guides are editorial entry pages, so advertising starts only after visitors have
+  // received the location context and map. Never place an ad in the hero or facts strip.
+  CITY_AFTER_LOCATION: {
+    format: 'display',
+    device: 'both',
+    reserve: { mobile: 280, desktop: 250 },
+    lazy: true,
+    minContentScore: 3,
+  },
+  // One native break inside substantial guides. Four sections is the minimum, which keeps
+  // thin or partially imported city pages ad-free.
+  CITY_GUIDE_IN_BODY: {
+    format: 'in-article',
+    device: 'both',
+    reserve: { mobile: 260, desktop: 280 },
+    lazy: true,
+    minContentScore: 4,
+  },
 };
 
 /**
@@ -160,6 +180,14 @@ const SLOT_IDS: Readonly<Record<PlacementId, string>> = {
   NEWS_ARTICLE_IN_BODY: clean(process.env.NEXT_PUBLIC_AD_SLOT_NEWS_ARTICLE_IN_BODY),
   NEWS_FEED_IN_LIST: clean(process.env.NEXT_PUBLIC_AD_SLOT_NEWS_FEED_IN_LIST),
   NEWS_ARTICLE_RELATED: clean(process.env.NEXT_PUBLIC_AD_SLOT_NEWS_ARTICLE_RELATED),
+  // Dedicated city-unit variables can be added later for surface-level reporting. Until then,
+  // reuse the existing units of the same AdSense format so this surface is live on deployment.
+  CITY_AFTER_LOCATION:
+    clean(process.env.NEXT_PUBLIC_AD_SLOT_CITY_AFTER_LOCATION) ||
+    clean(process.env.NEXT_PUBLIC_AD_SLOT_HOME_AFTER_LOCAL_NOW),
+  CITY_GUIDE_IN_BODY:
+    clean(process.env.NEXT_PUBLIC_AD_SLOT_CITY_GUIDE_IN_BODY) ||
+    clean(process.env.NEXT_PUBLIC_AD_SLOT_BUSINESS_AFTER_ABOUT),
 };
 
 export function slotIdFor(placement: PlacementId): string {

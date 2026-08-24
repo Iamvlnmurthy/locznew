@@ -4,6 +4,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import type { Category, City, ListingSummary } from '@locz/shared-types';
+import { AdSlot } from '@/components/ad-slot';
 import { ListingCard } from '@/components/listing-card';
 import { Icon } from '@/components/icons';
 import { getTranslator, type Locale } from '@/i18n';
@@ -325,6 +326,8 @@ export default async function CityPage({ params }: { params: Promise<{ city: str
           <p className={styles.mapCaveat}>{t('cityGuide.mapCaveat')}</p>
         </section>
 
+        <AdSlot placement="CITY_AFTER_LOCATION" contentScore={sections.length} />
+
         {sections.length ? (
           <section id="city-guide" className={styles.guide} aria-labelledby="city-guide-title">
             <SectionHeading
@@ -333,7 +336,7 @@ export default async function CityPage({ params }: { params: Promise<{ city: str
               intro={t('cityGuide.guideIntro')}
             />
             <div className={styles.guideGrid}>
-              {sections.map((section, index) => (
+              {sections.slice(0, 2).map((section, index) => (
                 <GuideCard
                   key={`${section.key}-${index}`}
                   section={section}
@@ -341,6 +344,22 @@ export default async function CityPage({ params }: { params: Promise<{ city: str
                   readMore={t('cityGuide.readFullSection')}
                 />
               ))}
+              <AdSlot
+                placement="CITY_GUIDE_IN_BODY"
+                contentScore={sections.length}
+                className={styles.guideAd}
+              />
+              {sections.slice(2).map((section, offset) => {
+                const index = offset + 2;
+                return (
+                  <GuideCard
+                    key={`${section.key}-${index}`}
+                    section={section}
+                    index={index}
+                    readMore={t('cityGuide.readFullSection')}
+                  />
+                );
+              })}
             </div>
           </section>
         ) : null}

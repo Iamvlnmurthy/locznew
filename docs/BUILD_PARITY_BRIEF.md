@@ -1,5 +1,14 @@
 # Brief for Codex — VPS web build fails at prerender (build-parity)
 
+## Resolved 2026-08-24
+
+The VPS `.env` declared `NODE_ENV=development`, and `deploy-web.sh` exported that value into
+`next build`. That selected development React internals while Next was prerendering its production
+special pages, producing the `/_global-error` `useContext` failure. The deploy script now forces
+`NODE_ENV=production` immediately after sourcing the shared environment. A clean Linux x86_64 build
+passes on Node 22.22.2, npm 10.9.7, Next 16.2.12, and React 19.2.8. The old stub remains only as a
+narrow emergency fallback and is not expected to run.
+
 **Owner: Codex** (`apps/web`). Symptom is deploy-blocking. My `scripts/deploy-web.sh` is the safety
 net (it restores the previous build and aborts on any unknown failure), so prod is protected — but
 your newest city-page work **cannot go live until `next build` passes on the VPS**.
