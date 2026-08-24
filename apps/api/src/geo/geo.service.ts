@@ -147,6 +147,40 @@ export class GeoService {
   }
 
   /**
+   * Just the hero image for a city — the lightweight call the home page makes when a tier-1/2
+   * location is selected or detected, to swap the hero background. Returns null (no error) when the
+   * city has no hero, so the client simply keeps its default illustration.
+   */
+  async getCityHero(slug: string) {
+    const city = await this.prisma.city.findUnique({
+      where: { slug },
+      select: {
+        name: true,
+        slug: true,
+        tier: true,
+        isActive: true,
+        images: {
+          where: { kind: 'HERO' },
+          orderBy: { sortOrder: 'asc' },
+          take: 1,
+          select: { storageUrl: true, attribution: true, license: true, source: true },
+        },
+      },
+    });
+    if (!city || !city.isActive) return null;
+    const hero = city.images[0] ?? null;
+    return {
+      slug: city.slug,
+      name: city.name,
+      tier: city.tier,
+      heroImageUrl: hero?.storageUrl ?? null,
+      attribution: hero?.attribution ?? null,
+      license: hero?.license ?? null,
+      source: hero?.source ?? null,
+    };
+  }
+
+  /**
    * One neighbourhood, by slug, within a city.
    *
    * Scoped by city because locality slugs are unique per city and not globally:

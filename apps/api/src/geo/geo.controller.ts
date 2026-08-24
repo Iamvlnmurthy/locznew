@@ -61,6 +61,15 @@ export class GeoController {
   }
 
   @Public()
+  @Get('cities/:slug/hero')
+  @ApiOperation({
+    summary: 'Just the city hero image — for swapping the home hero background on select/detect',
+  })
+  getCityHero(@Param('slug') slug: string) {
+    return this.geo.getCityHero(slug);
+  }
+
+  @Public()
   @Get('cities/:cityId/localities/:slug')
   @ApiOperation({ summary: 'One locality by slug — backs the neighbourhood landing pages' })
   @ApiResponse({ status: 200, type: LocalityDto })
