@@ -36,8 +36,10 @@ def ask(names, script_name):
               "not translate the meaning, do not add anything. Reply with ONLY a JSON object "
               "mapping each input name to its transliteration.\n\n"
               + json.dumps(names, ensure_ascii=False))
+    # 3000 fits a 20-name response with headroom; going higher (8000) reserves against Sarvam's
+    # tokens-per-minute cap and trips 429s a few calls in. The truncation was BATCH=40, not this.
     body = json.dumps({"model": "sarvam-105b-conversations", "temperature": 0,
-                       "max_tokens": 8000,
+                       "max_tokens": 3000,
                        "messages": [{"role": "user", "content": prompt}]}).encode()
     req = urllib.request.Request(API, body,
         {"Content-Type": "application/json", "Authorization": f"Bearer {KEY}"})
@@ -84,15 +86,15 @@ def main():
             for i in range(0, len(rows), BATCH):
                 chunk = rows[i:i + BATCH]
                 got = None
-                for attempt in range(3):  # Sarvam intermittently returns malformed JSON; retry
+                for attempt in range(4):  # transient 429 (tokens/min) or malformed JSON; back off
                     try:
                         got = ask([r[1] for r in chunk], script_name)
                         break
                     except Exception as e:
-                        if attempt == 2:
+                        if attempt == 3:
                             print(f"  batch {i//BATCH}: FAILED {type(e).__name__}", flush=True)
                         else:
-                            time.sleep(2)
+                            time.sleep(5 * (attempt + 1))  # 5s, 10s, 15s
                 if got is None:
                     continue
                 # Carry the source name alongside, only so the sample line below can
