@@ -7,9 +7,17 @@ POST to VPS `news_stories`. All local + free on the RTX 5060. The VPS only serve
 ## Pipeline
 
 1. `engine.py` — orchestrator. `python engine.py once [--limit N]` (one cycle) / `loop` (hourly).
-2. `insert_stories.py` — VPS receiver (stdin JSON → `news_stories`), lives at `/tmp/insert_stories.py`.
-3. `create_news_stories.sql` — parallel prod table, kept separate from the live NewsEvent/NewsArticle
+   Loads `feeds.json`; caps at `MAX_PER_FEED` (4) and `MAX_PER_CYCLE` (120) so 230 feeds never blow
+   the GPU budget; a local `seen.txt` skips already-processed source URLs (no re-regeneration);
+   flushes to the VPS in batches of 10. Translates to Hindi + each feed's `state_lang`.
+2. `gen_feeds.py` — builds the feed matrix from prod cities → `feeds.json` (run on the VPS):
+   **230 feeds = 23 states × 10 categories** (local/state/business/tech/sports/entertainment/
+   politics/crime/civic/weather), each a Google News search over the state's top tier-1/2 cities,
+   anchored at the largest city's coords. Re-run to add states/categories.
+3. `insert_stories.py` — VPS receiver (stdin JSON → `news_stories`), lives at `/tmp/insert_stories.py`.
+4. `create_news_stories.sql` — parallel prod table, kept separate from the live NewsEvent/NewsArticle
    so the current feed is undisturbed until the API switches over.
+5. `feeds.json` — committed snapshot; the engine regenerates it via `gen_feeds.py` when scaling.
 
 ## Runtime (this machine)
 

@@ -1,16 +1,16 @@
 """LocZ News Engine — runs on the GPU box (RTX 5060).
 
-Hourly:  pull (categories x states)  ->  fetch body + og:image  ->  regenerate English in
-LocZ tone (local LLM, journalist brief)  ->  INTEGRITY GATE (drop-on-fail)  ->  translate to
-Hindi + state language (IndicTrans2)  ->  categorize  ->  POST to VPS (news_stories table).
+Hourly:  pull (feeds.json = states x categories)  ->  fetch body + og:image  ->  regenerate English
+in LocZ voice (local LLM, journalist brief)  ->  INTEGRITY GATE (drop-on-fail)  ->  translate to
+Hindi + state language (IndicTrans2)  ->  categorize  ->  POST to VPS (news_stories).
 
-Everything runs locally and free. The VPS only serves. Interim rule: a story that fails the
-integrity gate is DROPPED and we move on (a human reviewer queue replaces the drop later).
+Local + free. The VPS only serves. Interim rule: a story that fails the integrity gate is DROPPED.
+Scale is bounded by MAX_PER_FEED / MAX_PER_CYCLE and a local seen-file so seen articles aren't
+reprocessed and the GPU budget is never blown.
 
-Run:  python engine.py once [--limit N]     # one cycle
-      python engine.py loop                 # forever, every hour
+Run:  python engine.py once [--limit N]   |   python engine.py loop
 """
-import base64, json, re, sys, io, time, subprocess, hashlib, html
+import base64, json, os, re, sys, io, time, subprocess, hashlib
 from urllib.parse import quote
 import requests
 from bs4 import BeautifulSoup
@@ -18,33 +18,44 @@ from bs4 import BeautifulSoup
 sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8")
 sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding="utf-8")
 
+HERE = os.path.dirname(os.path.abspath(__file__))
 OLLAMA = "http://127.0.0.1:11434/api/generate"
 LLM = "qwen2.5:7b-instruct"
 UA = ("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
       "(KHTML, like Gecko) Chrome/124.0 Safari/537.36")
 S = requests.Session(); S.headers.update({"User-Agent": UA})
 
-# state -> its language (IndicTrans2 tgt code). Extend to all 30+ states.
-STATE_LANG = {
-    "Telangana": ("te", "tel_Telu"), "Andhra Pradesh": ("te", "tel_Telu"),
-    "Tamil Nadu": ("ta", "tam_Taml"), "Karnataka": ("kn", "kan_Knda"),
-    "Maharashtra": ("mr", "mar_Deva"), "West Bengal": ("bn", "ben_Beng"),
-    "Kerala": ("ml", "mal_Mlym"), "Gujarat": ("gu", "guj_Gujr"),
-}
 HI = "hin_Deva"
+LANG_TRIPLE = {"te": "tel_Telu", "hi": "hin_Deva", "ta": "tam_Taml", "kn": "kan_Knda",
+               "mr": "mar_Deva", "bn": "ben_Beng", "ml": "mal_Mlym", "gu": "guj_Gujr",
+               "or": "ory_Orya", "pa": "pan_Guru", "as": "asm_Beng"}
 
-# Feed matrix: (category, state, city, lat, lng, google-news-query). English only — regional
-# comes from translation. Scale = add rows (30 states x ~8 categories). Small set here for a cycle.
-def gnews(q, lang="en"):
-    return (f"https://news.google.com/rss/search?q={quote(q)}"
-            f"&hl={lang}-IN&gl=IN&ceid=IN:{lang}")
+FEEDS_JSON = os.path.join(HERE, "feeds.json")
+SEEN_FILE = os.path.join(HERE, "seen.txt")
+MAX_PER_FEED = int(os.environ.get("MAX_PER_FEED", "4"))       # new stories per feed per cycle
+MAX_PER_CYCLE = int(os.environ.get("MAX_PER_CYCLE", "120"))   # GPU budget guard per hour
 
-FEEDS = [
-    ("local",    "Telangana", "Hyderabad", 17.3850, 78.4867, gnews("Hyderabad OR Gachibowli OR Secunderabad")),
-    ("business", "Telangana", "Hyderabad", 17.3850, 78.4867, gnews("Hyderabad business OR startup OR IT")),
-    ("sports",   "Telangana", "Hyderabad", 17.3850, 78.4867, gnews("Hyderabad sports OR cricket Telangana")),
-    ("state",    "Andhra Pradesh", "Vijayawada", 16.5062, 80.6480, gnews("Andhra Pradesh Vijayawada OR Visakhapatnam")),
-]
+
+def load_feeds():
+    try:
+        return json.load(open(FEEDS_JSON, encoding="utf-8"))
+    except Exception:
+        return [{"category": "local", "state": "Telangana", "city": "Hyderabad",
+                 "lat": 17.385, "lng": 78.4867, "state_lang": "te",
+                 "url": "https://news.google.com/rss/search?q=Hyderabad&hl=en-IN&gl=IN&ceid=IN:en"}]
+
+
+def load_seen():
+    try:
+        return set(open(SEEN_FILE, encoding="utf-8").read().split())
+    except Exception:
+        return set()
+
+
+def mark_seen(url):
+    with open(SEEN_FILE, "a", encoding="utf-8") as f:
+        f.write(url + "\n")
+
 
 # ---------- source resolution ----------
 def decode_gnews(url):
@@ -85,7 +96,6 @@ def fetch_article(url):
         t.decompose()
     node = soup.find("article") or soup.body or soup
     paras = [p.get_text(" ", strip=True) for p in node.find_all("p")]
-    # drop boilerplate / social-embed lines
     paras = [p for p in paras if len(p) > 40 and not re.search(
         r"(subscrib|log ?in|log ?out|a post shared|©|cookie|newsletter)", p, re.I)]
     return "\n".join(paras), img
@@ -93,7 +103,7 @@ def fetch_article(url):
 
 # ---------- regenerate (LocZ journalist voice) ----------
 BRIEF = """You are LocZ's senior news editor, thirty years on the city desk. Rewrite the report
-below as an ORIGINAL LocZ story that a busy local reader wants to read.
+below as an ORIGINAL LocZ story a busy local reader wants to read.
 
 OUTPUT EXACTLY:
 HEADLINE: <specific, active, <=70 chars, names the place, no clickbait, no caps-lock>
@@ -111,10 +121,10 @@ RULES (never break):
 REPORT:
 """
 
+
 def ollama(prompt, timeout=180):
     body = json.dumps({"model": LLM, "prompt": prompt, "stream": False,
                        "options": {"temperature": 0.5}}).encode("utf-8")
-    req = requests.Request  # noqa
     r = S.post(OLLAMA, data=body, headers={"Content-Type": "application/json"}, timeout=timeout)
     return r.json()["response"].strip()
 
@@ -123,8 +133,8 @@ def regenerate(src_body):
     out = ollama(BRIEF + src_body[:5000])
     head = re.search(r"HEADLINE:\s*(.+)", out)
     dek = re.search(r"DEK:\s*(.+)", out)
-    body = re.split(r"\n\s*\n", out, 1)
-    body_txt = body[1].strip() if len(body) > 1 else out
+    parts = re.split(r"\n\s*\n", out, 1)
+    body_txt = parts[1].strip() if len(parts) > 1 else out
     body_txt = re.sub(r"^(HEADLINE|DEK):.*$", "", body_txt, flags=re.M).strip()
     return (head.group(1).strip() if head else "", dek.group(1).strip() if dek else "", body_txt)
 
@@ -133,18 +143,17 @@ def regenerate(src_body):
 def norm(s):
     return re.sub(r"\s+", " ", s.lower())
 
+
 def integrity_ok(title, body, src):
     nsrc = norm(src)
     text = title + "\n" + body
-    # 1. no fabricated quotes
     for q in re.findall(r"[\"“]([^\"”]{6,})[\"”]", text):
         if norm(q) not in nsrc:
             return False, f"fabricated quote: {q[:40]}"
-    # 2. every number / year in the story must exist in the source
+    src_nospace = re.sub(r"[,\s]", "", src)
     for num in set(re.findall(r"\b\d{2,}\b", text)):
-        if num not in re.sub(r"[,\s]", "", src) and num not in src:
+        if num not in src_nospace and num not in src:
             return False, f"invented number: {num}"
-    # 3. sane length
     if not (150 <= len(body) <= 3000):
         return False, f"bad length {len(body)}"
     return True, "ok"
@@ -152,6 +161,8 @@ def integrity_ok(title, body, src):
 
 # ---------- translate (IndicTrans2) ----------
 _it2 = {}
+
+
 def it2_load():
     import torch
     from transformers import AutoModelForSeq2SeqLM, AutoTokenizer
@@ -163,10 +174,10 @@ def it2_load():
         name, trust_remote_code=True, torch_dtype=torch.float16).to("cuda").eval()
     _it2["torch"] = torch
 
+
 def translate(text, tgt_code):
-    import re as _re
     torch = _it2["torch"]; ip = _it2["ip"]; tok = _it2["tok"]; model = _it2["model"]
-    sents = [s.strip() for s in _re.split(r"(?<=[.!?])\s+", text) if s.strip()]
+    sents = [s.strip() for s in re.split(r"(?<=[.!?])\s+", text) if s.strip()]
     if not sents:
         return ""
     batch = ip.preprocess_batch(sents, src_lang="eng_Latn", tgt_lang=tgt_code)
@@ -182,33 +193,45 @@ def push(stories):
     if not stories:
         return 0
     payload = json.dumps(stories, ensure_ascii=False)
-    p = subprocess.run(
-        ["ssh", "onrol", "sudo -u locz python3 /tmp/insert_stories.py"],
-        input=payload.encode("utf-8"), capture_output=True, timeout=120)
+    p = subprocess.run(["ssh", "onrol", "sudo -u locz python3 /tmp/insert_stories.py"],
+                       input=payload.encode("utf-8"), capture_output=True, timeout=120)
     sys.stdout.write(p.stdout.decode("utf-8", "replace"))
     if p.returncode != 0:
         sys.stderr.write(p.stderr.decode("utf-8", "replace"))
     return len(stories)
 
 
+def feedparser_parse(url):
+    import feedparser
+    d = feedparser.parse(S.get(url, timeout=25).content)
+    return [{"link": e.get("link"), "title": e.get("title"), "published": e.get("published"),
+             "source": (e.get("source", {}) or {}).get("title", "")} for e in d.entries[:100]]
+
+
 # ---------- one cycle ----------
 def cycle(limit=None):
     it2_load()
-    print("models ready; starting cycle", flush=True)
-    done = kept = dropped = 0
+    seen = load_seen()
+    feeds = load_feeds()
+    print(f"models ready; {len(feeds)} feeds, {len(seen)} already seen", flush=True)
+    kept = dropped = 0
     stories = []
-    for cat, state, city, lat, lng, feed_url in FEEDS:
+    budget = limit or MAX_PER_CYCLE
+    for feed in feeds:
+        if kept >= budget:
+            break
         try:
-            items = feedparser_parse(feed_url)
+            items = feedparser_parse(feed["url"])
         except Exception as e:
-            print(f"feed error {cat}/{city}: {e}"); continue
+            print(f"feed error {feed['category']}/{feed['state']}: {e}"); continue
+        kept_here = 0
         for it in items:
-            if limit and kept >= limit:
+            if kept >= budget or kept_here >= MAX_PER_FEED:
                 break
-            done += 1
             src = decode_gnews(it["link"])
-            if not src:
-                dropped += 1; continue
+            if not src or src in seen:
+                continue
+            seen.add(src); mark_seen(src)
             try:
                 body, img = fetch_article(src)
             except Exception:
@@ -217,52 +240,41 @@ def cycle(limit=None):
                 dropped += 1; continue
             try:
                 title, dek, body_en = regenerate(body)
-            except Exception as e:
-                print("regen err", e); dropped += 1; continue
+            except Exception:
+                dropped += 1; continue
             ok, why = integrity_ok(title, body_en, body)
             if not ok or not title:
-                dropped += 1
-                print(f"  DROP [{cat}/{city}] {why} :: {title[:50]}")
-                continue
-            slcode, sltriple = STATE_LANG.get(state, ("hi", HI))
+                dropped += 1; continue
+            tgt = feed.get("state_lang", "hi")
             try:
-                body_hi = translate(body_en, HI); title_hi = translate(title, HI)
-                body_sl = translate(body_en, sltriple); title_sl = translate(title, sltriple)
-            except Exception as e:
-                print("translate err", e); dropped += 1; continue
+                title_hi = translate(title, HI); body_hi = translate(body_en, HI)
+                if tgt != "hi" and tgt in LANG_TRIPLE:
+                    triple = LANG_TRIPLE[tgt]
+                    title_sl = translate(title, triple); body_sl = translate(body_en, triple)
+                else:
+                    title_sl = body_sl = None
+            except Exception:
+                dropped += 1; continue
             ch = hashlib.sha256((src + "|" + title).encode()).hexdigest()[:32]
             stories.append(dict(
-                content_hash=ch, category=cat, title_en=title, dek_en=dek, body_en=body_en,
+                content_hash=ch, category=feed["category"], title_en=title, dek_en=dek, body_en=body_en,
                 title_hi=title_hi, body_hi=body_hi, title_te=None, body_te=None,
-                state_lang=slcode, title_sl=title_sl, body_sl=body_sl,
+                state_lang=tgt, title_sl=title_sl, body_sl=body_sl,
                 image_url=img, image_credit=(it.get("source") or "") if img else None,
-                city=city, state=state, latitude=lat, longitude=lng,
+                city=feed["city"], state=feed["state"], latitude=feed["lat"], longitude=feed["lng"],
                 src_url=src, src_publisher=it.get("source") or "", src_lang="en",
                 published_at=it.get("published"), status="PUBLISHED"))
-            kept += 1
-            print(f"  KEEP [{cat}/{city}] {title[:60]}")
-        if limit and kept >= limit:
-            break
-    n = push(stories)
-    print(f"cycle done: seen {done}, kept {kept}, dropped {dropped}, pushed {n}", flush=True)
-
-
-def feedparser_parse(url):
-    import feedparser
-    d = feedparser.parse(S.get(url, timeout=25).content)
-    out = []
-    for e in d.entries[:100]:
-        out.append({"link": e.get("link"), "title": e.get("title"),
-                    "published": e.get("published"),
-                    "source": (e.get("source", {}) or {}).get("title", "")})
-    return out
+            kept += 1; kept_here += 1
+            if kept % 10 == 0:
+                push(stories); stories = []      # flush in batches so a long cycle isn't all-or-nothing
+            print(f"  KEEP [{feed['category']}/{feed['city']}] {title[:55]}", flush=True)
+    n_final = push(stories)
+    print(f"cycle done: kept {kept}, dropped {dropped}, final-batch {n_final}", flush=True)
 
 
 if __name__ == "__main__":
     mode = sys.argv[1] if len(sys.argv) > 1 else "once"
-    limit = None
-    if "--limit" in sys.argv:
-        limit = int(sys.argv[sys.argv.index("--limit") + 1])
+    limit = int(sys.argv[sys.argv.index("--limit") + 1]) if "--limit" in sys.argv else None
     if mode == "loop":
         while True:
             t0 = time.time()
@@ -270,8 +282,8 @@ if __name__ == "__main__":
                 cycle(limit)
             except Exception as e:
                 print("CYCLE ERROR:", e, flush=True)
-            sleep = max(0, 3600 - (time.time() - t0))
-            print(f"sleeping {sleep/60:.0f} min", flush=True)
+            sleep = max(60, 3600 - (time.time() - t0))
+            print(f"sleeping {sleep / 60:.0f} min", flush=True)
             time.sleep(sleep)
     else:
         cycle(limit)
