@@ -1851,6 +1851,24 @@
   display: none;
 }
 
+/* Stay collapsed while WAITING for a fill too. Otherwise, while AdSense fill is
+   still ramping on a new account, every unfilled slot flashes an empty bordered
+   "Advertisement" box for up to 8s before collapsing. The slot only becomes
+   visible once an ad actually fills (data-ad-state='filled'). The width is still
+   there for AdSense to measure a responsive unit against. */
+.ad-slot[data-ad-state='requesting'] {
+  min-height: 1px;
+  margin-block: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  overflow: hidden;
+}
+
+.ad-slot[data-ad-state='requesting'] .ad-slot__label {
+  display: none;
+}
+
 .ad-slot[data-ad-state='unfilled'],
 .ad-slot:has(.adsbygoogle[data-ad-status='unfilled']),
 .ad-slot:has(.adsbygoogle[data-ad-status='unfill-optimized']) {
