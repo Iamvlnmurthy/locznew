@@ -107,14 +107,18 @@ export const PLACEMENTS: Readonly<Record<PlacementId, Placement>> = {
     device: 'both',
     reserve: { mobile: 280, desktop: 250 },
     lazy: false,
-    minContentScore: 250,
+    // Score is the article's WORD count. Hyperlocal rewrites run ~150–250 words, so the old
+    // 250/500/700 gates (tuned for long-form) left almost every news article ad-free. Lowered so a
+    // normal news story carries a top + related unit, while sub-50-word stubs stay ad-free (thin
+    // content must not show ads — AdSense policy).
+    minContentScore: 50,
   },
   NEWS_ARTICLE_IN_BODY: {
     format: 'in-article',
     device: 'both',
     reserve: { mobile: 260, desktop: 280 },
     lazy: true,
-    minContentScore: 500,
+    minContentScore: 200,
   },
   NEWS_FEED_IN_LIST: {
     format: 'in-feed',
@@ -128,7 +132,7 @@ export const PLACEMENTS: Readonly<Record<PlacementId, Placement>> = {
     device: 'both',
     reserve: { mobile: 360, desktop: 340 },
     lazy: true,
-    minContentScore: 700,
+    minContentScore: 120,
   },
   // City guides are editorial entry pages, so advertising starts only after visitors have
   // received the location context and map. Never place an ad in the hero or facts strip.

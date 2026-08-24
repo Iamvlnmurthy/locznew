@@ -274,10 +274,15 @@ def cycle(limit=None):
                     title_sl = body_sl = None
             except Exception:
                 dropped += 1; continue
+            # Telugu is a first-class UI language (its own switcher tab) that reads the dedicated
+            # title_te/body_te columns — so for te feeds, mirror the translation there, not only in
+            # the generic state-lang columns the site never queries.
+            title_te = title_sl if tgt == "te" else None
+            body_te = body_sl if tgt == "te" else None
             ch = hashlib.sha256((src + "|" + title).encode()).hexdigest()[:32]
             stories.append(dict(
                 content_hash=ch, category=feed["category"], title_en=title, dek_en=dek, body_en=body_en,
-                title_hi=title_hi, body_hi=body_hi, title_te=None, body_te=None,
+                title_hi=title_hi, body_hi=body_hi, title_te=title_te, body_te=body_te,
                 state_lang=tgt, title_sl=title_sl, body_sl=body_sl,
                 image_url=img, image_credit=(it.get("source") or "") if img else None,
                 city=feed["city"], state=feed["state"], latitude=feed["lat"], longitude=feed["lng"],
