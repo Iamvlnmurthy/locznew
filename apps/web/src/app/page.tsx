@@ -26,6 +26,8 @@ interface NewsHeadline {
   title: string;
   category: string;
   ring: 'local' | 'city' | 'district' | 'state' | 'national';
+  imageUrl: string | null;
+  imageCredit: string | null;
   publishedAt: string | null;
 }
 
@@ -567,29 +569,33 @@ export default async function HomePage({
                   {t('feed.seeAll')} <Icon name="arrow" />
                 </Link>
               </div>
-              <ul className="local-news__list">
-                {newsHeadlines.slice(0, 5).map((item) => {
+              <div className="local-news__tiles">
+                {newsHeadlines.slice(0, 3).map((item) => {
                   const when = relativeTime(item.publishedAt, locale);
                   return (
-                    <li key={item.slug}>
-                      <Link href={`/news/${item.slug}`}>
-                        <span className="local-news__dot" aria-hidden="true" />
-                        <span className="local-news__body">
-                          <strong className={locale === 'te' ? 'te' : undefined}>
-                            {item.title}
-                          </strong>
-                          <span className="local-news__meta">
-                            <span style={{ textTransform: 'capitalize' }}>{item.category}</span>
-                            {when ? ` · ${when}` : ''}
+                    <Link key={item.slug} href={`/news/${item.slug}`} className="local-news-tile">
+                      <span className="local-news-tile__img">
+                        {item.imageUrl ? (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img src={item.imageUrl} alt="" loading="lazy" />
+                        ) : (
+                          <span className="local-news-tile__ph" aria-hidden="true">
+                            <Icon name="location" />
                           </span>
-                        </span>
-                        <Icon name="arrow" />
-                      </Link>
-                    </li>
+                        )}
+                        <span className="local-news-tile__cat">{item.category}</span>
+                      </span>
+                      <span className="local-news-tile__body">
+                        <strong className={locale === 'te' ? 'te' : undefined}>{item.title}</strong>
+                        {when ? <span className="local-news-tile__time">{when}</span> : null}
+                      </span>
+                    </Link>
                   );
                 })}
-              </ul>
-              <p className="local-news__attribution">LocZ News</p>
+              </div>
+              <Link href="/news" className="local-news__more">
+                Show more news <Icon name="arrow" />
+              </Link>
             </section>
           ) : null}
 
