@@ -2423,6 +2423,12 @@ model NewsEvent {
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 
+  /// Set when a moderator takes the event down — an auto-ingested headline that is offensive,
+  /// wrong or defamatory. Soft, so it is reversible and the retention job still hard-deletes it
+  /// on schedule. The feed and the detail page exclude removed events.
+  removedAt DateTime?
+  removedBy String?   @db.Uuid
+
   articles  NewsEventArticle[]
   locations NewsEventLocation[]
   updates   NewsEventUpdate[]

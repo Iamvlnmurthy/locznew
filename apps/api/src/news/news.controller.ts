@@ -2,6 +2,7 @@ import { Body, Controller, Get, NotFoundException, Param, Post, Query } from '@n
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
 import { IsIn, IsLatitude, IsLongitude, IsOptional, IsString, MaxLength } from 'class-validator';
+import { AuthenticatedUser, CurrentUser } from '../common/decorators/current-user.decorator';
 import { Public, RequirePermissions } from '../rbac/rbac.decorators';
 import { PrismaService } from '../prisma/prisma.service';
 import { cleanText, stripPublisherSuffix } from './feed/event-shaper';
@@ -62,8 +63,8 @@ export class NewsController {
   @Get(':slug')
   @ApiOperation({ summary: 'One news event, LocZ-regenerated in the requested language' })
   async getEvent(@Param('slug') slug: string, @Query('lang') lang?: string) {
-    const event = await this.prisma.newsEvent.findUnique({
-      where: { slug },
+    const event = await this.prisma.newsEvent.findFirst({
+      where: { slug, removedAt: null },
       include: {
         articles: { include: { article: { select: { publisher: true, sourceUrl: true } } } },
       },
@@ -95,5 +96,35 @@ export class NewsController {
   async triggerIngest(@Body() body: IngestDto) {
     const target = await this.sources.ensureGoogleNewsFeed(body.area, body.language);
     return this.ingest.ingestFeed(target);
+  }
+
+  @RequirePermissions('category:manage')
+  @Post('admin/:slug/takedown')
+  @ApiOperation({
+    summary: 'Take an auto-ingested news event down (offensive, wrong, defamatory)',
+    description:
+      'Soft: the event leaves the feed and its page immediately, stays reversible, and the ' +
+      'retention purge still deletes it on schedule. There was no way to remove a bad headline ' +
+      'before this.',
+  })
+  async takedown(@Param('slug') slug: string, @CurrentUser() user: AuthenticatedUser) {
+    const result = await this.prisma.newsEvent.updateMany({
+      where: { slug, removedAt: null },
+      data: { removedAt: new Date(), removedBy: user.id },
+    });
+    if (!result.count) throw new NotFoundException('Event not found or already removed');
+    return { removed: true };
+  }
+
+  @RequirePermissions('category:manage')
+  @Post('admin/:slug/restore')
+  @ApiOperation({ summary: 'Reinstate a news event removed by mistake' })
+  async restore(@Param('slug') slug: string) {
+    const result = await this.prisma.newsEvent.updateMany({
+      where: { slug, removedAt: { not: null } },
+      data: { removedAt: null, removedBy: null },
+    });
+    if (!result.count) throw new NotFoundException('Event not found or not removed');
+    return { restored: true };
   }
 }

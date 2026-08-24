@@ -298,6 +298,7 @@ export class GeoRepository {
              ST_Distance(e."geo", ${point}) AS "distanceMeters"
       FROM "NewsEvent" e
       WHERE e."geo" IS NOT NULL
+        AND e."removedAt" IS NULL
         AND ST_DWithin(e."geo", ${point}, ${radiusMeters})
         AND e."latestUpdateAt" >= ${since}
       ORDER BY e."geo" <-> ${point}
