@@ -22633,3 +22633,15 @@ h4,
 }
 .local-news__more:hover { background: color-mix(in srgb, var(--locz-primary, #0b3d2e) 88%, #000); }
 .local-news__more svg { width: 16px; height: 16px; }
+
+/* News feed pagination */
+.news-pagination { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 30px; }
+.news-pagination__link {
+  display: inline-flex; align-items: center; gap: 6px; background: var(--locz-primary, #0b3d2e);
+  color: #fff; text-decoration: none; padding: 9px 18px; border-radius: 999px; font-weight: 600;
+  font-size: 0.9rem; min-height: 40px;
+}
+.news-pagination__link:hover { background: color-mix(in srgb, var(--locz-primary, #0b3d2e) 88%, #000); }
+.news-pagination__link svg { width: 16px; height: 16px; }
+.news-pagination__link--prev svg { transform: rotate(180deg); }
+.news-pagination__page { color: var(--locz-muted, #5c6b64); font-size: 0.85rem; }

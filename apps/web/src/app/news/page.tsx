@@ -66,15 +66,21 @@ function qs(base: Record<string, string | undefined>, patch: Record<string, stri
 export default async function NewsFeedPage({
   searchParams,
 }: {
-  searchParams: Promise<{ topic?: string; when?: string; lang?: string }>;
+  searchParams: Promise<{ topic?: string; when?: string; lang?: string; page?: string }>;
 }) {
   const sp = await searchParams;
   const [locale, city] = await Promise.all([getLocale(), getSelectedCity()]);
   const lang = sp.lang || locale || 'en';
   const when = WHENS.includes(sp.when as (typeof WHENS)[number]) ? sp.when : undefined;
   const topic = sp.topic;
+  const PER_PAGE = 24;
+  const page = Math.max(1, Number(sp.page ?? '1') || 1);
 
-  const q = new URLSearchParams({ limit: '24', lang });
+  const q = new URLSearchParams({
+    limit: String(PER_PAGE),
+    offset: String((page - 1) * PER_PAGE),
+    lang,
+  });
   if (topic) q.set('category', topic);
   if (when) q.set('when', when);
   if (city?.latitude && city?.longitude) {
@@ -89,6 +95,7 @@ export default async function NewsFeedPage({
     apiSafe<Facets>('/news/stories/facets', { revalidate: 300 }),
   ]);
   const cards = feed?.cards ?? [];
+  const hasMore = feed?.hasMore ?? false;
   const base = { topic, when, lang: lang === 'en' ? undefined : lang };
 
   return (
@@ -196,6 +203,29 @@ export default async function NewsFeedPage({
             ))}
           </div>
         )}
+
+        {cards.length > 0 && (page > 1 || hasMore) ? (
+          <nav className="news-pagination" aria-label="More news">
+            {page > 1 ? (
+              <Link
+                className="news-pagination__link news-pagination__link--prev"
+                href={qs(base, { page: String(page - 1) })}
+              >
+                <Icon name="arrow" /> Newer
+              </Link>
+            ) : (
+              <span />
+            )}
+            <span className="news-pagination__page">Page {page}</span>
+            {hasMore ? (
+              <Link className="news-pagination__link" href={qs(base, { page: String(page + 1) })}>
+                Older <Icon name="arrow" />
+              </Link>
+            ) : (
+              <span />
+            )}
+          </nav>
+        ) : null}
       </div>
     </main>
   );
