@@ -420,10 +420,41 @@ export class BusinessClaimsService {
         skip: (page - 1) * limit,
         take: limit,
         include: {
+          // The business's OWN record — so a reviewer can see what each matched signal matched
+          // AGAINST. "Matched on EMAIL" means nothing without the two emails side by side; the
+          // whole decision is whether the claimant has proved control of this specific record.
           business: {
-            select: { id: true, name: true, slug: true, primaryPhone: true, sourceName: true },
+            select: {
+              id: true,
+              name: true,
+              slug: true,
+              primaryPhone: true,
+              whatsappNumber: true,
+              email: true,
+              website: true,
+              claimStatus: true,
+              verificationStatus: true,
+              sourceName: true,
+              category: { select: { name: true } },
+              city: { select: { name: true } },
+              address: {
+                select: { line1: true, landmark: true, locality: { select: { name: true } } },
+              },
+            },
           },
-          claimant: { select: { id: true, displayName: true, phoneE164: true, email: true } },
+          // emailVerifiedAt / phoneVerifiedAt: a match only counts when the contact is *verified*,
+          // and the reviewer needs to see which are. createdAt shows how fresh the account is.
+          claimant: {
+            select: {
+              id: true,
+              displayName: true,
+              phoneE164: true,
+              phoneVerifiedAt: true,
+              email: true,
+              emailVerifiedAt: true,
+              createdAt: true,
+            },
+          },
         },
       }),
       this.prisma.businessClaim.count({ where }),
