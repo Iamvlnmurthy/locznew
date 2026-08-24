@@ -226,24 +226,30 @@ export class StoriesService {
       q<{ lang: string }>(
         `SELECT DISTINCT state_lang lang FROM news_stories WHERE ${w} AND state_lang IS NOT NULL`,
       ),
-      q<{ today: bigint; yesterday: bigint; week: bigint; month: bigint }>(
+      q<{ d_today: bigint; d_yest: bigint; d_week: bigint; d_month: bigint }>(
+        // aliases must not be datetime keywords (month/week/day) — Postgres rejects them bare
         `SELECT
-           count(*) FILTER (WHERE published_at >= date_trunc('day', now())) today,
+           count(*) FILTER (WHERE published_at >= date_trunc('day', now())) AS d_today,
            count(*) FILTER (WHERE published_at >= date_trunc('day', now()) - interval '1 day'
-                              AND published_at < date_trunc('day', now())) yesterday,
-           count(*) FILTER (WHERE published_at >= now() - interval '7 days') week,
-           count(*) FILTER (WHERE published_at >= now() - interval '30 days') month
+                              AND published_at < date_trunc('day', now())) AS d_yest,
+           count(*) FILTER (WHERE published_at >= now() - interval '7 days') AS d_week,
+           count(*) FILTER (WHERE published_at >= now() - interval '30 days') AS d_month
          FROM news_stories WHERE ${w}`,
       ),
     ]);
     const n = (v: bigint | number) => Number(v);
-    const d = dates[0] ?? { today: 0n, yesterday: 0n, week: 0n, month: 0n };
+    const d = dates[0] ?? { d_today: 0n, d_yest: 0n, d_week: 0n, d_month: 0n };
     return {
       topics: topics.map((t) => ({ key: t.category, count: n(t.n) })),
       states: states.map((s) => ({ name: s.state, count: n(s.n) })),
       cities: cities.map((c) => ({ name: c.city, count: n(c.n) })),
       languages: ['en', 'hi', ...langs.map((l) => l.lang).filter((l) => l && l !== 'hi')],
-      dates: { today: n(d.today), yesterday: n(d.yesterday), week: n(d.week), month: n(d.month) },
+      dates: {
+        today: n(d.d_today),
+        yesterday: n(d.d_yest),
+        week: n(d.d_week),
+        month: n(d.d_month),
+      },
     };
   }
 }
