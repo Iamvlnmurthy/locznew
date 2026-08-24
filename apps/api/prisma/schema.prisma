@@ -727,6 +727,11 @@ model Address {
   line1      String?                                @db.VarChar(200)
   line2      String?                                @db.VarChar(200)
   landmark   String?                                @db.VarChar(160)
+  // Transliterations of the landmark, so a Telugu/Hindi page's composed description does not
+  // drop an English proper noun mid-sentence ("... Cyberabad Women Police Station దగ్గర ఉంది").
+  // Backfilled per distinct landmark string; the composer picks the reader's script.
+  landmarkTe String?                                @db.VarChar(160)
+  landmarkHi String?                                @db.VarChar(160)
   cityId     String                                 @db.Uuid
   localityId String?                                @db.Uuid
   postalCode String?                                @db.VarChar(12)

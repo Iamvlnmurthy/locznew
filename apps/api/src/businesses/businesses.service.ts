@@ -77,6 +77,10 @@ const BUSINESS_INCLUDE = {
       line1: true,
       line2: true,
       landmark: true,
+      // The landmark is a proper noun inside the composed sentence, so it travels in the
+      // reader's script too — otherwise a Telugu page reads "... Police Station దగ్గర ఉంది".
+      landmarkTe: true,
+      landmarkHi: true,
       // The neighbourhood is the most specific thing the page says about where a shop is,
       // so it travels in the reader's script too.
       locality: { select: { name: true, nameTe: true, nameHi: true, mandal: true } },
@@ -1135,7 +1139,16 @@ export class BusinessesService {
     const localityName = business.address?.locality
       ? localizedName(business.address.locality, lang)
       : null;
-    const landmark = business.address?.landmark ?? null;
+    const landmark = business.address?.landmark
+      ? localizedName(
+          {
+            name: business.address.landmark,
+            nameTe: business.address.landmarkTe,
+            nameHi: business.address.landmarkHi,
+          },
+          lang,
+        )
+      : null;
     // The description is composed from these two names, so localising them here is what
     // makes the /te and /hi pages actually read in those languages.
     const categoryName = localizedName(business.category, lang);
