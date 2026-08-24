@@ -11,6 +11,23 @@ reprocessed and the GPU budget is never blown.
 Run:  python engine.py once [--limit N]   |   python engine.py loop
 """
 import base64, json, os, re, sys, io, time, subprocess, hashlib
+from datetime import datetime, timezone
+from email.utils import parsedate_to_datetime
+
+MAX_AGE_DAYS = int(os.environ.get("MAX_AGE_DAYS", "3"))  # skip stale articles — this is NEWS
+
+
+def fresh_enough(published):
+    """True unless the article's publish date is older than MAX_AGE_DAYS. Unknown date = allow."""
+    if not published:
+        return True
+    try:
+        pub = parsedate_to_datetime(published)
+        if pub.tzinfo is None:
+            pub = pub.replace(tzinfo=timezone.utc)
+        return (datetime.now(timezone.utc) - pub).days <= MAX_AGE_DAYS
+    except Exception:
+        return True
 from urllib.parse import quote
 import requests
 from bs4 import BeautifulSoup
@@ -228,6 +245,8 @@ def cycle(limit=None):
         for it in items:
             if kept >= budget or kept_here >= MAX_PER_FEED:
                 break
+            if not fresh_enough(it.get("published")):
+                continue  # months-old evergreen the feed returned — not news
             src = decode_gnews(it["link"])
             if not src or src in seen:
                 continue
