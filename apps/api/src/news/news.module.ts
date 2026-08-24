@@ -7,6 +7,7 @@ import { NewsIngestService } from './ingest/news-ingest.service';
 import { NewsFeedService } from './feed/news-feed.service';
 import { NewsSourceService } from './sources/news-source.service';
 import { NewsRefineService } from './refine/news-refine.service';
+import { NewsRetentionService } from './retention/news-retention.service';
 import { NewsScheduler } from './news.scheduler';
 import { NewsProcessor } from './news.processor';
 
@@ -25,6 +26,7 @@ import { NewsProcessor } from './news.processor';
     NewsFeedService,
     NewsSourceService,
     NewsRefineService,
+    NewsRetentionService,
     NewsScheduler,
     NewsProcessor,
   ],

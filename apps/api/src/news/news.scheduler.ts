@@ -2,7 +2,7 @@ import { InjectQueue } from '@nestjs/bullmq';
 import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { Queue } from 'bullmq';
 import { AppConfig } from '../config/config.module';
-import { JOB_NEWS_INGEST, QUEUE_NEWS } from '../queue/queue.constants';
+import { JOB_NEWS_INGEST, JOB_NEWS_RETENTION, QUEUE_NEWS } from '../queue/queue.constants';
 import { NewsSourceService } from './sources/news-source.service';
 
 /**
@@ -53,6 +53,12 @@ export class NewsScheduler implements OnModuleInit {
       JOB_NEWS_INGEST,
       {},
       { repeat: { pattern: '*/5 * * * *' }, jobId: 'repeat:news-ingest' },
+    );
+    // Once a day: delete news past the retention window so the tables don't grow without bound.
+    await this.queue.add(
+      JOB_NEWS_RETENTION,
+      {},
+      { repeat: { pattern: '30 3 * * *' }, jobId: 'repeat:news-retention' },
     );
     this.logger.log(`News scheduler registered (${NewsScheduler.SEED_FEEDS.length} seed feeds)`);
   }

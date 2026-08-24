@@ -1,8 +1,9 @@
 import { Processor, WorkerHost } from '@nestjs/bullmq';
 import { Logger } from '@nestjs/common';
 import { Job } from 'bullmq';
-import { JOB_NEWS_INGEST, QUEUE_NEWS } from '../queue/queue.constants';
+import { JOB_NEWS_INGEST, JOB_NEWS_RETENTION, QUEUE_NEWS } from '../queue/queue.constants';
 import { NewsIngestService } from './ingest/news-ingest.service';
+import { NewsRetentionService } from './retention/news-retention.service';
 import { NewsSourceService } from './sources/news-source.service';
 
 /**
@@ -17,11 +18,15 @@ export class NewsProcessor extends WorkerHost {
   constructor(
     private readonly sources: NewsSourceService,
     private readonly ingest: NewsIngestService,
+    private readonly retention: NewsRetentionService,
   ) {
     super();
   }
 
   async process(job: Job): Promise<unknown> {
+    if (job.name === JOB_NEWS_RETENTION) {
+      return this.retention.purgeExpired();
+    }
     if (job.name !== JOB_NEWS_INGEST) {
       this.logger.error(`Unknown job "${job.name}" on the ${QUEUE_NEWS} queue`);
       return undefined;

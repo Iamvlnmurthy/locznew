@@ -50,6 +50,9 @@ export const envSchema = z.object({
   GROQ_API_KEY: z.string().optional(),
   CEREBRAS_API_KEY: z.string().optional(),
   NEWS_OLLAMA_URL: z.string().optional(), // local Ollama (dev machine only), e.g. http://localhost:11434
+  // News older than this is deleted daily so the tables don't grow forever. Wider than the feed's
+  // 7-day window on purpose, for margin (late viewers, crawled slugs).
+  NEWS_RETENTION_DAYS: z.coerce.number().int().positive().max(365).default(14),
 
   JWT_ACCESS_SECRET: z.string().min(32, 'JWT_ACCESS_SECRET must be at least 32 characters'),
   JWT_REFRESH_SECRET: z.string().min(32, 'JWT_REFRESH_SECRET must be at least 32 characters'),
