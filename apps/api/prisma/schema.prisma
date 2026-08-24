@@ -640,10 +640,77 @@ model City {
   businesses      Business[]
   listings        Listing[]
   searchQueryLogs SearchQueryLog[]
+  content         CityContent?
+  sections        CitySection[]
+  images          CityImage[]
 
   @@index([stateId, isActive])
   @@index([name])
   @@map("cities")
+}
+
+/// Editorial profile for a city page — a view built from sourced facts, never invented prose.
+/// 1:1 with City so the base row stays lean. Populated from the city-content pipeline.
+model CityContent {
+  cityId          String   @id @db.Uuid
+  shortIntro      String?  @db.Text
+  description     String?  @db.Text
+  famousFor       String?  @db.VarChar(500)
+  character       String?  @db.Text
+  economySummary  String?  @db.Text
+  climate         String?  @db.VarChar(120)
+  knownFor        String?  @db.VarChar(500)
+  seoTitle        String?  @db.VarChar(200)
+  metaDescription String?  @db.VarChar(400)
+  sourceName      String?  @db.VarChar(160)
+  dataQuality     String?  @db.VarChar(20)
+  updatedAt       DateTime @updatedAt
+
+  city City @relation(fields: [cityId], references: [id], onDelete: Cascade)
+
+  @@map("city_content")
+}
+
+/// A sourced section of a city guide (history, economy, tourism…). The source URL and licence
+/// travel on every row, because the text is used under that licence (Wikipedia = CC BY-SA 4.0).
+model CitySection {
+  id         String  @id @db.Uuid
+  cityId     String  @db.Uuid
+  sectionKey String  @db.VarChar(40)
+  title      String  @db.VarChar(120)
+  content    String  @db.Text
+  sourceUrl  String? @db.VarChar(500)
+  license    String? @db.VarChar(60)
+  source     String? @db.VarChar(60)
+  sortOrder  Int     @default(0)
+
+  city City @relation(fields: [cityId], references: [id], onDelete: Cascade)
+
+  @@unique([cityId, sectionKey])
+  @@index([cityId])
+  @@map("city_sections")
+}
+
+/// A city image (hero, attraction or map). Held as an external-storage URL — the bytes live in
+/// object storage, not the DB — with the source, licence and exact attribution it must carry.
+model CityImage {
+  id          String  @id @db.Uuid
+  cityId      String  @db.Uuid
+  kind        String  @db.VarChar(20) // HERO | ATTRACTION | MAP
+  title       String? @db.VarChar(160)
+  storageUrl  String  @db.VarChar(500)
+  source      String? @db.VarChar(120)
+  license     String? @db.VarChar(60)
+  attribution String? @db.VarChar(300)
+  width       Int?
+  height      Int?
+  contentHash String? @db.VarChar(64)
+  sortOrder   Int     @default(0)
+
+  city City @relation(fields: [cityId], references: [id], onDelete: Cascade)
+
+  @@index([cityId, kind])
+  @@map("city_images")
 }
 
 model Locality {
