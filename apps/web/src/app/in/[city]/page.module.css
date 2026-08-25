@@ -139,6 +139,10 @@
 .categoryRail strong { overflow: hidden; font-size: 13px; text-overflow: ellipsis; white-space: nowrap; }
 .categoryRail small { color: #71817c; font-size: 10px; font-weight: 700; }
 .categoryRail svg { width: 15px; color: #71817c; }
+.categoryLinks { margin: 6px 0 34px; display: flex; flex-wrap: wrap; gap: 8px; }
+.categoryLinks a { padding: 6px 13px; font-size: 12.5px; line-height: 1.2; color: var(--city-ink); border: 1px solid rgb(20 70 59 / 12%); border-radius: 999px; background: rgb(255 255 255 / 80%); transition: border-color .18s ease, background .18s ease; }
+.categoryLinks a:hover { border-color: rgb(13 102 87 / 30%); background: var(--city-mint); }
+:global(:root[data-theme='dark']) .categoryLinks a { background: rgb(255 255 255 / 6%); border-color: rgb(255 255 255 / 12%); }
 .directoryListings { position: relative; padding-top: 4px; }
 .directoryListings :global(.business-filters) { margin-bottom: 22px; }
 .directoryListings :global(.search-businesses__grid) { grid-template-columns: repeat(3, minmax(0, 1fr)); }

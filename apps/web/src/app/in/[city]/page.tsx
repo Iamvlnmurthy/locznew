@@ -511,6 +511,19 @@ function CityDirectory({
           ))}
         </nav>
       ) : null}
+      {/* Text-link continuation of the visual rail. The rail shows the top 8; the sitemap indexes the
+          top 45 city×category hubs, so without this the other ~37 hubs had no internal feeder link
+          and leaned entirely on the sitemap to be crawled. Cheap link equity to every indexable hub —
+          and a real "browse all categories" affordance for visitors. */}
+      {categories.length > 8 ? (
+        <nav className={styles.categoryLinks} aria-label={t('feed.browseCategories')}>
+          {categories.slice(8, 45).map((category) => (
+            <Link key={`hub-${category.id}`} href={`/in/${city.slug}/${category.slug}`}>
+              {category.name}
+            </Link>
+          ))}
+        </nav>
+      ) : null}
       {businesses.items.length === 0 ? (
         <div className={styles.empty}>
           <Image src="/illustrations/empty-neighbourhood.webp" alt="" width="220" height="180" />
