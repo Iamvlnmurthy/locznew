@@ -357,7 +357,6 @@ export default async function HomePage({
         {cityHeroImage ? <div className="home-hero__citybg" aria-hidden="true" /> : null}
         <div className="container home-hero__inner">
           <div className="home-hero__copy">
-            <span className="home-hero__eyebrow">{t('home.heroEyebrow')}</span>
             {hasCityGuide && homeCity ? (
               <Link
                 href={`/in/${homeCity.slug}`}
