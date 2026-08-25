@@ -195,7 +195,7 @@ describe('ImageModerationService', () => {
       expect(queue.add).not.toHaveBeenCalled();
     });
 
-    it('publishes an established seller when the scanner could not be reached', async () => {
+    it('holds an established seller for review when the scanner could not be reached', async () => {
       const { service, prisma, queue } = build({ listing: published, publishedByOwner: 40 });
 
       await expect(
@@ -203,15 +203,15 @@ describe('ImageModerationService', () => {
           unavailable: ['IMAGE_SCANNER_UNAVAILABLE'],
         }),
       ).resolves.toEqual({
-        decision: 'APPROVE',
+        decision: 'REVIEW',
         reasons: ['IMAGE_SCANNER_UNAVAILABLE'],
       });
 
-      // The reason is still recorded and still logged at error level; what it no longer
-      // does is take an established seller's listing off the shelf because a dependency
-      // was down.
-      expect(prisma.listing.update).not.toHaveBeenCalled();
-      expect(queue.add).not.toHaveBeenCalled();
+      // Fail CLOSED: a child-safety control must not publish unscanned images on an outage, even
+      // for an established seller. The listing is pulled back to review and removed from the index
+      // (queued, not refused — a real upload recovers once a human clears it). Still logged loudly.
+      expect(prisma.listing.update).toHaveBeenCalled();
+      expect(queue.add).toHaveBeenCalled();
     });
 
     it('still queues a new seller when the scanner could not be reached', async () => {
