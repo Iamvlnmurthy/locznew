@@ -252,13 +252,16 @@ class ListingRepository {
     String scope = 'city',
     int limit = 20,
   }) async {
+    // The live news system is `news_stories` (served by /news/stories) — the same feed the website
+    // uses. The old /news/feed (NewsEvent) is superseded and stale (the engine no longer writes it),
+    // which is why the app showed old-or-empty news. `dek` is the story's short standfirst.
     final json = await _api.get<Map<String, dynamic>>(
-      '/news/feed',
+      '/news/stories',
       query: {
         'latitude': '$latitude',
         'longitude': '$longitude',
         'lang': lang,
-        'scope': scope,
+        'sort': 'recent',
         'limit': '$limit',
       },
     );
@@ -268,7 +271,7 @@ class ListingRepository {
         NewsCard(
           slug: (entry as Map<String, dynamic>)['slug'] as String? ?? '',
           title: entry['title'] as String? ?? '',
-          summary: entry['summary'] as String?,
+          summary: entry['dek'] as String? ?? entry['summary'] as String?,
           category: entry['category'] as String? ?? 'local',
           distanceKm: (entry['distanceKm'] as num?)?.toDouble(),
           publishedAt: entry['publishedAt'] as String?,
@@ -280,25 +283,21 @@ class ListingRepository {
   /// One LocZ-regenerated news event by slug, in the requested language (for the detail screen).
   Future<NewsEvent?> newsEvent(String slug, {String lang = 'en'}) async {
     try {
+      // Live news system: /news/stories/:slug (the old /news/:slug 404s for these slugs). The detail
+      // screen renders `summary` as the article body, so map the story `body` there; `category` is a
+      // single string here (not a list), and image credit stands in for the old per-source list.
       final json = await _api.get<Map<String, dynamic>>(
-        '/news/${Uri.encodeComponent(slug)}',
+        '/news/stories/${Uri.encodeComponent(slug)}',
         query: {'lang': lang},
       );
+      final category = json['category'] as String?;
       return NewsEvent(
         slug: json['slug'] as String? ?? slug,
         title: json['title'] as String? ?? '',
-        summary: json['summary'] as String?,
-        categories: [
-          for (final c in (json['categories'] as List<dynamic>? ?? [])) c as String,
-        ],
+        summary: (json['body'] as String?) ?? (json['dek'] as String?),
+        categories: category != null && category.isNotEmpty ? [category] : const [],
         publishedAt: json['publishedAt'] as String?,
-        sources: [
-          for (final s in (json['sources'] as List<dynamic>? ?? []))
-            (
-              publisher: (s as Map<String, dynamic>)['publisher'] as String?,
-              url: s['url'] as String?,
-            ),
-        ],
+        sources: const [],
       );
     } catch (_) {
       return null;
