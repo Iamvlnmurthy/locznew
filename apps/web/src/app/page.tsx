@@ -9,6 +9,7 @@ import { premiumCategoryArtwork, premiumDiscoveryArtwork } from '@/lib/premium-i
 import { NearbyBusinesses } from './search/nearby-businesses';
 import { loadNearbyBusinesses } from './search/businesses-actions';
 import { RADIUS_OPTIONS_KM, getLocale, getSelectedCity, getSelectedRadius } from '@/lib/session';
+import { relativeTime } from '@/lib/relative-time';
 import { RadiusSelector } from '@/components/radius-selector';
 import { DiscoveryMotionLink } from '@/components/discovery-motion-link';
 import { AdSlot } from '@/components/ad-slot';
@@ -65,19 +66,6 @@ function formatSalary(min: number | null, max: number | null): string | null {
 }
 
 /** Localised "2 hours ago" without any translation keys — Intl handles the language. */
-function relativeTime(iso: string | null, locale: string): string | null {
-  if (!iso) return null;
-  const then = new Date(iso).getTime();
-  if (Number.isNaN(then)) return null;
-  const diffMs = then - Date.now();
-  const rtf = new Intl.RelativeTimeFormat(locale, { numeric: 'auto' });
-  const minutes = Math.round(diffMs / 60000);
-  if (Math.abs(minutes) < 60) return rtf.format(minutes, 'minute');
-  const hours = Math.round(minutes / 60);
-  if (Math.abs(hours) < 24) return rtf.format(hours, 'hour');
-  return rtf.format(Math.round(hours / 24), 'day');
-}
-
 interface FeedSection {
   key: string;
   title: string;

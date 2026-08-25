@@ -5,6 +5,8 @@ import { Icon } from '@/components/icons';
 import { AdSlot } from '@/components/ad-slot';
 import { apiSafe } from '@/lib/api';
 import { getLocale, getSelectedCity } from '@/lib/session';
+import { relativeTime } from '@/lib/relative-time';
+import { NewsFilters } from './news-filters';
 
 export const dynamic = 'force-dynamic';
 
@@ -36,13 +38,6 @@ interface Facets {
 }
 
 const WHENS = ['today', 'yesterday', 'week', 'month'] as const;
-// Literal labels for now; the news surface is localised in a later i18n pass.
-const WHEN_LABEL: Record<(typeof WHENS)[number], string> = {
-  today: 'Today',
-  yesterday: 'Yesterday',
-  week: 'This week',
-  month: 'This month',
-};
 const RING_LABEL: Record<StoryCard['ring'], string> = {
   local: 'Local',
   city: 'City',
@@ -50,11 +45,6 @@ const RING_LABEL: Record<StoryCard['ring'], string> = {
   state: 'State',
   national: 'India',
 };
-const LANGS: Array<{ code: string; label: string; te?: boolean }> = [
-  { code: 'en', label: 'English' },
-  { code: 'te', label: 'తెలుగు', te: true },
-  { code: 'hi', label: 'हिन्दी' },
-];
 
 function qs(base: Record<string, string | undefined>, patch: Record<string, string | undefined>) {
   const p = new URLSearchParams();
@@ -80,6 +70,10 @@ export default async function NewsFeedPage({
     limit: String(PER_PAGE),
     offset: String((page - 1) * PER_PAGE),
     lang,
+    // Latest first. Without this the feed defaults to nearest-first when a location is set, which
+    // buries just-published stories under older-but-closer ones — a news feed should lead with what's
+    // new. The per-card distance ring still gives location context.
+    sort: 'recent',
   });
   if (topic) q.set('category', topic);
   if (when) q.set('when', when);
@@ -100,66 +94,22 @@ export default async function NewsFeedPage({
 
   return (
     <main className="news-page">
-      <header className="news-masthead">
+      <header className="news-masthead news-masthead--compact">
         <div className="container">
           <span className="news-masthead__brand">
             <Icon name="location" /> LocZ News · Hyperlocal
           </span>
           <h1>What’s happening near you</h1>
-          <p>
-            Local news in your area, rewritten in LocZ’s own voice and translated into your
-            language.
-          </p>
-          <nav className="news-langs" aria-label="Language">
-            {LANGS.map((l) => (
-              <Link
-                key={l.code}
-                href={qs(base, { lang: l.code === 'en' ? undefined : l.code })}
-                className={`news-lang${(base.lang ?? 'en') === l.code ? ' news-lang--on' : ''}${l.te ? ' te' : ''}`}
-              >
-                {l.label}
-              </Link>
-            ))}
-          </nav>
         </div>
       </header>
 
-      <div className="news-filters">
-        <div className="container">
-          <div className="news-filters__row">
-            <span className="news-filters__label">When</span>
-            {WHENS.map((w) => (
-              <Link
-                key={w}
-                href={qs(base, { when: when === w ? undefined : w })}
-                className={`news-pill${when === w ? ' news-pill--on' : ''}`}
-              >
-                {WHEN_LABEL[w]}
-                {facets ? <b>{facets.dates[w]}</b> : null}
-              </Link>
-            ))}
-          </div>
-          <div className="news-filters__row">
-            <span className="news-filters__label">Topic</span>
-            <Link
-              href={qs(base, { topic: undefined })}
-              className={`news-chip${!topic ? ' news-chip--on' : ''}`}
-            >
-              All
-            </Link>
-            {(facets?.topics ?? []).map((tp) => (
-              <Link
-                key={tp.key}
-                href={qs(base, { topic: topic === tp.key ? undefined : tp.key })}
-                className={`news-chip${topic === tp.key ? ' news-chip--on' : ''}`}
-              >
-                <span className="news-chip__cap">{tp.key}</span>
-                <b>{tp.count}</b>
-              </Link>
-            ))}
-          </div>
-        </div>
-      </div>
+      <NewsFilters
+        lang={lang}
+        when={when}
+        topic={topic}
+        dates={facets?.dates ?? { today: 0, yesterday: 0, week: 0, month: 0 }}
+        topics={facets?.topics ?? []}
+      />
 
       <div className="container news-feed">
         {cards.length === 0 ? (
@@ -187,6 +137,11 @@ export default async function NewsFeedPage({
                     <span className="news-card__meta">
                       <span className="news-card__cat">{s.category}</span>
                       <span className="news-card__ring">{RING_LABEL[s.ring]}</span>
+                      {relativeTime(s.publishedAt, lang) ? (
+                        <time className="news-card__time" dateTime={s.publishedAt ?? undefined}>
+                          {relativeTime(s.publishedAt, lang)}
+                        </time>
+                      ) : null}
                     </span>
                     <span className={`news-card__title${lang === 'te' ? ' te' : ''}`}>
                       {s.title}
