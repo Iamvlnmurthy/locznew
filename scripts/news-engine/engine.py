@@ -10,7 +10,7 @@ reprocessed and the GPU budget is never blown.
 
 Run:  python engine.py once [--limit N]   |   python engine.py loop
 """
-import base64, json, os, re, sys, io, time, subprocess, hashlib
+import base64, json, os, re, sys, io, time, subprocess, hashlib, random
 from datetime import datetime, timezone
 from email.utils import parsedate_to_datetime
 
@@ -230,7 +230,15 @@ def cycle(limit=None):
     it2_load()
     seen = load_seen()
     feeds = load_feeds()
-    print(f"models ready; {len(feeds)} feeds, {len(seen)} already seen", flush=True)
+    # The per-cycle budget (120) covers only ~30 of 230 feeds, and a fixed alphabetical order meant
+    # the first states (Andhra Pradesh…) ate the whole budget every cycle while Telangana (19th) and
+    # everything after it never ran. Put the home market (Telangana/Hyderabad) first so local news is
+    # always covered, then shuffle the rest so every other state gets fair rotation across cycles.
+    home = [f for f in feeds if f.get("state") == "Telangana"]
+    rest = [f for f in feeds if f.get("state") != "Telangana"]
+    random.shuffle(rest)
+    feeds = home + rest
+    print(f"models ready; {len(feeds)} feeds ({len(home)} home-first), {len(seen)} already seen", flush=True)
     kept = dropped = 0
     stories = []
     budget = limit or MAX_PER_CYCLE
