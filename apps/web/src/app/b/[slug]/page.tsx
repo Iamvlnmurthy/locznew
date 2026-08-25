@@ -249,10 +249,24 @@ export async function generateMetadata({
     business.cityName,
   ];
 
+  // Keep clearly-junk imported records out of the index — an all-digits / sub-3-char / URL-as-name /
+  // bare-pincode "name" is a broken import, not a business, and indexing it dilutes crawl trust
+  // across the 4.2M real records. It stays crawlable (follow:true) so its city/category links still
+  // pass, but does not compete for indexing. NB: a plain unclaimed/undescribed record is NOT junk —
+  // that is the directory's legitimate inventory (name + category + place is real SEO value), so
+  // only the broken-name signatures are excluded here.
+  const nm = business.name.trim();
+  const isJunkName =
+    /^[0-9 .,\-]+$/.test(nm) ||
+    nm.length < 3 ||
+    /https?:|www\.|\.com/i.test(nm) ||
+    /^[0-9]{6}$/.test(nm);
+
   return {
     title,
     description,
     keywords,
+    ...(isJunkName ? { robots: { index: false, follow: true } } : {}),
     alternates: await localizedAlternates(`/b/${business.slug}`),
     openGraph: {
       title,
