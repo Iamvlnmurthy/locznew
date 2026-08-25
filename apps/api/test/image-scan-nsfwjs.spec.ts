@@ -272,18 +272,15 @@ describe('nsfwjs image scanning, end to end', () => {
       expect(result.status).not.toBe(MediaStatus.REJECTED);
     });
 
-    it('does not trap an established seller’s upload when the scanner is unreachable', async () => {
-      const { service, storage } = build({ publishedByOwner: 40, scannerReachable: false });
+    it('holds an established seller’s upload for review when the scanner is unreachable', async () => {
+      const { service } = build({ publishedByOwner: 40, scannerReachable: false });
 
       const result = await service.confirmUpload(mediaId, userId);
 
-      // The defect this whole change exists for: with the scanner down, every upload went
-      // to REVIEW_REQUIRED, the listing published anyway, and the only symptom anyone ever
-      // saw was a grey placeholder. An outage must not become a silent, total blackout.
-      expect(result.status).toBe(MediaStatus.READY);
-      for (const [key] of storage.putObject.mock.calls) {
-        expect(key).toMatch(/^public\/listings\//);
-      }
+      // Fail CLOSED: with the scanner down, even an established seller's image is held for review
+      // rather than published unscanned — a child-safety control must not wave images through on an
+      // outage. The upload is queued for a person, not refused, so a legitimate one still recovers.
+      expect(result.status).toBe(MediaStatus.REVIEW_REQUIRED);
     });
 
     it('still queues a new account when the scanner is unreachable', async () => {

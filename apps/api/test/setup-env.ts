@@ -13,3 +13,9 @@ process.env.OTP_PROVIDER ??= 'mock';
 process.env.LOG_LEVEL ??= 'error';
 // No repeatable jobs, and therefore no live Redis connection, during a test run.
 process.env.SCHEDULER_ENABLED ??= 'false';
+// Argon2 with production cost (19 MiB, t=2) is fine in prod but, multiplied across Jest's parallel
+// workers, starves CPU/memory and makes the password specs flaky (they time out and fail, yet pass
+// in isolation). Tests do not need real hashing strength — argon2.verify reads the cost from the
+// encoded hash, so hashing cheap here stays internally consistent. Prod keeps the real defaults.
+process.env.ARGON2_MEMORY_COST ??= '512';
+process.env.ARGON2_TIME_COST ??= '1';
