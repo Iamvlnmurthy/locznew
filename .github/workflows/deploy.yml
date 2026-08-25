@@ -1,0 +1,79 @@
+name: Build & Deploy
+
+# Builds web + api on a clean Linux runner (NOT the prod box) and ships the finished artifacts to
+# the VPS. This removes the two things that caused the outages: `next build`/`nest build` no longer
+# runs on the 15GB box (no more OOM-killing Postgres), and argon2 is rebuilt from source on deploy
+# (no more silent core-dump). See docs/CI_DEPLOY_SETUP.md for the one-time secret setup.
+
+on:
+  push:
+    branches: [master]
+  workflow_dispatch: {}
+
+concurrency:
+  group: deploy-master
+  cancel-in-progress: false
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install deps
+        run: npm ci
+
+      - name: Generate Prisma client
+        run: npm run db:generate -w @locz/api
+
+      - name: Build api + web (off-box)
+        env:
+          NODE_ENV: production
+        run: |
+          npm run build -w @locz/api
+          npm run build -w @locz/web
+
+      - name: Set up SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.VPS_SSH_KEY }}" > ~/.ssh/id_deploy
+          chmod 600 ~/.ssh/id_deploy
+          ssh-keyscan -H "${{ secrets.VPS_HOST }}" >> ~/.ssh/known_hosts 2>/dev/null
+
+      - name: Sync source to the exact deployed commit
+        run: |
+          ssh -i ~/.ssh/id_deploy ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} \
+            "sudo -u locz bash -lc 'cd /home/locz/app && git fetch origin master -q && git reset --hard ${{ github.sha }} -q'"
+
+      - name: Ship prebuilt artifacts (.next + api dist)
+        run: |
+          # rsync the runner-built output over the top of the reset tree, so the box never builds.
+          rsync -az --delete -e "ssh -i ~/.ssh/id_deploy" \
+            apps/api/dist/ ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:/home/locz/app/apps/api/dist/
+          rsync -az --delete -e "ssh -i ~/.ssh/id_deploy" \
+            apps/web/.next/ ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:/home/locz/app/apps/web/.next/
+
+      - name: Install runtime deps + argon2 rebuild + restart
+        run: |
+          ssh -i ~/.ssh/id_deploy ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} 'sudo -u locz bash -lc "
+            cd /home/locz/app &&
+            npm install >/tmp/ci-install.log 2>&1 &&
+            npm rebuild argon2 --build-from-source >/tmp/ci-argon2.log 2>&1 &&
+            npm run db:generate -w @locz/api >/tmp/ci-gen.log 2>&1 &&
+            chown -R locz:locz apps/web/.next apps/api/dist 2>/dev/null;
+            pm2 restart locz-api locz-web --update-env >/dev/null 2>&1 &&
+            echo restarted
+          "'
+
+      - name: Health check
+        run: |
+          sleep 8
+          code=$(curl -s -o /dev/null -w '%{http_code}' -m 30 https://locz.in/)
+          echo "site returned $code"
+          test "$code" = "200"
