@@ -2068,5 +2068,77 @@
     "lng": 87.32193,
     "state_lang": "bn",
     "url": "https://news.google.com/rss/search?q=%28Durgapur%20OR%20Asansol%20OR%20Siliguri%29%20weather%20OR%20rain%20OR%20flood%20OR%20temperature%20OR%20forecast&hl=en-IN&gl=IN&ceid=IN:en"
+  },
+  {
+    "category": "local",
+    "state": "Andhra Pradesh",
+    "city": "Vijayawada",
+    "lat": 16.5062,
+    "lng": 80.648,
+    "state_lang": "te",
+    "url": "https://news.google.com/rss/search?q=Vijayawada&hl=en-IN&gl=IN&ceid=IN:en"
+  },
+  {
+    "category": "local",
+    "state": "Telangana",
+    "city": "Warangal",
+    "lat": 17.9689,
+    "lng": 79.5941,
+    "state_lang": "te",
+    "url": "https://news.google.com/rss/search?q=Warangal&hl=en-IN&gl=IN&ceid=IN:en"
+  },
+  {
+    "category": "local",
+    "state": "Andhra Pradesh",
+    "city": "Tirupati",
+    "lat": 13.6288,
+    "lng": 79.4192,
+    "state_lang": "te",
+    "url": "https://news.google.com/rss/search?q=Tirupati&hl=en-IN&gl=IN&ceid=IN:en"
+  },
+  {
+    "category": "local",
+    "state": "Karnataka",
+    "city": "Bengaluru",
+    "lat": 12.9716,
+    "lng": 77.5946,
+    "state_lang": "kn",
+    "url": "https://news.google.com/rss/search?q=Bengaluru&hl=en-IN&gl=IN&ceid=IN:en"
+  },
+  {
+    "category": "local",
+    "state": "Tamil Nadu",
+    "city": "Chennai",
+    "lat": 13.0827,
+    "lng": 80.2707,
+    "state_lang": "ta",
+    "url": "https://news.google.com/rss/search?q=Chennai&hl=en-IN&gl=IN&ceid=IN:en"
+  },
+  {
+    "category": "local",
+    "state": "Maharashtra",
+    "city": "Mumbai",
+    "lat": 19.076,
+    "lng": 72.8777,
+    "state_lang": "mr",
+    "url": "https://news.google.com/rss/search?q=Mumbai&hl=en-IN&gl=IN&ceid=IN:en"
+  },
+  {
+    "category": "local",
+    "state": "Maharashtra",
+    "city": "Pune",
+    "lat": 18.5204,
+    "lng": 73.8567,
+    "state_lang": "mr",
+    "url": "https://news.google.com/rss/search?q=Pune&hl=en-IN&gl=IN&ceid=IN:en"
+  },
+  {
+    "category": "local",
+    "state": "West Bengal",
+    "city": "Kolkata",
+    "lat": 22.5726,
+    "lng": 88.3639,
+    "state_lang": "bn",
+    "url": "https://news.google.com/rss/search?q=Kolkata&hl=en-IN&gl=IN&ceid=IN:en"
   }
 ]

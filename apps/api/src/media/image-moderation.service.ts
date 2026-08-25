@@ -159,15 +159,18 @@ export class ImageModerationService {
     // established account's clean-looking upload nothing, and still queues everything that
     // carries any other signal, new accounts included. Low risk publishes; the rest waits.
     const holding = reasons.filter((reason) => !unavailable.includes(reason));
-    if (holding.length === 0) {
-      if (unavailable.length > 0) {
-        this.logger.error(
-          `Image ${media.id} on listing ${listing.id} published without a completed scan: ` +
-            `${unavailable.join(', ')}. Failing open for an established account with no other ` +
-            `signal — fix the scanner.`,
-        );
-      }
+    // Approve only when the scan actually completed clean. If the scanner could not be reached we
+    // HOLD for review (fail-CLOSED) instead of publishing unscanned — a child-safety control must
+    // not wave images through on an outage. The image is queued for a human, not rejected, so a
+    // legitimate upload still recovers; loud logging keeps the outage from ever being silent.
+    if (holding.length === 0 && unavailable.length === 0) {
       return { decision: 'APPROVE', reasons };
+    }
+    if (holding.length === 0 && unavailable.length > 0) {
+      this.logger.error(
+        `Image ${media.id} on listing ${listing.id} could NOT be scanned (${unavailable.join(', ')}) — ` +
+          `holding for review (fail-closed) rather than publishing unscanned. Fix the scanner.`,
+      );
     }
 
     // Only a live listing is worth pulling back; one already waiting for review is where
