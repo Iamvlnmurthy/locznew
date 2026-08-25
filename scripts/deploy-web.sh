@@ -20,6 +20,13 @@ rm -rf apps/web/.next.bak
 echo ">> npm install (resync deps to lockfile)"
 npm install >/tmp/deploy-npm.log 2>&1 || { echo "npm install FAILED"; tail -5 /tmp/deploy-npm.log; exit 1; }
 
+# npm install can refetch argon2's prebuilt binary, which segfaults on this box and silently
+# crash-loops locz-api on its next restart (see memory: locz-api-argon2-crash). Force a from-source
+# compile every time so a deploy can never reintroduce the crash. Cheap and idempotent.
+echo ">> rebuild argon2 from source (prevents silent api core-dump)"
+npm rebuild argon2 --build-from-source >/tmp/deploy-argon2.log 2>&1 \
+  && echo "   argon2 ok" || { echo "!! argon2 rebuild FAILED"; tail -8 /tmp/deploy-argon2.log; exit 1; }
+
 echo ">> build web"
 set -a; . ./.env; set +a
 # `.env` is also used by local development and currently declares NODE_ENV=development. A
@@ -27,9 +34,16 @@ set -a; . ./.env; set +a
 # while Next is prerendering production special pages, which crashes `/_global-error` with a
 # null `useContext`. Public variables stay sourced above; only the execution mode is corrected.
 export NODE_ENV=production
+# `next build` on this shared 15GB box can spike ~1-2GB and trip the OOM-killer (which has killed
+# Postgres mid-deploy). Shed load while building: pause the non-public admin app, cap the build's
+# heap, and de-prioritise it for CPU/IO. A trap guarantees admin comes back on any exit.
+ADMIN_WAS_UP=$(pm2 jlist 2>/dev/null | grep -c '"name":"locz-admin".*"status":"online"' || true)
+[ "${ADMIN_WAS_UP:-0}" != "0" ] && { echo "   pausing locz-admin during build"; pm2 stop locz-admin >/dev/null 2>&1 || true; }
+restore_admin() { [ "${ADMIN_WAS_UP:-0}" != "0" ] && pm2 start locz-admin >/dev/null 2>&1 || true; }
+trap restore_admin EXIT
 rm -rf apps/web/.next
 set +e
-npm run build -w @locz/web >/tmp/deploy-web.log 2>&1
+NODE_OPTIONS="--max-old-space-size=1536" nice -n 10 ionice -c3 npm run build -w @locz/web >/tmp/deploy-web.log 2>&1
 BUILD_EXIT=$?
 set -e
 
