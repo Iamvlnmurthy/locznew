@@ -51,6 +51,9 @@ FEEDS_JSON = os.path.join(HERE, "feeds.json")
 SEEN_FILE = os.path.join(HERE, "seen.txt")
 MAX_PER_FEED = int(os.environ.get("MAX_PER_FEED", "4"))       # new stories per feed per cycle
 MAX_PER_CYCLE = int(os.environ.get("MAX_PER_CYCLE", "120"))   # GPU budget guard per hour
+MAX_SECONDS = int(os.environ.get("MAX_SECONDS", "600"))       # hard wall-clock cap per cycle (10 min)
+PUSH_DELAY = float(os.environ.get("PUSH_DELAY", "2"))         # pause between VPS writes — slow serial
+                                                              # queue so the VPS is never hammered
 
 
 def load_feeds():
@@ -215,6 +218,10 @@ def push(stories):
     sys.stdout.write(p.stdout.decode("utf-8", "replace"))
     if p.returncode != 0:
         sys.stderr.write(p.stderr.decode("utf-8", "replace"))
+    # Pace the writes: one small INSERT at a time with a gap, so the VPS never sees a burst of
+    # concurrent load (the swap-thrash that hung it before came from parallel heavy jobs).
+    if PUSH_DELAY > 0:
+        time.sleep(PUSH_DELAY)
     return len(stories)
 
 
@@ -242,8 +249,14 @@ def cycle(limit=None):
     kept = dropped = 0
     stories = []
     budget = limit or MAX_PER_CYCLE
+    # Hard wall-clock cap on generation. The box is a shared workstation: run a short burst each hour
+    # then exit so the ~18GB of models is freed for the rest of the hour (launcher sleeps the gap).
+    t_start = time.time()
     for feed in feeds:
         if kept >= budget:
+            break
+        if time.time() - t_start > MAX_SECONDS:
+            print(f"time cap {MAX_SECONDS}s reached; stopping cycle early", flush=True)
             break
         try:
             items = feedparser_parse(feed["url"])
