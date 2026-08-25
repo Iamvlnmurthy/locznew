@@ -78,7 +78,11 @@ export function MotionFrame({ children }: { children: ReactNode }) {
               observer?.unobserve(entry.target);
             }
           },
-          { threshold: 0.12, rootMargin: '0px 0px -7% 0px' },
+          // Reveal a little BEFORE an element scrolls into view (positive bottom margin), not after
+          // (the old -7% delayed it). Otherwise a tall below-fold section — e.g. "Businesses near
+          // you" — sits at opacity 0 until it is well into view, reading as an empty gap that only
+          // fills in as you scroll. Any pixel entering the extended band now starts the fade.
+          { threshold: 0, rootMargin: '0px 0px 20% 0px' },
         );
         elements.forEach((element) => observer?.observe(element));
       }

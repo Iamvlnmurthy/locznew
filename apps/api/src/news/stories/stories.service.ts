@@ -114,6 +114,17 @@ export class StoriesService {
     }
     where.push(this.sinceClause(q.when ?? 'all'));
 
+    // A language view must only list stories that actually exist in that language. Every story has
+    // English, and Hindi is generated for all, but Telugu/other regional text only exists for that
+    // state's feeds (title_sl) — without this filter a Telugu view lists Telugu-less stories that
+    // pick() silently falls back to English, so English headlines appear under the Telugu tab.
+    if (lang === 'hi') {
+      where.push('title_hi IS NOT NULL');
+    } else if (lang !== 'en') {
+      where.push(`(state_lang = ${p()} AND title_sl IS NOT NULL)`);
+      params.push(lang);
+    }
+
     const order =
       q.sort === 'popular'
         ? 'view_count DESC, published_at DESC'
