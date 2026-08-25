@@ -135,11 +135,15 @@ export default async function DiscoveryAreaPage({ params }: { params: Promise<{ 
   }
 
   const showWeather = false;
-  const showAlerts = area === 'alerts';
-  const showNews = area === 'news';
+  // "Local Now" is the everything-nearby tab, so it aggregates the sources that actually have
+  // content (news, alerts, businesses) instead of only the marketplace feed — which is empty until
+  // people post, leaving the tab looking broken. Each dedicated tab still shows only its own source.
+  const isLocalNow = area === 'local-now';
+  const showAlerts = area === 'alerts' || isLocalNow;
+  const showNews = isLocalNow;
   const showJobs = area === 'jobs';
   const showDeals = area === 'deals';
-  const showBusinesses = area === 'businesses';
+  const showBusinesses = area === 'businesses' || isLocalNow;
   const alertQuery = new URLSearchParams({ q: cityOnly });
   if (place?.id) alertQuery.set('cityId', place.id);
 
@@ -159,14 +163,41 @@ export default async function DiscoveryAreaPage({ params }: { params: Promise<{ 
         )
       : Promise.resolve(null),
     showNews && place?.latitude !== undefined && place.longitude !== undefined
-      ? apiSafe<{ cards: NewsCard[]; hasMore: boolean }>(
-          `/news/feed?${new URLSearchParams({
+      ? apiSafe<{
+          cards: Array<{
+            slug: string;
+            title: string;
+            dek: string | null;
+            summary: string | null;
+            category: string;
+            distanceKm: number | null;
+            publishedAt: string | null;
+          }>;
+        }>(
+          // The live news system (news_stories); the old /news/feed is superseded and empty.
+          `/news/stories?${new URLSearchParams({
             latitude: String(place.latitude),
             longitude: String(place.longitude),
             lang: locale,
-            scope: 'city',
-            limit: '20',
+            limit: '8',
           }).toString()}`,
+        ).then((r) =>
+          r
+            ? {
+                cards: r.cards.map((c) => ({
+                  slug: c.slug,
+                  title: c.title,
+                  summary: c.dek ?? c.summary,
+                  category: c.category,
+                  distanceKm: c.distanceKm,
+                  ring: 0,
+                  publishedAt: c.publishedAt,
+                  locz: true,
+                  sources: 1,
+                })),
+                hasMore: false,
+              }
+            : null,
         )
       : Promise.resolve(null),
     showAlerts
