@@ -116,6 +116,13 @@ export default async function DiscoveryAreaPage({ params }: { params: Promise<{ 
       )) ?? [])[0];
   const place = city ?? defaultCity ?? null;
   const cityName = place?.name ?? t('home.yourCity');
+  // A locality selection names the place "Locality, City" (e.g. "J V Colony, Hyderabad"). City-scoped
+  // lookups — Adzuna jobs, NDMA alerts — only understand cities, and returned nothing for the full
+  // locality string ("...Nothing nearby yet" on the Jobs tab while the home page had jobs). Use the
+  // city segment for those, keeping the precise place for the geo/radius feeds.
+  const cityOnly = cityName.includes(',')
+    ? (cityName.split(',').pop()?.trim() ?? cityName)
+    : cityName;
   const title = areaLabels[area] ?? area;
 
   const feedQuery = new URLSearchParams({ limit: '30' });
@@ -133,7 +140,7 @@ export default async function DiscoveryAreaPage({ params }: { params: Promise<{ 
   const showJobs = area === 'jobs';
   const showDeals = area === 'deals';
   const showBusinesses = area === 'businesses';
-  const alertQuery = new URLSearchParams({ q: cityName });
+  const alertQuery = new URLSearchParams({ q: cityOnly });
   if (place?.id) alertQuery.set('cityId', place.id);
 
   const [
@@ -166,7 +173,7 @@ export default async function DiscoveryAreaPage({ params }: { params: Promise<{ 
       ? apiSafe<{ alerts: LocalAlert[] }>(`/local-now/alerts?${alertQuery.toString()}`)
       : Promise.resolve(null),
     showJobs
-      ? apiSafe<{ jobs: JobPosting[] }>(`/local-now/jobs?q=${encodeURIComponent(cityName)}`)
+      ? apiSafe<{ jobs: JobPosting[] }>(`/local-now/jobs?q=${encodeURIComponent(cityOnly)}`)
       : Promise.resolve(null),
     showDeals ? apiSafe<{ deals: LocalDeal[] }>(`/local-now/deals`) : Promise.resolve(null),
     showBusinesses
