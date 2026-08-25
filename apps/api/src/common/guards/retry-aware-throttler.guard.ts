@@ -55,6 +55,30 @@ export class RetryAwareThrottlerGuard extends ThrottlerGuard {
     return super.shouldSkip(context);
   }
 
+  /**
+   * Rate-limit by the REAL client IP, not the proxy's.
+   *
+   * Behind Cloudflare + LiteSpeed, `req.ip` is the proxy address — identical for every visitor — so
+   * a per-IP window collapses into one global bucket. The web server dodges it with the internal
+   * key above, but the mobile app (a public client that cannot send that key) shares the single
+   * bucket with all other public callers and fails intermittently with 429 ("sometimes loads,
+   * sometimes doesn't"). Cloudflare puts the true client IP in `cf-connecting-ip`; fall back to the
+   * standard forwarded chain, then the socket address, so each user gets their own window again.
+   */
+  protected override async getTracker(req: Record<string, unknown>): Promise<string> {
+    const headers = (req.headers ?? {}) as Record<string, string | string[] | undefined>;
+    const cf = headers['cf-connecting-ip'];
+    const xff = headers['x-forwarded-for'];
+    const forwarded =
+      (Array.isArray(cf) ? cf[0] : cf) ||
+      (typeof xff === 'string'
+        ? xff.split(',')[0]?.trim()
+        : Array.isArray(xff)
+          ? xff[0]
+          : undefined);
+    return forwarded || (req.ip as string) || 'unknown';
+  }
+
   protected override async throwThrottlingException(
     context: ExecutionContext,
     detail: ThrottlerLimitDetail,
