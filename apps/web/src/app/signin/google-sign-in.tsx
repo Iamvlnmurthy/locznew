@@ -13,7 +13,15 @@ interface GoogleIdentity {
       initialize(options: {
         client_id: string;
         callback(response: GoogleCredentialResponse): void;
+        /** Auto-select a returning user so a recognised visitor is signed in without a click. */
+        auto_select?: boolean;
+        /** Required by Google: the modern browser identity API, works with third-party cookies off. */
+        use_fedcm_for_prompt?: boolean;
+        /** Don't dismiss the One Tap card on an accidental outside click. */
+        cancel_on_tap_outside?: boolean;
       }): void;
+      /** Shows the One Tap prompt (top-right card); with auto_select it can sign in automatically. */
+      prompt(): void;
       renderButton(
         element: HTMLElement,
         options: {
@@ -124,7 +132,15 @@ export function GoogleSignIn({
     const container = buttonRef.current;
     if (!scriptReady || !google || !container) return;
 
-    google.accounts.id.initialize({ client_id: clientId, callback: handleCredential });
+    google.accounts.id.initialize({
+      client_id: clientId,
+      callback: handleCredential,
+      // Auto sign-in for a returning visitor + modern FedCM flow (the non-FedCM path is deprecated
+      // and breaks under Chrome's third-party-cookie blocking).
+      auto_select: true,
+      use_fedcm_for_prompt: true,
+      cancel_on_tap_outside: false,
+    });
 
     const render = () => {
       container.replaceChildren();
@@ -140,6 +156,14 @@ export function GoogleSignIn({
     };
 
     render();
+    // Fire the One Tap prompt so a recognised user is signed in and redirected automatically,
+    // without having to click the button. Wrapped defensively — a prompt failure must never
+    // break the manual button below it.
+    try {
+      google.accounts.id.prompt();
+    } catch {
+      // One Tap is best-effort; the rendered button remains the reliable path.
+    }
     window.addEventListener('resize', render);
     const theme = new MutationObserver(render);
     theme.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
