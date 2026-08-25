@@ -75,9 +75,11 @@ export const PLACEMENTS: Readonly<Record<PlacementId, Placement>> = {
   // Before the nearby list, never inside it. Those internal links matter for both
   // navigation and SEO, and an ad among them would read as a result.
   BUSINESS_BEFORE_NEARBY: {
-    format: 'multiplex',
+    // Single display unit, not multiplex: on a low-fill account multiplex tiles the one available
+    // creative into a grid, so the same ad appears several times restyled. One unit = one creative.
+    format: 'display',
     device: 'both',
-    reserve: { mobile: 360, desktop: 340 },
+    reserve: { mobile: 280, desktop: 250 },
     lazy: true,
     minContentScore: 1,
   },
@@ -118,7 +120,10 @@ export const PLACEMENTS: Readonly<Record<PlacementId, Placement>> = {
     device: 'both',
     reserve: { mobile: 260, desktop: 280 },
     lazy: true,
-    minContentScore: 200,
+    // TOP is the single ad every article shows. A second in-body unit appears only on genuinely long
+    // pieces (≥260 words) so typical ~150–250-word hyperlocal stories carry exactly one ad — one ad
+    // means one creative, so the same ad can't repeat down the page on a low-fill account.
+    minContentScore: 260,
   },
   NEWS_FEED_IN_LIST: {
     format: 'in-feed',
@@ -128,11 +133,13 @@ export const PLACEMENTS: Readonly<Record<PlacementId, Placement>> = {
     minContentScore: 5,
   },
   NEWS_ARTICLE_RELATED: {
-    format: 'multiplex',
+    // Was multiplex (a grid that repeats the same creative on low fill). Now a single in-article
+    // unit, and only on long articles (≥260 words) so short stories never stack a second ad.
+    format: 'in-article',
     device: 'both',
-    reserve: { mobile: 360, desktop: 340 },
+    reserve: { mobile: 280, desktop: 280 },
     lazy: true,
-    minContentScore: 120,
+    minContentScore: 260,
   },
   // City guides are editorial entry pages, so advertising starts only after visitors have
   // received the location context and map. Never place an ad in the hero or facts strip.
