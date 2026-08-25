@@ -195,15 +195,19 @@ export default async function HomePage({
   const countCityId = city?.id ?? feed?.cityId;
   if (countCityId) countScope.set('cityId', countCityId);
   if (city?.pincode) countScope.set('pincode', city.pincode);
-  // "Local Now" weather — display-only, and null unless OPENWEATHER_API_KEY is configured.
+  // "Local Now" weather (met.no, key-less). getSelectedCity() is null until a visitor explicitly
+  // picks a location, so keying the fetch on `city` left weather blank for almost everyone. Fall
+  // back to the default launched market (Hyderabad) so the strip always shows real weather; an
+  // explicit selection still wins.
+  const wxLat = city?.latitude ?? 17.385;
+  const wxLon = city?.longitude ?? 78.4867;
   const weather =
-    city?.latitude !== undefined && city?.longitude !== undefined
-      ? ((
-          await apiSafe<{ weather: LocalWeather | null }>(
-            `/local-now/weather?latitude=${city.latitude}&longitude=${city.longitude}`,
-          )
-        )?.weather ?? null)
-      : null;
+    (
+      await apiSafe<{ weather: LocalWeather | null }>(
+        `/local-now/weather?latitude=${wxLat}&longitude=${wxLon}`,
+        { revalidate: 900 },
+      )
+    )?.weather ?? null;
 
   // "Around you" — how many known places sit in each discovery area, rolled up from the POIs we
   // already hold. This is the cold-start payoff: even before anyone posts, a new area reads as
