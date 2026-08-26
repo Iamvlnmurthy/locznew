@@ -84,7 +84,7 @@ const _taxonomy = <_Group>[
       Icons.camera_alt_outlined,
       '/search?q=photographer',
     ),
-    _Area('explore.businesses', Icons.store_outlined, '/search?q=business'),
+    _Area('explore.businesses', Icons.store_outlined, '/discover/businesses'),
   ]),
   _Group('explore.group.community', [
     _Area('explore.community', Icons.groups_outlined, '/search?q=community'),
