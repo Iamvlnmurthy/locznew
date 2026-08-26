@@ -1,22 +1,37 @@
 import { Injectable, Logger, OnModuleDestroy, OnModuleInit } from '@nestjs/common';
 import { PrismaPg } from '@prisma/adapter-pg';
 import { Prisma, PrismaClient } from '@prisma/client';
+import { Pool } from 'pg';
 
 @Injectable()
 export class PrismaService extends PrismaClient implements OnModuleInit, OnModuleDestroy {
   private readonly logger = new Logger(PrismaService.name);
+  private readonly pool: Pool;
 
   constructor() {
-    // Prisma 7 connects through a driver adapter rather than its own bundled engine, so
-    // the connection string is supplied here rather than in schema.prisma. The pool size
-    // comes from `connection_limit` in DATABASE_URL — see docs/SETUP.md on sizing it
-    // against the database's max_connections.
+    // Prisma 7 connects through a driver adapter rather than its own bundled engine. We own the pg
+    // Pool (instead of letting the adapter make one from a connection string) so we can attach an
+    // error handler: when Postgres restarts (e.g. under memory pressure) an idle client emits
+    // 'error', and an UNHANDLED EventEmitter error is fatal in Node — which previously wedged every
+    // subsequent query with "Cannot use a pool after calling end", 500-ing all pages ("Business not
+    // found") until the API was restarted. Handling it lets the pool drop the dead client and open a
+    // fresh one on the next query, so a brief DB blip self-heals. Pool size mirrors the old
+    // connection_limit=10; keepAlive surfaces dropped sockets promptly.
+    const pool = new Pool({
+      connectionString: process.env.DATABASE_URL,
+      max: Number(process.env.DB_POOL_MAX ?? 10),
+      keepAlive: true,
+    });
     super({
-      adapter: new PrismaPg({ connectionString: process.env.DATABASE_URL }),
+      adapter: new PrismaPg(pool),
       log: [
         { emit: 'event', level: 'warn' },
         { emit: 'event', level: 'error' },
       ],
+    });
+    this.pool = pool;
+    this.pool.on('error', (err: Error) => {
+      this.logger.warn(`idle pg client error (pool recovers on next query): ${err.message}`);
     });
   }
 
