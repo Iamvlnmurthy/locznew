@@ -3,14 +3,12 @@
 import { useEffect, useRef, useState } from 'react';
 import {
   ADS_CLIENT,
-  ADS_PROVIDER,
   PLACEMENTS,
   isPlacementLive,
   slotIdFor,
   type AdFormat,
   type PlacementId,
 } from '@/lib/ads/placements';
-import { AdsterraBanner, AdsterraNative } from './adsterra-banner';
 
 /**
  * One advertising position.
@@ -143,19 +141,6 @@ export function AdSlot({ placement, contentScore = 0, className }: Props) {
   }, [live, config.lazy]);
 
   if (!live) return null;
-
-  if (ADS_PROVIDER === 'adsterra') {
-    if (config.format === 'in-feed') {
-      return <AdsterraNative className={className} />;
-    }
-    const adsterraFormat =
-      config.format === 'in-article'
-        ? 'rectangle-300x250'
-        : config.format === 'display'
-          ? 'leaderboard-728x90'
-          : 'responsive';
-    return <AdsterraBanner format={adsterraFormat} className={className} />;
-  }
 
   const deviceClass =
     config.device === 'mobile'

@@ -635,7 +635,7 @@ export default async function BusinessPage({ params }: { params: Promise<{ slug:
                 cityName={business.cityName}
                 categoryName={business.categoryName}
               />
-              <ShareBusiness name={business.name} labels={p} />
+              <ShareBusiness name={business.name} city={business.cityName} labels={p} />
               {business.isOwner ? (
                 <Link href="/dashboard">
                   <Icon name="user" /> {p.manageProfile}

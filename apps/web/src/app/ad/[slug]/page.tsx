@@ -11,7 +11,6 @@ import { SaveButton } from './save-button';
 import { ContactPanel } from './contact-panel';
 import { ListingGallery } from './listing-gallery';
 import { ShareButton, WhatsAppShareButton } from './share-button';
-import { AdsterraBanner } from '@/components/adsterra-banner';
 
 interface ListingMedia {
   id: string;
@@ -449,7 +448,6 @@ export default async function ListingPage({ params }: { params: Promise<{ slug: 
               {t('listing.report')}
             </Link>
           </div>
-          <AdsterraBanner format="rectangle-300x250" />
         </aside>
       </div>
 
