@@ -644,116 +644,97 @@ export default async function BusinessPage({ params }: { params: Promise<{ slug:
                 </Link>
               ) : null}
             </div>
-          </div>
 
-          <div className="business-profile-identity">
-            <span
-              className={`business-profile-logo ${
-                profileLogo ? 'business-profile-logo--image' : 'business-profile-logo--monogram'
-              }`}
-            >
-              {profileLogo ? (
-                <Image src={profileLogo} alt={`${business.name} logo`} width={112} height={112} />
-              ) : (
-                <span aria-hidden="true">{business.name.slice(0, 1).toUpperCase()}</span>
-              )}
-            </span>
-            <div className="business-profile-identity__content">
-              <span className="business-profile-category">
-                {displayCategory}
-                {business.localityName ? ` · ${business.localityName}` : ''}
+            <div className="business-profile-identity">
+              <span
+                className={`business-profile-logo ${
+                  profileLogo ? 'business-profile-logo--image' : 'business-profile-logo--monogram'
+                }`}
+              >
+                {profileLogo ? (
+                  <Image src={profileLogo} alt={`${business.name} logo`} width={112} height={112} />
+                ) : (
+                  <span aria-hidden="true">{business.name.slice(0, 1).toUpperCase()}</span>
+                )}
               </span>
-              <h1>{business.name}</h1>
-              <div className="business-profile-identity__address-wrap">
-                <CopyAddressButton address={postalAddress(business)}>
-                  {postalAddress(business)}
-                </CopyAddressButton>
-              </div>
-              <div className="business-profile-badges">
-                {business.verificationStatus === 'VERIFIED' ? (
-                  <span className="is-verified">
-                    <Icon name="shield" /> {p.verifiedBusiness}
-                  </span>
-                ) : (
-                  <span>
-                    <Icon name="store" /> {p.localBusiness}
-                  </span>
-                )}
-                {business.claimStatus === 'UNCLAIMED' && !business.isOwner ? (
-                  <Link
-                    href={`/b/${business.slug}/claim`}
-                    className="business-profile-badges__interest"
-                    style={{ textDecoration: 'none', cursor: 'pointer' }}
-                  >
-                    <Icon name="shield" /> Claim business
-                  </Link>
-                ) : null}
-                {business.hours.length > 0 ? (
-                  <span
-                    className={`business-profile-badges__status ${openState.isOpen ? 'is-open' : 'is-closed'}`}
-                  >
-                    <span className="status-dot" aria-hidden="true" /> {openState.label}
-                  </span>
-                ) : (
-                  <span className="business-profile-badges__no-hours">
-                    <Icon name="calendar" /> {p.hoursNotListed}
-                  </span>
-                )}
-                <span>
-                  {p.onLoczSince} {new Date(business.createdAt).getFullYear()}
+              <div className="business-profile-identity__content">
+                <span className="business-profile-category">
+                  {displayCategory}
+                  {business.localityName ? ` · ${business.localityName}` : ''}
                 </span>
-                {business.loczId ? (
-                  <span className="business-profile-identity__id">
-                    {p.loczId} <code>{business.loczId}</code>
+                <h1>{business.name}</h1>
+                <p className="business-profile-identity__address">
+                  <Icon name="location" /> {postalAddress(business)}
+                </p>
+                <div className="business-profile-badges">
+                  {business.verificationStatus === 'VERIFIED' ? (
+                    <span className="is-verified">
+                      <Icon name="shield" /> {p.verifiedBusiness}
+                    </span>
+                  ) : (
+                    <span>
+                      <Icon name="store" /> {p.localBusiness}
+                    </span>
+                  )}
+                  <span className={openState.isOpen ? 'is-open' : ''}>
+                    <i /> {openState.label}
                   </span>
-                ) : null}
-                {business.claimStatus === 'UNCLAIMED' && business.viewCount > 0 ? (
-                  <span className="business-profile-badges__interest" role="status">
-                    <Icon name="sparkles" />
-                    {p.profileInterest.replace(
-                      '{count}',
-                      business.viewCount.toLocaleString(`${locale}-IN`),
-                    )}
+                  <span>
+                    {p.onLoczSince} {new Date(business.createdAt).getFullYear()}
                   </span>
-                ) : null}
-              </div>
-              <div className="business-profile-identity__actions" aria-label={p.talkBusiness}>
-                {business.primaryPhone ? (
-                  <a
-                    href={`tel:${business.primaryPhone}`}
-                    data-track="call_click"
-                    className="is-call"
-                  >
-                    <Icon name="phone" /> {p.callBusiness}
-                  </a>
-                ) : null}
-                {waEnquiryUrl ? (
-                  <a
-                    href={waEnquiryUrl}
-                    data-track="whatsapp_click"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="is-whatsapp"
-                  >
-                    <Icon name="message" /> WhatsApp
-                  </a>
-                ) : null}
-                {directionsUrl ? (
-                  <a
-                    href={directionsUrl}
-                    data-track="directions_click"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="is-directions"
-                  >
-                    <Icon name="location" /> {p.getDirections}
-                  </a>
-                ) : null}
-                {!business.isOwner ? (
-                  <a href="#contact" data-track="enquiry_open" className="is-enquiry">
-                    <Icon name="message" /> {p.sendEnquiry}
-                  </a>
-                ) : null}
+                  {business.loczId ? (
+                    <span className="business-profile-identity__id">
+                      {p.loczId} <code>{business.loczId}</code>
+                    </span>
+                  ) : null}
+                  {business.claimStatus === 'UNCLAIMED' && business.viewCount > 0 ? (
+                    <span className="business-profile-badges__interest" role="status">
+                      <Icon name="sparkles" />
+                      {p.profileInterest.replace(
+                        '{count}',
+                        business.viewCount.toLocaleString(`${locale}-IN`),
+                      )}
+                    </span>
+                  ) : null}
+                </div>
+                <div className="business-profile-identity__actions" aria-label={p.talkBusiness}>
+                  {business.primaryPhone ? (
+                    <a
+                      href={`tel:${business.primaryPhone}`}
+                      data-track="call_click"
+                      className="is-call"
+                    >
+                      <Icon name="phone" /> {p.callBusiness}
+                    </a>
+                  ) : null}
+                  {waEnquiryUrl ? (
+                    <a
+                      href={waEnquiryUrl}
+                      data-track="whatsapp_click"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="is-whatsapp"
+                    >
+                      <Icon name="message" /> WhatsApp
+                    </a>
+                  ) : null}
+                  {directionsUrl ? (
+                    <a
+                      href={directionsUrl}
+                      data-track="directions_click"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="is-directions"
+                    >
+                      <Icon name="location" /> {p.getDirections}
+                    </a>
+                  ) : null}
+                  {!business.isOwner ? (
+                    <a href="#contact" data-track="enquiry_open" className="is-enquiry">
+                      <Icon name="message" /> {p.sendEnquiry}
+                    </a>
+                  ) : null}
+                </div>
               </div>
             </div>
           </div>
