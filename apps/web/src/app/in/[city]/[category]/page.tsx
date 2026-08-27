@@ -155,6 +155,27 @@ export default async function CityCategoryPage({
       }
     : null;
 
+  const collectionPageLd = {
+    '@context': 'https://schema.org',
+    '@type': 'CollectionPage',
+    name: placeLabel,
+    url: `${SITE_URL}/in/${city.slug}/${category.slug}`,
+    description: `Find verified ${categoryName} in ${cityName}, India on LocZ.`,
+    about: {
+      '@type': 'Thing',
+      name: categoryName,
+    },
+    spatialCoverage: {
+      '@type': 'Place',
+      name: cityName,
+      address: {
+        '@type': 'PostalAddress',
+        addressLocality: cityName,
+        addressCountry: 'IN',
+      },
+    },
+  };
+
   const siblingCategories = categories.filter((c) => c.slug !== category.slug).slice(0, 10);
   const otherCities = cities.filter((c) => c.slug !== city.slug).slice(0, 8);
 
@@ -163,6 +184,12 @@ export default async function CityCategoryPage({
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbLd).replace(/</g, '\\u003c') }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(collectionPageLd).replace(/</g, '\\u003c'),
+        }}
       />
       {itemListLd ? (
         <script

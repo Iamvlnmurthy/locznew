@@ -67,16 +67,17 @@ export function LocationPicker({
 
   useEffect(() => {
     const needle = query.trim();
-    if (needle.length < 2) return;
+    if (!needle) return;
 
     let current = true;
+    setIsSearching(true);
     const timer = window.setTimeout(() => {
       void searchCitiesAction(needle, true).then((matches) => {
         if (!current) return;
         setCityResults(matches);
         setIsSearching(false);
       });
-    }, 250);
+    }, 180);
 
     return () => {
       current = false;

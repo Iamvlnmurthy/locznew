@@ -1,5 +1,6 @@
 import type { Paginated } from '@locz/shared-types';
 import { ApiRequestError, api } from '@/lib/api';
+import { UserActions } from './user-actions';
 
 export const dynamic = 'force-dynamic';
 
@@ -112,6 +113,7 @@ export default async function UsersPage({
                 <th style={{ textAlign: 'right' }}>Claims</th>
                 <th style={{ textAlign: 'right' }}>Reports</th>
                 <th>Joined</th>
+                <th>Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -182,6 +184,13 @@ export default async function UsersPage({
                   </td>
                   <td>
                     {new Date(user.createdAt).toLocaleDateString('en-IN', { dateStyle: 'medium' })}
+                  </td>
+                  <td>
+                    <UserActions
+                      userId={user.id}
+                      status={user.status}
+                      displayName={user.displayName}
+                    />
                   </td>
                 </tr>
               ))}

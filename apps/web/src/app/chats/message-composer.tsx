@@ -40,10 +40,20 @@ export function MessageComposer({
     router.refresh();
   }, [router, state.sentAt]);
 
+  const quickReplies = [
+    labels.quickAvailable || 'Is this still available?',
+    labels.quickPrice || 'What is your best price?',
+    labels.quickMeet || 'Where is the pickup location?',
+    labels.quickInspect || 'Can I inspect this today?',
+  ].filter(Boolean);
+
   return (
     <>
-      <div className="chat-quick-replies" aria-label={labels.suggestedReplies}>
-        {[labels.quickAvailable, labels.quickPrice, labels.quickMeet].map((reply) => (
+      <div
+        className="chat-quick-replies"
+        aria-label={labels.suggestedReplies ?? 'Suggested quick replies'}
+      >
+        {quickReplies.map((reply) => (
           <button
             key={reply}
             type="button"

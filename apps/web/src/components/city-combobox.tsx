@@ -43,9 +43,10 @@ export function CityCombobox({
   const selectedLabel = selected ? cityLabel(selected) : (defaultLabel ?? '');
 
   useEffect(() => {
-    if (query.trim().length < 2 || query === selectedLabel) return;
+    if (query.trim().length < 1 || query === selectedLabel) return;
 
     let current = true;
+    setLoading(true);
     const timer = window.setTimeout(() => {
       void searchCitiesAction(query).then((matches) => {
         if (!current) return;
@@ -53,7 +54,7 @@ export function CityCombobox({
         setActiveIndex(0);
         setLoading(false);
       });
-    }, 250);
+    }, 180);
 
     return () => {
       current = false;

@@ -18,7 +18,7 @@ export async function selectCityAction(city: SelectedCity): Promise<void> {
 
 export async function searchCitiesAction(query: string, includeUpcoming = false): Promise<City[]> {
   const q = query.trim().slice(0, 60);
-  if (q.length < 2) return [];
+  if (!q) return [];
 
   return (
     (await apiSafe<City[]>(
