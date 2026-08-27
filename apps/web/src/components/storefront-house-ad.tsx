@@ -1,6 +1,7 @@
 import Image from 'next/image';
 
-const ONROL_PROGRAM_URL = 'https://onrol.in/programs/afprograms';
+const ONROL_PROGRAM_URL =
+  'https://onrol.in/programs/afprograms?utm_source=locz&utm_medium=display&utm_campaign=ai_programs&utm_content=business_page_banner';
 
 /**
  * Direct campaign shown in the storefront's post-location advertising position.
