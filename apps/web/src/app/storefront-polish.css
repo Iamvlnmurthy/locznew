@@ -3835,5 +3835,81 @@
   color: #f8fafc;
 }
 
+/* Compact sidebar merchant claim card */
+.business-profile-claim-card {
+  margin-top: 14px;
+  padding: 16px;
+  border-radius: 14px;
+  background: #f0f7f3;
+  border: 1px solid rgb(17 82 66 / 15%);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.business-profile-claim-card__head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.business-profile-claim-card__icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  background: var(--storefront-ink, #14362d);
+  color: #fff;
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+}
+.business-profile-claim-card__icon svg {
+  width: 16px;
+  height: 16px;
+}
+.business-profile-claim-card__head strong {
+  display: block;
+  font-size: 0.88rem;
+  color: var(--storefront-ink, #14362d);
+  line-height: 1.2;
+}
+.business-profile-claim-card__head small {
+  font-size: 0.72rem;
+  color: var(--storefront-muted, #687b74);
+}
+.business-profile-claim-card p {
+  font-size: 0.78rem;
+  color: #4a5c55;
+  line-height: 1.45;
+  margin: 0;
+}
+.btn--claim-compact {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 8px 14px;
+  border-radius: 8px;
+  background: var(--storefront-ink, #14362d);
+  color: #fff !important;
+  font-size: 0.82rem;
+  font-weight: 600;
+  text-decoration: none;
+  border: none;
+  transition: opacity 0.15s ease;
+}
+.btn--claim-compact:hover {
+  opacity: 0.9;
+}
+:root[data-theme='dark'] .business-profile-claim-card {
+  background: #132722;
+  border-color: rgba(24, 161, 133, 0.25);
+}
+:root[data-theme='dark'] .business-profile-claim-card__head strong {
+  color: #f1f5f3;
+}
+:root[data-theme='dark'] .business-profile-claim-card p {
+  color: #a8b8b2;
+}
+
+
 
 
