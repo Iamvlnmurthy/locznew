@@ -557,38 +557,57 @@ export default async function HomePage({
             <section className="local-news" aria-labelledby="local-news-title">
               <div className="local-news__head">
                 <div>
-                  <span className="section-kicker">{t('home.localNewsKicker')}</span>
+                  <span className="section-kicker">
+                    <span className="local-news__pulse" aria-hidden="true" />
+                    {t('home.localNewsKicker')}
+                  </span>
                   <h2 id="local-news-title">{t('home.localNewsTitle', { city: feedCity })}</h2>
                 </div>
                 <Link href="/news" className="local-city-panel__action">
                   {t('feed.seeAll')} <Icon name="arrow" />
                 </Link>
               </div>
-              <div className="local-news__tiles">
-                {newsHeadlines.slice(0, 3).map((item) => {
+              <div className="local-news__feed">
+                {newsHeadlines.slice(0, 4).map((item, index) => {
                   const when = relativeTime(item.publishedAt, locale);
-                  return (
-                    <Link key={item.slug} href={`/news/${item.slug}`} className="local-news-tile">
-                      <span className="local-news-tile__img">
-                        {item.imageUrl ? (
+                  if (index === 0 && item.imageUrl) {
+                    return (
+                      <Link key={item.slug} href={`/news/${item.slug}`} className="local-news-hero">
+                        <div className="local-news-hero__img">
                           <img src={item.imageUrl} alt="" loading="lazy" />
-                        ) : (
-                          <span className="local-news-tile__ph" aria-hidden="true">
-                            <Icon name="location" />
-                          </span>
-                        )}
-                        <span className="local-news-tile__cat">{item.category}</span>
-                      </span>
-                      <span className="local-news-tile__body">
+                        </div>
+                        <div className="local-news-hero__body">
+                          <div className="local-news-meta">
+                            <span className="local-news-tag">{item.category || 'City News'}</span>
+                            {when ? <span className="local-news-time">{when}</span> : null}
+                          </div>
+                          <strong className={locale === 'te' ? 'te' : undefined}>
+                            {item.title}
+                          </strong>
+                        </div>
+                      </Link>
+                    );
+                  }
+                  return (
+                    <Link key={item.slug} href={`/news/${item.slug}`} className="local-news-row">
+                      <div className="local-news-row__body">
+                        <div className="local-news-meta">
+                          <span className="local-news-tag">{item.category || 'Local'}</span>
+                          {when ? <span className="local-news-time">{when}</span> : null}
+                        </div>
                         <strong className={locale === 'te' ? 'te' : undefined}>{item.title}</strong>
-                        {when ? <span className="local-news-tile__time">{when}</span> : null}
-                      </span>
+                      </div>
+                      {item.imageUrl ? (
+                        <div className="local-news-row__thumb">
+                          <img src={item.imageUrl} alt="" loading="lazy" />
+                        </div>
+                      ) : null}
                     </Link>
                   );
                 })}
               </div>
-              <Link href="/news" className="local-news__more">
-                Show more news <Icon name="arrow" />
+              <Link href="/news" className="local-news__more-btn">
+                <span>View all local stories</span> <Icon name="arrow" />
               </Link>
             </section>
           ) : null}
