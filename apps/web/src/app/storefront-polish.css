@@ -3287,6 +3287,10 @@
    ========================================================================= */
 
 /* Address Click-to-Copy Button */
+.business-profile-identity__address-wrap {
+  margin: 6px 0 2px;
+}
+
 .business-profile-address-copy {
   display: inline-flex;
   align-items: center;
@@ -3295,29 +3299,32 @@
   border: 1px solid transparent;
   border-radius: 8px;
   padding: 4px 8px;
-  margin: 0 -8px 4px;
-  color: inherit;
+  margin: 0 -8px 2px;
+  color: #ffffff !important;
   font: inherit;
   cursor: pointer;
   text-align: left;
+  text-shadow: 0 1px 8px rgb(0 0 0 / 60%);
   transition: background-color 150ms ease, border-color 150ms ease;
 }
 
 .business-profile-address-copy:hover {
-  background: rgb(255 255 255 / 10%);
-  border-color: rgb(255 255 255 / 20%);
+  background: rgb(255 255 255 / 15%);
+  border-color: rgb(255 255 255 / 30%);
 }
 
 .business-profile-address-copy__icon svg {
-  width: 15px;
-  height: 15px;
+  width: 16px;
+  height: 16px;
   flex-shrink: 0;
-  color: currentColor;
+  color: #a7f3d0 !important;
 }
 
 .business-profile-address-copy__text {
-  font-size: 0.82rem;
+  font-size: 0.85rem;
   line-height: 1.4;
+  color: #ffffff !important;
+  font-weight: 500;
 }
 
 .business-profile-address-copy__badge {
@@ -3329,16 +3336,47 @@
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.04em;
-  background: rgb(255 255 255 / 15%);
-  color: currentColor;
-  opacity: 0.8;
+  background: rgb(255 255 255 / 20%);
+  border: 1px solid rgb(255 255 255 / 35%);
+  color: #ffffff !important;
+  opacity: 0.95;
   transition: opacity 150ms ease, background-color 150ms ease;
 }
 
 .business-profile-address-copy.is-copied .business-profile-address-copy__badge {
-  background: #166534;
-  color: #fff;
+  background: #16a34a !important;
+  border-color: #22c55e !important;
+  color: #ffffff !important;
   opacity: 1;
+}
+
+.business-profile-cover .business-profile-badges > span {
+  background: rgb(0 0 0 / 40%) !important;
+  color: #ffffff !important;
+  border: 1px solid rgb(255 255 255 / 25%) !important;
+  backdrop-filter: blur(8px);
+}
+
+.business-profile-cover .business-profile-badges > span.is-open {
+  background: rgb(22 101 52 / 50%) !important;
+  border-color: rgb(134 239 172 / 45%) !important;
+  color: #ffffff !important;
+}
+
+.business-profile-cover .business-profile-badges > span.is-verified {
+  background: rgb(30 64 175 / 50%) !important;
+  border-color: rgb(147 197 253 / 45%) !important;
+  color: #ffffff !important;
+}
+
+.business-profile-cover .business-profile-badges .business-profile-badges__interest {
+  background: rgb(180 83 9 / 55%) !important;
+  border-color: rgb(253 230 138 / 45%) !important;
+  color: #fef08a !important;
+}
+
+.business-profile-cover .business-profile-badges .business-profile-badges__interest svg {
+  color: #fbbf24 !important;
 }
 
 /* Bookmark Button in Top Cover */
