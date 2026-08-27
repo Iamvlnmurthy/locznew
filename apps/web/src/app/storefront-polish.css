@@ -627,8 +627,7 @@
   border: 1px solid color-mix(in srgb, var(--locz-primary) 14%, var(--locz-border));
   border-radius: 22px;
   background:
-    radial-gradient(circle at 5% 10%, rgb(17 111 88 / 8%), transparent 13rem),
-    var(--locz-surface);
+    radial-gradient(circle at 5% 10%, rgb(17 111 88 / 8%), transparent 13rem), var(--locz-surface);
   box-shadow: 0 15px 42px rgb(19 59 49 / 7%);
 }
 
@@ -3063,7 +3062,10 @@
   line-height: 1.2;
   box-sizing: border-box;
   text-align: center;
-  transition: transform 140ms ease, box-shadow 140ms ease, background-color 140ms ease;
+  transition:
+    transform 140ms ease,
+    box-shadow 140ms ease,
+    background-color 140ms ease;
 }
 
 .business-profile-identity__actions > a svg {
@@ -3305,7 +3307,9 @@
   cursor: pointer;
   text-align: left;
   text-shadow: 0 1px 8px rgb(0 0 0 / 60%);
-  transition: background-color 150ms ease, border-color 150ms ease;
+  transition:
+    background-color 150ms ease,
+    border-color 150ms ease;
 }
 
 .business-profile-address-copy:hover {
@@ -3340,7 +3344,9 @@
   border: 1px solid rgb(255 255 255 / 35%);
   color: #ffffff !important;
   opacity: 0.95;
-  transition: opacity 150ms ease, background-color 150ms ease;
+  transition:
+    opacity 150ms ease,
+    background-color 150ms ease;
 }
 
 .business-profile-address-copy.is-copied .business-profile-address-copy__badge {
@@ -3394,7 +3400,10 @@
   font-weight: 650;
   cursor: pointer;
   backdrop-filter: blur(10px);
-  transition: background-color 150ms ease, border-color 150ms ease, transform 120ms ease;
+  transition:
+    background-color 150ms ease,
+    border-color 150ms ease,
+    transform 120ms ease;
 }
 
 .business-profile-bookmark svg {
@@ -3535,7 +3544,9 @@
   text-decoration: none;
   white-space: nowrap;
   flex-shrink: 0;
-  transition: transform 140ms ease, background-color 140ms ease;
+  transition:
+    transform 140ms ease,
+    background-color 140ms ease;
 }
 
 .business-profile-claim-banner .btn--claim:hover {
@@ -3652,6 +3663,280 @@
   }
 }
 
+/* ==========================================================================
+   Storefront layout contract — authoritative final pass
+
+   Keep this block after the legacy refinement layers above. The storefront has
+   accumulated several valid experiments with conflicting grid, hero and card
+   rules; these declarations define the one production layout they resolve to.
+   ========================================================================== */
+
+.business-profile-cover,
+.business-profile-cover.has-banner {
+  min-height: 300px;
+}
+
+.business-profile-cover > .business-profile-identity,
+.business-profile-cover.has-banner > .business-profile-identity {
+  width: 100%;
+  min-width: 0;
+  padding: 70px 28px 24px;
+  align-items: flex-end;
+}
+
+.business-profile-cover .business-profile-identity__content,
+.business-profile-cover.has-banner .business-profile-identity__content {
+  display: grid;
+  min-width: 0;
+  grid-template-columns: minmax(280px, 1fr) auto;
+  grid-template-rows: auto auto auto auto;
+  align-items: end;
+  column-gap: clamp(18px, 3vw, 42px);
+}
+
+.business-profile-cover .business-profile-category,
+.business-profile-cover .business-profile-identity__content > h1,
+.business-profile-cover .business-profile-identity__address,
+.business-profile-cover .business-profile-badges {
+  grid-column: 1;
+}
+
+.business-profile-cover .business-profile-identity__content > h1 {
+  max-width: 25ch;
+  overflow: visible;
+  margin: 8px 0 5px;
+  font-size: clamp(2rem, 3vw, 3rem);
+  line-height: 1.02;
+  overflow-wrap: anywhere;
+  text-wrap: balance;
+}
+
+.business-profile-cover .business-profile-identity__address {
+  max-width: min(74ch, 100%);
+  overflow: visible;
+  text-overflow: clip;
+  white-space: normal;
+}
+
+.business-profile-cover .business-profile-identity__actions {
+  width: auto;
+  max-width: 560px;
+  grid-row: 1 / 5;
+  grid-column: 2;
+  align-self: end;
+  justify-content: flex-end;
+  margin: 0;
+}
+
+.business-profile-layout {
+  display: grid;
+  align-items: start;
+  grid-template-columns: minmax(0, 1fr) 340px;
+  gap: 24px;
+}
+
+.business-profile-layout > main {
+  display: flex;
+  min-width: 0;
+  align-self: start;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 22px;
+}
+
+.business-profile-layout > main > * {
+  width: 100%;
+  min-width: 0;
+  margin-block: 0;
+}
+
+.business-profile-contact {
+  position: sticky;
+  top: calc(var(--locz-header-height, 76px) + 16px);
+  display: flex;
+  min-width: 0;
+  align-self: start;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.business-profile-contact > section + section {
+  margin-top: 0;
+}
+
+.business-profile-claim-card {
+  position: relative;
+  overflow: hidden;
+  padding: 20px;
+  border: 1px solid color-mix(in srgb, var(--locz-primary) 18%, var(--locz-border));
+  border-radius: 20px;
+  background:
+    radial-gradient(circle at 100% 0%, rgb(242 203 128 / 24%), transparent 11rem),
+    linear-gradient(145deg, #fffdf8, #f3f8f5);
+  box-shadow: 0 16px 42px rgb(21 54 44 / 9%);
+}
+
+.business-profile-claim-card__head {
+  display: grid;
+  grid-template-columns: 44px minmax(0, 1fr);
+  align-items: center;
+  gap: 12px;
+}
+
+.business-profile-claim-card__icon {
+  display: grid;
+  width: 44px;
+  height: 44px;
+  place-items: center;
+  border: 1px solid rgb(17 108 88 / 14%);
+  border-radius: 14px;
+  background: #e7f3ee;
+  color: var(--locz-primary);
+}
+
+.business-profile-claim-card__icon svg {
+  width: 22px;
+  height: 22px;
+}
+
+.business-profile-claim-card strong {
+  display: block;
+  color: var(--storefront-ink);
+  font-size: 0.9rem;
+  line-height: 1.3;
+}
+
+.business-profile-claim-card p {
+  margin: 4px 0 0;
+  color: #4f645c;
+  font-size: 0.76rem;
+  line-height: 1.5;
+}
+
+.business-profile-claim-card .btn--claim-compact {
+  display: inline-flex;
+  width: 100%;
+  min-height: 44px;
+  margin-top: 15px;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  border-radius: 12px;
+  background: var(--locz-primary);
+  color: #fff;
+  font-size: 0.78rem;
+  font-weight: 740;
+  box-shadow: 0 10px 24px rgb(17 108 88 / 17%);
+}
+
+.business-profile-layout .ad-slot[data-ad-state='idle'],
+.business-profile-layout .ad-slot[data-ad-state='requesting'] {
+  height: 1px;
+  min-height: 1px;
+  max-height: 1px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.storefront-house-ad__label {
+  color: #40584f;
+}
+
+@media (max-width: 1179px) {
+  .business-profile-layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .business-profile-contact {
+    position: static;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .business-profile-report {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (max-width: 900px) and (min-width: 761px) {
+  .business-profile-cover .business-profile-identity__content,
+  .business-profile-cover.has-banner .business-profile-identity__content {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .business-profile-cover .business-profile-identity__actions {
+    width: 100%;
+    max-width: none;
+    grid-row: auto;
+    grid-column: 1;
+    justify-content: flex-start;
+    margin-top: 14px;
+  }
+}
+
+@media (max-width: 760px) {
+  .business-profile-cover,
+  .business-profile-cover.has-banner {
+    min-height: 0;
+  }
+
+  .business-profile-cover > .business-profile-identity,
+  .business-profile-cover.has-banner > .business-profile-identity {
+    padding: 0 16px 18px;
+    align-items: stretch;
+  }
+
+  .business-profile-cover .business-profile-identity__content,
+  .business-profile-cover.has-banner .business-profile-identity__content {
+    display: block;
+  }
+
+  .business-profile-cover .business-profile-identity__content > h1 {
+    max-width: none;
+    font-size: clamp(1.55rem, 7.1vw, 2rem);
+    line-height: 1.08;
+    overflow-wrap: anywhere;
+    text-wrap: pretty;
+  }
+
+  .business-profile-cover .business-profile-identity__actions {
+    display: grid;
+    width: 100%;
+    max-width: none;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    margin-top: 12px;
+  }
+
+  .business-profile-layout {
+    padding-bottom: 84px;
+    gap: 16px;
+  }
+
+  .business-profile-layout > main {
+    gap: 16px;
+  }
+
+  .business-profile-contact {
+    display: flex;
+    gap: 12px;
+  }
+
+  .business-profile-claim-card {
+    padding: 17px;
+    border-radius: 18px;
+  }
+}
+
+:root[data-theme='dark'] .business-profile-claim-card {
+  border-color: #30493f;
+  background: linear-gradient(145deg, #1d3028, #17251f);
+}
+
+:root[data-theme='dark'] .business-profile-claim-card p {
+  color: #b7c9c1;
+}
+
 /* =====================================================================
    Location Typeahead Component (India-wide Cities & PIN Codes)
    ===================================================================== */
@@ -3682,7 +3967,7 @@
   height: 18px;
 }
 
-.location-typeahead input[type="text"] {
+.location-typeahead input[type='text'] {
   width: 100%;
   min-height: 46px;
   padding: 10px 38px 10px 38px;
@@ -3692,10 +3977,12 @@
   color: var(--locz-text, #1e293b);
   background: var(--locz-surface, #ffffff);
   outline: none;
-  transition: border-color 150ms ease, box-shadow 150ms ease;
+  transition:
+    border-color 150ms ease,
+    box-shadow 150ms ease;
 }
 
-.location-typeahead input[type="text"]:focus {
+.location-typeahead input[type='text']:focus {
   border-color: var(--locz-primary, #0d5c4b);
   box-shadow: 0 0 0 3px rgb(13 92 75 / 15%);
 }
@@ -3738,7 +4025,9 @@
   background: #ffffff;
   border: 1.5px solid #e2e8f0;
   border-radius: 12px;
-  box-shadow: 0 10px 25px -5px rgb(0 0 0 / 12%), 0 8px 10px -6px rgb(0 0 0 / 10%);
+  box-shadow:
+    0 10px 25px -5px rgb(0 0 0 / 12%),
+    0 8px 10px -6px rgb(0 0 0 / 10%);
 }
 
 .location-typeahead__dropdown li {
@@ -3829,11 +4118,8 @@
   color: #94a3b8;
 }
 
-:root[data-theme='dark'] .location-typeahead input[type="text"] {
+:root[data-theme='dark'] .location-typeahead input[type='text'] {
   background: #0f172a;
   border-color: #334155;
   color: #f8fafc;
 }
-
-
-
