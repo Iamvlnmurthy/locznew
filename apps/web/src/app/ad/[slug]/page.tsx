@@ -449,7 +449,7 @@ export default async function ListingPage({ params }: { params: Promise<{ slug: 
               {t('listing.report')}
             </Link>
           </div>
-          <AdsterraBanner />
+          <AdsterraBanner format="rectangle-300x250" />
         </aside>
       </div>
 

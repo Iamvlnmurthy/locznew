@@ -10,7 +10,7 @@ import {
   type AdFormat,
   type PlacementId,
 } from '@/lib/ads/placements';
-import { AdsterraBanner } from './adsterra-banner';
+import { AdsterraBanner, AdsterraNative } from './adsterra-banner';
 
 /**
  * One advertising position.
@@ -145,7 +145,16 @@ export function AdSlot({ placement, contentScore = 0, className }: Props) {
   if (!live) return null;
 
   if (ADS_PROVIDER === 'adsterra') {
-    return <AdsterraBanner className={className} />;
+    if (config.format === 'in-feed') {
+      return <AdsterraNative className={className} />;
+    }
+    const adsterraFormat =
+      config.format === 'in-article'
+        ? 'rectangle-300x250'
+        : config.format === 'display'
+          ? 'leaderboard-728x90'
+          : 'responsive';
+    return <AdsterraBanner format={adsterraFormat} className={className} />;
   }
 
   const deviceClass =
