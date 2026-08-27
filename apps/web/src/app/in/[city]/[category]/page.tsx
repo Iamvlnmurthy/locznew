@@ -250,6 +250,30 @@ export default async function CityCategoryPage({
               <Icon name="arrow" />
             </Link>
           ) : null}
+
+          <section className="hub-popular-searches">
+            <h2>Popular searches in {cityName}</h2>
+            <div className="hub-popular-searches__tags">
+              <Link href={`/search?cityId=${city.id}&q=best+${encodeURIComponent(categoryName)}`}>
+                Best {categoryName} in {cityName}
+              </Link>
+              <Link
+                href={`/search?cityId=${city.id}&q=top+rated+${encodeURIComponent(categoryName)}`}
+              >
+                Top rated {categoryName.toLowerCase()}
+              </Link>
+              <Link
+                href={`/search?cityId=${city.id}&q=open+now+${encodeURIComponent(categoryName)}`}
+              >
+                {categoryName} open now
+              </Link>
+              <Link
+                href={`/search?cityId=${city.id}&q=verified+${encodeURIComponent(categoryName)}`}
+              >
+                Verified {categoryName.toLowerCase()} in {cityName}
+              </Link>
+            </div>
+          </section>
         </main>
 
         <aside className="hub-cross">

@@ -20,6 +20,8 @@ import { AdSlot } from '@/components/ad-slot';
 import { StorefrontHouseAd } from '@/components/storefront-house-ad';
 import { BusinessActionTracker } from '@/components/business-action-tracker';
 import { StorefrontTabs } from './storefront-tabs';
+import { CopyAddressButton } from './copy-address-button';
+import { BookmarkBusiness } from './bookmark-business';
 
 interface BusinessHour {
   dayOfWeek: number;
@@ -626,6 +628,13 @@ export default async function BusinessPage({ params }: { params: Promise<{ slug:
               <strong>{business.cityName}</strong>
             </div>
             <div className="business-profile-cover__actions">
+              <BookmarkBusiness
+                id={business.id}
+                name={business.name}
+                slug={business.slug}
+                cityName={business.cityName}
+                categoryName={business.categoryName}
+              />
               <ShareBusiness name={business.name} labels={p} />
               {business.isOwner ? (
                 <Link href="/dashboard">
@@ -652,14 +661,11 @@ export default async function BusinessPage({ params }: { params: Promise<{ slug:
                   {business.localityName ? ` · ${business.localityName}` : ''}
                 </span>
                 <h1>{business.name}</h1>
-                {/* The whole address, here at the top.
-                  It read "Pune — 411013", which is the one part of an address nobody needs:
-                  the reader came from a page that already said the city. The street, the
-                  area, the mandal and the state are what tell them whether it is worth the
-                  journey, and they were buried in a section further down. */}
-                <p className="business-profile-identity__address">
-                  <Icon name="location" /> {postalAddress(business)}
-                </p>
+                <div className="business-profile-identity__address-wrap">
+                  <CopyAddressButton address={postalAddress(business)}>
+                    {postalAddress(business)}
+                  </CopyAddressButton>
+                </div>
                 <div className="business-profile-badges">
                   {business.verificationStatus === 'VERIFIED' ? (
                     <span className="is-verified">
@@ -670,9 +676,17 @@ export default async function BusinessPage({ params }: { params: Promise<{ slug:
                       <Icon name="store" /> {p.localBusiness}
                     </span>
                   )}
-                  <span className={openState.isOpen ? 'is-open' : ''}>
-                    <i /> {openState.label}
-                  </span>
+                  {business.hours.length > 0 ? (
+                    <span
+                      className={`business-profile-badges__status ${openState.isOpen ? 'is-open' : 'is-closed'}`}
+                    >
+                      <span className="status-dot" aria-hidden="true" /> {openState.label}
+                    </span>
+                  ) : (
+                    <span className="business-profile-badges__no-hours">
+                      <Icon name="calendar" /> {p.hoursNotListed}
+                    </span>
+                  )}
                   <span>
                     {p.onLoczSince} {new Date(business.createdAt).getFullYear()}
                   </span>
@@ -734,6 +748,35 @@ export default async function BusinessPage({ params }: { params: Promise<{ slug:
           </div>
         </div>
       </section>
+
+      {/* Prominent Owner Claim Banner */}
+      {business.claimStatus === 'UNCLAIMED' &&
+      business.isClaimable !== false &&
+      !business.isOwner ? (
+        <div className="container business-profile-claim-banner-wrap">
+          <div className="business-profile-claim-banner">
+            <div className="business-profile-claim-banner__brand">
+              <span className="business-profile-claim-banner__icon">
+                <Icon name="shield" />
+              </span>
+              <div>
+                <strong>Own or manage {business.name}?</strong>
+                <p>
+                  Claim your free verified profile to update opening hours, add your menu or
+                  catalog, and receive direct customer enquiries.
+                </p>
+              </div>
+            </div>
+            <Link
+              href={`/b/${business.slug}/claim`}
+              className="btn btn--claim"
+              data-track="hero_claim_click"
+            >
+              Claim this business <Icon name="arrow" />
+            </Link>
+          </div>
+        </div>
+      ) : null}
 
       <div className="container business-profile-layout">
         <main>
