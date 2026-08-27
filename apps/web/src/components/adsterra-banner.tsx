@@ -25,7 +25,7 @@ export function AdsterraBanner({ format = 'responsive', className }: AdsterraBan
 
     const widthScreen = typeof window !== 'undefined' ? window.innerWidth : 1200;
 
-    let key = '40bbb936ec9dbc187eec10864cd97e57'; // default 300x250
+    let key = '40bbb936ec9dbc187eec10864cd97e57'; // 300x250
     let width = 300;
     let height = 250;
 
@@ -62,7 +62,6 @@ export function AdsterraBanner({ format = 'responsive', className }: AdsterraBan
       width = 300;
       height = 250;
     } else {
-      // 'responsive'
       if (widthScreen >= 800) {
         key = 'b019f458a4ecea96b1a9dd67ff3f2ba8';
         width = 728;
@@ -159,57 +158,7 @@ export function AdsterraBanner({ format = 'responsive', className }: AdsterraBan
   );
 }
 
+/** Native units disabled to eliminate clickbait / dating teasers */
 export function AdsterraNative({ className }: { className?: string }) {
-  const containerRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (!containerRef.current) return;
-    const container = containerRef.current;
-    container.innerHTML = '<div id="container-17356faf2a2167079c3b1b15a9920001"></div>';
-
-    const script = document.createElement('script');
-    script.async = true;
-    script.setAttribute('data-cfasync', 'false');
-    script.src =
-      'https://pl31052061.profitableratecpmnetwork.com/17356faf2a2167079c3b1b15a9920001/invoke.js';
-    container.appendChild(script);
-  }, []);
-
-  return (
-    <div
-      className={`adsterra-native-slot ${className ?? ''}`}
-      style={{
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        justifyContent: 'center',
-        margin: '20px auto',
-        width: '100%',
-        maxWidth: '100%',
-        overflow: 'hidden',
-      }}
-    >
-      <span
-        style={{
-          fontSize: '0.58rem',
-          color: 'var(--locz-text-muted, #94a3b8)',
-          marginBottom: 4,
-          letterSpacing: '0.06em',
-          textTransform: 'uppercase',
-          fontWeight: 600,
-        }}
-      >
-        Sponsored Content
-      </span>
-      <div
-        ref={containerRef}
-        style={{
-          width: '100%',
-          display: 'flex',
-          justifyContent: 'center',
-          minHeight: '120px',
-        }}
-      />
-    </div>
-  );
+  return null;
 }
