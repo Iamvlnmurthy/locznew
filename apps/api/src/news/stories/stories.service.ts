@@ -10,7 +10,7 @@ export interface StoryFeedQuery {
   state?: string;
   city?: string;
   when?: TimeWindow;
-  lang?: 'en' | 'hi' | 'te' | string;
+  lang?: string;
   sort?: 'recent' | 'popular' | 'nearby';
   limit?: number;
   offset?: number;
@@ -79,7 +79,7 @@ export class StoriesService {
   }
 
   private ring(distanceKm: number | null, sameState: boolean): StoryCard['ring'] {
-    if (distanceKm == null) return sameState ? 'state' : 'national';
+    if (distanceKm === null) return sameState ? 'state' : 'national';
     if (distanceKm <= 5) return 'local';
     if (distanceKm <= 15) return 'city';
     if (distanceKm <= 50) return 'district';
@@ -90,7 +90,7 @@ export class StoriesService {
     const limit = Math.min(Math.max(q.limit ?? 20, 1), 50);
     const offset = Math.max(q.offset ?? 0, 0);
     const lang = q.lang ?? 'en';
-    const hasPoint = q.latitude != null && q.longitude != null;
+    const hasPoint = q.latitude !== undefined && q.longitude !== undefined;
 
     // Distance in metres from the anchor, or NULL when no point supplied (then order by recency).
     const distSql = hasPoint
@@ -145,8 +145,8 @@ export class StoriesService {
     const rows = await this.prisma.$queryRawUnsafe<Record<string, unknown>[]>(sql, ...params);
     const hasMore = rows.length > limit;
     const cards: StoryCard[] = rows.slice(0, limit).map((row) => {
-      const distM = row.dist_m == null ? null : Number(row.dist_m);
-      const distanceKm = distM == null ? null : Math.round(distM / 100) / 10;
+      const distM = row.dist_m === null ? null : Number(row.dist_m);
+      const distanceKm = distM === null ? null : Math.round(distM / 100) / 10;
       const sameState = !!q.state && (row.state as string)?.toLowerCase() === q.state.toLowerCase();
       const { title, body } = this.pick(row, lang);
       return {

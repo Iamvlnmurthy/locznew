@@ -4,6 +4,7 @@ import type {
   Category,
   City,
   ListingSummary,
+  ModerationMediaQueueItem,
   ModerationQueueItem,
   Paginated,
   SearchIndexStatus,
@@ -276,6 +277,17 @@ export class LoczClient {
       this.request<{ id: string; status: string }>(`/moderation/listings/${id}/reject`, {
         method: 'POST',
         body: JSON.stringify({ reason }),
+      }),
+    mediaQueue: (query: Record<string, unknown> = {}) =>
+      this.request<Paginated<ModerationMediaQueueItem>>('/moderation/media/queue', { query }),
+    mediaPreview: (id: string) =>
+      this.request<{ url: string; expiresInSeconds: number }>(`/moderation/media/${id}/preview`),
+    approveMedia: (id: string) =>
+      this.request<void>(`/moderation/media/${id}/approve`, { method: 'POST' }),
+    blockMedia: (id: string, reason: string, category?: string) =>
+      this.request<{ blocked: number }>(`/moderation/media/${id}/block`, {
+        method: 'POST',
+        body: JSON.stringify({ reason, category }),
       }),
   };
 

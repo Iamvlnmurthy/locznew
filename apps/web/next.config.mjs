@@ -35,7 +35,7 @@ const nextConfig = {
        * Worth knowing: this allowlist does *not* address the duplicated `Origin` header that
        * the proxy sends. Next parses the header into a URL before consulting the list, so a
        * duplicated value throws `TypeError: Invalid URL` and never reaches this check. That
-       * is repaired in `src/middleware.ts`; the two are unrelated defences.
+       * is repaired in `src/proxy.ts`; the two are unrelated defences.
        */
       allowedOrigins: ['locz.in', 'www.locz.in', 'staging.locz.in', 'localhost:3000'],
     },

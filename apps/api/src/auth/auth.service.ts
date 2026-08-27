@@ -122,7 +122,7 @@ export class AuthService {
       // anonymisation sweep has scrubbed the record (deletedAt set), the account is gone for
       // good and a stray login must not resurrect an emptied profile.
       if (
-        user.deletedAt == null &&
+        user.deletedAt === null &&
         (user.status === UserStatus.DEACTIVATED || user.status === UserStatus.DELETION_REQUESTED)
       ) {
         user = await this.prisma.user.update({

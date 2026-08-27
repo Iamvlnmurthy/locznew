@@ -16221,6 +16221,12 @@ body {
   text-align: center;
 }
 
+.seller-profile-stats article > svg {
+  width: 24px;
+  height: 24px;
+  color: var(--locz-primary);
+}
+
 .seller-profile-stats strong {
   font-size: 1.7rem;
 }
@@ -22202,6 +22208,10 @@ h4,
   padding-block: clamp(24px, 4vw, 40px);
   align-items: start;
 }
+.hub-body > main,
+.hub-body > aside {
+  min-width: 0;
+}
 .hub-list {
   display: grid;
   gap: 10px;
@@ -22250,11 +22260,17 @@ h4,
 }
 .hub-list__body small {
   display: flex;
+  min-width: 0;
   align-items: center;
   gap: 4px;
   margin-top: 2px;
   color: var(--locz-text-muted);
   font-size: 0.64rem;
+}
+.hub-list__body small {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 .hub-list__body small svg {
   width: 12px;
@@ -22331,7 +22347,89 @@ h4,
 }
 @media (max-width: 860px) {
   .hub-body {
-    grid-template-columns: 1fr;
+    width: 100%;
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .hub-list,
+  .hub-list > li,
+  .hub-list a {
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+  }
+}
+
+/* Final responsive integrity pass. These rules intentionally sit after the historical home
+   overrides so the tablet layout cannot inherit desktop-sized intrinsic card widths. */
+@media (min-width: 761px) and (max-width: 1199px) {
+  .home-content-shell > *,
+  .home-main-column,
+  .home-content-shell .local-news__list,
+  .home-content-shell .local-jobs__list,
+  .home-content-shell .local-news__list a,
+  .home-content-shell .local-jobs__card,
+  .home-content-shell .local-news__body,
+  .home-content-shell .local-jobs__body,
+  .search-business-card,
+  .search-business-card__content {
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  .home-content-shell .local-jobs__card {
+    grid-template-columns: 40px minmax(0, 1fr) 16px;
+    overflow: hidden;
+  }
+
+  .home-content-shell .local-news__body strong,
+  .home-content-shell .local-jobs__body strong {
+    display: -webkit-box;
+    overflow: hidden;
+    white-space: normal;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+  }
+
+  .home-content-shell .local-news__meta,
+  .home-content-shell .local-jobs__meta,
+  .home-content-shell .local-jobs__tags {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .discovery-feed-shell {
+    width: 100%;
+    max-width: 100%;
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .discovery-feed-rail,
+  .discovery-feed-stream {
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+  }
+}
+
+/* WCAG contrast and minimum interactive size corrections shared by the audited public routes. */
+:root:not([data-theme='dark']) .home-discovery__head > a,
+:root:not([data-theme='dark']) .news-filters__label,
+:root:not([data-theme='dark']) .news-lead__category,
+:root:not([data-theme='dark']) .hub-hero .breadcrumbs > span:last-child {
+  color: #8f352a;
+}
+
+@media (max-width: 760px) {
+  .radius-chip,
+  .popular-chip,
+  .news-filterbar a,
+  .news-filterbar button,
+  .news-filterbar select,
+  .search-filters__head > button {
+    min-height: 44px;
   }
 }
 

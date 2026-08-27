@@ -276,8 +276,9 @@ export default async function HomePage({
   // (never stored). Display-only: headline + publisher + a link back to the original.
   // Our own regenerated news (news_stories), nearest-first for the reader's area — not raw Google
   // News. Links go to the LocZ article, never the source.
-  // Pull a wider recent pool (cached), then show a random handful in the sidebar so the "Latest
-  // around" tiles vary on each visit instead of always the same top three.
+  // Pull a wider recent pool (cached). Keep the order supplied by the API: randomising a Server
+  // Component with Math.random() produces different HTML when React replays the render and can
+  // turn a harmless news rail into a full-page hydration mismatch.
   const newsQuery = new URLSearchParams({ limit: '20', lang: locale });
   if (city?.latitude && city?.longitude) {
     newsQuery.set('latitude', String(city.latitude));
@@ -289,7 +290,7 @@ export default async function HomePage({
         revalidate: 120,
       })
     )?.cards ?? [];
-  const newsHeadlines = [...newsPool].sort(() => Math.random() - 0.5);
+  const newsHeadlines = newsPool;
 
   // "Local Now" alerts — official NDMA SACHET public-safety warnings naming the area. Verbatim,
   // display-only, hidden when there is nothing.
@@ -570,7 +571,6 @@ export default async function HomePage({
                     <Link key={item.slug} href={`/news/${item.slug}`} className="local-news-tile">
                       <span className="local-news-tile__img">
                         {item.imageUrl ? (
-                          // eslint-disable-next-line @next/next/no-img-element
                           <img src={item.imageUrl} alt="" loading="lazy" />
                         ) : (
                           <span className="local-news-tile__ph" aria-hidden="true">

@@ -1,6 +1,7 @@
-import type { ModerationQueueItem, Paginated } from '@locz/shared-types';
+import type { ModerationMediaQueueItem, ModerationQueueItem, Paginated } from '@locz/shared-types';
 import { ApiRequestError, locz } from '@/lib/api';
 import { QueueItem } from './queue-item';
+import { MediaQueueItem } from './media-queue-item';
 
 export const dynamic = 'force-dynamic';
 
@@ -17,10 +18,13 @@ export default async function ModerationPage({
   const { page: pageParam } = await searchParams;
   const page = Math.max(1, Number(pageParam ?? '1') || 1);
 
-  let queue: Paginated<ModerationQueueItem>;
-  try {
-    queue = await locz.moderation.queue({ page, limit: 20 });
-  } catch (error) {
+  const [listingResult, mediaResult] = await Promise.allSettled([
+    locz.moderation.queue({ page, limit: 20 }),
+    locz.moderation.mediaQueue({ page: 1, limit: 20 }),
+  ]);
+
+  if (listingResult.status === 'rejected') {
+    const error = listingResult.reason as unknown;
     return (
       <>
         <div className="page-header">
@@ -36,6 +40,16 @@ export default async function ModerationPage({
       </>
     );
   }
+
+  const queue: Paginated<ModerationQueueItem> = listingResult.value;
+  const mediaQueue: Paginated<ModerationMediaQueueItem> | null =
+    mediaResult.status === 'fulfilled' ? mediaResult.value : null;
+  const mediaError =
+    mediaResult.status === 'rejected'
+      ? mediaResult.reason instanceof ApiRequestError
+        ? mediaResult.reason.message
+        : 'Could not load the image queue. Listing moderation remains available.'
+      : null;
 
   return (
     <>
@@ -85,6 +99,35 @@ export default async function ModerationPage({
           ) : null}
         </nav>
       ) : null}
+
+      <section className="moderation-media" aria-labelledby="media-review-heading">
+        <div className="page-header">
+          <div>
+            <span className="eyebrow">Image safety</span>
+            <h2 id="media-review-heading">Quarantined images</h2>
+            <p>
+              {!mediaQueue
+                ? 'Image review is temporarily unavailable.'
+                : mediaQueue.meta.total === 0
+                  ? 'No images are waiting for review.'
+                  : `${mediaQueue.meta.total} image${mediaQueue.meta.total === 1 ? '' : 's'} need a decision.`}
+            </p>
+          </div>
+        </div>
+        {mediaError ? (
+          <div className="alert alert--error" role="alert">
+            {mediaError}
+          </div>
+        ) : mediaQueue && mediaQueue.items.length > 0 ? (
+          <div className="media-review-grid">
+            {mediaQueue.items.map((item) => (
+              <MediaQueueItem key={item.id} item={item} />
+            ))}
+          </div>
+        ) : (
+          <div className="card empty">The image queue is clear.</div>
+        )}
+      </section>
     </>
   );
 }

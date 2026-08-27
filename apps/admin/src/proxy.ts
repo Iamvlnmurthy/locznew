@@ -57,7 +57,7 @@ function replaceCookie(cookieHeader: string, name: string, value: string): strin
  * would revoke the whole session family. The new access token is also injected into the current
  * request, so an action posted at the very moment the token expired reads the fresh one.
  */
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   const { headers, repaired } = repairHeaders(request);
 
   const access = request.cookies.get(ACCESS_COOKIE)?.value;

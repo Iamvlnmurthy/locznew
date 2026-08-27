@@ -169,6 +169,15 @@ export interface ModerationQueueItem {
   createdAt: string;
 }
 
+export interface ModerationMediaQueueItem {
+  id: string;
+  listingId: string;
+  listingTitle: string;
+  uploaderName: string;
+  failureReason: string | null;
+  createdAt: string;
+}
+
 export interface SearchIndexStatus {
   available: boolean;
   indexedDocuments?: number;

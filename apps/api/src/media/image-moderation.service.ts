@@ -152,12 +152,9 @@ export class ImageModerationService {
     // Account age is the cheap signal that covers the gap, and it is already how the text
     // rules work — NEW_ACCOUNT scores in `RuleBasedModerationProvider`. Images now match.
     //
-    // The other half: a provider that could not be reached does *not* hold the image by
-    // itself. It is a reason to distrust nothing in particular, and treating it as an
-    // objection is what put 100% of production media behind a grey placeholder — silently,
-    // because a held image still lets its listing publish. So an outage costs an
-    // established account's clean-looking upload nothing, and still queues everything that
-    // carries any other signal, new accounts included. Low risk publishes; the rest waits.
+    // A provider outage holds the image for human review. The old failure was not the safe
+    // hold itself; it was having no discoverable queue or approval path, which made the hold
+    // permanent and invisible. Those recovery controls now exist.
     const holding = reasons.filter((reason) => !unavailable.includes(reason));
     // Approve only when the scan actually completed clean. If the scanner could not be reached we
     // HOLD for review (fail-CLOSED) instead of publishing unscanned — a child-safety control must

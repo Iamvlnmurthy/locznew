@@ -37,7 +37,8 @@ export function distanceMetresOrNull(
   point: { latitude: number | null | undefined; longitude: number | null | undefined },
 ): number | undefined {
   if (!origin) return undefined;
-  if (point.latitude == null || point.longitude == null) return undefined;
+  if (point.latitude === null || point.latitude === undefined) return undefined;
+  if (point.longitude === null || point.longitude === undefined) return undefined;
   return Math.round(
     distanceMetres(origin, { latitude: point.latitude, longitude: point.longitude }),
   );

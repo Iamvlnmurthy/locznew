@@ -25,19 +25,6 @@ interface LocalWeather {
   condition: string;
 }
 
-// A LocZ-regenerated news card from /news/feed (our own content, not a source redirect).
-interface NewsCard {
-  slug: string;
-  title: string;
-  summary: string | null;
-  category: string;
-  distanceKm: number | null;
-  ring: number;
-  publishedAt: string | null;
-  locz: boolean;
-  sources: number;
-}
-
 interface JobPosting {
   title: string;
   company: string | null;
@@ -81,6 +68,10 @@ const listingTypes: Partial<Record<Destination, ReadonlySet<ListingSummary['type
   'local-now': new Set(['EVENT', 'BUYER_REQUIREMENT', 'RENTAL']),
   businesses: new Set(['BUSINESS_LISTING']),
   jobs: new Set(['JOB']),
+  // Alerts come only from the official alert source below. An explicit empty set is important:
+  // an absent mapping means "accept every feed item", which is why an unrelated marketplace ad
+  // appeared beneath the Alerts heading.
+  alerts: new Set(),
   deals: new Set(['OFFER']),
   services: new Set(['SERVICE']),
   marketplace: new Set(['PRODUCT', 'CLASSIFIED']),
@@ -488,7 +479,13 @@ export default async function DiscoveryAreaPage({ params }: { params: Promise<{ 
           listings.length === 0 &&
           businesses.items.length === 0 ? (
             <div className="discovery-feed-empty">
-              <Image src={premiumDiscoveryArtwork(area)} alt="" width={92} height={92} />
+              <Image
+                src={premiumDiscoveryArtwork(area)}
+                alt=""
+                width={92}
+                height={92}
+                loading="eager"
+              />
               <h2>{d.emptyTitle}</h2>
               <p>{d.emptyBody}</p>
               <Link href="/search" className="btn btn--primary">

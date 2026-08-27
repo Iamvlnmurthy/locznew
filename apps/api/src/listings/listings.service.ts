@@ -1279,8 +1279,8 @@ export class ListingsService {
     // Distance is computed from the row's own coordinates against the viewer's origin, so
     // every card can show "how far" even on city-scoped shelves that never ran a radius query.
     const distanceMeters = distanceMetresOrNull(origin, {
-      latitude: listing.latitude != null ? Number(listing.latitude) : null,
-      longitude: listing.longitude != null ? Number(listing.longitude) : null,
+      latitude: listing.latitude !== null ? Number(listing.latitude) : null,
+      longitude: listing.longitude !== null ? Number(listing.longitude) : null,
     });
     return {
       id: listing.id,

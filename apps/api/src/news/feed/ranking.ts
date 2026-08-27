@@ -80,7 +80,7 @@ export function ringOf(
   e: RankableEvent,
   viewer: Viewer,
 ): { ring: number; distanceKm: number | null } {
-  if (e.latitude != null && e.longitude != null) {
+  if (e.latitude !== null && e.longitude !== null) {
     const km = haversineKm(viewer.lat, viewer.lng, e.latitude, e.longitude);
     return { ring: ringForDistance(km), distanceKm: Math.round(km * 10) / 10 };
   }

@@ -73,6 +73,9 @@ interface BusinessDetail {
   whatsappNumber: string | null;
   email: string | null;
   website: string | null;
+  sourceName?: string | null;
+  verifiedAt?: string | null;
+  updatedAt?: string | null;
   verificationStatus: string;
   hours: BusinessHour[];
   listingCount: number;
@@ -231,42 +234,45 @@ export async function generateMetadata({
   const title = `${business.name} — ${placed}`;
   const description =
     business.description?.replace(/\s+/g, ' ').slice(0, 155) ??
-    `${business.name} is a ${catLower} in ${place}. Contact number, address, directions, timings, offers and reviews — find the best ${catLower} near you in ${business.cityName} on LocZ.`;
+    `${business.name} is listed as a ${catLower} in ${place}. Find available contact details, address, directions and opening hours on LocZ.`;
   const brandLogo = business.logoUrl ?? publicBrandLogo(business.name, business.publicBrandKey);
 
-  // The category+place phrases people actually search — the same shape ("Salons & spas in
-  // Ahmedabad") that already ranks, expanded to locality, "near me" and best/top variants.
+  // Factual entity and place phrases only. LocZ has no genuine ratings system yet, so metadata
+  // must not imply "best", "top" or reviewed popularity merely to broaden a keyword list.
   const keywords = [
     business.name,
     `${business.name} ${business.cityName}`,
     `${cat} in ${business.cityName}`,
     ...(business.localityName ? [`${cat} in ${business.localityName}`, `${cat} in ${place}`] : []),
     `${catLower} near me`,
-    `best ${catLower} in ${business.cityName}`,
-    `top ${catLower} in ${business.cityName}`,
     `${catLower} near ${business.localityName ?? business.cityName}`,
     cat,
     business.cityName,
   ];
 
-  // Keep clearly-junk imported records out of the index — an all-digits / sub-3-char / URL-as-name /
-  // bare-pincode "name" is a broken import, not a business, and indexing it dilutes crawl trust
-  // across the 4.2M real records. It stays crawlable (follow:true) so its city/category links still
-  // pass, but does not compete for indexing. NB: a plain unclaimed/undescribed record is NOT junk —
-  // that is the directory's legitimate inventory (name + category + place is real SEO value), so
-  // only the broken-name signatures are excluded here.
+  // Match the sitemap's quality gate. Sparse imported entities remain useful to visitors and
+  // remain followable for discovery, but do not ask a crawler to index millions of pages whose
+  // only differentiator is a substituted name. A real phone, owner description, claim,
+  // verification or published listing supplies enough entity substance to become indexable.
   const nm = business.name.trim();
   const isJunkName =
     /^[0-9 .,\-]+$/.test(nm) ||
     nm.length < 3 ||
     /https?:|www\.|\.com/i.test(nm) ||
     /^[0-9]{6}$/.test(nm);
+  const isIndexable =
+    !isJunkName &&
+    (business.claimStatus === 'CLAIMED' ||
+      business.verificationStatus === 'VERIFIED' ||
+      Boolean(business.primaryPhone) ||
+      !business.descriptionIsGenerated ||
+      business.listingCount > 0);
 
   return {
     title,
     description,
     keywords,
-    ...(isJunkName ? { robots: { index: false, follow: true } } : {}),
+    ...(!isIndexable ? { robots: { index: false, follow: true } } : {}),
     alternates: await localizedAlternates(`/b/${business.slug}`),
     openGraph: {
       title,
@@ -419,11 +425,11 @@ export default async function BusinessPage({ params }: { params: Promise<{ slug:
       '@type': 'PostalAddress',
       streetAddress: business.addressLine ?? undefined,
       addressLocality: business.localityName ?? business.cityName,
-      addressRegion: business.cityName,
+      addressRegion: business.stateName ?? undefined,
       postalCode: business.pincode ?? undefined,
       addressCountry: 'IN',
     },
-    ...(business.latitude && business.longitude
+    ...(business.latitude !== null && business.longitude !== null
       ? {
           geo: {
             '@type': 'GeoCoordinates',
@@ -646,6 +652,15 @@ export default async function BusinessPage({ params }: { params: Promise<{ slug:
                     </span>
                   ) : null}
                 </div>
+                {business.claimStatus === 'UNCLAIMED' && business.viewCount > 0 ? (
+                  <p className="business-profile-interest" role="status">
+                    <Icon name="sparkles" />
+                    {p.profileInterest.replace(
+                      '{count}',
+                      business.viewCount.toLocaleString(`${locale}-IN`),
+                    )}
+                  </p>
+                ) : null}
                 <div className="business-profile-identity__actions" aria-label={p.talkBusiness}>
                   {directionsUrl ? (
                     <a
@@ -752,6 +767,20 @@ export default async function BusinessPage({ params }: { params: Promise<{ slug:
 
           {/* The reader has the identity, primary actions and business story by now. */}
           <AdSlot placement="BUSINESS_AFTER_ABOUT" contentScore={adContentScore} />
+
+          <aside className="business-profile-post-cta" aria-labelledby="storefront-post-title">
+            <span className="business-profile-post-cta__icon" aria-hidden="true">
+              <Icon name="plus" />
+            </span>
+            <div>
+              <span className="section-kicker">{p.postFreeKicker}</span>
+              <h2 id="storefront-post-title">{p.postFreeTitle}</h2>
+              <p>{p.postFreeBody}</p>
+            </div>
+            <Link href="/post" className="btn business-profile-post-cta__action">
+              {p.postFreeAction} <Icon name="arrow" />
+            </Link>
+          </aside>
 
           {/* Rendered only when there is something in it.
 
@@ -993,6 +1022,45 @@ export default async function BusinessPage({ params }: { params: Promise<{ slug:
           {business.attribution ? (
             <p className="business-profile-attribution">{business.attribution}</p>
           ) : null}
+          <section className="business-profile-provenance" aria-labelledby="listing-information">
+            <div>
+              <span className="section-kicker">{p.listingInformation}</span>
+              <h2 id="listing-information">{p.informationTransparency}</h2>
+            </div>
+            <dl>
+              <div>
+                <dt>{p.informationSource}</dt>
+                <dd>{business.sourceName ?? p.loczSource}</dd>
+              </div>
+              <div>
+                <dt>{p.profileUpdated}</dt>
+                <dd>
+                  {business.updatedAt
+                    ? formatProfileDate(business.updatedAt, locale)
+                    : p.notAvailable}
+                </dd>
+              </div>
+              <div>
+                <dt>{p.claimStatus}</dt>
+                <dd>
+                  {business.claimStatus === 'UNCLAIMED' ? p.statusUnclaimed : p.statusClaimed}
+                </dd>
+              </div>
+              <div>
+                <dt>{p.informationStatus}</dt>
+                <dd>
+                  {business.verificationStatus === 'VERIFIED'
+                    ? business.verifiedAt
+                      ? p.statusVerifiedOn.replace(
+                          '{date}',
+                          formatProfileDate(business.verifiedAt, locale),
+                        )
+                      : p.statusVerified
+                    : p.statusUnverified}
+                </dd>
+              </div>
+            </dl>
+          </section>
         </main>
 
         <aside className="business-profile-contact" id="contact">
@@ -1091,6 +1159,17 @@ export default async function BusinessPage({ params }: { params: Promise<{ slug:
       </div>
     </div>
   );
+}
+
+function formatProfileDate(value: string, locale: string): string {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return value;
+  return new Intl.DateTimeFormat(`${locale}-IN`, {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+    timeZone: 'Asia/Kolkata',
+  }).format(date);
 }
 
 function currentIndiaDay(): number {

@@ -17,11 +17,11 @@ export class LogEmailProvider implements EmailProvider {
   readonly name = 'log';
   private readonly logger = new Logger(LogEmailProvider.name);
 
-  async send(message: EmailMessage): Promise<EmailSendResult> {
+  send(message: EmailMessage): Promise<EmailSendResult> {
     this.logger.warn(
       `No email provider configured — not sending "${message.subject}" to ${this.mask(message.to)}`,
     );
-    return { messageId: 'not-sent', skipped: true };
+    return Promise.resolve({ messageId: 'not-sent', skipped: true });
   }
 
   /** Enough to recognise the address in a support conversation, not enough to harvest it. */

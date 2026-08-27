@@ -109,7 +109,7 @@ describe('nsfwjs image scanning, end to end', () => {
       });
     });
 
-    it('throws on bytes it cannot decode, so the retry and fail-open path can run', async () => {
+    it('throws on bytes it cannot decode, so retry and fail-closed review can run', async () => {
       await expect(
         provider.scan({
           mediaId,

@@ -55,7 +55,7 @@ export function mentions(text: string, term: string): boolean {
   if (!q) return false;
   // For ASCII terms use a word boundary so "car" ≠ "carefully"; for non-ASCII fall back to
   // substring (JS \b is Latin-only and would never fire on Telugu).
-  if (/^[\x00-\x7f]+$/.test(q)) {
+  if (/^[\p{ASCII}]+$/u.test(q)) {
     return new RegExp(
       `(^|[^\\p{L}])${q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}([^\\p{L}]|$)`,
       'u',

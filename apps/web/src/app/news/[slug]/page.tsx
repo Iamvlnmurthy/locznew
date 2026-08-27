@@ -146,7 +146,6 @@ export default async function NewsEventPage({
     <main className="news-article-page">
       <script
         type="application/ld+json"
-        // eslint-disable-next-line react/no-danger
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
       <div className="container news-article">
@@ -183,7 +182,6 @@ export default async function NewsEventPage({
 
         {event.imageUrl ? (
           <figure className="news-article__hero">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src={event.imageUrl} alt="" />
             {event.imageCredit ? <figcaption>Photo: {event.imageCredit}</figcaption> : null}
           </figure>

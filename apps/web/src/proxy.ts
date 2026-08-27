@@ -18,7 +18,7 @@ import { NextRequest, NextResponse } from 'next/server';
  */
 const DEDUPLICATE = ['origin', 'x-forwarded-host', 'x-forwarded-proto'];
 
-export function middleware(request: NextRequest) {
+export function proxy(request: NextRequest) {
   const headers = new Headers(request.headers);
 
   for (const name of DEDUPLICATE) {

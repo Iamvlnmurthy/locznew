@@ -63,7 +63,7 @@ export class OsmOverpassConnector implements SourceConnector {
 
     const latitude = el.lat ?? el.center?.lat ?? null;
     const longitude = el.lon ?? el.center?.lon ?? null;
-    if (latitude == null || longitude == null) return null;
+    if (latitude === null || longitude === null) return null;
 
     const addressText = [tags?.['addr:housenumber'], tags?.['addr:street'], tags?.['addr:suburb']]
       .filter(Boolean)

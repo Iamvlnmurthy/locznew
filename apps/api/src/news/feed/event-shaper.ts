@@ -59,7 +59,7 @@ const CATEGORY_KEYWORDS: Array<[NewsCategory, RegExp]> = [
 
 /** Decode the handful of HTML entities Google News leaves in titles/summaries and tidy whitespace. */
 export function cleanText(s: string | null): string | null {
-  if (s == null) return null;
+  if (s === null) return null;
   const out = s
     .replace(/&nbsp;/gi, ' ')
     .replace(/&amp;/gi, '&')

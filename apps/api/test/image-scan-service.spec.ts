@@ -46,13 +46,12 @@ describe('ImageScanService', () => {
     };
     const service = new ImageScanService(provider, config(50, 2) as never);
 
-    // "We could not ask" is a different answer from "a moderator should look at this".
-    // Reporting the second for the first is what held every production image behind a grey
-    // placeholder for weeks, silently.
+    // Preserve the distinct outage outcome so the orchestration layer can hold it, alert,
+    // and route it to the human queue without pretending the provider reviewed it.
     await expect(service.scan(subject)).resolves.toEqual({
       decision: 'UNAVAILABLE',
       reasons: ['IMAGE_SCANNER_UNAVAILABLE'],
-      provider: 'fail-open',
+      provider: 'fail-closed',
     });
     expect(provider.scan).toHaveBeenCalledTimes(2);
   });

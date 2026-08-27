@@ -35,7 +35,7 @@ function sameName(a: string, b: string): boolean {
     value
       .toLowerCase()
       .replace(/[^a-z0-9\s]/g, ' ')
-      .replace(/(the|shop|store|and|co|pvt|ltd)/g, ' ')
+      .replace(/\b(the|shop|store|and|co|pvt|ltd)\b/g, ' ')
       .replace(/\s+/g, ' ')
       .trim();
 
@@ -171,10 +171,10 @@ export class BusinessClaimsService {
         }
 
         const distanceM =
-          input.latitude != null &&
-          input.longitude != null &&
-          candidate.latitude != null &&
-          candidate.longitude != null
+          input.latitude !== undefined &&
+          input.longitude !== undefined &&
+          candidate.latitude !== null &&
+          candidate.longitude !== null
             ? distanceInMetres(
                 { latitude: input.latitude, longitude: input.longitude },
                 { latitude: Number(candidate.latitude), longitude: Number(candidate.longitude) },
@@ -183,7 +183,7 @@ export class BusinessClaimsService {
 
         // Wider than the 50 m used to grant a claim. That threshold decides a handover; this
         // one only decides whether to show somebody a card they can dismiss.
-        if (distanceM != null && distanceM <= SUGGESTION_RADIUS_METRES) matchedOn.push('LOCATION');
+        if (distanceM !== null && distanceM <= SUGGESTION_RADIUS_METRES) matchedOn.push('LOCATION');
 
         return { ...candidate, distanceM, matchedOn };
       })

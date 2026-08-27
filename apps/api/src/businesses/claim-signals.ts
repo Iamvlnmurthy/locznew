@@ -112,14 +112,15 @@ export function matchedSignals(
   }
 
   const hasFix =
-    evidence.latitude != null &&
-    evidence.longitude != null &&
-    business.latitude != null &&
-    business.longitude != null;
+    evidence.latitude !== undefined &&
+    evidence.longitude !== undefined &&
+    business.latitude !== null &&
+    business.longitude !== null;
 
   if (hasFix) {
     const accurateEnough =
-      evidence.locationAccuracyM != null &&
+      evidence.locationAccuracyM !== undefined &&
+      evidence.locationAccuracyM !== null &&
       evidence.locationAccuracyM <= MAX_LOCATION_ACCURACY_METRES;
 
     const metres = distanceInMetres(

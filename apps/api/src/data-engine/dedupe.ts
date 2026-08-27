@@ -41,7 +41,16 @@ function nameSimilarity(a: string, b: string): number {
 
 /** Proximity score: 1 at 0 m, ~0 beyond 250 m — same shop rarely sits further apart across sources. */
 function proximityScore(a: DedupeCandidate, b: DedupeCandidate): number {
-  if (a.latitude == null || a.longitude == null || b.latitude == null || b.longitude == null) {
+  if (
+    a.latitude === null ||
+    a.latitude === undefined ||
+    a.longitude === null ||
+    a.longitude === undefined ||
+    b.latitude === null ||
+    b.latitude === undefined ||
+    b.longitude === null ||
+    b.longitude === undefined
+  ) {
     return 0;
   }
   const metres = distanceMetres(

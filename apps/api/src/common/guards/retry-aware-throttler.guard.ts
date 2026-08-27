@@ -65,7 +65,7 @@ export class RetryAwareThrottlerGuard extends ThrottlerGuard {
    * sometimes doesn't"). Cloudflare puts the true client IP in `cf-connecting-ip`; fall back to the
    * standard forwarded chain, then the socket address, so each user gets their own window again.
    */
-  protected override async getTracker(req: Record<string, unknown>): Promise<string> {
+  protected override getTracker(req: Record<string, unknown>): Promise<string> {
     const headers = (req.headers ?? {}) as Record<string, string | string[] | undefined>;
     const cf = headers['cf-connecting-ip'];
     const xff = headers['x-forwarded-for'];
@@ -76,7 +76,7 @@ export class RetryAwareThrottlerGuard extends ThrottlerGuard {
         : Array.isArray(xff)
           ? xff[0]
           : undefined);
-    return forwarded || (req.ip as string) || 'unknown';
+    return Promise.resolve(forwarded || (req.ip as string) || 'unknown');
   }
 
   protected override async throwThrottlingException(

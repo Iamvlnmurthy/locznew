@@ -224,7 +224,7 @@ describe('ImageModerationService', () => {
       );
 
       // Failing open is for low-risk uploads. Everything else queues — which is the whole
-      // difference between failing open and simply switching the control off.
+      // difference between a reviewable outage and simply switching the control off.
       expect(result.decision).toBe('REVIEW');
       expect(prisma.listing.update).toHaveBeenCalled();
     });

@@ -40,7 +40,7 @@
 .heroPlace span { display: grid; gap: 3px; }
 .heroPlace strong { font-size: 15px; }
 .heroPlace small { color: rgb(255 255 255 / 65%); }
-.imageCredit { display: block; color: #6f7e79; font-size: 10px; line-height: 1.4; }
+.imageCredit { display: block; color: #52645e; font-size: 10px; line-height: 1.4; }
 .hero > .imageCredit { position: absolute; right: 18px; bottom: 14px; z-index: 2; }
 .imageCreditDark { color: rgb(255 255 255 / 64%); text-shadow: 0 1px 2px rgb(0 0 0 / 65%); }
 
@@ -107,7 +107,7 @@
 .guideCard p { color: #586b65; line-height: 1.68; }
 .guidePreview { margin: 0; display: -webkit-box; overflow: hidden; -webkit-box-orient: vertical; -webkit-line-clamp: 4; }
 .guideDetails { margin-top: 20px; }
-.guideDetails summary { width: fit-content; cursor: pointer; display: flex; align-items: center; gap: 8px; color: var(--city-green); font-size: 13px; font-weight: 800; list-style: none; }
+.guideDetails summary { width: fit-content; min-height: 44px; padding-block: 9px; cursor: pointer; display: flex; align-items: center; gap: 8px; color: var(--city-green); font-size: 13px; font-weight: 800; list-style: none; }
 .guideDetails summary::-webkit-details-marker { display: none; }
 .guideDetails summary svg { width: 15px; transition: transform .2s ease; }
 .guideDetails[open] summary svg { transform: rotate(90deg); }

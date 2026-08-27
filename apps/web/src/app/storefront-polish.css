@@ -618,6 +618,67 @@
   font-size: 0.52rem;
 }
 
+.business-profile-provenance {
+  display: grid;
+  grid-template-columns: minmax(190px, 0.42fr) minmax(0, 1fr);
+  align-items: center;
+  gap: clamp(18px, 3vw, 36px);
+  padding: clamp(20px, 3vw, 30px);
+  border: 1px solid color-mix(in srgb, var(--locz-primary) 14%, var(--locz-border));
+  border-radius: 22px;
+  background:
+    radial-gradient(circle at 5% 10%, rgb(17 111 88 / 8%), transparent 13rem),
+    var(--locz-surface);
+  box-shadow: 0 15px 42px rgb(19 59 49 / 7%);
+}
+
+.business-profile-provenance h2 {
+  margin: 5px 0 0;
+  color: var(--locz-text);
+  font-size: clamp(1.1rem, 2vw, 1.4rem);
+  letter-spacing: -0.025em;
+}
+
+.business-profile-provenance dl {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  margin: 0;
+  overflow: hidden;
+  border: 1px solid var(--locz-border);
+  border-radius: 16px;
+  background: color-mix(in srgb, var(--locz-surface-muted) 60%, transparent);
+}
+
+.business-profile-provenance dl > div {
+  min-width: 0;
+  padding: 13px 15px;
+}
+
+.business-profile-provenance dl > div:nth-child(even) {
+  border-left: 1px solid var(--locz-border);
+}
+
+.business-profile-provenance dl > div:nth-child(n + 3) {
+  border-top: 1px solid var(--locz-border);
+}
+
+.business-profile-provenance dt {
+  color: var(--storefront-muted);
+  font-size: 0.66rem;
+  font-weight: 650;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.business-profile-provenance dd {
+  margin: 4px 0 0;
+  overflow-wrap: anywhere;
+  color: var(--locz-text);
+  font-size: 0.78rem;
+  font-weight: 700;
+  line-height: 1.4;
+}
+
 .business-profile-contact {
   top: calc(var(--locz-header-height, 76px) + 10px);
 }
@@ -997,6 +1058,34 @@
   .business-profile-similar__grid a {
     transition: none;
   }
+}
+
+/* Final accessibility contrast pass. These selectors intentionally live after the visual
+   layers above: later theme refinements must not reduce text below WCAG AA. */
+.home-hero--discovery .radius-chip[data-active='true'],
+.home-hero--discovery .radius-chip[aria-pressed='true'] {
+  border-color: #0b624f;
+  background: #0b624f;
+  color: #fff;
+}
+
+.news-select,
+.news-select > span,
+.hub-list__body small,
+.news-card time {
+  color: #3f554d;
+}
+
+.news-card .news-card__cat,
+.news-card--lead .news-card__cat {
+  color: #743f17;
+}
+
+.business-profile-tabs a,
+.business-profile-tabs a:first-child,
+.business-profile-attribution {
+  color: #3f574e;
+  opacity: 1;
 }
 
 /* The address block: pin, then name over address. */
@@ -2469,6 +2558,133 @@
   margin: 0;
 }
 
+.business-profile-interest {
+  display: inline-flex;
+  width: fit-content;
+  min-height: 36px;
+  align-items: center;
+  gap: 8px;
+  margin: 10px 0 0;
+  padding: 7px 11px;
+  border: 1px solid rgb(255 255 255 / 24%);
+  border-radius: 999px;
+  background: rgb(7 30 24 / 38%);
+  color: #fff;
+  font-size: 0.72rem;
+  font-weight: 680;
+  line-height: 1.3;
+  box-shadow: inset 0 1px rgb(255 255 255 / 10%);
+  backdrop-filter: blur(12px);
+}
+
+.business-profile-interest svg {
+  width: 15px;
+  height: 15px;
+  color: #ffd38a;
+}
+
+.business-profile-post-cta {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 18px;
+  padding: clamp(20px, 3vw, 30px);
+  overflow: hidden;
+  border: 1px solid rgb(255 255 255 / 14%);
+  border-radius: 24px;
+  background:
+    radial-gradient(circle at 88% 10%, rgb(255 209 133 / 22%), transparent 15rem),
+    linear-gradient(125deg, #103d32, #116653 64%, #267e66);
+  color: #fff;
+  box-shadow: 0 18px 44px rgb(13 67 53 / 16%);
+}
+
+.business-profile-post-cta__icon {
+  display: grid;
+  width: 52px;
+  height: 52px;
+  place-items: center;
+  border: 1px solid rgb(255 255 255 / 18%);
+  border-radius: 17px;
+  background: rgb(255 255 255 / 10%);
+}
+
+.business-profile-post-cta__icon svg {
+  width: 23px;
+  height: 23px;
+}
+
+.business-profile-post-cta .section-kicker {
+  color: #ffd38a;
+}
+
+.business-profile-post-cta h2 {
+  margin: 4px 0 3px;
+  color: #fff;
+  font-size: clamp(1.12rem, 2vw, 1.45rem);
+}
+
+.business-profile-post-cta p {
+  margin: 0;
+  color: rgb(255 255 255 / 74%);
+  font-size: 0.78rem;
+}
+
+.business-profile-post-cta__action {
+  min-height: 46px;
+  gap: 8px;
+  border: 0;
+  background: #fff;
+  color: #104f40;
+  box-shadow: 0 10px 24px rgb(4 35 27 / 18%);
+}
+
+.business-profile-post-cta__action:hover {
+  color: #0c4135;
+  background: #fffaf1;
+}
+
+.business-profile-post-cta__action svg {
+  width: 15px;
+}
+
+@media (max-width: 700px) {
+  .business-profile-provenance {
+    grid-template-columns: 1fr;
+    gap: 14px;
+    border-radius: 18px;
+  }
+
+  .business-profile-provenance dl {
+    grid-template-columns: 1fr;
+  }
+
+  .business-profile-provenance dl > div:nth-child(even) {
+    border-left: 0;
+  }
+
+  .business-profile-provenance dl > div:nth-child(n + 2) {
+    border-top: 1px solid var(--locz-border);
+  }
+
+  .business-profile-post-cta {
+    grid-template-columns: auto minmax(0, 1fr);
+    gap: 13px;
+    border-radius: 20px;
+  }
+
+  .business-profile-post-cta__icon {
+    width: 44px;
+    height: 44px;
+    border-radius: 14px;
+  }
+
+  .business-profile-post-cta__action {
+    grid-column: 1 / -1;
+    justify-content: center;
+  }
+}
+
 :root[data-theme='dark'] .business-profile {
   background:
     radial-gradient(circle at 5% 2%, rgb(31 69 56 / 48%), transparent 34rem),
@@ -2664,4 +2880,21 @@
   .business-profile-tabs a {
     transition: none;
   }
+}
+
+/* Must remain last: the compact storefront rules above use a light muted colour that fails
+   contrast once text falls below 12px on phones. */
+.business-profile-tabs a,
+.business-profile-tabs a:first-child,
+.business-profile-attribution {
+  color: #3f574e;
+}
+
+.business-profile-attribution {
+  opacity: 1;
+}
+
+.discovery-feed-empty > p,
+.business-profile-contact__trust p {
+  color: #3f554d;
 }

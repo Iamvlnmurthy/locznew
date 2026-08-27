@@ -51,6 +51,9 @@ FEEDS_JSON = os.path.join(HERE, "feeds.json")
 SEEN_FILE = os.path.join(HERE, "seen.txt")
 MAX_PER_FEED = int(os.environ.get("MAX_PER_FEED", "4"))       # new stories per feed per cycle
 MAX_PER_CYCLE = int(os.environ.get("MAX_PER_CYCLE", "120"))   # GPU budget guard per hour
+# Guaranteed per-category quotas, run FIRST each cycle so they always fill before the wall-clock cap.
+QUOTAS = {"tech": int(os.environ.get("TECH_QUOTA", "5")),
+          "entertainment": int(os.environ.get("ENT_QUOTA", "5"))}
 MAX_SECONDS = int(os.environ.get("MAX_SECONDS", "600"))       # hard wall-clock cap per cycle (10 min)
 PUSH_DELAY = float(os.environ.get("PUSH_DELAY", "2"))         # pause between VPS writes — slow serial
                                                               # queue so the VPS is never hammered
@@ -241,12 +244,26 @@ def cycle(limit=None):
     # the first states (Andhra Pradesh…) ate the whole budget every cycle while Telangana (19th) and
     # everything after it never ran. Put the home market (Telangana/Hyderabad) first so local news is
     # always covered, then shuffle the rest so every other state gets fair rotation across cycles.
-    home = [f for f in feeds if f.get("state") == "Telangana"]
-    rest = [f for f in feeds if f.get("state") != "Telangana"]
-    random.shuffle(rest)
-    feeds = home + rest
-    print(f"models ready; {len(feeds)} feeds ({len(home)} home-first), {len(seen)} already seen", flush=True)
+    # Quota categories (tech, entertainment) run FIRST so they always fill before the wall-clock cap
+    # ends the cycle — otherwise those feeds sat in the shuffled tail and the burst timed out with ~1
+    # each. Home-state feeds lead within each (relevant local), then other states shuffled for rotation.
+    def home_first(pool):
+        h = [f for f in pool if f.get("state") == "Telangana"]
+        r = [f for f in pool if f.get("state") != "Telangana"]
+        random.shuffle(r)
+        return h + r
+    quota_feeds = []
+    for cat in QUOTAS:
+        quota_feeds += home_first([f for f in feeds if f.get("category") == cat])
+    other = [f for f in feeds if f.get("category") not in QUOTAS]
+    feeds = quota_feeds + home_first(other)
+    print(f"models ready; {len(feeds)} feeds (quota-first: "
+          f"{', '.join(f'{c}={n}' for c, n in QUOTAS.items())}), {len(seen)} already seen", flush=True)
     kept = dropped = 0
+    cat_kept = {c: 0 for c in QUOTAS}
+    seen_titles = set()  # within-cycle guard: same article reaches us via two feeds (e.g. business +
+    #                      state) under different Google-News URLs, so the src-based seen-file misses it.
+    #                      Dedup on the regenerated headline instead — the story's real identity.
     stories = []
     budget = limit or MAX_PER_CYCLE
     # Hard wall-clock cap on generation. The box is a shared workstation: run a short burst each hour
@@ -258,6 +275,11 @@ def cycle(limit=None):
         if time.time() - t_start > MAX_SECONDS:
             print(f"time cap {MAX_SECONDS}s reached; stopping cycle early", flush=True)
             break
+        # Quota categories are front-loaded and capped: once a category's quota is met, skip its
+        # remaining feeds so it doesn't consume the whole budget and starve the other categories.
+        fcat = feed.get("category")
+        if fcat in QUOTAS and cat_kept[fcat] >= QUOTAS[fcat]:
+            continue
         try:
             items = feedparser_parse(feed["url"])
         except Exception as e:
@@ -265,6 +287,8 @@ def cycle(limit=None):
         kept_here = 0
         for it in items:
             if kept >= budget or kept_here >= MAX_PER_FEED:
+                break
+            if fcat in QUOTAS and cat_kept[fcat] >= QUOTAS[fcat]:
                 break
             if not fresh_enough(it.get("published")):
                 continue  # months-old evergreen the feed returned — not news
@@ -285,6 +309,11 @@ def cycle(limit=None):
             ok, why = integrity_ok(title, body_en, body)
             if not ok or not title:
                 dropped += 1; continue
+            tkey = norm(title)
+            if tkey in seen_titles:
+                dropped += 1; continue  # same headline already kept this cycle — skip before the
+                #                          expensive translation, don't emit a second category copy
+            seen_titles.add(tkey)
             tgt = feed.get("state_lang", "hi")
             try:
                 title_hi = translate(title, HI); body_hi = translate(body_en, HI)
@@ -300,7 +329,10 @@ def cycle(limit=None):
             # the generic state-lang columns the site never queries.
             title_te = title_sl if tgt == "te" else None
             body_te = body_sl if tgt == "te" else None
-            ch = hashlib.sha256((src + "|" + title).encode()).hexdigest()[:32]
+            # Identity = the story, not the URL. Hashing the normalized headline (not src+title) means
+            # the DB's ON CONFLICT (content_hash) also rejects the same story arriving via a different
+            # feed/URL or in a later cycle — the src-based hash let those through as duplicates.
+            ch = hashlib.sha256(tkey.encode()).hexdigest()[:32]
             stories.append(dict(
                 content_hash=ch, category=feed["category"], title_en=title, dek_en=dek, body_en=body_en,
                 title_hi=title_hi, body_hi=body_hi, title_te=title_te, body_te=body_te,
@@ -310,11 +342,14 @@ def cycle(limit=None):
                 src_url=src, src_publisher=it.get("source") or "", src_lang="en",
                 published_at=it.get("published"), status="PUBLISHED"))
             kept += 1; kept_here += 1
+            if fcat in QUOTAS:
+                cat_kept[fcat] += 1
             if kept % 1 == 0:
                 push(stories); stories = []      # push each story immediately (incremental, nothing lost on interrupt)
             print(f"  KEEP [{feed['category']}/{feed['city']}] {title[:55]}", flush=True)
     n_final = push(stories)
-    print(f"cycle done: kept {kept}, dropped {dropped}, final-batch {n_final}", flush=True)
+    quota_report = ', '.join(f'{c} {cat_kept[c]}' for c in QUOTAS)
+    print(f"cycle done: kept {kept} ({quota_report}), dropped {dropped}, final-batch {n_final}", flush=True)
 
 
 if __name__ == "__main__":

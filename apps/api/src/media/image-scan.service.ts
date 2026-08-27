@@ -34,11 +34,9 @@ export class ImageScanService {
    * leave a valid upload intact, so every exhausted failure is converted to UNAVAILABLE
    * rather than thrown into MediaService's generic failure path.
    *
-   * What UNAVAILABLE must *not* mean is REVIEW. That equivalence is what trapped every
-   * image on production: the scanner could not be reached, each upload was quietly held
-   * for a moderator, the listing published anyway, and the only visible symptom was a grey
-   * placeholder. Nobody was told. `ImageModerationService` decides what to do with this,
-   * and for a low-risk upload the answer is publish.
+   * UNAVAILABLE is passed to `ImageModerationService`, which holds the image for human
+   * review. Safety controls fail closed; the separate moderation queue and loud logging are
+   * what prevent that safe default from becoming the silent permanent quarantine it once was.
    */
   async scan(subject: ImageScanSubject): Promise<ImageScanOutcome> {
     const attempts = this.config.get('IMAGE_SCANNER_MAX_ATTEMPTS');
@@ -60,14 +58,14 @@ export class ImageScanService {
     // noisy: the last outage was invisible for weeks precisely because nothing said so.
     this.logger.error(
       `IMAGE_SCANNER_UNAVAILABLE: ${this.config.get('IMAGE_SCANNER_PROVIDER')} failed all ` +
-        `${attempts} attempts for media ${subject.mediaId}. Uploads are now failing open — ` +
-        `low-risk images publish unscanned and the rest queue for review.`,
+        `${attempts} attempts for media ${subject.mediaId}. The image is being held for ` +
+        `human review; no unscanned image will publish.`,
     );
 
     return {
       decision: 'UNAVAILABLE',
       reasons: ['IMAGE_SCANNER_UNAVAILABLE'],
-      provider: 'fail-open',
+      provider: 'fail-closed',
     };
   }
 

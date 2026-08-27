@@ -1220,6 +1220,9 @@ export class BusinessesService {
       whatsappNumber: business.whatsappNumber,
       email: business.email,
       website: business.website,
+      sourceName: business.sourceName,
+      verifiedAt: business.verifiedAt,
+      updatedAt: business.updatedAt,
       hours: business.hours.map((hour) => ({
         dayOfWeek: hour.dayOfWeek,
         opensAt: hour.opensAt,

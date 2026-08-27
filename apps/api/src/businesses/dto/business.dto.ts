@@ -195,7 +195,7 @@ export class BusinessNearbyQueryDto extends PaginationQueryDto {
 
   @ApiPropertyOptional({ enum: DISCOVERY_AREAS, description: 'Filter by discovery area' })
   @IsOptional()
-  @IsIn(DISCOVERY_AREAS as unknown as string[])
+  @IsIn([...DISCOVERY_AREAS])
   area?: string;
 
   @ApiPropertyOptional() @IsOptional() @IsString() @MaxLength(120) q?: string;
@@ -421,6 +421,16 @@ export class BusinessDetailDto extends BusinessSummaryDto {
   @ApiPropertyOptional() whatsappNumber!: string | null;
   @ApiPropertyOptional() email!: string | null;
   @ApiPropertyOptional() website!: string | null;
+  @ApiPropertyOptional({
+    description: 'Named upstream source for imported information, when one exists.',
+  })
+  sourceName!: string | null;
+  @ApiPropertyOptional({
+    description: 'When a LocZ moderator last verified this record. Null means not verified.',
+  })
+  verifiedAt!: Date | null;
+  @ApiProperty({ description: 'When this entity record last changed materially in LocZ.' })
+  updatedAt!: Date;
   @ApiProperty() isOwner!: boolean;
   @ApiProperty() createdAt!: Date;
 }

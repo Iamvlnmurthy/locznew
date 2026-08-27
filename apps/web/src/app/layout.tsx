@@ -189,7 +189,13 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         <footer className="footer">
           <div className="container footer__inner">
             <div className="footer__brand">
-              <Image src="/brand/locz-logo.webp" alt="LocZ" width={107} height={51} />
+              <Image
+                src="/brand/locz-logo.webp"
+                alt="LocZ"
+                width={107}
+                height={51}
+                loading="eager"
+              />
               <p>{t('brand.tagline')}</p>
               <Link href="/post" className="footer__post-link">
                 <Icon name="plus" /> {t('footer.postFree')}

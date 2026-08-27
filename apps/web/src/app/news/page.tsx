@@ -126,7 +126,6 @@ export default async function NewsFeedPage({
                 >
                   {s.imageUrl ? (
                     <span className="news-card__img">
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img src={s.imageUrl} alt="" loading="lazy" />
                       {s.imageCredit ? (
                         <small className="news-card__credit">Photo: {s.imageCredit}</small>
