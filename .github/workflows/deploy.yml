@@ -32,12 +32,13 @@ jobs:
       - name: Generate Prisma client
         run: npm run db:generate -w @locz/api
 
-      - name: Build api + web (off-box)
+      - name: Build api + web + admin (off-box)
         env:
           NODE_ENV: production
         run: |
           npm run build -w @locz/api
           npm run build -w @locz/web
+          npm run build -w @locz/admin
 
       - name: Set up SSH
         run: |
@@ -62,6 +63,14 @@ jobs:
             apps/api/dist/ ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:/home/locz/app/apps/api/dist/
           rsync -az --delete -e "ssh -i ~/.ssh/id_deploy" \
             apps/web/.next/ ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:/home/locz/app/apps/web/.next/
+          rsync -az --delete -e "ssh -i ~/.ssh/id_deploy" \
+            apps/admin/.next/ ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:/home/locz/app/apps/admin/.next/
+          # rsync connects as the restricted deploy account, while PM2 runs all applications as
+          # `locz`. Next must be able to create its runtime fetch cache, so ownership has to be
+          # corrected by sudo rather than by the later `sudo -u locz` shell (which cannot chown
+          # files owned by the deploy account).
+          ssh -i ~/.ssh/id_deploy ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} \
+            "sudo chown -R locz:locz /home/locz/app/apps/web/.next /home/locz/app/apps/admin/.next /home/locz/app/apps/api/dist"
 
       - name: Install runtime deps + argon2 rebuild + restart
         run: |
@@ -70,8 +79,7 @@ jobs:
             npm install >/tmp/ci-install.log 2>&1 &&
             npm rebuild argon2 --build-from-source >/tmp/ci-argon2.log 2>&1 &&
             npm run db:generate -w @locz/api >/tmp/ci-gen.log 2>&1 &&
-            chown -R locz:locz apps/web/.next apps/api/dist 2>/dev/null;
-            pm2 restart locz-api locz-web --update-env >/dev/null 2>&1 &&
+            pm2 restart locz-api locz-web locz-admin --update-env >/dev/null 2>&1 &&
             echo restarted
           "'
 
@@ -80,4 +88,8 @@ jobs:
           sleep 8
           code=$(curl -s -o /dev/null -w '%{http_code}' -m 30 https://locz.in/)
           echo "site returned $code"
-          test "$code" = "200"
+          api_code=$(curl -s -o /dev/null -w '%{http_code}' -m 30 https://api.locz.in/api/v1/health/ready)
+          echo "api readiness returned $api_code"
+          admin_code=$(curl -s -o /dev/null -w '%{http_code}' -m 30 https://admin.locz.in/login)
+          echo "admin returned $admin_code"
+          test "$code" = "200" && test "$api_code" = "200" && test "$admin_code" = "200"
