@@ -44,7 +44,11 @@ jobs:
           mkdir -p ~/.ssh
           echo "${{ secrets.VPS_SSH_KEY }}" > ~/.ssh/id_deploy
           chmod 600 ~/.ssh/id_deploy
-          ssh-keyscan -H "${{ secrets.VPS_HOST }}" >> ~/.ssh/known_hosts 2>/dev/null
+          # Don't gate the deploy on a host-key SCAN: ssh-keyscan returning non-zero (a transient
+          # network flake from the runner) was killing the whole step under `bash -e`. Let the real
+          # ssh/rsync connections learn the host key on first use instead.
+          printf 'Host *\n  StrictHostKeyChecking accept-new\n  IdentityFile ~/.ssh/id_deploy\n' > ~/.ssh/config
+          chmod 600 ~/.ssh/config
 
       - name: Sync source to the exact deployed commit
         run: |
