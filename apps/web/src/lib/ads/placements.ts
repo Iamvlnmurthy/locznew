@@ -177,8 +177,10 @@ const clean = (value: string | undefined) => value?.trim() ?? '';
 // These references must stay explicit. Next.js does not inline dynamic lookups such as
 // `process.env[name]` into client bundles. A dynamic lookup works during server rendering but
 // becomes empty in the browser, which makes React remove the server-rendered ad during hydration.
-export const ADS_ENABLED = process.env.NEXT_PUBLIC_ADS_ENABLED === 'true';
+export const ADS_ENABLED = process.env.NEXT_PUBLIC_ADS_ENABLED !== 'false';
 export const ADS_CLIENT = clean(process.env.NEXT_PUBLIC_ADSENSE_CLIENT);
+export const ADS_PROVIDER =
+  clean(process.env.NEXT_PUBLIC_ADS_PROVIDER) || (ADS_CLIENT ? 'adsense' : 'adsterra');
 
 const SLOT_IDS: Readonly<Record<PlacementId, string>> = {
   BUSINESS_AFTER_ABOUT: clean(process.env.NEXT_PUBLIC_AD_SLOT_BUSINESS_AFTER_ABOUT),
@@ -208,12 +210,13 @@ export function slotIdFor(placement: PlacementId): string {
 /**
  * Whether this placement may render at all.
  *
- * Four independent gates, each of which can turn a slot off on its own: the global
- * switch, the client id, this placement's own slot id, and the page's content score.
- * A placement is only live when every one of them says yes.
+ * For AdSense: requires global switch, client ID, and slot ID.
+ * For Adsterra: requires global switch and content score threshold.
  */
 export function isPlacementLive(placement: PlacementId, contentScore = 0): boolean {
-  if (!ADS_ENABLED || !ADS_CLIENT) return false;
-  if (!slotIdFor(placement)) return false;
+  if (!ADS_ENABLED) return false;
+  if (ADS_PROVIDER === 'adsense') {
+    if (!ADS_CLIENT || !slotIdFor(placement)) return false;
+  }
   return contentScore >= PLACEMENTS[placement].minContentScore;
 }
