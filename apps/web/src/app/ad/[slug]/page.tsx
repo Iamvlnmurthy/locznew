@@ -469,6 +469,25 @@ export default async function ListingPage({ params }: { params: Promise<{ slug: 
           </div>
         </section>
       ) : null}
+
+      {!isOwner ? (
+        <aside className="ad-profile-sticky-bar" aria-label="Quick contact">
+          <a href="#contact-seller" className="btn btn--sticky-chat">
+            <Icon name="message" /> {labels.contactSeller}
+          </a>
+          {listing.owner.phone ? (
+            <a
+              href={`https://wa.me/${listing.owner.phone.replace(/[^0-9]/g, '')}?text=${encodeURIComponent(`Hi, I saw your listing for "${listing.title}" on LocZ. Is this still available?`)}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="btn btn--sticky-wa"
+              data-track="classified_sticky_whatsapp"
+            >
+              <Icon name="message" /> WhatsApp
+            </a>
+          ) : null}
+        </aside>
+      ) : null}
     </div>
   );
 }

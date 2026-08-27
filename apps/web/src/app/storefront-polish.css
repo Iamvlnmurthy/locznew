@@ -3598,3 +3598,58 @@
   border-color: #94a3b8;
 }
 
+/* Sticky Action Bar for Classified Ad Pages */
+.ad-profile-sticky-bar {
+  display: none;
+}
+
+@media (max-width: 760px) {
+  .ad-profile-sticky-bar {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: space-around;
+    gap: 8px;
+    padding: 10px 16px;
+    background: rgb(255 255 255 / 96%);
+    backdrop-filter: blur(12px);
+    border-top: 1px solid #e2e8f0;
+    box-shadow: 0 -4px 20px rgb(0 0 0 / 12%);
+  }
+
+  .ad-profile-sticky-bar a {
+    flex: 1;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    min-height: 44px;
+    padding: 0 12px;
+    border-radius: 12px;
+    font-size: 0.86rem;
+    font-weight: 700;
+    text-decoration: none;
+    text-align: center;
+    transition: transform 120ms ease;
+  }
+
+  .ad-profile-sticky-bar a:active {
+    transform: scale(0.97);
+  }
+
+  .ad-profile-sticky-bar .btn--sticky-chat {
+    background: #0d5c4b;
+    color: #ffffff;
+  }
+
+  .ad-profile-sticky-bar .btn--sticky-wa {
+    background: #25d366;
+    color: #ffffff;
+  }
+}
+
+
