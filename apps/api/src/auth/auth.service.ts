@@ -208,19 +208,35 @@ export class AuthService {
 
     await this.rbac.grantRole(user.id, RoleName.REGISTERED_USER);
 
-    if (dto.cityId) {
+    if (dto.cityId || dto.pincode) {
       try {
-        const city = await this.prisma.city.findUnique({ where: { id: dto.cityId } });
-        if (city) {
-          await this.prisma.savedLocation.create({
-            data: {
-              id: uuid(),
-              userId: user.id,
-              cityId: city.id,
-              label: 'Home',
-              isDefault: true,
-            },
+        let targetCityId = dto.cityId;
+        let locationLabel = 'Home';
+
+        if (dto.pincode) {
+          const pin = await this.prisma.pincode.findUnique({
+            where: { code: dto.pincode },
+            include: { city: true },
           });
+          if (pin) {
+            targetCityId = pin.cityId ?? targetCityId;
+            locationLabel = `${pin.name} (${pin.code})`;
+          }
+        }
+
+        if (targetCityId) {
+          const city = await this.prisma.city.findUnique({ where: { id: targetCityId } });
+          if (city) {
+            await this.prisma.savedLocation.create({
+              data: {
+                id: uuid(),
+                userId: user.id,
+                cityId: city.id,
+                label: locationLabel,
+                isDefault: true,
+              },
+            });
+          }
         }
       } catch (err) {
         this.logger.warn(`Could not save initial location for user ${user.id}: ${err}`);

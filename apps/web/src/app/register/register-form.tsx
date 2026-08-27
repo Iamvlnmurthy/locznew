@@ -2,9 +2,9 @@
 
 import { useActionState, useState } from 'react';
 import { useFormStatus } from 'react-dom';
-import type { City } from '@locz/shared-types';
 import { Icon } from '@/components/icons';
 import { GoogleSignIn } from '../signin/google-sign-in';
+import { LocationTypeahead } from './location-typeahead';
 import { registerAction, type RegisterState } from './actions';
 
 interface Labels {
@@ -49,11 +49,9 @@ function Submit({ idle, busy }: { idle: string; busy: string }) {
 
 export function RegisterForm({
   labels,
-  cities = [],
   googleClientId,
 }: {
   labels: Labels;
-  cities?: City[];
   googleClientId?: string;
 }) {
   const [state, action] = useActionState<RegisterState, FormData>(registerAction, {});
@@ -137,29 +135,16 @@ export function RegisterForm({
         <small className="field__hint">{labels.phoneIdentityHint}</small>
       </div>
 
-      {cities.length > 0 ? (
-        <div className="field">
-          <label htmlFor="register-city">Your City / Location</label>
-          <select
-            id="register-city"
-            name="cityId"
-            defaultValue={state.values?.cityId ?? ''}
-            required
-          >
-            <option value="" disabled>
-              Select your primary city
-            </option>
-            {cities.map((c) => (
-              <option key={c.id} value={c.id}>
-                {c.name}
-              </option>
-            ))}
-          </select>
-          <small className="field__hint">
-            Sets your default location for local listings and businesses near you.
-          </small>
-        </div>
-      ) : null}
+      <div className="field">
+        <label htmlFor="register-location">Your City, Area or PIN Code</label>
+        <LocationTypeahead
+          defaultCityId={state.values?.cityId}
+          defaultPincode={state.values?.pincode}
+        />
+        <small className="field__hint">
+          Type any city, area name or 6-digit PIN code across India.
+        </small>
+      </div>
 
       <div className="field">
         <div className="auth-field-label">

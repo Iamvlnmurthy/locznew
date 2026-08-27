@@ -149,6 +149,14 @@ export class RegisterDto {
   @IsOptional()
   @IsString()
   cityId?: string;
+
+  @ApiPropertyOptional({
+    example: '500081',
+    description: 'Pincode selected during sign-up',
+  })
+  @IsOptional()
+  @IsString()
+  pincode?: string;
 }
 
 export class EmailLoginDto {

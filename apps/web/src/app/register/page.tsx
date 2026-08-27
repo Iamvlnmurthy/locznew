@@ -1,8 +1,6 @@
 import type { Metadata } from 'next';
 import { redirect } from 'next/navigation';
-import type { City } from '@locz/shared-types';
 import { getMessageGroup } from '@/i18n';
-import { apiSafe } from '@/lib/api';
 import { getCurrentUser, getLocale } from '@/lib/session';
 import { AuthShell } from '../signin/auth-shell';
 import { RegisterForm } from './register-form';
@@ -18,11 +16,7 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default async function RegisterPage() {
-  const [locale, user, cities] = await Promise.all([
-    getLocale(),
-    getCurrentUser(),
-    apiSafe<City[]>('/locations/cities?launchedOnly=true&limit=50', { revalidate: 3600 }),
-  ]);
+  const [locale, user] = await Promise.all([getLocale(), getCurrentUser()]);
 
   // Somebody already signed in has no business on a sign-up form; sending them home is
   // kinder than showing a page that would fail on submit.
@@ -51,7 +45,6 @@ export default async function RegisterPage() {
       }}
     >
       <RegisterForm
-        cities={cities ?? []}
         googleClientId={process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID}
         labels={{
           title: s.title,

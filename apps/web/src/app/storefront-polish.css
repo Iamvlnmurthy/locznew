@@ -3652,4 +3652,188 @@
   }
 }
 
+/* =====================================================================
+   Location Typeahead Component (India-wide Cities & PIN Codes)
+   ===================================================================== */
+.location-typeahead {
+  position: relative;
+  width: 100%;
+}
+
+.location-typeahead__input-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: 100%;
+}
+
+.location-typeahead__icon {
+  position: absolute;
+  left: 12px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--locz-primary, #0d5c4b);
+  pointer-events: none;
+}
+
+.location-typeahead__icon svg {
+  width: 18px;
+  height: 18px;
+}
+
+.location-typeahead input[type="text"] {
+  width: 100%;
+  min-height: 46px;
+  padding: 10px 38px 10px 38px;
+  border: 1.5px solid var(--locz-border, #cbd5e1);
+  border-radius: 10px;
+  font-size: 0.92rem;
+  color: var(--locz-text, #1e293b);
+  background: var(--locz-surface, #ffffff);
+  outline: none;
+  transition: border-color 150ms ease, box-shadow 150ms ease;
+}
+
+.location-typeahead input[type="text"]:focus {
+  border-color: var(--locz-primary, #0d5c4b);
+  box-shadow: 0 0 0 3px rgb(13 92 75 / 15%);
+}
+
+.location-typeahead__clear {
+  position: absolute;
+  right: 12px;
+  background: none;
+  border: none;
+  font-size: 1.2rem;
+  line-height: 1;
+  color: #94a3b8;
+  cursor: pointer;
+  padding: 4px;
+}
+
+.location-typeahead__clear:hover {
+  color: #334155;
+}
+
+.location-typeahead__spinner {
+  position: absolute;
+  right: 12px;
+  animation: spin 1s linear infinite;
+  color: var(--locz-primary, #0d5c4b);
+  display: inline-flex;
+}
+
+.location-typeahead__dropdown {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  z-index: 100;
+  max-height: 260px;
+  overflow-y: auto;
+  margin: 0;
+  padding: 6px;
+  list-style: none;
+  background: #ffffff;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 12px;
+  box-shadow: 0 10px 25px -5px rgb(0 0 0 / 12%), 0 8px 10px -6px rgb(0 0 0 / 10%);
+}
+
+.location-typeahead__dropdown li {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 12px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 120ms ease;
+}
+
+.location-typeahead__dropdown li:hover {
+  background: #f1f5f9;
+}
+
+.location-typeahead__tag {
+  display: inline-block;
+  padding: 2px 7px;
+  font-size: 0.68rem;
+  font-weight: 700;
+  border-radius: 6px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  flex-shrink: 0;
+}
+
+.location-typeahead__tag.is-city {
+  background: #e6f4ea;
+  color: #137333;
+}
+
+.location-typeahead__tag.is-pincode {
+  background: #e8f0fe;
+  color: #1a73e8;
+}
+
+.location-typeahead__details {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.location-typeahead__details strong {
+  font-size: 0.88rem;
+  color: #1e293b;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.location-typeahead__details small {
+  font-size: 0.74rem;
+  color: #64748b;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.location-typeahead__selected {
+  margin-top: 6px;
+  font-size: 0.78rem;
+  color: #137333;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.location-typeahead__selected svg {
+  width: 14px;
+  height: 14px;
+}
+
+:root[data-theme='dark'] .location-typeahead__dropdown {
+  background: #1e293b;
+  border-color: #334155;
+}
+
+:root[data-theme='dark'] .location-typeahead__dropdown li:hover {
+  background: #334155;
+}
+
+:root[data-theme='dark'] .location-typeahead__details strong {
+  color: #f8fafc;
+}
+
+:root[data-theme='dark'] .location-typeahead__details small {
+  color: #94a3b8;
+}
+
+:root[data-theme='dark'] .location-typeahead input[type="text"] {
+  background: #0f172a;
+  border-color: #334155;
+  color: #f8fafc;
+}
+
+
 
