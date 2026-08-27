@@ -231,3 +231,74 @@
 }
 
 @media (prefers-reduced-motion: reduce) { .landmarkCard img, .categoryRail a, .guideCard { transition: none; } }
+
+.localityMesh, .pincodeMesh {
+  margin-top: 32px;
+  padding-top: 24px;
+  border-top: 1px solid rgb(17 82 66 / 10%);
+}
+.localityGrid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 14px;
+}
+.localityChip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 13px;
+  border-radius: 999px;
+  background: #f0f7f3;
+  color: var(--city-ink);
+  text-decoration: none;
+  font-size: 13px;
+  font-weight: 600;
+  border: 1px solid rgb(17 82 66 / 12%);
+  transition: all 0.16s ease;
+}
+.localityChip:hover {
+  background: var(--city-green);
+  color: #fff;
+  border-color: var(--city-green);
+  transform: translateY(-1px);
+}
+.localityChip svg {
+  color: var(--city-coral);
+}
+.localityChip:hover svg {
+  color: #fff;
+}
+.pincodeGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+  gap: 8px;
+  margin-top: 14px;
+}
+.pincodeChip {
+  display: flex;
+  flex-direction: column;
+  padding: 8px 12px;
+  border-radius: 10px;
+  background: #fff;
+  border: 1px solid rgb(17 82 66 / 12%);
+  text-decoration: none;
+  color: var(--city-ink);
+  transition: all 0.16s ease;
+}
+.pincodeChip:hover {
+  border-color: var(--city-green);
+  box-shadow: 0 4px 12px rgba(13, 102, 87, 0.12);
+  transform: translateY(-1px);
+}
+.pincodeChip strong {
+  font-size: 14px;
+  color: var(--city-green);
+}
+.pincodeChip small {
+  font-size: 11px;
+  color: #687b74;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}

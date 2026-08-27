@@ -383,8 +383,10 @@ export default async function BusinessPage({ params }: { params: Promise<{ slug:
   const rawWa = business.whatsappNumber || business.primaryPhone;
   const digitsOnly = rawWa?.replace(/[^0-9]/g, '');
   const waNumber = digitsOnly ? (digitsOnly.length === 10 ? `91${digitsOnly}` : digitsOnly) : null;
+  const businessUrl = `https://locz.in/b/${business.slug}`;
+  const waMessage = `🛍️ *Inquiry for ${business.name}*\n\nHi, I found your business on LocZ.in (${businessUrl})\n\nI would like to enquire about:\n- Services & Products available\n- Pricing & Availability\n\nPlease let me know. Thanks!`;
   const waEnquiryUrl = waNumber
-    ? `https://wa.me/${waNumber}?text=${encodeURIComponent(`Hi, I found ${business.name} on LocZ and would like to enquire about your services.`)}`
+    ? `https://wa.me/${waNumber}?text=${encodeURIComponent(waMessage)}`
     : null;
 
   // Rich, fact-driven conditional FAQs based on data density
@@ -749,7 +751,7 @@ export default async function BusinessPage({ params }: { params: Promise<{ slug:
         </div>
       </section>
 
-      {/* Prominent Owner Claim Banner */}
+      {/* High-Converting Merchant Magnet Claim Banner */}
       {business.claimStatus === 'UNCLAIMED' &&
       business.isClaimable !== false &&
       !business.isOwner ? (
@@ -760,10 +762,11 @@ export default async function BusinessPage({ params }: { params: Promise<{ slug:
                 <Icon name="shield" />
               </span>
               <div>
-                <strong>Own or manage {business.name}?</strong>
+                <strong>Are you the owner or manager of {business.name}?</strong>
                 <p>
-                  Claim your free verified profile to update opening hours, add your menu or
-                  catalog, and receive direct customer enquiries.
+                  Claim your official profile in 30 seconds. Unlock the{' '}
+                  <strong>Green Verified Badge</strong>, update opening hours, edit contact details,
+                  and receive direct WhatsApp leads with <strong>0% commission</strong>.
                 </p>
               </div>
             </div>
@@ -772,7 +775,7 @@ export default async function BusinessPage({ params }: { params: Promise<{ slug:
               className="btn btn--claim"
               data-track="hero_claim_click"
             >
-              Claim this business <Icon name="arrow" />
+              ⚡ Claim in 30s (Free OTP) <Icon name="arrow" />
             </Link>
           </div>
         </div>

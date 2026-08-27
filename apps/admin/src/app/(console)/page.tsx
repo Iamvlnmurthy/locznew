@@ -73,7 +73,17 @@ function Metric({
 }
 
 export default async function OverviewPage() {
-  const [metrics, byCity, byCategory, daily, topListings, queues, indexStatus] = await Promise.all([
+  const [
+    metrics,
+    byCity,
+    byCategory,
+    daily,
+    topListings,
+    queues,
+    indexStatus,
+    demand,
+    unmetDemand,
+  ] = await Promise.all([
     api<AdminMetrics>('/admin/metrics').catch(() => null),
     api<Bucket[]>('/admin/metrics/listings-by-city?limit=5').catch(() => []),
     api<Bucket[]>('/admin/metrics/listings-by-category?limit=5').catch(() => []),
@@ -81,6 +91,13 @@ export default async function OverviewPage() {
     api<TopListing[]>('/admin/metrics/most-viewed?limit=5').catch(() => []),
     api<QueueHealth[]>('/admin/queues').catch(() => []),
     api<SearchIndexStatus>('/search/index/status').catch(() => null),
+    api<{
+      openRequirements: number;
+      fulfilledRequirements: number;
+      unansweredRequirements: number;
+      demandFulfillmentRate: number;
+    }>('/admin/metrics/demand').catch(() => null),
+    api<Bucket[]>('/admin/metrics/unmet-demand?limit=5').catch(() => []),
   ]);
 
   if (!metrics) {
@@ -263,6 +280,26 @@ export default async function OverviewPage() {
             <BarList buckets={byCategory} warm />
           ) : (
             <PanelEmpty>No category data yet.</PanelEmpty>
+          )}
+        </section>
+
+        <section className="panel">
+          <div className="panel__header">
+            <div>
+              <span className="panel__kicker">Buyer Intent & Demand</span>
+              <h2>Unmet Search Demand</h2>
+            </div>
+            {demand ? (
+              <span className="health-pill health-pill--good">
+                <span />
+                {Math.round(demand.demandFulfillmentRate * 100)}% Fulfilled
+              </span>
+            ) : null}
+          </div>
+          {unmetDemand.length ? (
+            <BarList buckets={unmetDemand} warm />
+          ) : (
+            <PanelEmpty>All buyer search requirements are currently fulfilled.</PanelEmpty>
           )}
         </section>
 

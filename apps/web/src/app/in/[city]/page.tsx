@@ -131,7 +131,7 @@ export default async function CityPage({ params }: { params: Promise<{ city: str
 
   const { city, content, sections, images } = data;
   const cityName = localizedName(city, locale);
-  const [businesses, categoryRows, categoryCounts] = await Promise.all([
+  const [businesses, categoryRows, categoryCounts, localities, pincodes] = await Promise.all([
     loadNearbyBusinesses({ cityId: city.id, page: 1 }),
     apiSafe<Array<Omit<BusinessCategory, 'count'>>>('/businesses/categories', {
       revalidate: 86400,
@@ -139,6 +139,18 @@ export default async function CityPage({ params }: { params: Promise<{ city: str
     apiSafe<Array<{ categoryId: string; count: number }>>(
       `/businesses/category-counts?cityId=${city.id}`,
       { revalidate: 3600 },
+    ),
+    apiSafe<Array<{ id: string; name: string; slug: string }>>(
+      `/locations/cities/${city.id}/localities`,
+      {
+        revalidate: 86400,
+      },
+    ),
+    apiSafe<Array<{ code: string; name: string }>>(
+      `/locations/pincodes?cityId=${city.id}&limit=30`,
+      {
+        revalidate: 86400,
+      },
     ),
   ]);
   const countByCategory = new Map(
@@ -157,6 +169,8 @@ export default async function CityPage({ params }: { params: Promise<{ city: str
         locale={locale}
         categories={categories ?? []}
         businesses={businesses}
+        localities={localities ?? []}
+        pincodes={pincodes ?? []}
       />
     );
   }
@@ -308,6 +322,8 @@ export default async function CityPage({ params }: { params: Promise<{ city: str
           locale={locale}
           categories={categories ?? []}
           businesses={businesses}
+          localities={localities ?? []}
+          pincodes={pincodes ?? []}
         />
 
         <section
@@ -349,11 +365,7 @@ export default async function CityPage({ params }: { params: Promise<{ city: str
             ) : (
               <MapFallback city={city} cityName={cityName} />
             )}
-            {mapImage ? (
-              <figcaption>
-                <ImageCredit image={mapImage} />
-              </figcaption>
-            ) : null}
+            {mapImage ? <ImageCredit image={mapImage} /> : null}
           </figure>
           <p className={styles.mapCaveat}>{t('cityGuide.mapCaveat')}</p>
         </section>
@@ -365,7 +377,7 @@ export default async function CityPage({ params }: { params: Promise<{ city: str
             <SectionHeading
               kicker={t('cityGuide.guideKicker')}
               title={t('cityGuide.guideTitle', { city: cityName })}
-              intro={t('cityGuide.guideIntro')}
+              intro={t('cityGuide.guideIntro', { city: cityName })}
             />
             <div className={styles.guideGrid}>
               {sections.slice(0, 2).map((section, index) => (
@@ -406,12 +418,16 @@ function ThinCityPage({
   locale,
   categories,
   businesses,
+  localities,
+  pincodes,
 }: {
   city: City;
   cityName: string;
   locale: Locale;
   categories: BusinessCategory[];
   businesses: BusinessPage;
+  localities: Array<{ id: string; name: string; slug: string }>;
+  pincodes: Array<{ code: string; name: string }>;
 }) {
   const t = getTranslator(locale);
   return (
@@ -441,6 +457,8 @@ function ThinCityPage({
           locale={locale}
           categories={categories}
           businesses={businesses}
+          localities={localities}
+          pincodes={pincodes}
         />
       </div>
     </main>
@@ -453,12 +471,16 @@ function CityDirectory({
   locale,
   categories,
   businesses,
+  localities = [],
+  pincodes = [],
 }: {
   city: City;
   cityName: string;
   locale: Locale;
   categories: BusinessCategory[];
   businesses: BusinessPage;
+  localities?: Array<{ id: string; name: string; slug: string }>;
+  pincodes?: Array<{ code: string; name: string }>;
 }) {
   const t = getTranslator(locale);
   const searchLabels = getMessageGroup(locale, 'searchUi');
@@ -524,6 +546,45 @@ function CityDirectory({
           ))}
         </nav>
       ) : null}
+
+      {localities.length > 0 ? (
+        <div className={styles.localityMesh}>
+          <span className={styles.sectionKicker}>Popular Areas & Localities in {cityName}</span>
+          <div className={styles.localityGrid}>
+            {localities.map((loc) => (
+              <Link
+                key={loc.id}
+                href={`/search?cityId=${city.id}&q=${encodeURIComponent(loc.name)}`}
+                className={styles.localityChip}
+                title={`Explore businesses and services in ${loc.name}, ${cityName}`}
+              >
+                <Icon name="location" width="13" height="13" />
+                <span>{loc.name}</span>
+              </Link>
+            ))}
+          </div>
+        </div>
+      ) : null}
+
+      {pincodes.length > 0 ? (
+        <div className={styles.pincodeMesh}>
+          <span className={styles.sectionKicker}>Browse by PIN Code in {cityName}</span>
+          <div className={styles.pincodeGrid}>
+            {pincodes.map((pin) => (
+              <Link
+                key={pin.code}
+                href={`/search?pincode=${pin.code}`}
+                className={styles.pincodeChip}
+                title={`Find verified shops and services in PIN ${pin.code} (${pin.name})`}
+              >
+                <strong>{pin.code}</strong>
+                <small>{pin.name}</small>
+              </Link>
+            ))}
+          </div>
+        </div>
+      ) : null}
+
       {businesses.items.length === 0 ? (
         <div className={styles.empty}>
           <Image src="/illustrations/empty-neighbourhood.webp" alt="" width="220" height="180" />
