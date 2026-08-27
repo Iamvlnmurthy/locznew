@@ -27,7 +27,9 @@ interface GoogleIdentity {
  */
 export function GoogleConsoleSignIn({ clientId }: { clientId: string }) {
   const container = useRef<HTMLDivElement>(null);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(
+    clientId ? null : 'Google sign-in is temporarily unavailable. Contact your LocZ administrator.',
+  );
 
   const onCredential = useCallback(async (response: { credential: string }) => {
     const result = await googleLoginAction(response.credential);
@@ -53,9 +55,15 @@ export function GoogleConsoleSignIn({ clientId }: { clientId: string }) {
     const script = document.createElement('script');
     script.src = 'https://accounts.google.com/gsi/client';
     script.async = true;
+    script.onerror = () => {
+      setError('Google sign-in could not be loaded. Check your connection and try again.');
+    };
     script.onload = () => {
       const google = (window as unknown as { google?: GoogleIdentity }).google;
-      if (!google || !container.current) return;
+      if (!google || !container.current) {
+        setError('Google sign-in could not be initialised. Refresh the page and try again.');
+        return;
+      }
 
       google.accounts.id.initialize({
         client_id: clientId,
@@ -73,12 +81,10 @@ export function GoogleConsoleSignIn({ clientId }: { clientId: string }) {
     return () => script.remove();
   }, [clientId, onCredential]);
 
-  if (!clientId) return null;
-
   return (
     <div className="google-console-signin">
       {error ? <p role="alert">{error}</p> : null}
-      <div ref={container} />
+      {clientId ? <div ref={container} /> : null}
     </div>
   );
 }
