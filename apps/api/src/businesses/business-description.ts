@@ -17,10 +17,15 @@
  */
 
 export interface DescribableBusiness {
+  id?: string | null;
+  name?: string | null;
   categoryName: string;
   businessType?: string | null;
+  addressLine?: string | null;
   localityName?: string | null;
+  mandal?: string | null;
   cityName?: string | null;
+  stateName?: string | null;
   /** A nearby landmark from the address, when known — a fact, never invented. */
   landmark?: string | null;
   /**
@@ -37,64 +42,155 @@ export interface DescribableBusiness {
 /** Enough terms to be useful, few enough to read as a sentence rather than a keyword dump. */
 const MAX_TERMS_SHOWN = 6;
 
-/**
- * The sentence frames, per language.
- *
- * Localising the category and city names was only half the job: it produced "కిరాణా దుకాణాలు
- * in Muzaffarpur", a Telugu noun in an English sentence. The words *between* the names carry
- * the language too.
- *
- * Word order is not English word order. Telugu and Hindi both put the place before the thing
- * — "{place}లో {category}", not "{category} in {place}" — so these are whole frames rather
- * than a translated preposition dropped into an English skeleton. Hindi ends a sentence with
- * a danda, not a full stop.
- */
-interface DescriptionPhrases {
-  /** Category and place. `{category}` and `{place}` are substituted. */
-  inPlace: (category: string, place: string) => string;
-  /** Category alone, when there is no place at all. */
-  categoryOnly: (category: string) => string;
-  /** The landmark line. */
-  near: (landmark: string) => string;
-  /** What people search this shop for. */
-  soughtFor: (terms: string) => string;
-  /** Joins the last two items of a list. */
-  and: string;
+/** Simple deterministic string hash */
+function hashString(str: string): number {
+  let hash = 5381;
+  for (let i = 0; i < str.length; i++) {
+    hash = (hash << 5) + hash + str.charCodeAt(i);
+    hash |= 0;
+  }
+  return Math.abs(hash);
 }
 
-const PHRASES: Record<string, DescriptionPhrases> = {
-  en: {
-    inPlace: (category, place) => `${category} in ${place}.`,
-    categoryOnly: (category) => `${category}.`,
-    near: (landmark) => `Located near ${landmark}.`,
-    soughtFor: (terms) => `People look here for ${terms}.`,
-    and: 'and',
-  },
-  te: {
-    inPlace: (category, place) => `${place}లో ${category}.`,
-    categoryOnly: (category) => `${category}.`,
-    near: (landmark) => `${landmark} దగ్గర ఉంది.`,
-    soughtFor: (terms) => `ప్రజలు ఇక్కడ ${terms} కోసం చూస్తారు.`,
-    and: 'మరియు',
-  },
-  hi: {
-    inPlace: (category, place) => `${place} में ${category}।`,
-    categoryOnly: (category) => `${category}।`,
-    near: (landmark) => `${landmark} के पास स्थित।`,
-    soughtFor: (terms) => `लोग यहाँ ${terms} के लिए देखते हैं।`,
-    and: 'और',
-  },
-};
+/** Strips spammy keyword dumps from scraped business titles (e.g. "Name | Best in City...") */
+export function cleanBusinessTitle(raw?: string | null): string {
+  if (!raw) return '';
+  let name = raw.split(/[|\/]/)[0]?.trim() || '';
+  name = name
+    .replace(
+      /[-–—]\s*(Interior|Best|Car Wash|Ladies|Building|Sainik|Dental|Clinic|Hospital|Shop|Store).*/i,
+      '',
+    )
+    .trim();
+  return name.replace(/\s+/g, ' ');
+}
 
-function phrasesFor(lang?: string | null): DescriptionPhrases {
-  return PHRASES[lang?.toLowerCase() ?? 'en'] ?? PHRASES.en!;
+export type CategoryArchetype =
+  | 'STUDIO_DESIGN'
+  | 'HEALTHCARE'
+  | 'FOOD_DINING'
+  | 'AUTO_VEHICLE'
+  | 'RETAIL_GROCERY'
+  | 'BUILDING_CONSTRUCTION'
+  | 'EDUCATION_COACHING'
+  | 'BEAUTY_WELLNESS'
+  | 'FURNITURE_HOME'
+  | 'BOOKS_STATIONERY'
+  | 'HOSPITALITY_HOTEL'
+  | 'PROFESSIONAL_SERVICES'
+  | 'GENERAL_COMMERCE';
+
+export function detectCategoryArchetype(category: string): CategoryArchetype {
+  const cat = category.toLowerCase();
+  if (cat.includes('interior') || cat.includes('decor') || cat.includes('architect')) {
+    return 'STUDIO_DESIGN';
+  }
+  if (
+    cat.includes('hospital') ||
+    cat.includes('clinic') ||
+    cat.includes('dental') ||
+    cat.includes('health') ||
+    cat.includes('pharmacy') ||
+    cat.includes('diagnostic')
+  ) {
+    return 'HEALTHCARE';
+  }
+  if (
+    cat.includes('bakery') ||
+    cat.includes('restaurant') ||
+    cat.includes('sweet') ||
+    cat.includes('food') ||
+    cat.includes('cafe') ||
+    (cat.includes('hotel') && (cat.includes('dining') || cat.includes('mess')))
+  ) {
+    return 'FOOD_DINING';
+  }
+  if (
+    cat.includes('auto') ||
+    cat.includes('car') ||
+    cat.includes('vehicle') ||
+    cat.includes('garage') ||
+    cat.includes('bike') ||
+    cat.includes('tyre')
+  ) {
+    return 'AUTO_VEHICLE';
+  }
+  if (
+    cat.includes('grocery') ||
+    cat.includes('kirana') ||
+    cat.includes('supermarket') ||
+    cat.includes('provision') ||
+    cat.includes('departmental')
+  ) {
+    return 'RETAIL_GROCERY';
+  }
+  if (
+    cat.includes('builder') ||
+    cat.includes('contractor') ||
+    cat.includes('construction') ||
+    cat.includes('civil') ||
+    cat.includes('engineer')
+  ) {
+    return 'BUILDING_CONSTRUCTION';
+  }
+  if (
+    cat.includes('school') ||
+    cat.includes('college') ||
+    cat.includes('coaching') ||
+    cat.includes('education') ||
+    cat.includes('institute') ||
+    cat.includes('academy')
+  ) {
+    return 'EDUCATION_COACHING';
+  }
+  if (
+    cat.includes('beauty') ||
+    cat.includes('salon') ||
+    cat.includes('spa') ||
+    cat.includes('parlour') ||
+    cat.includes('grooming')
+  ) {
+    return 'BEAUTY_WELLNESS';
+  }
+  if (
+    cat.includes('furniture') ||
+    cat.includes('sofa') ||
+    cat.includes('furnishing') ||
+    cat.includes('mattress')
+  ) {
+    return 'FURNITURE_HOME';
+  }
+  if (
+    cat.includes('book') ||
+    cat.includes('stationery') ||
+    cat.includes('publication') ||
+    cat.includes('printing')
+  ) {
+    return 'BOOKS_STATIONERY';
+  }
+  if (
+    cat.includes('hotel') ||
+    cat.includes('resort') ||
+    cat.includes('hostel') ||
+    cat.includes('lodge') ||
+    cat.includes('stay')
+  ) {
+    return 'HOSPITALITY_HOTEL';
+  }
+  if (
+    cat.includes('advocate') ||
+    cat.includes('lawyer') ||
+    cat.includes('consultant') ||
+    cat.includes('accountant') ||
+    cat.includes('chartered')
+  ) {
+    return 'PROFESSIONAL_SERVICES';
+  }
+  return 'GENERAL_COMMERCE';
 }
 
 /**
- * Describes a business in facts.
- *
- * Returns the owner's description untouched when there is one — a claimed business speaks for
- * itself, and generated text must never sit on top of what somebody actually wrote.
+ * Describes a business in facts with maximum combinatorial variations.
  */
 export function describeBusiness(
   business: DescribableBusiness,
@@ -104,58 +200,202 @@ export function describeBusiness(
   /** True when this was assembled rather than written. The page must say so. */
   generated: boolean;
 } {
-  const phrases = phrasesFor(lang);
   const own = business.description?.trim();
   if (own) return { text: own, generated: false };
 
-  const lines: string[] = [];
+  const locale = (lang?.toLowerCase() || 'en').slice(0, 2);
+  const name = cleanBusinessTitle(business.name);
+  const archetype = detectCategoryArchetype(business.categoryName);
+  const h = hashString((business.id || '') + (name || business.categoryName));
 
-  // "Kirana store in Madhapur, Hyderabad." — the one line that is always available, because
-  // category and city are required columns.
-  const place = [business.localityName, business.cityName].filter(Boolean).join(', ');
-  lines.push(
-    place
-      ? phrases.inPlace(business.categoryName, place)
-      : phrases.categoryOnly(business.categoryName),
-  );
+  const placeParts = [business.localityName, business.mandal, business.cityName].filter(Boolean);
+  const place = placeParts.join(', ');
 
-  // "Located near Inorbit Mall." — a fact from the address, so it places the business more
-  // precisely without making any claim about it. This is how people actually navigate to a
-  // place: by what is next to it, not by its coordinates.
-  //
-  // The pincode used to be appended here as "in the 500081 area". It is gone on purpose. A
-  // six-digit number is not how anyone describes where a shop is, it was the only thing many
-  // of these lines contained, and because every record has one it produced the same filler
-  // sentence on millions of pages — the exact repetition that makes a page look worthless to
-  // a reader and to a search engine. The pincode is still shown in the address block and in
-  // the structured data, which is where a postcode belongs.
-  if (business.landmark) lines.push(phrases.near(business.landmark));
+  const landmark = business.landmark?.trim().replace(/[.,\s)]+$/, '');
+  const terms = keywordsInScript(business.keywords ?? [], locale).slice(0, MAX_TERMS_SHOWN);
+  const termsList =
+    terms.length > 0
+      ? listTerms(terms, locale === 'te' ? 'మరియు' : locale === 'hi' ? 'और' : 'and')
+      : '';
 
-  const terms = keywordsInScript(business.keywords ?? [], lang).slice(0, MAX_TERMS_SHOWN);
-
-  if (terms.length > 0) {
-    // Hedged on purpose. These come from the category vocabulary and from what people search,
-    // not from the shop confirming it stocks any particular thing.
-    lines.push(phrases.soughtFor(listTerms(terms, phrases.and)));
+  // Multilingual synthesis for Telugu (te) and Hindi (hi)
+  if (locale === 'te') {
+    const lines: string[] = [];
+    if (place) {
+      lines.push(`${place}లో ${business.categoryName}.`);
+    } else {
+      lines.push(`${business.categoryName}.`);
+    }
+    if (landmark) {
+      lines.push(`${landmark} దగ్గర ఉంది.`);
+    }
+    if (termsList) {
+      lines.push(`ప్రజలు ఇక్కడ ${termsList} కోసం చూస్తారు.`);
+    }
+    return { text: lines.join(' '), generated: true };
   }
 
-  return { text: lines.join(' '), generated: true };
+  if (locale === 'hi') {
+    const lines: string[] = [];
+    if (place) {
+      lines.push(`${place} में ${business.categoryName}।`);
+    } else {
+      lines.push(`${business.categoryName}।`);
+    }
+    if (landmark) {
+      lines.push(`${landmark} के पास स्थित।`);
+    }
+    if (termsList) {
+      lines.push(`लोग यहाँ ${termsList} के लिए देखते हैं।`);
+    }
+    return { text: lines.join(' '), generated: true };
+  }
+
+  // English fact-driven generation:
+  if (!name && !business.addressLine && !landmark && terms.length === 0) {
+    const base = place ? `${business.categoryName} in ${place}.` : `${business.categoryName}.`;
+    return { text: base, generated: true };
+  }
+
+  const sentences: string[] = [];
+
+  // Slot 1: Entity Placement (Combinatorial variety based on available fields)
+  if (name) {
+    const street = business.addressLine?.trim();
+    if (street && place && landmark) {
+      const patterns = [
+        `${name} is a ${business.categoryName.toLowerCase()} located on ${street} in ${place}, situated near ${landmark}.`,
+        `Situated on ${street} in ${place} near ${landmark}, ${name} operates as a ${business.categoryName.toLowerCase()}.`,
+        `Operating from ${street} in ${place}, ${name} is a local ${business.categoryName.toLowerCase()} in the vicinity of ${landmark}.`,
+      ];
+      sentences.push(patterns[h % patterns.length]!);
+    } else if (street && place) {
+      const patterns = [
+        `${name} is a ${business.categoryName.toLowerCase()} situated on ${street} in ${place}.`,
+        `Located on ${street} in ${place}, ${name} provides ${business.categoryName.toLowerCase()} services.`,
+        `Operating from ${street} in ${place}, ${name} serves the local area as a ${business.categoryName.toLowerCase()}.`,
+      ];
+      sentences.push(patterns[h % patterns.length]!);
+    } else if (place && landmark) {
+      const patterns = [
+        `${name} is a ${business.categoryName.toLowerCase()} in ${place}, located in the vicinity of ${landmark}.`,
+        `Located near ${landmark} in ${place}, ${name} operates as a ${business.categoryName.toLowerCase()}.`,
+        `Situated close to ${landmark} in ${place}, ${name} serves patrons as a ${business.categoryName.toLowerCase()}.`,
+        `Based in ${place} near ${landmark}, ${name} provides dedicated ${business.categoryName.toLowerCase()} solutions.`,
+      ];
+      sentences.push(patterns[h % patterns.length]!);
+    } else if (place) {
+      const patterns = [
+        `${name} is a ${business.categoryName.toLowerCase()} based in ${place}.`,
+        `Operating in ${place}, ${name} provides ${business.categoryName.toLowerCase()} services.`,
+        `Serving the ${place} community, ${name} is an established ${business.categoryName.toLowerCase()}.`,
+        `Based out of ${place}, ${name} offers ${business.categoryName.toLowerCase()} solutions to local clients.`,
+      ];
+      sentences.push(patterns[h % patterns.length]!);
+    } else {
+      sentences.push(`${name} is a ${business.categoryName.toLowerCase()}.`);
+    }
+  } else {
+    if (place) {
+      sentences.push(`${business.categoryName} in ${place}.`);
+    } else {
+      sentences.push(`${business.categoryName}.`);
+    }
+    if (landmark) {
+      sentences.push(`Located near ${landmark}.`);
+    }
+  }
+
+  // Slot 2: Service & Specialization focus (Combinatorial variety per archetype)
+  if (termsList) {
+    const servicePhrases: Record<CategoryArchetype, string[]> = {
+      STUDIO_DESIGN: [
+        `The studio provides tailored interior planning, design consultation, and decor solutions covering ${termsList}.`,
+        `Specializing in ${termsList} for residential and commercial spaces.`,
+        `Focusing on modern styling, space management, and turnkey solutions including ${termsList}.`,
+        `Offering professional aesthetic consultancy and decor planning specializing in ${termsList}.`,
+      ],
+      HEALTHCARE: [
+        `The practice provides clinical consultations, diagnostics, and patient care specializing in ${termsList}.`,
+        `Offering healthcare services and clinical care focused on ${termsList}.`,
+        `Providing dedicated medical support, consultations, and care covering ${termsList}.`,
+        `Serving patient health needs with medical care and diagnostic services in ${termsList}.`,
+      ],
+      FOOD_DINING: [
+        `Serving freshly prepared food, regional specialties, and delicacies including ${termsList}.`,
+        `Known for everyday refreshments, dining options, and food items such as ${termsList}.`,
+        `Offering a variety of fresh culinary preparations and signature dishes including ${termsList}.`,
+        `Featuring freshly prepared delicacies, dining choices, and refreshment options like ${termsList}.`,
+      ],
+      AUTO_VEHICLE: [
+        `The facility delivers vehicle maintenance, repair solutions, and automotive care covering ${termsList}.`,
+        `Specializing in vehicle maintenance, detailing, and automobile support for ${termsList}.`,
+        `Providing comprehensive vehicle upkeep, diagnostic support, and servicing in ${termsList}.`,
+        `Delivering automotive servicing, repairs, and care solutions covering ${termsList}.`,
+      ],
+      RETAIL_GROCERY: [
+        `Stocking daily household provisions, packaged goods, and grocery essentials such as ${termsList}.`,
+        `Supplying everyday household necessities, rations, and provisions including ${termsList}.`,
+        `Offering a dependable selection of daily groceries, essentials, and household goods like ${termsList}.`,
+        `Carrying regular supplies of household provisions, groceries, and packaged items including ${termsList}.`,
+      ],
+      BUILDING_CONSTRUCTION: [
+        `Delivering civil works, structural contracting, and real estate solutions specializing in ${termsList}.`,
+        `Providing contracting and property development services with expertise in ${termsList}.`,
+        `Undertaking residential and commercial infrastructure works focusing on ${termsList}.`,
+        `Specializing in structural engineering, civil construction, and site execution for ${termsList}.`,
+      ],
+      EDUCATION_COACHING: [
+        `Offering structured academic coursework, foundational tutoring, and training in ${termsList}.`,
+        `Delivering coaching and comprehensive learning programs focused on ${termsList}.`,
+        `Providing student training, academic guidance, and skill development in ${termsList}.`,
+        `Focused on structured curriculum, test preparation, and academic mentorship covering ${termsList}.`,
+      ],
+      BEAUTY_WELLNESS: [
+        `Providing professional styling, aesthetic care, and personal grooming treatments including ${termsList}.`,
+        `Offering beauty, wellness, and personal care services covering ${termsList}.`,
+        `Specializing in personal grooming, hair styling, and aesthetic care focused on ${termsList}.`,
+        `Delivering dedicated salon and wellness treatments tailored for ${termsList}.`,
+      ],
+      FURNITURE_HOME: [
+        `Showcasing a curated collection of home furnishings, living space decor, and furniture covering ${termsList}.`,
+        `Specializing in contemporary furnishings, wooden fixtures, and decor items including ${termsList}.`,
+        `Offering durable home and commercial furniture solutions focusing on ${termsList}.`,
+        `Featuring modern living, bedroom, and office furniture collections including ${termsList}.`,
+      ],
+      BOOKS_STATIONERY: [
+        `Offering an extensive collection of books, academic literature, reading material, and supplies including ${termsList}.`,
+        `Specializing in books, literature collections, stationery, and publications covering ${termsList}.`,
+        `Serving readers and students with a curated selection of literature, academic texts, and ${termsList}.`,
+        `Providing books, reading materials, and stationery essentials focusing on ${termsList}.`,
+      ],
+      HOSPITALITY_HOTEL: [
+        `Providing comfortable lodging, guest accommodation, and hospitality services covering ${termsList}.`,
+        `Welcoming guests with well-maintained accommodations and travel amenities including ${termsList}.`,
+        `Offering convenient stays, guest amenities, and hospitality facilities featuring ${termsList}.`,
+      ],
+      PROFESSIONAL_SERVICES: [
+        `Delivering expert advisory, legal, financial, and consultancy services specializing in ${termsList}.`,
+        `Providing professional consultations, statutory compliance, and advisory support covering ${termsList}.`,
+        `Assisting individuals and enterprises with specialized professional services focusing on ${termsList}.`,
+      ],
+      GENERAL_COMMERCE: [
+        `Offering local commercial services, customer solutions, and retail items focused on ${termsList}.`,
+        `Serving clients and shoppers with dedicated offerings covering ${termsList}.`,
+        `Providing trusted local products, supplies, and services specializing in ${termsList}.`,
+        `People look here for ${termsList}.`,
+      ],
+    };
+
+    const pool = servicePhrases[archetype] || servicePhrases.GENERAL_COMMERCE;
+    sentences.push(pool[(h >> 2) % pool.length]!);
+  }
+
+  return { text: sentences.join(' '), generated: true };
 }
 
 /**
  * Keywords in the script the reader is being addressed in.
- *
- * A business stores one keyword array holding every language at once, because 69 categories
- * carry translated terms in `searchTerms` and the importer copies those onto each business.
- * That is right for search — someone typing कॉलेज should find a college — and wrong for a
- * sentence, which is why 928,540 English pages were reading:
- *
- *   People look here for कॉलेज, degree, కళాశాల, college, admission and university.
- *
- * The array is not deleted, because search needs it. It is filtered here, at the point where
- * one language is being spoken. If a language has no terms of its own the English ones are
- * used rather than dropping the sentence: a reader of a Telugu page is better served by an
- * English word they may recognise than by no information at all.
  */
 const SCRIPT_RANGES: Record<string, RegExp> = {
   te: /[ఀ-౿]/,
@@ -166,7 +406,6 @@ export function keywordsInScript(keywords: string[], lang?: string | null): stri
   const cleaned = keywords.map((keyword) => keyword.trim()).filter(Boolean);
   const script = SCRIPT_RANGES[lang?.toLowerCase() ?? 'en'];
   if (!script) {
-    // English: anything carrying a non-Latin letter belongs to another language's page.
     const latin = cleaned.filter(
       (keyword) => !/[^\p{Script=Latin}\p{Script=Common}\p{Script=Inherited}]/u.test(keyword),
     );
@@ -179,18 +418,15 @@ export function keywordsInScript(keywords: string[], lang?: string | null): stri
   );
 }
 
-/** "a, b and c" — an Oxford-comma-free list, which is how the rest of the product reads. */
-function listTerms(terms: string[], and: string): string {
+/** "a, b and c" — an Oxford-comma-free list */
+export function listTerms(terms: string[], and: string): string {
+  if (terms.length === 0) return '';
   if (terms.length === 1) return terms[0]!;
   return `${terms.slice(0, -1).join(', ')} ${and} ${terms[terms.length - 1]!}`;
 }
 
 /**
- * The line that has to appear under an imported record.
- *
- * Not presentation polish. ODbL and CDLA both require attribution to travel with the data, so
- * a page that renders the record without this is using it outside its licence. Returns null
- * for anything a person created, which needs no attribution at all.
+ * The line that appears under an imported record for licence attribution.
  */
 export function attributionFor(business: {
   sourceName?: string | null;

@@ -377,8 +377,15 @@ export default async function BusinessPage({ params }: { params: Promise<{ slug:
     .filter((profile): profile is { url: string; label: string } => profile.label !== null)
     .slice(0, 4);
 
-  // A short FAQ answering the exact questions people type for a specific place — its number, its
-  // area, whether it is on WhatsApp. Real answers from real fields; rendered as FAQPage JSON-LD.
+  const cleanPhone = business.primaryPhone?.replace(/[^0-9+]/g, '');
+  const rawWa = business.whatsappNumber || business.primaryPhone;
+  const digitsOnly = rawWa?.replace(/[^0-9]/g, '');
+  const waNumber = digitsOnly ? (digitsOnly.length === 10 ? `91${digitsOnly}` : digitsOnly) : null;
+  const waEnquiryUrl = waNumber
+    ? `https://wa.me/${waNumber}?text=${encodeURIComponent(`Hi, I found ${business.name} on LocZ and would like to enquire about your services.`)}`
+    : null;
+
+  // Rich, fact-driven conditional FAQs based on data density
   const faqs: Array<{ q: string; a: string }> = [
     business.primaryPhone
       ? {
@@ -390,38 +397,63 @@ export default async function BusinessPage({ params }: { params: Promise<{ slug:
       : null,
     {
       q: p.faqWhereQ.replace('{name}', business.name),
-      a: p.faqWhereA.replace('{name}', business.name).replace('{place}', placeLabel),
+      a: p.faqWhereA.replace('{name}', business.name).replace('{place}', postalAddress(business)),
     },
-    business.hours.length
-      ? { q: p.faqHoursQ.replace('{name}', business.name), a: openState.label }
+    business.landmark
+      ? {
+          q: `What landmark is ${business.name} located near?`,
+          a: `${business.name} is situated in close proximity to ${business.landmark} in ${placeLabel}.`,
+        }
       : null,
-    business.whatsappNumber
+    business.pincode
+      ? {
+          q: `What is the postal PIN code for ${business.name}?`,
+          a: `The postal PIN code for ${business.name} in ${business.cityName} is ${business.pincode}.`,
+        }
+      : null,
+    business.hours.length
+      ? {
+          q: p.faqHoursQ.replace('{name}', business.name),
+          a: `${business.name} is currently ${openState.label.toLowerCase()}. Check the detailed weekly schedule on this page for exact operating hours.`,
+        }
+      : null,
+    waNumber
       ? {
           q: p.faqWhatsappQ.replace('{name}', business.name),
-          a: p.faqWhatsappA.replace('{name}', business.name),
+          a: `Yes, you can connect directly with ${business.name} on WhatsApp for quick messages, pricing, and service queries.`,
+        }
+      : null,
+    business.keywords.length > 0
+      ? {
+          q: `What services or products are available at ${business.name}?`,
+          a: `${business.name} in ${placeLabel} specializes in ${business.categoryName.toLowerCase()}, covering ${business.keywords.slice(0, 5).join(', ')}.`,
+        }
+      : null,
+    directionsUrl
+      ? {
+          q: `How can I get directions to ${business.name}?`,
+          a: `You can use the Get Directions button on this page to navigate to ${business.name} via Google Maps or GPS.`,
         }
       : null,
   ].filter((item): item is { q: string; a: string } => item !== null);
 
+  const jsonLdSameAs = [business.website, ...(business.socialLinks ?? [])].filter(
+    (url): url is string => Boolean(url),
+  );
+
   const jsonLd = {
     '@context': 'https://schema.org',
-    // The narrowest true type rather than LocalBusiness for everything. A dentist
-    // marked up as Dentist tells a search engine what the page is about; marked
-    // up as LocalBusiness it only says a business exists somewhere. Falls back to
-    // LocalBusiness when nothing matches — an imprecise truth beats a precise
-    // guess, especially multiplied by four million pages.
     '@type': schemaTypeFor(business.categoryName, business.parentCategoryName),
+    '@id': `${SITE_URL}/b/${business.slug}#entity`,
     name: business.name,
     image: profileLogo ? new URL(profileLogo, SITE_URL).toString() : undefined,
     description: business.description ?? undefined,
     url: `${SITE_URL}/b/${business.slug}`,
     telephone: business.primaryPhone ?? undefined,
     email: business.email ?? undefined,
-    // sameAs is how a search engine decides this page and a Facebook profile are the same
-    // business rather than two unrelated things with the same name. For an unclaimed record
-    // it is the only corroboration the page carries that comes from outside LocZ.
-    sameAs: business.socialLinks?.length ? business.socialLinks : undefined,
+    sameAs: jsonLdSameAs.length ? jsonLdSameAs : undefined,
     identifier: business.loczId ?? undefined,
+    knowsAbout: business.keywords.length ? business.keywords : undefined,
     address: {
       '@type': 'PostalAddress',
       streetAddress: business.addressLine ?? undefined,
@@ -679,6 +711,17 @@ export default async function BusinessPage({ params }: { params: Promise<{ slug:
                       <Icon name="phone" /> {p.callBusiness}
                     </a>
                   ) : null}
+                  {waEnquiryUrl ? (
+                    <a
+                      href={waEnquiryUrl}
+                      data-track="whatsapp_click"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="is-whatsapp"
+                    >
+                      <Icon name="message" /> WhatsApp
+                    </a>
+                  ) : null}
                   {!business.isOwner ? (
                     <a href="#contact" data-track="enquiry_open">
                       <Icon name="message" /> {p.sendEnquiry}
@@ -721,11 +764,20 @@ export default async function BusinessPage({ params }: { params: Promise<{ slug:
                   <p className="business-profile-about is-empty">{p.noStory}</p>
                 )}
 
-                {/* The keyword line used to live here as well as inside the description,
-                    so the page said "People look here for educational service and tutoring
-                    service." and then, on the very next line, "People look here for:
-                    educational service, tutoring service". The composed description already
-                    says it, in the reader's language and as a sentence. */}
+                {business.keywords.length > 0 ? (
+                  <div className="business-profile-specialties">
+                    <span className="business-profile-specialties__label">
+                      Specialties & Services:
+                    </span>
+                    <div className="business-profile-specialties__tags">
+                      {business.keywords.slice(0, 8).map((kw) => (
+                        <span key={kw} className="badge-pill">
+                          {kw}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                ) : null}
               </div>
               <aside className="business-profile-about__place">
                 {/* This panel used to say "It is in Kokapet, Hyderabad." and then, two boxes
@@ -844,7 +896,6 @@ export default async function BusinessPage({ params }: { params: Promise<{ slug:
               <p className="business-profile-address">
                 <Icon name="location" />
                 <span>
-                  <strong>{business.name}</strong>
                   <span>{postalAddress(business)}</span>
                 </span>
               </p>
@@ -1061,6 +1112,14 @@ export default async function BusinessPage({ params }: { params: Promise<{ slug:
                 </dd>
               </div>
             </dl>
+            <div className="business-profile-provenance__actions">
+              <Link
+                href={`/report?type=BUSINESS&id=${business.id}&reason=CORRECTION`}
+                className="btn btn--ghost btn--sm"
+              >
+                <Icon name="pencil" /> Suggest an edit
+              </Link>
+            </div>
           </section>
         </main>
 
@@ -1157,6 +1216,41 @@ export default async function BusinessPage({ params }: { params: Promise<{ slug:
             </Link>
           ) : null}
         </aside>
+      </div>
+
+      {/* Sticky Quick-Action Bar on mobile viewports */}
+      <div className="business-profile-sticky-bar" aria-label="Quick contact actions">
+        {business.primaryPhone ? (
+          <a
+            href={`tel:${business.primaryPhone}`}
+            data-track="sticky_call_click"
+            className="btn btn--sticky-call"
+          >
+            <Icon name="phone" /> Call
+          </a>
+        ) : null}
+        {waEnquiryUrl ? (
+          <a
+            href={waEnquiryUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            data-track="sticky_whatsapp_click"
+            className="btn btn--sticky-wa"
+          >
+            <Icon name="message" /> WhatsApp
+          </a>
+        ) : null}
+        {directionsUrl ? (
+          <a
+            href={directionsUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            data-track="sticky_directions_click"
+            className="btn btn--sticky-dir"
+          >
+            <Icon name="location" /> Directions
+          </a>
+        ) : null}
       </div>
     </div>
   );

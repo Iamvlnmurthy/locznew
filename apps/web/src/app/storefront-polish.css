@@ -2979,3 +2979,132 @@
 .business-profile-contact__trust p {
   color: #3f554d;
 }
+
+/* WhatsApp action button styling in hero */
+.business-profile-identity__actions a.is-whatsapp {
+  background: #25d366;
+  color: #fff;
+  border-color: #25d366;
+  font-weight: 650;
+}
+
+.business-profile-identity__actions a.is-whatsapp:hover {
+  background: #20ba5a;
+  border-color: #20ba5a;
+  transform: translateY(-2px);
+}
+
+/* Specialties & Services Badges */
+.business-profile-specialties {
+  margin-top: 18px;
+  padding-top: 14px;
+  border-top: 1px solid var(--locz-border, #e2e8f0);
+}
+
+.business-profile-specialties__label {
+  display: block;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--storefront-muted, #64748b);
+  margin-bottom: 8px;
+}
+
+.business-profile-specialties__tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.business-profile-specialties__tags .badge-pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 5px 12px;
+  background: #f1f5f9;
+  border: 1px solid #cbd5e1;
+  border-radius: 999px;
+  font-size: 0.82rem;
+  font-weight: 550;
+  color: #1e293b;
+  transition:
+    background 150ms ease,
+    border-color 150ms ease;
+}
+
+.business-profile-specialties__tags .badge-pill:hover {
+  background: #e2e8f0;
+  border-color: #94a3b8;
+}
+
+/* Provenance actions */
+.business-profile-provenance__actions {
+  margin-top: 14px;
+  display: flex;
+  justify-content: flex-end;
+}
+
+/* Sticky Action Bar for Mobile */
+.business-profile-sticky-bar {
+  display: none;
+}
+
+@media (max-width: 760px) {
+  .business-profile-sticky-bar {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: space-around;
+    gap: 8px;
+    padding: 10px 16px;
+    background: rgb(255 255 255 / 96%);
+    backdrop-filter: blur(12px);
+    border-top: 1px solid #e2e8f0;
+    box-shadow: 0 -4px 20px rgb(0 0 0 / 12%);
+  }
+
+  .business-profile-sticky-bar a {
+    flex: 1;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    min-height: 42px;
+    padding: 0 10px;
+    border-radius: 12px;
+    font-size: 0.84rem;
+    font-weight: 700;
+    text-decoration: none;
+    text-align: center;
+    transition: transform 120ms ease;
+  }
+
+  .business-profile-sticky-bar a:active {
+    transform: scale(0.97);
+  }
+
+  .btn--sticky-call {
+    background: #0f172a;
+    color: #fff;
+  }
+
+  .btn--sticky-wa {
+    background: #25d366;
+    color: #fff;
+  }
+
+  .btn--sticky-dir {
+    background: #f1f5f9;
+    color: #0f172a;
+    border: 1px solid #cbd5e1;
+  }
+
+  /* Padding at page bottom so sticky bar never covers content */
+  .business-profile-layout {
+    padding-bottom: 72px;
+  }
+}

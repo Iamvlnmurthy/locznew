@@ -1169,15 +1169,23 @@ export class BusinessesService {
     // makes the /te and /hi pages actually read in those languages.
     const categoryName = localizedName(business.category, lang);
     const cityName = localizedName(business.city, lang);
-    // The terms are shown inside the sentence, so they have to change language with it.
+    const stateName = business.city?.state ? localizedName(business.city.state, lang) : null;
+    const mandal = business.address?.locality?.mandal ?? null;
+    const addressLine = business.address?.line1 ?? null;
     const keywords = this.keywordTranslations.localize(business.keywords, lang);
+
     const described = describeBusiness(
       {
+        id: business.id,
+        name: business.name,
         categoryName,
+        addressLine,
         localityName,
+        mandal,
+        cityName,
+        stateName,
         landmark,
         pincode: business.pincodeCode,
-        cityName,
         keywords,
         description: business.description,
       },

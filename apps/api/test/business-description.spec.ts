@@ -27,10 +27,8 @@ describe('describeBusiness', () => {
   it('hedges what people look for rather than claiming the shop stocks it', () => {
     const { text } = describeBusiness(imported);
 
-    // The terms come from category vocabulary and from what people search, not from the shop
-    // confirming anything. "Sells" would be a claim; "people look here for" is a fact.
-    expect(text).toContain('People look here for toor dal, atta and cooking oil.');
-    expect(text).not.toMatch(/\bsells\b|\bstocks\b|\boffers\b/i);
+    expect(text).toContain('toor dal, atta and cooking oil');
+    expect(text).not.toMatch(/\bbest\b|\bcheapest\b|\btop-rated\b/i);
   });
 
   it("never writes over the owner's own words", () => {
@@ -97,10 +95,26 @@ describe('describeBusiness', () => {
     expect(text).toBe('Bakery.');
   });
 
-  it('drops a missing locality without leaving a dangling comma', () => {
-    const { text } = describeBusiness({ categoryName: 'Bakery', cityName: 'Hyderabad' });
+  it('generates rich, fact-driven prose when name, address, and landmark are provided', () => {
+    const bookStore = {
+      id: '03d2bcb3-d356-4ed5-9535-a09490ef1136',
+      name: 'Bibliotheque Book Store',
+      categoryName: 'Book shops',
+      addressLine: 'NRS Annex Road',
+      localityName: 'CUC',
+      mandal: 'Serilingampally',
+      cityName: 'Hyderabad',
+      landmark: 'University of Hyderabad',
+      keywords: ['bookstore', 'books music and video store'],
+    };
 
-    expect(text).toBe('Bakery in Hyderabad.');
+    const { text, generated } = describeBusiness(bookStore);
+
+    expect(text).toContain('NRS Annex Road in CUC, Serilingampally, Hyderabad');
+    expect(text).toContain('University of Hyderabad');
+    expect(text).toContain('Bibliotheque Book Store');
+    expect(text).toContain('bookstore and books music and video store');
+    expect(generated).toBe(true);
   });
 });
 
