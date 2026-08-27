@@ -2558,6 +2558,87 @@
   margin: 0;
 }
 
+/* Direct storefront campaign. This deliberately occupies the post-location
+   position even when an ad network has no fill, so the content column keeps a
+   useful, intentional rhythm instead of opening into an empty reserved floor. */
+.storefront-house-ad {
+  position: relative;
+  margin: 0;
+}
+
+.storefront-house-ad__label {
+  display: block;
+  margin: 0 0 7px 4px;
+  color: var(--storefront-muted);
+  font-size: 0.62rem;
+  font-weight: 680;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+}
+
+.storefront-house-ad__link {
+  position: relative;
+  display: block;
+  overflow: hidden;
+  border: 1px solid color-mix(in srgb, #f46a0a 24%, var(--locz-border));
+  border-radius: 24px;
+  background: #f9f4ec;
+  box-shadow: 0 18px 44px rgb(35 44 40 / 13%);
+  isolation: isolate;
+  transition:
+    transform 180ms ease,
+    box-shadow 220ms ease,
+    border-color 180ms ease;
+}
+
+.storefront-house-ad__link::after {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  box-shadow: inset 0 1px rgb(255 255 255 / 55%);
+  content: '';
+  pointer-events: none;
+}
+
+.storefront-house-ad__link:hover {
+  border-color: color-mix(in srgb, #f46a0a 52%, var(--locz-border));
+  box-shadow: 0 24px 58px rgb(35 44 40 / 18%);
+  transform: translateY(-3px);
+}
+
+.storefront-house-ad__link:focus-visible {
+  outline: 3px solid color-mix(in srgb, #f46a0a 70%, white);
+  outline-offset: 4px;
+}
+
+.storefront-house-ad picture,
+.storefront-house-ad img {
+  display: block;
+  width: 100%;
+}
+
+.storefront-house-ad img {
+  height: auto;
+  aspect-ratio: 3 / 1;
+  object-fit: cover;
+}
+
+@media (max-width: 760px) {
+  .storefront-house-ad__link {
+    border-radius: 20px;
+  }
+
+  .storefront-house-ad img {
+    aspect-ratio: 4 / 3;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .storefront-house-ad__link {
+    transition: none;
+  }
+}
+
 .business-profile-interest {
   display: inline-flex;
   width: fit-content;

@@ -17,6 +17,7 @@ import { ShareBusiness } from './share-business';
 import { BusinessBackButton } from './back-button';
 import { schemaTypeFor } from '@/lib/schema-type';
 import { AdSlot } from '@/components/ad-slot';
+import { StorefrontHouseAd } from '@/components/storefront-house-ad';
 import { BusinessActionTracker } from '@/components/business-action-tracker';
 import { StorefrontTabs } from './storefront-tabs';
 
@@ -930,7 +931,7 @@ export default async function BusinessPage({ params }: { params: Promise<{ slug:
                 know when this place is open, once, in three words. */}
           </section>
 
-          <AdSlot placement="BUSINESS_AFTER_LOCATION" contentScore={adContentScore} />
+          <StorefrontHouseAd />
 
           {faqs.length > 0 ? (
             <section className="business-profile-section business-profile-faq" id="faq">
