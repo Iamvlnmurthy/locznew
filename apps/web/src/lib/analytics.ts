@@ -30,6 +30,15 @@ interface Context {
   locality?: string | null;
 }
 
+export interface OnrolBannerContext {
+  businessId: string;
+  businessName: string;
+  city: string;
+  category: string;
+}
+
+export type OnrolBannerEvent = 'onrol_banner_view' | 'onrol_banner_click';
+
 /**
  * Fire and forget. Never throws, never blocks the click.
  *
@@ -49,5 +58,25 @@ export function trackBusinessAction(action: BusinessAction, ctx: Context = {}): 
     });
   } catch {
     // Nothing to do and nothing worth telling the reader.
+  }
+}
+
+/** Record the direct ONROL campaign funnel without delaying navigation. */
+export function trackOnrolBannerEvent(event: OnrolBannerEvent, context: OnrolBannerContext): void {
+  try {
+    const gtag = (window as unknown as { gtag?: (...args: unknown[]) => void }).gtag;
+    if (typeof gtag !== 'function') return;
+
+    gtag('event', event, {
+      placement: 'business_page_banner',
+      destination: 'onrol',
+      business_id: context.businessId,
+      business_name: context.businessName,
+      city: context.city,
+      category: context.category,
+      page_path: `${window.location.pathname}${window.location.search}`,
+    });
+  } catch {
+    // Analytics must never interfere with the advertisement link.
   }
 }

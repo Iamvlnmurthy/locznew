@@ -1,4 +1,8 @@
+'use client';
+
 import Image from 'next/image';
+import { useEffect, useRef } from 'react';
+import { trackOnrolBannerEvent, type OnrolBannerContext } from '@/lib/analytics';
 
 const ONROL_PROGRAM_URL =
   'https://onrol.in/programs/afprograms?utm_source=locz&utm_medium=display&utm_campaign=ai_programs&utm_content=business_page_banner';
@@ -8,16 +12,66 @@ const ONROL_PROGRAM_URL =
  * Separate desktop and mobile artwork keeps the message readable without cropping
  * the supplied poster into an illegible thumbnail.
  */
-export function StorefrontHouseAd() {
+export function StorefrontHouseAd({
+  businessId,
+  businessName,
+  city,
+  category,
+}: OnrolBannerContext) {
+  const bannerRef = useRef<HTMLElement>(null);
+  const viewTracked = useRef(false);
+
+  useEffect(() => {
+    const banner = bannerRef.current;
+    if (!banner) return;
+
+    const recordView = () => {
+      if (viewTracked.current) return;
+      viewTracked.current = true;
+      trackOnrolBannerEvent('onrol_banner_view', {
+        businessId,
+        businessName,
+        city,
+        category,
+      });
+    };
+
+    const supportsObserver = typeof window.IntersectionObserver === 'function';
+    if (!supportsObserver) {
+      const bounds = banner.getBoundingClientRect();
+      if (bounds.top < window.innerHeight && bounds.bottom > 0) recordView();
+      return;
+    }
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (!entry?.isIntersecting) return;
+        recordView();
+        observer.disconnect();
+      },
+      { threshold: 0.25 },
+    );
+
+    observer.observe(banner);
+    return () => observer.disconnect();
+  }, [businessId, businessName, category, city]);
+
   return (
-    <aside className="storefront-house-ad" aria-label="Sponsored learning program">
+    <aside ref={bannerRef} className="storefront-house-ad" aria-label="Sponsored learning program">
       <span className="storefront-house-ad__label">Sponsored · Onrol</span>
       <a
         href={ONROL_PROGRAM_URL}
         target="_blank"
         rel="sponsored noopener noreferrer"
         className="storefront-house-ad__link"
-        data-track="onrol_ai_generalist_ad_click"
+        onClick={() =>
+          trackOnrolBannerEvent('onrol_banner_click', {
+            businessId,
+            businessName,
+            city,
+            category,
+          })
+        }
         aria-label="Explore the Onrol AI Generalist Program (opens in a new tab)"
       >
         <picture>

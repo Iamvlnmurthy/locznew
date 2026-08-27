@@ -989,7 +989,12 @@ export default async function BusinessPage({ params }: { params: Promise<{ slug:
                 know when this place is open, once, in three words. */}
           </section>
 
-          <StorefrontHouseAd />
+          <StorefrontHouseAd
+            businessId={business.id}
+            businessName={business.name}
+            city={business.cityName}
+            category={business.categoryName}
+          />
 
           {faqs.length > 0 ? (
             <section className="business-profile-section business-profile-faq" id="faq">
