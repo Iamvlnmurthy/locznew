@@ -34,7 +34,10 @@ export async function Header({ locale }: { locale: Locale }) {
   const primaryLinks = [
     { href: '/discover/local-now', label: discoveryLabels['local-now'] },
     { href: '/news', label: discoveryLabels.news },
-    { href: '/business', label: discoveryLabels.businesses },
+    // The primary nav is a discovery switcher. `/business` is the separate directory/onboarding
+    // surface, while this button must open the same nearby-business feed as the home Businesses
+    // tile and the mobile app.
+    { href: '/discover/businesses', label: discoveryLabels.businesses },
     { href: '/discover/jobs', label: discoveryLabels.jobs },
     { href: '/discover/services', label: discoveryLabels.services },
   ];
