@@ -8,7 +8,7 @@ import { storeSession } from '@/lib/session';
 export interface RegisterState {
   error?: string;
   /** Kept so a failed submission does not clear what the person already typed. */
-  values?: { name?: string; email?: string; phone?: string };
+  values?: { name?: string; email?: string; phone?: string; cityId?: string };
 }
 
 /** 10 digits, first digit 6–9 — the Indian mobile range. Mirrors the sign-in form. */
@@ -34,10 +34,11 @@ export async function registerAction(
     .toLowerCase();
   const password = String(formData.get('password') ?? '');
   const confirm = String(formData.get('confirmPassword') ?? '');
+  const cityId = String(formData.get('cityId') ?? '').trim();
 
   // Everything the user typed is echoed back on every failure path, so a mistyped password
   // does not also cost them their name and number.
-  const values = { name, email, phone: national };
+  const values = { name, email, phone: national, cityId };
 
   if (name.length < 2) return { error: 'invalidName', values };
   // Loose on purpose: anything stricter rejects addresses that genuinely work, and this is
@@ -56,6 +57,7 @@ export async function registerAction(
         phone: `+91${national}`,
         displayName: name,
         password,
+        cityId: cityId || undefined,
         device: { deviceKey: `web-${Date.now()}`, platform: 'WEB', name: 'LocZ web' },
       },
     });

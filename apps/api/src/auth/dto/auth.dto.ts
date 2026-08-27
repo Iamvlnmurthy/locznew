@@ -141,6 +141,14 @@ export class RegisterDto {
   @ValidateNested()
   @Type(() => DeviceInfoDto)
   device!: DeviceInfoDto;
+
+  @ApiPropertyOptional({
+    example: '3a2a472a-6ea5-4148-9c60-8451f28b49e1',
+    description: 'City UUID selected during sign-up',
+  })
+  @IsOptional()
+  @IsString()
+  cityId?: string;
 }
 
 export class EmailLoginDto {

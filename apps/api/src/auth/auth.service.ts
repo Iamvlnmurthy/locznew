@@ -207,6 +207,26 @@ export class AuthService {
     });
 
     await this.rbac.grantRole(user.id, RoleName.REGISTERED_USER);
+
+    if (dto.cityId) {
+      try {
+        const city = await this.prisma.city.findUnique({ where: { id: dto.cityId } });
+        if (city) {
+          await this.prisma.savedLocation.create({
+            data: {
+              id: uuid(),
+              userId: user.id,
+              cityId: city.id,
+              label: 'Home',
+              isDefault: true,
+            },
+          });
+        }
+      } catch (err) {
+        this.logger.warn(`Could not save initial location for user ${user.id}: ${err}`);
+      }
+    }
+
     await this.audit.record({
       action: 'user.register',
       entityType: 'User',
