@@ -958,25 +958,29 @@
 
   .business-profile-identity__actions {
     display: grid;
-    margin-top: 13px;
+    margin-top: 16px;
     grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
-  .business-profile-identity__actions a:nth-child(3) {
-    grid-column: 1 / -1;
+    gap: 10px;
   }
 
   .business-profile-identity__actions a {
     width: 100%;
-    min-height: 42px;
-    border: 1px solid rgb(17 108 88 / 18%);
-    background: #fff;
-    color: #116c58;
+    min-height: 46px;
+    padding: 10px 12px;
+    border-radius: 12px;
+    font-size: 0.84rem;
+    font-weight: 650;
+    line-height: 1.2;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+    box-sizing: border-box;
+    text-align: center;
   }
 
-  .business-profile-identity__actions a.is-primary {
-    background: #116c58;
-    color: #fff;
+  .business-profile-identity__actions a:last-child:nth-child(odd) {
+    grid-column: 1 / -1;
   }
 
   .business-profile-layout {
@@ -2980,18 +2984,187 @@
   color: #3f554d;
 }
 
-/* WhatsApp action button styling in hero */
-.business-profile-identity__actions a.is-whatsapp {
-  background: #25d366;
-  color: #fff;
-  border-color: #25d366;
+/* =========================================================================
+   STOREFRONT HERO ACTIONS & BADGES POLISH
+   ========================================================================= */
+
+/* Hero Badges Row */
+.business-profile-badges {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 7px;
+  margin-top: 10px;
+}
+
+.business-profile-badges > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  min-height: 28px;
+  padding: 4px 9px;
+  border-radius: 8px;
+  background: #f1f5f9;
+  border: 1px solid #cbd5e1;
+  color: #334155;
+  font-size: 0.74rem;
+  font-weight: 600;
+  line-height: 1.2;
+}
+
+.business-profile-badges > span svg {
+  width: 13px;
+  height: 13px;
+  flex-shrink: 0;
+}
+
+.business-profile-badges > span.is-open {
+  background: #f0fdf4;
+  border-color: #86efac;
+  color: #166534;
+}
+
+.business-profile-badges > span.is-verified {
+  background: #eff6ff;
+  border-color: #93c5fd;
+  color: #1e40af;
+}
+
+.business-profile-badges .business-profile-badges__interest {
+  background: #fffbeb;
+  border-color: #fde68a;
+  color: #92400e;
+}
+
+.business-profile-badges .business-profile-badges__interest svg {
+  color: #d97706;
+}
+
+/* Hero Action Buttons Hierarchy */
+.business-profile-identity__actions {
+  display: grid;
+  margin-top: 16px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  width: 100%;
+}
+
+.business-profile-identity__actions > a {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 46px;
+  padding: 10px 14px;
+  border-radius: 12px;
+  font-size: 0.86rem;
   font-weight: 650;
+  text-decoration: none;
+  line-height: 1.2;
+  box-sizing: border-box;
+  text-align: center;
+  transition: transform 140ms ease, box-shadow 140ms ease, background-color 140ms ease;
+}
+
+.business-profile-identity__actions > a svg {
+  width: 17px;
+  height: 17px;
+  flex-shrink: 0;
+}
+
+.business-profile-identity__actions > a:active {
+  transform: scale(0.98);
+}
+
+/* 1. Call Button (Solid Forest Emerald) */
+.business-profile-identity__actions a.is-call {
+  background: #0d5c4b !important;
+  color: #ffffff !important;
+  border: 1px solid #0d5c4b !important;
+  box-shadow: 0 4px 14px rgb(13 92 75 / 22%) !important;
+}
+
+.business-profile-identity__actions a.is-call:hover {
+  background: #084337 !important;
+  border-color: #084337 !important;
+  box-shadow: 0 6px 18px rgb(13 92 75 / 32%) !important;
+  transform: translateY(-1px);
+}
+
+/* 2. WhatsApp Button (Modern WhatsApp Green) */
+.business-profile-identity__actions a.is-whatsapp {
+  background: #25d366 !important;
+  color: #ffffff !important;
+  border: 1px solid #20ba5a !important;
+  box-shadow: 0 4px 14px rgb(37 211 102 / 24%) !important;
 }
 
 .business-profile-identity__actions a.is-whatsapp:hover {
-  background: #20ba5a;
-  border-color: #20ba5a;
-  transform: translateY(-2px);
+  background: #1eb956 !important;
+  border-color: #1eb956 !important;
+  box-shadow: 0 6px 18px rgb(37 211 102 / 34%) !important;
+  transform: translateY(-1px);
+}
+
+/* 3. Directions Button (Crisp Soft Mint) */
+.business-profile-identity__actions a.is-directions {
+  background: #f0fdf4 !important;
+  color: #166534 !important;
+  border: 1px solid #bbf7d0 !important;
+}
+
+.business-profile-identity__actions a.is-directions:hover {
+  background: #dcfce7 !important;
+  border-color: #86efac !important;
+  transform: translateY(-1px);
+}
+
+/* 4. Enquiry Button (Crisp Slate White Card) */
+.business-profile-identity__actions a.is-enquiry {
+  background: #ffffff !important;
+  color: #1e293b !important;
+  border: 1px solid #cbd5e1 !important;
+}
+
+.business-profile-identity__actions a.is-enquiry:hover {
+  background: #f8fafc !important;
+  border-color: #94a3b8 !important;
+  transform: translateY(-1px);
+}
+
+/* Responsive Action Layout */
+@media (min-width: 761px) {
+  .business-profile-identity__actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px;
+    width: auto;
+  }
+
+  .business-profile-identity__actions > a {
+    min-height: 42px;
+    padding: 8px 18px;
+    border-radius: 10px;
+    font-size: 0.85rem;
+  }
+}
+
+@media (max-width: 760px) {
+  .business-profile-identity__actions {
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 10px !important;
+  }
+
+  .business-profile-identity__actions > a {
+    width: 100% !important;
+    min-height: 46px !important;
+  }
+
+  .business-profile-identity__actions > a:last-child:nth-child(odd) {
+    grid-column: 1 / -1 !important;
+  }
 }
 
 /* Specialties & Services Badges */
@@ -3088,7 +3261,7 @@
   }
 
   .btn--sticky-call {
-    background: #0f172a;
+    background: #0d5c4b;
     color: #fff;
   }
 

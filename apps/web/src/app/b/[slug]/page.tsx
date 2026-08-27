@@ -677,37 +677,27 @@ export default async function BusinessPage({ params }: { params: Promise<{ slug:
                     {p.onLoczSince} {new Date(business.createdAt).getFullYear()}
                   </span>
                   {business.loczId ? (
-                    // The same characters already sitting at the end of the URL, labelled. A
-                    // shopkeeper ringing up to claim their listing can read this out, and
-                    // support can find the record from it.
                     <span className="business-profile-identity__id">
                       {p.loczId} <code>{business.loczId}</code>
                     </span>
                   ) : null}
-                </div>
-                {business.claimStatus === 'UNCLAIMED' && business.viewCount > 0 ? (
-                  <p className="business-profile-interest" role="status">
-                    <Icon name="sparkles" />
-                    {p.profileInterest.replace(
-                      '{count}',
-                      business.viewCount.toLocaleString(`${locale}-IN`),
-                    )}
-                  </p>
-                ) : null}
-                <div className="business-profile-identity__actions" aria-label={p.talkBusiness}>
-                  {directionsUrl ? (
-                    <a
-                      href={directionsUrl}
-                      data-track="directions_click"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="is-primary"
-                    >
-                      <Icon name="location" /> {p.getDirections}
-                    </a>
+                  {business.claimStatus === 'UNCLAIMED' && business.viewCount > 0 ? (
+                    <span className="business-profile-badges__interest" role="status">
+                      <Icon name="sparkles" />
+                      {p.profileInterest.replace(
+                        '{count}',
+                        business.viewCount.toLocaleString(`${locale}-IN`),
+                      )}
+                    </span>
                   ) : null}
+                </div>
+                <div className="business-profile-identity__actions" aria-label={p.talkBusiness}>
                   {business.primaryPhone ? (
-                    <a href={`tel:${business.primaryPhone}`} data-track="call_click">
+                    <a
+                      href={`tel:${business.primaryPhone}`}
+                      data-track="call_click"
+                      className="is-call"
+                    >
                       <Icon name="phone" /> {p.callBusiness}
                     </a>
                   ) : null}
@@ -722,8 +712,19 @@ export default async function BusinessPage({ params }: { params: Promise<{ slug:
                       <Icon name="message" /> WhatsApp
                     </a>
                   ) : null}
+                  {directionsUrl ? (
+                    <a
+                      href={directionsUrl}
+                      data-track="directions_click"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="is-directions"
+                    >
+                      <Icon name="location" /> {p.getDirections}
+                    </a>
+                  ) : null}
                   {!business.isOwner ? (
-                    <a href="#contact" data-track="enquiry_open">
+                    <a href="#contact" data-track="enquiry_open" className="is-enquiry">
                       <Icon name="message" /> {p.sendEnquiry}
                     </a>
                   ) : null}
