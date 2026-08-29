@@ -239,6 +239,7 @@ export class BusinessClaimsService {
         email: true,
         latitude: true,
         longitude: true,
+        category: { select: { parent: { select: { slug: true } } } },
       },
     });
 
@@ -248,6 +249,15 @@ export class BusinessClaimsService {
     if (publicBrand) {
       throw new ConflictException(
         `${publicBrand.displayName} locations are maintained as public brand records and cannot be claimed. Report an incorrect location instead.`,
+      );
+    }
+
+    // Public services (banks, post offices, police stations, courts, government offices…) are
+    // authoritative civic records, not owner-operated storefronts — nobody may claim one. The UI
+    // hides the claim controls; this is what actually enforces it against a direct API call.
+    if (business.category?.parent?.slug === 'public-services') {
+      throw new ConflictException(
+        'This is a public service listed from official records and cannot be claimed. Use “Suggest a correction” to report an inaccuracy instead.',
       );
     }
 
