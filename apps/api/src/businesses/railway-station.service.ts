@@ -26,6 +26,10 @@ const GEN = new Set(
   'railway station junction jn the new old road city town east west north south main'.split(' '),
 );
 const IS_STATION = /\brailway\s*station\b|\bjunction\b/i;
+// A business that merely SITS near a station (a hotel, lodge, PG, shop) is not the station itself.
+// These words mean "near/at a station", so the page must not claim to be the station.
+const NOT_STATION =
+  /\b(hotel|lodge|lodging|resort|inn|restaurant|cafe|bar|hostel|pg|residency|residence|guest|stay|rooms?|near|opp|opposite|behind|beside|hospital|clinic|apartment|flats?|shop|store|parking|cyber|xerox|tiffin|mess|dhaba)\b/i;
 const TRAIN_CAP = 12;
 
 @Injectable()
@@ -53,7 +57,7 @@ export class RailwayStationService {
   }
 
   async enrich(input: { name: string }): Promise<RailwayInfo | null> {
-    if (!IS_STATION.test(input.name)) return null;
+    if (!IS_STATION.test(input.name) || NOT_STATION.test(input.name)) return null;
     if (!(await this.isAvailable())) return null;
 
     const core = input.name.replace(/railway\s*station|junction/gi, ' ');
