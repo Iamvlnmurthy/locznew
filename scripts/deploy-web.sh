@@ -36,11 +36,18 @@ set -a; . ./.env; set +a
 export NODE_ENV=production
 # `next build` on this shared 15GB box can spike ~1-2GB and trip the OOM-killer (which has killed
 # Postgres mid-deploy). Shed load while building: pause the non-public admin app, cap the build's
-# heap, and de-prioritise it for CPU/IO. A trap guarantees admin comes back on any exit.
+# heap, and de-prioritise it for CPU/IO. Stop the current web process before replacing `.next`:
+# otherwise Next can recreate fetch-cache entries while `rm -rf` is removing them, leaving a
+# partial build or an unwritable prerender cache. A trap guarantees both services return on exit.
 ADMIN_WAS_UP=$(pm2 jlist 2>/dev/null | grep -c '"name":"locz-admin".*"status":"online"' || true)
+WEB_WAS_UP=$(pm2 jlist 2>/dev/null | grep -c '"name":"locz-web".*"status":"online"' || true)
 [ "${ADMIN_WAS_UP:-0}" != "0" ] && { echo "   pausing locz-admin during build"; pm2 stop locz-admin >/dev/null 2>&1 || true; }
-restore_admin() { [ "${ADMIN_WAS_UP:-0}" != "0" ] && pm2 start locz-admin >/dev/null 2>&1 || true; }
-trap restore_admin EXIT
+[ "${WEB_WAS_UP:-0}" != "0" ] && { echo "   pausing locz-web before replacing .next"; pm2 stop locz-web >/dev/null 2>&1 || true; }
+restore_services() {
+  [ "${WEB_WAS_UP:-0}" != "0" ] && pm2 start locz-web >/dev/null 2>&1 || true
+  [ "${ADMIN_WAS_UP:-0}" != "0" ] && pm2 start locz-admin >/dev/null 2>&1 || true
+}
+trap restore_services EXIT
 rm -rf apps/web/.next
 set +e
 NODE_OPTIONS="--max-old-space-size=1536" nice -n 10 ionice -c3 npm run build -w @locz/web >/tmp/deploy-web.log 2>&1
