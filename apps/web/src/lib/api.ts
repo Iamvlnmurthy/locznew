@@ -1,7 +1,15 @@
 import { cookies } from 'next/headers';
 import type { ApiResponse } from '@locz/shared-types';
 
-export const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL ?? 'http://localhost:4000/api/v1';
+// This module is server-only (it imports next/headers), so its requests never leave the box when an
+// internal base is set. SSR MUST NOT round-trip through the public CDN URL: Cloudflare/LiteSpeed strip
+// the `x-locz-internal` bypass header in transit, so every server render was rate-limited into one
+// saturated bucket ("Something went wrong" on /b/ pages under crawl load). Prefer a direct localhost
+// API base for server calls; the browser still uses NEXT_PUBLIC_API_BASE_URL elsewhere.
+export const API_BASE =
+  process.env.INTERNAL_API_BASE_URL ??
+  process.env.NEXT_PUBLIC_API_BASE_URL ??
+  'http://localhost:4000/api/v1';
 export const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000';
 
 export const ACCESS_COOKIE = 'locz_access';
