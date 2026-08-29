@@ -46,6 +46,57 @@ const GENERIC = new Set(
 );
 const LIST_CAP = 14;
 
+// Indian states/UTs, to catch the rare razorpay row whose structured city/district is right but whose
+// free-text ADDRESS is stale and names a different state (e.g. a Nashik branch with a Gujarat address).
+// Showing that under "… in Nashik" reads as wrong, so such a row is dropped from the list.
+const STATE_NAMES = [
+  'andhra pradesh',
+  'arunachal',
+  'assam',
+  'bihar',
+  'chhattisgarh',
+  'goa',
+  'gujarat',
+  'haryana',
+  'himachal',
+  'jharkhand',
+  'karnataka',
+  'kerala',
+  'madhya pradesh',
+  'maharashtra',
+  'manipur',
+  'meghalaya',
+  'mizoram',
+  'nagaland',
+  'odisha',
+  'punjab',
+  'rajasthan',
+  'sikkim',
+  'tamil nadu',
+  'telangana',
+  'tripura',
+  'uttar pradesh',
+  'uttarakhand',
+  'west bengal',
+  'delhi',
+  'jammu',
+  'kashmir',
+  'chandigarh',
+  'puducherry',
+];
+
+/** True unless the free-text address explicitly names a state other than the branch's own state. */
+function addressMatchesState(address: string | null, state: string | null): boolean {
+  if (!address || !state) return true;
+  const a = address.toLowerCase();
+  const own = state.toLowerCase();
+  for (const s of STATE_NAMES) {
+    if (own.includes(s)) continue; // the branch's own state — fine
+    if (a.includes(s)) return false; // a different state named in the address — stale/mismatched row
+  }
+  return true;
+}
+
 @Injectable()
 export class BankBranchService {
   private readonly logger = new Logger(BankBranchService.name);
@@ -140,7 +191,11 @@ export class BankBranchService {
         ...uniqueHints.map((h) => `%${h}%`),
       );
       const only = rows[0];
-      if (rows.length === 1 && only) matched = this.toRecord(only);
+      if (rows.length === 1 && only) {
+        matched = this.toRecord(only);
+        // Keep the verified IFSC, but suppress a stale address that names a different state.
+        if (!addressMatchesState(matched.address, matched.state)) matched.address = null;
+      }
     }
 
     // 2) The authoritative city/district branch list — what the page is built around when unpinned.
@@ -148,16 +203,20 @@ export class BankBranchService {
     let branchCount = 0;
     let areaLabel: string | null = null;
     if (area) {
+      // Fetch a buffer beyond the cap so dropping stale-address rows still leaves a full list.
       const rows = await this.prisma.$queryRawUnsafe<Array<Record<string, unknown>>>(
         `${SELECT} WHERE lower(bank) = lower($1) AND (lower(city) = lower($2) OR lower(district) = lower($2))
-         ORDER BY branch ASC LIMIT ${LIST_CAP + 1}`,
+         ORDER BY branch ASC LIMIT ${LIST_CAP + 8}`,
         bank,
         area,
       );
-      branches = rows.slice(0, LIST_CAP).map((r) => this.toRecord(r));
-      branchCount = rows.length; // capped indicator; exact count fetched below only if needed
+      const clean = rows
+        .map((r) => this.toRecord(r))
+        .filter((b) => addressMatchesState(b.address, b.state));
+      branches = clean.slice(0, LIST_CAP);
+      branchCount = clean.length; // capped indicator; exact count fetched below only if needed
       if (branches.length) areaLabel = area;
-      if (rows.length > LIST_CAP) {
+      if (clean.length > LIST_CAP) {
         const c = await this.prisma.$queryRawUnsafe<Array<{ n: bigint }>>(
           `SELECT count(*)::bigint AS n FROM bank_branches WHERE lower(bank) = lower($1) AND (lower(city) = lower($2) OR lower(district) = lower($2))`,
           bank,
