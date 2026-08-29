@@ -38,6 +38,7 @@ export async function Header({ locale }: { locale: Locale }) {
     // surface, while this button must open the same nearby-business feed as the home Businesses
     // tile and the mobile app.
     { href: '/discover/businesses', label: discoveryLabels.businesses },
+    { href: '/c/public-services', label: discoveryLabels['public-services'] },
     { href: '/discover/jobs', label: discoveryLabels.jobs },
     { href: '/discover/services', label: discoveryLabels.services },
   ];
@@ -70,15 +71,26 @@ export async function Header({ locale }: { locale: Locale }) {
           />
 
           <nav className="header__primary" aria-label={t('nav.primary')}>
-            {primaryLinks.map((item) => (
-              <Link
-                key={item.href}
-                href={item.href}
-                className={pathname.startsWith(item.href) ? 'is-active' : undefined}
-              >
-                {item.label}
-              </Link>
-            ))}
+            {primaryLinks.map((item) => {
+              const isActive = pathname.startsWith(item.href);
+              const className = [
+                isActive ? 'is-active' : '',
+                item.href === '/c/public-services' ? 'header__primary-public-services' : '',
+              ]
+                .filter(Boolean)
+                .join(' ');
+
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  className={className || undefined}
+                  aria-current={isActive ? 'page' : undefined}
+                >
+                  {item.label}
+                </Link>
+              );
+            })}
           </nav>
 
           <ThemeToggle label={t('nav.toggleTheme')} className="theme-toggle--mobile" />

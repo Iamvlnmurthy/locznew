@@ -1513,3 +1513,54 @@
     bottom: 38px;
   }
 }
+
+/* The full discovery switcher is intentionally collapsed below desktop widths. Keep the
+   public-services directory discoverable in that collapsed header without adding a sixth
+   bottom-dock action or allowing the document to overflow horizontally. */
+.header__primary a:focus-visible {
+  outline: 3px solid rgb(15 102 84 / 28%);
+  outline-offset: 2px;
+}
+
+@media (max-width: 1079px) {
+  .header .header__primary {
+    display: flex;
+    flex: 0 0 auto;
+    margin-left: 0;
+  }
+
+  .header .header__primary > a {
+    display: none;
+  }
+
+  .header .header__primary > .header__primary-public-services {
+    display: inline-flex;
+  }
+}
+
+@media (max-width: 760px) {
+  .header {
+    height: auto;
+  }
+
+  .header .container.header__row {
+    min-height: 56px;
+    flex-wrap: wrap;
+    row-gap: 5px;
+    padding-bottom: 8px;
+  }
+
+  .header .header__primary {
+    order: 5;
+    width: 100%;
+    justify-content: center;
+    padding: 3px;
+  }
+
+  .header .header__primary > .header__primary-public-services {
+    width: 100%;
+    min-height: 32px;
+    justify-content: center;
+    padding-block: 6px;
+  }
+}
