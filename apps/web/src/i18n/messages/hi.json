@@ -89,7 +89,41 @@
     "heroNoAlerts": "सब ठीक है",
     "popularKicker": "डायरेक्टरी देखें",
     "popularTitle": "{city} में लोकप्रिय",
-    "popularCount": "{count} जगहें"
+    "popularCount": "{count} जगहें",
+    "publicServicesKicker": "सार्वजनिक आवश्यक सेवाएँ",
+    "publicServicesTitle": "{city} में सार्वजनिक सेवाएँ",
+    "publicServicesSubtitle": "बैंक, परिवहन, सुरक्षा, स्वास्थ्य और सरकारी कार्यालय—ज़रूरत के समय स्पष्ट स्थानीय जानकारी।",
+    "publicServicesCount": "{count} स्थान"
+  },
+  "publicServices": {
+    "directoryKicker": "सार्वजनिक सेवा निर्देशिका",
+    "directoryTitle": "सरकारी और सार्वजनिक सेवाएँ",
+    "directorySubtitle": "सार्वजनिक अभिलेखों से आवश्यक नागरिक, वित्तीय, स्वास्थ्य, सुरक्षा और परिवहन सेवाएँ खोजें।",
+    "availableIn": "{city} के आसपास उपलब्ध",
+    "nationalDirectory": "पूरे भारत की निर्देशिका",
+    "locations": "{count} सार्वजनिक स्थान",
+    "searchPlaceholder": "{category} खोजें",
+    "resultsTitle": "{city} के आसपास {category}",
+    "resultsTitleNational": "भारत भर में {category}",
+    "noResults": "यहाँ अभी कोई मिलती-जुलती सार्वजनिक सेवा उपलब्ध नहीं है।",
+    "viewLocation": "जानकारी देखें",
+    "breadcrumb": "सार्वजनिक सेवा ब्रेडक्रंब",
+    "pagination": "सार्वजनिक सेवा स्थान पृष्ठ",
+    "previous": "पिछला",
+    "more": "और देखें",
+    "page": "पृष्ठ {page}",
+    "categories": {
+      "banks-atms": "बैंक और एटीएम",
+      "post-offices": "डाकघर",
+      "government-hospitals": "सरकारी अस्पताल",
+      "police-stations": "पुलिस स्टेशन",
+      "universities": "विश्वविद्यालय",
+      "railway-stations": "रेलवे स्टेशन",
+      "government-offices": "सरकारी कार्यालय",
+      "bus-stations": "बस स्टेशन",
+      "courts": "न्यायालय",
+      "fire-stations": "अग्निशमन केंद्र"
+    }
   },
   "nav": {
     "home": "होम",
@@ -861,7 +895,18 @@
     "locatedIn": "यह {place} में है।",
     "nearLandmark": "यह {landmark} के पास है।",
     "pincodeArea": "पिनकोड {pincode} है।",
-    "back": "वापस"
+    "back": "वापस",
+    "publicService": "सार्वजनिक सेवा",
+    "publicServiceProfile": "सार्वजनिक सेवा जानकारी अनुभाग",
+    "publicInformationKicker": "सार्वजनिक जानकारी",
+    "publicAbout": "{name} के बारे में",
+    "publicFacilities": "सेवाएँ और सुविधाएँ",
+    "officialContact": "आधिकारिक संपर्क जानकारी",
+    "officialContactBody": "प्रकाशित संपर्क या दिशा-निर्देशों का उपयोग करें। महत्वपूर्ण जानकारी संबंधित प्राधिकरण से सत्यापित करें।",
+    "publicRecordStatus": "रिकॉर्ड का प्रकार",
+    "officialPublicRecord": "सार्वजनिक सेवा जानकारी रिकॉर्ड",
+    "suggestCorrection": "सुधार सुझाएँ",
+    "publicNearby": "{place} के आसपास अन्य {category}"
   },
   "dashboardUi": {
     "aboutYou": "आपके बारे में",

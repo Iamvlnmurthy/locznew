@@ -89,7 +89,41 @@
     "heroNoAlerts": "All clear",
     "popularKicker": "Browse the directory",
     "popularTitle": "Popular in {city}",
-    "popularCount": "{count} places"
+    "popularCount": "{count} places",
+    "publicServicesKicker": "Public essentials",
+    "publicServicesTitle": "Public services in {city}",
+    "publicServicesSubtitle": "Banks, transport, safety, health and civic offices—clear local information when you need it.",
+    "publicServicesCount": "{count} locations"
+  },
+  "publicServices": {
+    "directoryKicker": "Public services directory",
+    "directoryTitle": "Official and public services",
+    "directorySubtitle": "Find essential civic, financial, health, safety and transport services from public records.",
+    "availableIn": "Available around {city}",
+    "nationalDirectory": "India-wide directory",
+    "locations": "{count} public locations",
+    "searchPlaceholder": "Search {category}",
+    "resultsTitle": "{category} around {city}",
+    "resultsTitleNational": "{category} across India",
+    "noResults": "No matching public-service locations are available here yet.",
+    "viewLocation": "View information",
+    "breadcrumb": "Public services breadcrumb",
+    "pagination": "Public-service locations pages",
+    "previous": "Previous",
+    "more": "More",
+    "page": "Page {page}",
+    "categories": {
+      "banks-atms": "Banks & ATMs",
+      "post-offices": "Post offices",
+      "government-hospitals": "Government hospitals",
+      "police-stations": "Police stations",
+      "universities": "Universities",
+      "railway-stations": "Railway stations",
+      "government-offices": "Government offices",
+      "bus-stations": "Bus stations",
+      "courts": "Courts",
+      "fire-stations": "Fire stations"
+    }
   },
   "nav": {
     "home": "Home",
@@ -893,7 +927,18 @@
     "locatedIn": "It is in {place}.",
     "nearLandmark": "It is near {landmark}.",
     "pincodeArea": "The pincode is {pincode}.",
-    "back": "Back"
+    "back": "Back",
+    "publicService": "Public service",
+    "publicServiceProfile": "Public-service information sections",
+    "publicInformationKicker": "Public information",
+    "publicAbout": "About {name}",
+    "publicFacilities": "Services and facilities",
+    "officialContact": "Official contact information",
+    "officialContactBody": "Use the published contact details or directions below. Confirm important information with the responsible authority.",
+    "publicRecordStatus": "Record type",
+    "officialPublicRecord": "Public-service information record",
+    "suggestCorrection": "Suggest a correction",
+    "publicNearby": "Other {category} around {place}"
   },
   "dashboardUi": {
     "aboutYou": "About you",

@@ -13,21 +13,25 @@ interface ClaimableBusiness {
   categoryName: string;
   cityName: string;
   isClaimable?: boolean;
+  isPublicService?: boolean;
 }
 
 export const metadata: Metadata = { robots: { index: false, follow: false } };
 
 export default async function BusinessClaimPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
-  const [user, locale] = await Promise.all([getCurrentUser(), getLocale()]);
-  if (!user) redirect(`/signin?next=${encodeURIComponent(`/b/${slug}/claim`)}`);
-
-  const [business, categories] = await Promise.all([
+  const [business, user, locale] = await Promise.all([
     apiSafe<ClaimableBusiness>(`/businesses/${encodeURIComponent(slug)}`, { auth: true }),
-    apiSafe<Category[]>('/categories?listingType=BUSINESS_LISTING', { revalidate: 3600 }),
+    getCurrentUser(),
+    getLocale(),
   ]);
   if (!business) notFound();
-  if (business.isClaimable === false) redirect(`/b/${business.slug}`);
+  if (business.isPublicService || business.isClaimable === false) redirect(`/b/${business.slug}`);
+  if (!user) redirect(`/signin?next=${encodeURIComponent(`/b/${slug}/claim`)}`);
+
+  const categories = await apiSafe<Category[]>('/categories?listingType=BUSINESS_LISTING', {
+    revalidate: 3600,
+  });
 
   return (
     <BusinessClaimForm

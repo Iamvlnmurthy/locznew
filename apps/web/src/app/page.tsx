@@ -13,6 +13,11 @@ import { relativeTime } from '@/lib/relative-time';
 import { RadiusSelector } from '@/components/radius-selector';
 import { DiscoveryMotionLink } from '@/components/discovery-motion-link';
 import { AdSlot } from '@/components/ad-slot';
+import {
+  PUBLIC_SERVICE_ICONS,
+  PUBLIC_SERVICE_SLUGS,
+  publicServiceLabel,
+} from '@/lib/public-services';
 
 interface LocalWeather {
   tempC: number;
@@ -128,9 +133,11 @@ export default async function HomePage({
     items.sort((a, b) => {
       const da = a.distanceMeters;
       const db = b.distanceMeters;
-      if (da == null && db == null) return 0;
-      if (da == null) return 1;
-      if (db == null) return -1;
+      const daMissing = typeof da !== 'number';
+      const dbMissing = typeof db !== 'number';
+      if (daMissing && dbMissing) return 0;
+      if (daMissing) return 1;
+      if (dbMissing) return -1;
       return da - db;
     });
     return items;
@@ -258,6 +265,21 @@ export default async function HomePage({
     .filter((c) => c.count > 0)
     .sort((a, b) => b.count - a.count)
     .slice(0, 8);
+  const categoryBySlug = new Map(
+    (bizCategories ?? []).map((category) => [category.slug, category]),
+  );
+  const publicServiceCategories = PUBLIC_SERVICE_SLUGS.map((slug) => {
+    const category = categoryBySlug.get(slug);
+    return category
+      ? {
+          ...category,
+          slug,
+          count: catCountById.get(category.id) ?? 0,
+          label: publicServiceLabel(t, slug),
+          icon: PUBLIC_SERVICE_ICONS[slug],
+        }
+      : null;
+  }).filter((category): category is NonNullable<typeof category> => Boolean(category?.count));
   const areaLabels = getMessageGroup(locale, 'discoveryAreas');
   const primaryAreas = [
     'local-now',
@@ -502,6 +524,48 @@ export default async function HomePage({
                 <span className="home-popular-card__arrow" aria-hidden="true">
                   <Icon name="arrow" />
                 </span>
+              </Link>
+            ))}
+          </div>
+        </section>
+      ) : null}
+
+      {homeCity && publicServiceCategories.length > 0 ? (
+        <section
+          className="container home-public-services"
+          aria-labelledby="home-public-services-title"
+        >
+          <div className="home-public-services__intro">
+            <span className="home-public-services__seal" aria-hidden="true">
+              <Icon name="government" />
+            </span>
+            <div>
+              <span className="section-kicker">{t('home.publicServicesKicker')}</span>
+              <h2 id="home-public-services-title">
+                {t('home.publicServicesTitle', { city: homeCity.name })}
+              </h2>
+              <p>{t('home.publicServicesSubtitle')}</p>
+            </div>
+          </div>
+          <div className="home-public-services__grid">
+            {publicServiceCategories.map((category) => (
+              <Link
+                key={category.slug}
+                href={`/c/${category.slug}`}
+                className="home-public-service-card"
+              >
+                <span className="home-public-service-card__icon" aria-hidden="true">
+                  <Icon name={category.icon} />
+                </span>
+                <span className="home-public-service-card__body">
+                  <strong>{category.label}</strong>
+                  <small>
+                    {t('home.publicServicesCount', {
+                      count: category.count.toLocaleString(`${locale}-IN`),
+                    })}
+                  </small>
+                </span>
+                <Icon name="arrow" />
               </Link>
             ))}
           </div>

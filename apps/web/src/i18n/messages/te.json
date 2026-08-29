@@ -89,7 +89,41 @@
     "heroNoAlerts": "అంతా సవ్యంగా",
     "popularKicker": "డైరెక్టరీ చూడండి",
     "popularTitle": "{city} లో పాపులర్",
-    "popularCount": "{count} ప్రదేశాలు"
+    "popularCount": "{count} ప్రదేశాలు",
+    "publicServicesKicker": "ప్రజా అవసరాలు",
+    "publicServicesTitle": "{city}లో ప్రజా సేవలు",
+    "publicServicesSubtitle": "బ్యాంకులు, రవాణా, భద్రత, ఆరోగ్యం మరియు ప్రభుత్వ కార్యాలయాలు—అవసరమైనప్పుడు స్పష్టమైన స్థానిక సమాచారం.",
+    "publicServicesCount": "{count} ప్రదేశాలు"
+  },
+  "publicServices": {
+    "directoryKicker": "ప్రజా సేవల డైరెక్టరీ",
+    "directoryTitle": "ప్రభుత్వ మరియు ప్రజా సేవలు",
+    "directorySubtitle": "ప్రజా రికార్డుల నుంచి అవసరమైన పౌర, ఆర్థిక, ఆరోగ్య, భద్రత మరియు రవాణా సేవలను కనుగొనండి.",
+    "availableIn": "{city} చుట్టుపక్కల అందుబాటులో ఉన్నాయి",
+    "nationalDirectory": "భారతదేశవ్యాప్త డైరెక్టరీ",
+    "locations": "{count} ప్రజా ప్రదేశాలు",
+    "searchPlaceholder": "{category} కోసం వెతకండి",
+    "resultsTitle": "{city} చుట్టుపక్కల {category}",
+    "resultsTitleNational": "భారతదేశవ్యాప్తంగా {category}",
+    "noResults": "ఇక్కడ సరిపోలే ప్రజా సేవా ప్రదేశాలు ఇంకా అందుబాటులో లేవు.",
+    "viewLocation": "సమాచారం చూడండి",
+    "breadcrumb": "ప్రజా సేవల బ్రెడ్‌క్రంబ్",
+    "pagination": "ప్రజా సేవా ప్రదేశాల పేజీలు",
+    "previous": "మునుపటి",
+    "more": "మరిన్ని",
+    "page": "పేజీ {page}",
+    "categories": {
+      "banks-atms": "బ్యాంకులు & ఏటీఎంలు",
+      "post-offices": "తపాలా కార్యాలయాలు",
+      "government-hospitals": "ప్రభుత్వ ఆసుపత్రులు",
+      "police-stations": "పోలీస్ స్టేషన్లు",
+      "universities": "విశ్వవిద్యాలయాలు",
+      "railway-stations": "రైల్వే స్టేషన్లు",
+      "government-offices": "ప్రభుత్వ కార్యాలయాలు",
+      "bus-stations": "బస్ స్టేషన్లు",
+      "courts": "న్యాయస్థానాలు",
+      "fire-stations": "అగ్నిమాపక కేంద్రాలు"
+    }
   },
   "nav": {
     "home": "హోమ్",
@@ -861,7 +895,18 @@
     "locatedIn": "ఇది {place} లో ఉంది.",
     "nearLandmark": "ఇది {landmark} దగ్గర ఉంది.",
     "pincodeArea": "పిన్‌కోడ్ {pincode}.",
-    "back": "వెనుకకు"
+    "back": "వెనుకకు",
+    "publicService": "ప్రజా సేవ",
+    "publicServiceProfile": "ప్రజా సేవా సమాచార విభాగాలు",
+    "publicInformationKicker": "ప్రజా సమాచారం",
+    "publicAbout": "{name} గురించి",
+    "publicFacilities": "సేవలు మరియు సౌకర్యాలు",
+    "officialContact": "అధికారిక సంప్రదింపు సమాచారం",
+    "officialContactBody": "ప్రచురించిన సంప్రదింపు వివరాలు లేదా దిశలను ఉపయోగించండి. ముఖ్యమైన సమాచారాన్ని సంబంధిత అధికార సంస్థతో నిర్ధారించండి.",
+    "publicRecordStatus": "రికార్డు రకం",
+    "officialPublicRecord": "ప్రజా సేవా సమాచార రికార్డు",
+    "suggestCorrection": "సవరణను సూచించండి",
+    "publicNearby": "{place} చుట్టుపక్కల ఇతర {category}"
   },
   "dashboardUi": {
     "aboutYou": "మీ గురించి",

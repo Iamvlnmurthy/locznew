@@ -4213,7 +4213,7 @@
 .bank-branch-table { border-collapse: collapse; width: 100%; min-width: 560px; font-size: 0.9rem; }
 .bank-branch-table thead th {
   text-align: left; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.06em;
-  font-weight: 700; color: var(--locz-text-muted); background: var(--locz-surface-muted);
+  font-weight: 700; color: #435a52; background: var(--locz-surface-muted);
   padding: 10px 14px; border-bottom: 1px solid var(--storefront-line, var(--locz-border));
 }
 .bank-branch-table tbody td, .bank-branch-table tbody th {
@@ -4222,8 +4222,8 @@
 .bank-branch-table tbody tr:last-child td, .bank-branch-table tbody tr:last-child th { border-bottom: 0; }
 .bank-branch-table__branch { font-weight: 600; }
 .bank-branch-table__branch-name { display: block; color: var(--locz-text); }
-.bank-branch-table__addr { display: block; margin-top: 2px; font-weight: 400; font-size: 0.78rem; color: var(--locz-text-muted); max-width: 34ch; }
-.bank-branch-table__micr { font-family: "JetBrains Mono", ui-monospace, monospace; font-size: 0.85rem; color: var(--locz-text-muted); font-variant-numeric: tabular-nums; }
+.bank-branch-table__addr { display: block; margin-top: 2px; font-weight: 400; font-size: 0.78rem; color: #4f6861; max-width: 34ch; }
+.bank-branch-table__micr { font-family: "JetBrains Mono", ui-monospace, monospace; font-size: 0.85rem; color: #4f6861; font-variant-numeric: tabular-nums; }
 .bank-branch-table__svc { white-space: nowrap; }
 .bank-panel__more { margin: 12px 2px 0; font-size: 0.82rem; color: var(--locz-text-muted); }
 

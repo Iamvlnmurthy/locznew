@@ -20,11 +20,11 @@ import { AdSlot } from '@/components/ad-slot';
 import { StorefrontHouseAd } from '@/components/storefront-house-ad';
 import { BusinessActionTracker } from '@/components/business-action-tracker';
 import { StorefrontTabs } from './storefront-tabs';
-import { CopyAddressButton } from './copy-address-button';
 import { BankingDetails } from './banking-details';
 import { PostOfficeDetails } from './post-office-details';
 import { RailwayDetails } from './railway-details';
 import { BookmarkBusiness } from './bookmark-business';
+import { PUBLIC_SERVICE_SCHEMA_TYPES, isPublicServiceSlug } from '@/lib/public-services';
 
 interface BusinessHour {
   dayOfWeek: number;
@@ -369,7 +369,7 @@ export async function generateMetadata({
   if (po) {
     if (po.matched) {
       const m = po.matched;
-      finalTitle = `${m.officeName} Pincode ${m.pincode} — ${m.officeType} | LocZ`;
+      finalTitle = `${m.officeName} Pincode ${m.pincode} — ${m.officeType}`;
       finalDescription = `${m.officeName} (${m.officeType}) has pincode ${m.pincode}${m.district ? `, ${m.district}` : ''}. Delivery status, postal division and circle details from the official India Post directory.`;
       bankKeywords.push(
         `${m.officeName} pincode`,
@@ -380,7 +380,7 @@ export async function generateMetadata({
       );
     } else if (po.offices.length && po.pincode) {
       const areaPo = po.areaLabel ?? business.cityName;
-      finalTitle = `Post Offices in Pincode ${po.pincode}${areaPo ? `, ${areaPo}` : ''} — India Post | LocZ`;
+      finalTitle = `Post Offices in Pincode ${po.pincode}${areaPo ? `, ${areaPo}` : ''} — India Post`;
       finalDescription = `List of India Post offices under pincode ${po.pincode}${areaPo ? ` in ${areaPo}` : ''}, with office type and delivery status from the official directory.`;
       bankKeywords.push(
         `pincode ${po.pincode}`,
@@ -395,7 +395,7 @@ export async function generateMetadata({
   // Railway-station pages target the station-code searches people run ("<station> railway station code").
   const rail = business.railway;
   if (rail) {
-    finalTitle = `${rail.stationName} Railway Station Code ${rail.stationCode} — Trains | LocZ`;
+    finalTitle = `${rail.stationName} Railway Station Code ${rail.stationCode} — Trains`;
     finalDescription = `${rail.stationName} railway station code is ${rail.stationCode}. ${rail.trainCount} trains serve this station — see the train numbers, names and routes.`;
     bankKeywords.push(
       `${rail.stationName} railway station code`,
@@ -412,7 +412,7 @@ export async function generateMetadata({
   // verification or published listing supplies enough entity substance to become indexable.
   const nm = business.name.trim();
   const isJunkName =
-    /^[0-9 .,\-]+$/.test(nm) ||
+    /^[0-9 .,-]+$/.test(nm) ||
     nm.length < 3 ||
     /https?:|www\.|\.com/i.test(nm) ||
     /^[0-9]{6}$/.test(nm);
@@ -497,7 +497,7 @@ export default async function BusinessPage({ params }: { params: Promise<{ slug:
 
   // Whether this business has anything published. Used to decide whether the
   // listings section exists at all, and whether its tab is offered.
-  const hasListings = Boolean(listings && listings.items.length > 0);
+  const hasListings = !business.isPublicService && Boolean(listings && listings.items.length > 0);
 
   // How much this page actually has to say, counted in real fields. A business with
   // a name and a phone number carries one advertisement; one with an address, a
@@ -535,7 +535,6 @@ export default async function BusinessPage({ params }: { params: Promise<{ slug:
     .filter((profile): profile is { url: string; label: string } => profile.label !== null)
     .slice(0, 4);
 
-  const cleanPhone = business.primaryPhone?.replace(/[^0-9+]/g, '');
   const rawWa = business.whatsappNumber || business.primaryPhone;
   const digitsOnly = rawWa?.replace(/[^0-9]/g, '');
   const waNumber = digitsOnly ? (digitsOnly.length === 10 ? `91${digitsOnly}` : digitsOnly) : null;
@@ -605,13 +604,13 @@ export default async function BusinessPage({ params }: { params: Promise<{ slug:
           a: `${business.name} is currently ${openState.label.toLowerCase()}. Check the detailed weekly schedule on this page for exact operating hours.`,
         }
       : null,
-    waNumber
+    !business.isPublicService && waNumber
       ? {
           q: p.faqWhatsappQ.replace('{name}', business.name),
           a: `Yes, you can connect directly with ${business.name} on WhatsApp for quick messages, pricing, and service queries.`,
         }
       : null,
-    business.keywords.length > 0
+    !business.isPublicService && business.keywords.length > 0
       ? {
           q: `What services or products are available at ${business.name}?`,
           a: `${business.name} in ${placeLabel} specializes in ${business.categoryName.toLowerCase()}, covering ${business.keywords.slice(0, 5).join(', ')}.`,
@@ -629,15 +628,20 @@ export default async function BusinessPage({ params }: { params: Promise<{ slug:
     (url): url is string => Boolean(url),
   );
 
+  const publicSchemaType = isPublicServiceSlug(business.categorySlug)
+    ? PUBLIC_SERVICE_SCHEMA_TYPES[business.categorySlug]
+    : null;
   const jsonLd = {
     '@context': 'https://schema.org',
-    '@type': business.railway
-      ? 'TrainStation'
-      : business.postOffice
-        ? 'PostOffice'
-        : business.banking
-          ? 'BankOrCreditUnion'
-          : schemaTypeFor(business.categoryName, business.parentCategoryName),
+    '@type':
+      publicSchemaType ??
+      (business.railway
+        ? 'TrainStation'
+        : business.postOffice
+          ? 'PostOffice'
+          : business.banking
+            ? 'BankOrCreditUnion'
+            : schemaTypeFor(business.categoryName, business.parentCategoryName)),
     '@id': `${SITE_URL}/b/${business.slug}#entity`,
     name: business.name,
     image: profileLogo ? new URL(profileLogo, SITE_URL).toString() : undefined,
@@ -755,7 +759,9 @@ export default async function BusinessPage({ params }: { params: Promise<{ slug:
       : business.description;
 
   return (
-    <div className="business-profile">
+    <div
+      className={`business-profile${business.isPublicService ? ' business-profile--public-service' : ''}`}
+    >
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd).replace(/</g, '\\u003c') }}
@@ -849,7 +855,9 @@ export default async function BusinessPage({ params }: { params: Promise<{ slug:
               </span>
               <div className="business-profile-identity__content">
                 <span className="business-profile-category">
-                  {displayCategory}
+                  {business.isPublicService
+                    ? `${p.publicService} · ${business.categoryName}`
+                    : displayCategory}
                   {business.localityName ? ` · ${business.localityName}` : ''}
                 </span>
                 <h1>{business.name}</h1>
@@ -857,7 +865,13 @@ export default async function BusinessPage({ params }: { params: Promise<{ slug:
                   <Icon name="location" /> {postalAddress(business)}
                 </p>
                 <div className="business-profile-badges">
-                  {business.verificationStatus === 'VERIFIED' ? (
+                  {business.isPublicService ? (
+                    <span
+                      className={business.verificationStatus === 'VERIFIED' ? 'is-verified' : ''}
+                    >
+                      <Icon name="government" /> {p.publicService}
+                    </span>
+                  ) : business.verificationStatus === 'VERIFIED' ? (
                     <span className="is-verified">
                       <Icon name="shield" /> {p.verifiedBusiness}
                     </span>
@@ -877,7 +891,9 @@ export default async function BusinessPage({ params }: { params: Promise<{ slug:
                       {p.loczId} <code>{business.loczId}</code>
                     </span>
                   ) : null}
-                  {business.claimStatus === 'UNCLAIMED' && business.viewCount > 0 ? (
+                  {!business.isPublicService &&
+                  business.claimStatus === 'UNCLAIMED' &&
+                  business.viewCount > 0 ? (
                     <span className="business-profile-badges__interest" role="status">
                       <Icon name="sparkles" />
                       {p.profileInterest.replace(
@@ -897,7 +913,7 @@ export default async function BusinessPage({ params }: { params: Promise<{ slug:
                       <Icon name="phone" /> {p.callBusiness}
                     </a>
                   ) : null}
-                  {waEnquiryUrl ? (
+                  {!business.isPublicService && waEnquiryUrl ? (
                     <a
                       href={waEnquiryUrl}
                       data-track="whatsapp_click"
@@ -919,7 +935,7 @@ export default async function BusinessPage({ params }: { params: Promise<{ slug:
                       <Icon name="location" /> {p.getDirections}
                     </a>
                   ) : null}
-                  {!business.isOwner ? (
+                  {!business.isPublicService && !business.isOwner ? (
                     <a href="#contact" data-track="enquiry_open" className="is-enquiry">
                       <Icon name="message" /> {p.sendEnquiry}
                     </a>
@@ -934,7 +950,7 @@ export default async function BusinessPage({ params }: { params: Promise<{ slug:
       <div className="container business-profile-layout">
         <main>
           <StorefrontTabs
-            label={p.profileSections}
+            label={business.isPublicService ? p.publicServiceProfile : p.profileSections}
             items={[
               { id: 'about', icon: 'user', label: p.about },
               ...(hasListings ? [{ id: 'listings', icon: 'store', label: p.listingsOffers }] : []),
@@ -956,8 +972,15 @@ export default async function BusinessPage({ params }: { params: Promise<{ slug:
           {business.railway ? <RailwayDetails info={business.railway} /> : null}
 
           <section className="business-profile-section business-profile-section--about" id="about">
-            <span className="section-kicker">{p.meetBusiness}</span>
-            <h2>{p.aboutBusiness.replace('{name}', business.name)}</h2>
+            <span className="section-kicker">
+              {business.isPublicService ? p.publicInformationKicker : p.meetBusiness}
+            </span>
+            <h2>
+              {(business.isPublicService ? p.publicAbout : p.aboutBusiness).replace(
+                '{name}',
+                business.name,
+              )}
+            </h2>
             <div className="business-profile-about-grid">
               <div>
                 {storefrontDescription ? (
@@ -975,7 +998,7 @@ export default async function BusinessPage({ params }: { params: Promise<{ slug:
                 {business.keywords.length > 0 ? (
                   <div className="business-profile-specialties">
                     <span className="business-profile-specialties__label">
-                      Specialties & Services:
+                      {business.isPublicService ? p.publicFacilities : 'Specialties & Services:'}
                     </span>
                     <div className="business-profile-specialties__tags">
                       {business.keywords.slice(0, 8).map((kw) => (
@@ -1012,7 +1035,8 @@ export default async function BusinessPage({ params }: { params: Promise<{ slug:
                     ))}
                   </p>
                 ) : null}
-                {business.claimStatus === 'UNCLAIMED' &&
+                {!business.isPublicService &&
+                business.claimStatus === 'UNCLAIMED' &&
                 business.isClaimable !== false &&
                 !business.isOwner ? (
                   <p className="business-profile-unclaimed">
@@ -1029,19 +1053,21 @@ export default async function BusinessPage({ params }: { params: Promise<{ slug:
           {/* The reader has the identity, primary actions and business story by now. */}
           <AdSlot placement="BUSINESS_AFTER_ABOUT" contentScore={adContentScore} />
 
-          <aside className="business-profile-post-cta" aria-labelledby="storefront-post-title">
-            <span className="business-profile-post-cta__icon" aria-hidden="true">
-              <Icon name="plus" />
-            </span>
-            <div>
-              <span className="section-kicker">{p.postFreeKicker}</span>
-              <h2 id="storefront-post-title">{p.postFreeTitle}</h2>
-              <p>{p.postFreeBody}</p>
-            </div>
-            <Link href="/post" className="btn business-profile-post-cta__action">
-              {p.postFreeAction} <Icon name="arrow" />
-            </Link>
-          </aside>
+          {!business.isPublicService ? (
+            <aside className="business-profile-post-cta" aria-labelledby="storefront-post-title">
+              <span className="business-profile-post-cta__icon" aria-hidden="true">
+                <Icon name="plus" />
+              </span>
+              <div>
+                <span className="section-kicker">{p.postFreeKicker}</span>
+                <h2 id="storefront-post-title">{p.postFreeTitle}</h2>
+                <p>{p.postFreeBody}</p>
+              </div>
+              <Link href="/post" className="btn business-profile-post-cta__action">
+                {p.postFreeAction} <Icon name="arrow" />
+              </Link>
+            </aside>
+          ) : null}
 
           {/* Rendered only when there is something in it.
 
@@ -1082,7 +1108,8 @@ export default async function BusinessPage({ params }: { params: Promise<{ slug:
                     <strong>{p.nothingPublished}</strong>
                     <p>{p.nothingPublishedBody}</p>
                   </div>
-                  {business.claimStatus === 'UNCLAIMED' &&
+                  {!business.isPublicService &&
+                  business.claimStatus === 'UNCLAIMED' &&
                   business.isClaimable !== false &&
                   !business.isOwner ? (
                     <Link href={`/b/${business.slug}/claim`} data-track="claim_click">
@@ -1223,7 +1250,7 @@ export default async function BusinessPage({ params }: { params: Promise<{ slug:
                   <div>
                     <span className="section-kicker">{p.exploreArea}</span>
                     <h2>
-                      {p.similarHeading
+                      {(business.isPublicService ? p.publicNearby : p.similarHeading)
                         .replace('{category}', business.categoryName)
                         .replace('{place}', placeLabel)}
                     </h2>
@@ -1250,7 +1277,11 @@ export default async function BusinessPage({ params }: { params: Promise<{ slug:
                             <span>{b.categoryName}</span>
                             <strong>{b.name}</strong>
                             <small>
-                              {b.verificationStatus === 'VERIFIED' ? (
+                              {business.isPublicService ? (
+                                <>
+                                  <Icon name="government" /> {p.publicService} ·{' '}
+                                </>
+                              ) : b.verificationStatus === 'VERIFIED' ? (
                                 <>
                                   <Icon name="shield" /> {p.verifiedBusiness} ·{' '}
                                 </>
@@ -1271,16 +1302,18 @@ export default async function BusinessPage({ params }: { params: Promise<{ slug:
             </>
           ) : null}
 
-          <section className="business-profile-safety">
-            <Icon name="shield" />
-            <div>
-              <strong>{p.safetyTitle}</strong>
-              <p>{p.safetyBody}</p>
-            </div>
-            <Link href="/safety">
-              {p.safetyTips} <Icon name="arrow" />
-            </Link>
-          </section>
+          {!business.isPublicService ? (
+            <section className="business-profile-safety">
+              <Icon name="shield" />
+              <div>
+                <strong>{p.safetyTitle}</strong>
+                <p>{p.safetyBody}</p>
+              </div>
+              <Link href="/safety">
+                {p.safetyTips} <Icon name="arrow" />
+              </Link>
+            </section>
+          ) : null}
           {/* Not presentation polish. ODbL and CDLA both require attribution to travel with
             the data, so a page rendering an imported record without this is using that
             record outside its licence. */}
@@ -1306,9 +1339,13 @@ export default async function BusinessPage({ params }: { params: Promise<{ slug:
                 </dd>
               </div>
               <div>
-                <dt>{p.claimStatus}</dt>
+                <dt>{business.isPublicService ? p.publicRecordStatus : p.claimStatus}</dt>
                 <dd>
-                  {business.claimStatus === 'UNCLAIMED' ? p.statusUnclaimed : p.statusClaimed}
+                  {business.isPublicService
+                    ? p.officialPublicRecord
+                    : business.claimStatus === 'UNCLAIMED'
+                      ? p.statusUnclaimed
+                      : p.statusClaimed}
                 </dd>
               </div>
               <div>
@@ -1330,13 +1367,17 @@ export default async function BusinessPage({ params }: { params: Promise<{ slug:
                 href={`/report?type=BUSINESS&id=${business.id}&reason=CORRECTION`}
                 className="btn btn--ghost btn--sm"
               >
-                <Icon name="pencil" /> Suggest an edit
+                <Icon name="pencil" />
+                {business.isPublicService ? p.suggestCorrection : 'Suggest an edit'}
               </Link>
             </div>
           </section>
         </main>
 
-        <aside className="business-profile-contact" id="contact">
+        <aside
+          className={`business-profile-contact${business.isPublicService ? ' is-public-service' : ''}`}
+          id="contact"
+        >
           <section>
             <div className="business-profile-contact__brand">
               <span aria-hidden="true">
@@ -1347,10 +1388,12 @@ export default async function BusinessPage({ params }: { params: Promise<{ slug:
                 <small>{placeLabel}</small>
               </div>
             </div>
-            <span className="section-kicker">{p.talkBusiness}</span>
-            <h2>{p.howHelp}</h2>
-            <p>{p.contactPrivate}</p>
-            {business.isOwner ? (
+            <span className="section-kicker">
+              {business.isPublicService ? p.publicInformationKicker : p.talkBusiness}
+            </span>
+            <h2>{business.isPublicService ? p.officialContact : p.howHelp}</h2>
+            <p>{business.isPublicService ? p.officialContactBody : p.contactPrivate}</p>
+            {business.isPublicService ? null : business.isOwner ? (
               <Link href="/dashboard" className="btn btn--primary btn--block">
                 <Icon name="user" /> {p.manageBusiness}
               </Link>
@@ -1374,7 +1417,7 @@ export default async function BusinessPage({ params }: { params: Promise<{ slug:
                   </span>
                 </a>
               ) : null}
-              {business.whatsappNumber ? (
+              {!business.isPublicService && business.whatsappNumber ? (
                 <a
                   href={`https://wa.me/${business.whatsappNumber.replace('+', '')}`}
                   target="_blank"
@@ -1413,7 +1456,8 @@ export default async function BusinessPage({ params }: { params: Promise<{ slug:
             </div>
           </section>
 
-          {business.claimStatus === 'UNCLAIMED' &&
+          {!business.isPublicService &&
+          business.claimStatus === 'UNCLAIMED' &&
           business.isClaimable !== false &&
           !business.isOwner ? (
             <div className="business-profile-claim-card">
@@ -1437,19 +1481,21 @@ export default async function BusinessPage({ params }: { params: Promise<{ slug:
             </div>
           ) : null}
 
-          <div className="business-profile-contact__trust">
-            <span>
-              <Icon name="shield" />
-            </span>
-            <div>
-              <strong>{p.saferContact}</strong>
-              <p>{p.saferContactBody}</p>
+          {!business.isPublicService ? (
+            <div className="business-profile-contact__trust">
+              <span>
+                <Icon name="shield" />
+              </span>
+              <div>
+                <strong>{p.saferContact}</strong>
+                <p>{p.saferContactBody}</p>
+              </div>
             </div>
-          </div>
+          ) : null}
 
           {!business.isOwner ? (
             <Link href={`/report?business=${business.id}`} className="business-profile-report">
-              {p.reportBusiness}
+              {business.isPublicService ? p.suggestCorrection : p.reportBusiness}
             </Link>
           ) : null}
         </aside>
@@ -1466,7 +1512,7 @@ export default async function BusinessPage({ params }: { params: Promise<{ slug:
             <Icon name="phone" /> Call
           </a>
         ) : null}
-        {waEnquiryUrl ? (
+        {!business.isPublicService && waEnquiryUrl ? (
           <a
             href={waEnquiryUrl}
             target="_blank"

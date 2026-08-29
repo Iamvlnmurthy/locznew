@@ -2,7 +2,8 @@ import type { Metadata } from 'next';
 import Image from 'next/image';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import type { Category, CategoryAttribute, ListingSummary } from '@locz/shared-types';
+import type { Category, CategoryAttribute, ListingSummary, Paginated } from '@locz/shared-types';
+import { publicBrandLogo } from '@locz/public-brands';
 import { ListingCard } from '@/components/listing-card';
 import { Icon } from '@/components/icons';
 import { getTranslator } from '@/i18n';
@@ -10,9 +11,29 @@ import { ApiError, api, apiSafe } from '@/lib/api';
 import { premiumCategoryBanner } from '@/lib/premium-banner-catalog';
 import { premiumCategoryArtwork } from '@/lib/premium-icon-catalog';
 import { getLocale, getSelectedCity, localizedAlternates } from '@/lib/session';
+import {
+  PUBLIC_SERVICE_ICONS,
+  PUBLIC_SERVICE_SLUGS,
+  isPublicServiceSlug,
+  publicServiceLabel,
+  type PublicServiceSlug,
+} from '@/lib/public-services';
 
 interface CategoryDetail extends Category {
   attributes: CategoryAttribute[];
+}
+
+interface PublicBusinessSummary {
+  id: string;
+  name: string;
+  slug: string;
+  categoryName: string;
+  cityName: string;
+  pincode: string | null;
+  addressLine: string | null;
+  logoUrl: string | null;
+  publicBrandKey: string | null;
+  verificationStatus: string;
 }
 
 async function loadCategory(slug: string): Promise<CategoryDetail | null> {
@@ -54,6 +75,25 @@ export async function generateMetadata({
     category: localisedName,
   });
 
+  if (slug === 'public-services' || isPublicServiceSlug(slug)) {
+    const publicTitle =
+      slug === 'public-services'
+        ? t('publicServices.directoryTitle')
+        : t('publicServices.resultsTitleNational', {
+            category: publicServiceLabel(t, slug),
+          });
+    return {
+      title: publicTitle,
+      description: t('publicServices.directorySubtitle'),
+      alternates: await localizedAlternates(`/c/${category.slug}`),
+      openGraph: {
+        title: publicTitle,
+        description: t('publicServices.directorySubtitle'),
+        type: 'website',
+      },
+    };
+  }
+
   return {
     title,
     description,
@@ -66,12 +106,19 @@ export async function generateMetadata({
  * Category landing page — one of the two indexable surfaces (the other is city). Unlike
  * /search this is cached and crawlable, which is what makes it worth having separately.
  */
-export default async function CategoryPage({ params }: { params: Promise<{ slug: string }> }) {
+export default async function CategoryPage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ slug: string }>;
+  searchParams: Promise<{ page?: string }>;
+}) {
   const { slug } = await params;
-  const [locale, category, city] = await Promise.all([
+  const [locale, category, city, pageParams] = await Promise.all([
     getLocale(),
     loadCategory(slug),
     getSelectedCity(),
+    searchParams,
   ]);
 
   if (!category) notFound();
@@ -91,6 +138,52 @@ export default async function CategoryPage({ params }: { params: Promise<{ slug:
       : locale === 'hi'
         ? (category.nameHi ?? category.name)
         : category.name;
+
+  if (slug === 'public-services' || isPublicServiceSlug(slug)) {
+    const page = Math.max(1, Number(pageParams.page ?? '1') || 1);
+    const allCategories =
+      (await apiSafe<Array<{ id: string; slug: string; name: string; count: number }>>(
+        '/businesses/categories',
+        { revalidate: 1800 },
+      )) ?? [];
+    const categoryBySlug = new Map(allCategories.map((item) => [item.slug, item]));
+
+    if (slug === 'public-services') {
+      return (
+        <PublicServicesIndex
+          locale={locale}
+          cityName={city?.name ?? null}
+          categories={PUBLIC_SERVICE_SLUGS.map((publicSlug) => ({
+            slug: publicSlug,
+            count: categoryBySlug.get(publicSlug)?.count ?? 0,
+          }))}
+        />
+      );
+    }
+
+    const publicCategory = categoryBySlug.get(slug);
+    const businessQuery = new URLSearchParams({
+      categoryId: publicCategory?.id ?? category.id,
+      page: String(page),
+      limit: '24',
+    });
+    if (city?.id) businessQuery.set('cityId', city.id);
+    const businesses = await apiSafe<Paginated<PublicBusinessSummary>>(
+      `/businesses?${businessQuery.toString()}`,
+      { revalidate: 300 },
+    );
+    return (
+      <PublicServiceResults
+        slug={slug}
+        locale={locale}
+        cityName={city?.name ?? null}
+        businesses={businesses?.items ?? []}
+        total={businesses?.meta.total ?? 0}
+        page={page}
+        hasMore={businesses?.meta.hasNextPage ?? false}
+      />
+    );
+  }
   const categoryBanner = premiumCategoryBanner(category.name);
 
   return (
@@ -249,5 +342,211 @@ export default async function CategoryPage({ params }: { params: Promise<{ slug:
         </aside>
       </div>
     </>
+  );
+}
+
+function PublicServicesIndex({
+  locale,
+  cityName,
+  categories,
+}: {
+  locale: 'en' | 'te' | 'hi';
+  cityName: string | null;
+  categories: Array<{ slug: PublicServiceSlug; count: number }>;
+}) {
+  const t = getTranslator(locale);
+  return (
+    <main className="public-services-page">
+      <PublicServicesHero
+        icon="government"
+        breadcrumbLabel={t('publicServices.breadcrumb')}
+        eyebrow={t('publicServices.directoryKicker')}
+        title={t('publicServices.directoryTitle')}
+        subtitle={t('publicServices.directorySubtitle')}
+        context={
+          cityName
+            ? t('publicServices.availableIn', { city: cityName })
+            : t('publicServices.nationalDirectory')
+        }
+      />
+      <section
+        className="container public-services-directory"
+        aria-label={t('publicServices.directoryTitle')}
+      >
+        {categories.map(({ slug, count }) => (
+          <Link href={`/c/${slug}`} className="public-services-directory-card" key={slug}>
+            <span className="public-services-directory-card__icon" aria-hidden="true">
+              <Icon name={PUBLIC_SERVICE_ICONS[slug]} />
+            </span>
+            <span>
+              <strong>{publicServiceLabel(t, slug)}</strong>
+              <small>
+                {t('publicServices.locations', { count: count.toLocaleString(`${locale}-IN`) })}
+              </small>
+            </span>
+            <Icon name="arrow" />
+          </Link>
+        ))}
+      </section>
+    </main>
+  );
+}
+
+function PublicServiceResults({
+  slug,
+  locale,
+  cityName,
+  businesses,
+  total,
+  page,
+  hasMore,
+}: {
+  slug: PublicServiceSlug;
+  locale: 'en' | 'te' | 'hi';
+  cityName: string | null;
+  businesses: PublicBusinessSummary[];
+  total: number;
+  page: number;
+  hasMore: boolean;
+}) {
+  const t = getTranslator(locale);
+  const label = publicServiceLabel(t, slug);
+  const title = cityName
+    ? t('publicServices.resultsTitle', { category: label, city: cityName })
+    : t('publicServices.resultsTitleNational', { category: label });
+  return (
+    <main className="public-services-page">
+      <PublicServicesHero
+        icon={PUBLIC_SERVICE_ICONS[slug]}
+        breadcrumbLabel={t('publicServices.breadcrumb')}
+        eyebrow={t('publicServices.directoryKicker')}
+        title={title}
+        subtitle={t('publicServices.directorySubtitle')}
+        context={t('publicServices.locations', { count: total.toLocaleString(`${locale}-IN`) })}
+      />
+      <section
+        className="container public-service-results"
+        aria-labelledby="public-service-results-title"
+      >
+        <div className="public-service-results__head">
+          <div>
+            <span className="section-kicker">
+              {cityName
+                ? t('publicServices.availableIn', { city: cityName })
+                : t('publicServices.nationalDirectory')}
+            </span>
+            <h2 id="public-service-results-title">{label}</h2>
+          </div>
+          <Link href="/c/public-services" className="section-link">
+            {t('publicServices.directoryTitle')} <Icon name="arrow" />
+          </Link>
+        </div>
+        {businesses.length ? (
+          <div className="public-service-results__grid">
+            {businesses.map((business) => {
+              const logo =
+                business.logoUrl ?? publicBrandLogo(business.name, business.publicBrandKey);
+              return (
+                <Link
+                  href={`/b/${business.slug}`}
+                  className="public-service-result-card"
+                  key={business.id}
+                >
+                  <span className="public-service-result-card__icon" aria-hidden="true">
+                    {logo ? (
+                      <Image src={logo} alt="" width={58} height={58} />
+                    ) : (
+                      <Icon name={PUBLIC_SERVICE_ICONS[slug]} />
+                    )}
+                  </span>
+                  <span className="public-service-result-card__body">
+                    <small>{label}</small>
+                    <strong>{business.name}</strong>
+                    <span>
+                      <Icon name="location" />
+                      {[business.addressLine, business.cityName, business.pincode]
+                        .filter(Boolean)
+                        .join(' · ')}
+                    </span>
+                  </span>
+                  <span className="public-service-result-card__action">
+                    {t('publicServices.viewLocation')} <Icon name="arrow" />
+                  </span>
+                </Link>
+              );
+            })}
+          </div>
+        ) : (
+          <div className="public-service-results__empty">
+            <Icon name={PUBLIC_SERVICE_ICONS[slug]} />
+            <h2>{t('publicServices.noResults')}</h2>
+            <Link href="/c/public-services">{t('publicServices.directoryTitle')}</Link>
+          </div>
+        )}
+        {page > 1 || hasMore ? (
+          <nav className="news-pagination" aria-label={t('publicServices.pagination')}>
+            {page > 1 ? (
+              <Link
+                className="news-pagination__link news-pagination__link--prev"
+                href={`?page=${page - 1}`}
+              >
+                <Icon name="arrow" /> {t('publicServices.previous')}
+              </Link>
+            ) : (
+              <span />
+            )}
+            <span className="news-pagination__page">{t('publicServices.page', { page })}</span>
+            {hasMore ? (
+              <Link className="news-pagination__link" href={`?page=${page + 1}`}>
+                {t('publicServices.more')} <Icon name="arrow" />
+              </Link>
+            ) : (
+              <span />
+            )}
+          </nav>
+        ) : null}
+      </section>
+    </main>
+  );
+}
+
+function PublicServicesHero({
+  icon,
+  breadcrumbLabel,
+  eyebrow,
+  title,
+  subtitle,
+  context,
+}: {
+  icon: string;
+  breadcrumbLabel: string;
+  eyebrow: string;
+  title: string;
+  subtitle: string;
+  context: string;
+}) {
+  return (
+    <header className="public-services-hero">
+      <div className="container public-services-hero__inner">
+        <div className="public-services-hero__copy">
+          <nav className="breadcrumbs breadcrumbs--light" aria-label={breadcrumbLabel}>
+            <Link href="/">LocZ</Link>
+            <span>›</span>
+            <Link href="/c/public-services">{eyebrow}</Link>
+          </nav>
+          <span className="eyebrow">
+            <i /> {eyebrow}
+          </span>
+          <h1>{title}</h1>
+          <p>{subtitle}</p>
+          <span className="public-services-hero__context">
+            <Icon name="location" /> {context}
+          </span>
+        </div>
+        <span className="public-services-hero__emblem" aria-hidden="true">
+          <Icon name={icon} />
+        </span>
+      </div>
+    </header>
   );
 }

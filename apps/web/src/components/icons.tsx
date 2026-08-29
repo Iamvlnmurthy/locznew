@@ -142,6 +142,67 @@ const paths: Record<string, React.ReactNode> = {
       <path d="M8 21v-6h8v6" />
     </>
   ),
+  bank: (
+    <>
+      <path d="M3 9h18L12 3 3 9Z" />
+      <path d="M5 9v9M9.5 9v9M14.5 9v9M19 9v9M3 21h18M2 18h20" />
+    </>
+  ),
+  postOffice: (
+    <>
+      <rect x="3" y="5" width="18" height="15" rx="2" />
+      <path d="m4 7 8 6 8-6M8 20v-5h8v5" />
+    </>
+  ),
+  hospital: (
+    <>
+      <rect x="4" y="3" width="16" height="18" rx="2" />
+      <path d="M12 7v6M9 10h6M8 21v-4h8v4" />
+    </>
+  ),
+  police: (
+    <>
+      <path d="M12 2 5 5v6c0 4.8 2.8 8.2 7 11 4.2-2.8 7-6.2 7-11V5l-7-3Z" />
+      <path d="m12 7 1 2 2.2.3-1.6 1.6.4 2.3-2-1.1-2 1.1.4-2.3-1.6-1.6L11 9l1-2Z" />
+    </>
+  ),
+  university: (
+    <>
+      <path d="m2 9 10-5 10 5-10 5L2 9Z" />
+      <path d="M6 12v5c3.5 2.5 8.5 2.5 12 0v-5M22 9v7" />
+    </>
+  ),
+  train: (
+    <>
+      <rect x="5" y="3" width="14" height="15" rx="3" />
+      <path d="M8 7h8M8 11h8M8 18l-3 3M16 18l3 3" />
+      <circle cx="9" cy="15" r="1" />
+      <circle cx="15" cy="15" r="1" />
+    </>
+  ),
+  government: (
+    <>
+      <path d="M3 9h18L12 3 3 9ZM5 9v10M9.5 9v10M14.5 9v10M19 9v10M3 21h18" />
+      <path d="M12 5.8v.1" />
+    </>
+  ),
+  bus: (
+    <>
+      <rect x="4" y="3" width="16" height="16" rx="3" />
+      <path d="M7 7h10M7 11h10M7 19l-2 3M17 19l2 3" />
+      <circle cx="8" cy="16" r="1" />
+      <circle cx="16" cy="16" r="1" />
+    </>
+  ),
+  court: (
+    <>
+      <path d="M4 20h16M6 20V9M18 20V9M12 20V9M3 9h18L12 3 3 9Z" />
+      <path d="M9 13h6" />
+    </>
+  ),
+  fire: (
+    <path d="M13 2c1 4-2 5-2 8 0 1.5 1 2.5 2.5 2.5 2.7 0 3.5-3 2.5-5.5 3 2 5 5.2 5 8.5A8 8 0 0 1 4 15c0-3.8 2.2-7.4 6-10-.3 3.5 1 4.8 2.4 4.8C14 9.8 15 7 13 2Z" />
+  ),
   tools: (
     <>
       <path d="m14 6 4-4 4 4-4 4M13 7 3 17a2.8 2.8 0 0 0 4 4L17 11" />
