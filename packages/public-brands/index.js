@@ -140,6 +140,70 @@ const PUBLIC_BRANDS = Object.freeze([
     'jpg',
     'https://www.indiapost.gov.in/',
   ),
+  // National chains — logos from Wikimedia Commons (PD / freely-licensed), source recorded per entry.
+  brand(
+    'muthoot-finance',
+    'Muthoot Finance',
+    ['muthoot finance'],
+    'png',
+    'https://commons.wikimedia.org/wiki/File:Muthoot-finance-logo.png',
+  ),
+  brand(
+    'bajaj-finance',
+    'Bajaj Finance',
+    ['bajaj finance'],
+    'svg',
+    'https://commons.wikimedia.org/wiki/File:Bajaj_Finance_Logo.svg',
+  ),
+  brand(
+    'bajaj-finserv',
+    'Bajaj Finserv',
+    ['bajaj finserv'],
+    'svg',
+    'https://commons.wikimedia.org/wiki/File:Bajaj_Finserv_Logo.svg',
+  ),
+  brand(
+    'patanjali',
+    'Patanjali',
+    ['patanjali'],
+    'png',
+    'https://commons.wikimedia.org/wiki/File:Patanjali_Ayurved_Logo.png',
+  ),
+  brand(
+    'sharekhan',
+    'Sharekhan',
+    ['sharekhan', 'mirae asset sharekhan'],
+    'png',
+    'https://commons.wikimedia.org/wiki/File:Official_Logo_of_Sharekhan_by_BNP_Paribas.png',
+  ),
+  brand(
+    'metropolis-healthcare',
+    'Metropolis Healthcare',
+    ['metropolis healthcare', 'metropolis labs', 'metropolis diagnostic'],
+    'png',
+    'https://commons.wikimedia.org/wiki/File:Metropolis_Healthcare_Logo_White_Background.png',
+  ),
+  brand(
+    'asian-paints',
+    'Asian Paints',
+    ['asian paints'],
+    'svg',
+    'https://commons.wikimedia.org/wiki/File:Asian_Paints_Logo.svg',
+  ),
+  brand(
+    'vodafone-idea',
+    'Vi (Vodafone Idea)',
+    ['vi vodafone idea', 'vodafone idea'],
+    'svg',
+    'https://commons.wikimedia.org/wiki/File:Vodafone_Idea_logo.svg',
+  ),
+  brand(
+    'bata',
+    'Bata',
+    ['bata'],
+    'png',
+    'https://commons.wikimedia.org/wiki/File:Bata_logo_-_2023.png',
+  ),
 ]);
 
 function bank(key, displayName, aliases, code, blockedSuffixes) {
