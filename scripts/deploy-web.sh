@@ -39,8 +39,12 @@ export NODE_ENV=production
 # heap, and de-prioritise it for CPU/IO. Stop the current web process before replacing `.next`:
 # otherwise Next can recreate fetch-cache entries while `rm -rf` is removing them, leaving a
 # partial build or an unwritable prerender cache. A trap guarantees both services return on exit.
-ADMIN_WAS_UP=$(pm2 jlist 2>/dev/null | grep -c '"name":"locz-admin".*"status":"online"' || true)
-WEB_WAS_UP=$(pm2 jlist 2>/dev/null | grep -c '"name":"locz-web".*"status":"online"' || true)
+ADMIN_PID=$(pm2 pid locz-admin 2>/dev/null | tail -n 1 || true)
+WEB_PID=$(pm2 pid locz-web 2>/dev/null | tail -n 1 || true)
+ADMIN_WAS_UP=0
+WEB_WAS_UP=0
+[[ "${ADMIN_PID:-0}" =~ ^[1-9][0-9]*$ ]] && ADMIN_WAS_UP=1
+[[ "${WEB_PID:-0}" =~ ^[1-9][0-9]*$ ]] && WEB_WAS_UP=1
 [ "${ADMIN_WAS_UP:-0}" != "0" ] && { echo "   pausing locz-admin during build"; pm2 stop locz-admin >/dev/null 2>&1 || true; }
 [ "${WEB_WAS_UP:-0}" != "0" ] && { echo "   pausing locz-web before replacing .next"; pm2 stop locz-web >/dev/null 2>&1 || true; }
 restore_services() {
