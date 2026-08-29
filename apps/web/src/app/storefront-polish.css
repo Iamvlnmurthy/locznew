@@ -4235,10 +4235,319 @@
 /* ============================================================================
    Dedicated per-branch IFSC pages (/ifsc/[code]) — reuse the .bank-* panel styles.
    ============================================================================ */
-.ifsc-page { padding: clamp(18px, 4vw, 40px) 0 64px; display: grid; gap: 18px; }
-.ifsc-crumbs { font-size: 0.85rem; color: var(--locz-text-muted); display: flex; flex-wrap: wrap; gap: 4px; align-items: center; }
-.ifsc-crumbs a { color: var(--locz-primary); text-decoration: none; }
+.ifsc-page {
+  max-width: 1240px;
+  padding: clamp(18px, 3vw, 34px) clamp(14px, 3vw, 30px) 76px;
+  display: grid;
+  gap: 18px;
+}
+.ifsc-crumbs {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 5px;
+  color: #526a63;
+  font-size: 0.8rem;
+}
+.ifsc-crumbs a { color: var(--locz-primary); font-weight: 650; text-decoration: none; }
 .ifsc-crumbs a:hover { text-decoration: underline; }
-.ifsc-head { display: grid; gap: 4px; }
-.ifsc-head h1 { margin: 4px 0 0; font-size: clamp(1.4rem, 3.6vw, 2rem); line-height: 1.2; color: var(--locz-text); }
-.ifsc-head__place { margin: 0; color: var(--locz-text-muted); font-size: 0.95rem; }
+.ifsc-hero {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) minmax(250px, 330px);
+  align-items: center;
+  gap: clamp(18px, 3vw, 34px);
+  min-height: 270px;
+  padding: clamp(26px, 4vw, 48px);
+  border: 1px solid rgb(255 255 255 / 13%);
+  border-radius: 30px;
+  background:
+    radial-gradient(circle at 86% 8%, rgb(228 184 96 / 18%), transparent 28%),
+    radial-gradient(circle at 4% 92%, rgb(39 154 126 / 22%), transparent 34%),
+    linear-gradient(128deg, #071d1a 0%, #0a4035 56%, #102c27 100%);
+  color: #fff;
+  box-shadow: 0 24px 60px rgb(7 42 34 / 20%);
+}
+.ifsc-hero::after {
+  position: absolute;
+  z-index: -1;
+  right: -85px;
+  bottom: -180px;
+  width: 410px;
+  height: 410px;
+  border: 1px solid rgb(255 255 255 / 9%);
+  border-radius: 50%;
+  box-shadow: 0 0 0 68px rgb(255 255 255 / 2.5%);
+  content: '';
+}
+.ifsc-hero__mark {
+  display: grid;
+  width: 76px;
+  height: 76px;
+  place-items: center;
+  border: 1px solid rgb(255 255 255 / 22%);
+  border-radius: 22px;
+  background: linear-gradient(145deg, #f7e8bd, #dca950);
+  color: #173d34;
+  box-shadow: 0 12px 30px rgb(0 0 0 / 24%), inset 0 1px rgb(255 255 255 / 70%);
+  transform: rotate(-3deg);
+}
+.ifsc-hero__mark svg { width: 37px; height: 37px; }
+.ifsc-hero__copy { min-width: 0; }
+.ifsc-hero__eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  color: #f4cc78;
+  font-size: 0.7rem;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+.ifsc-hero__copy h1 {
+  margin: 8px 0 0;
+  color: #fff;
+  font-size: clamp(2rem, 4.2vw, 3.55rem);
+  line-height: 0.98;
+  letter-spacing: -0.045em;
+  text-wrap: balance;
+}
+.ifsc-hero__copy h1 span {
+  display: block;
+  margin-top: 8px;
+  color: #c9ddd7;
+  font-size: 0.47em;
+  font-weight: 560;
+  line-height: 1.18;
+  letter-spacing: -0.02em;
+}
+.ifsc-hero__place {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 16px 0 0;
+  color: #d9e9e4;
+  font-size: 0.86rem;
+  font-weight: 650;
+}
+.ifsc-hero__place svg { width: 16px; height: 16px; color: #88d5bd; }
+.ifsc-hero__address {
+  max-width: 68ch;
+  margin: 8px 0 0;
+  color: #bcd1ca;
+  font-size: 0.76rem;
+  line-height: 1.55;
+}
+.ifsc-hero__code {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  justify-items: start;
+  gap: 11px;
+  padding: 22px;
+  border: 1px solid rgb(255 255 255 / 18%);
+  border-radius: 22px;
+  background: rgb(255 255 255 / 9%);
+  box-shadow: inset 0 1px rgb(255 255 255 / 10%);
+  backdrop-filter: blur(15px);
+}
+.ifsc-hero__code > span {
+  color: #d8e9e3;
+  font-size: 0.68rem;
+  font-weight: 750;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.ifsc-hero__code .bank-code {
+  width: 100%;
+  justify-content: space-between;
+  padding: 12px 14px;
+  border-color: rgb(245 208 131 / 52%);
+  background: #fffaf0;
+  color: #153e34;
+  box-shadow: 0 10px 25px rgb(0 0 0 / 18%);
+}
+.ifsc-hero__code .bank-code__value { font-size: clamp(1rem, 2vw, 1.25rem); letter-spacing: 0.09em; }
+.ifsc-hero__code p { margin: 0; color: #bcd1ca; font-size: 0.72rem; }
+.ifsc-assurance {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 13px;
+  padding: 14px 18px;
+  border: 1px solid rgb(15 108 84 / 15%);
+  border-radius: 18px;
+  background: linear-gradient(110deg, #f4faf7, #fffdfa);
+  box-shadow: 0 8px 25px rgb(18 70 58 / 7%);
+}
+.ifsc-assurance__icon {
+  display: grid;
+  width: 40px;
+  height: 40px;
+  place-items: center;
+  border-radius: 13px;
+  background: #e3f4ee;
+  color: #0c7158;
+}
+.ifsc-assurance__icon svg { width: 20px; height: 20px; }
+.ifsc-assurance > span:nth-child(2) { display: grid; gap: 2px; }
+.ifsc-assurance strong { color: var(--locz-text); font-size: 0.82rem; }
+.ifsc-assurance small { color: #536b64; font-size: 0.7rem; }
+.ifsc-assurance__status {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  color: #315e52;
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+.ifsc-assurance__status i {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #28ad78;
+  box-shadow: 0 0 0 5px rgb(40 173 120 / 12%);
+}
+.ifsc-content-grid { display: grid; grid-template-columns: minmax(0, 1.85fr) minmax(280px, 0.75fr); gap: 18px; align-items: stretch; }
+.ifsc-details-card,
+.ifsc-transfer-card,
+.ifsc-nearby {
+  border: 1px solid rgb(18 79 64 / 12%);
+  border-radius: 24px;
+  background: var(--locz-surface);
+  box-shadow: 0 14px 38px rgb(17 67 55 / 8%);
+}
+.ifsc-details-card { overflow: hidden; }
+.ifsc-section-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 18px;
+  padding: 24px 26px 20px;
+}
+.ifsc-section-head .section-kicker,
+.ifsc-transfer-card .section-kicker { color: #a63b2f; }
+.ifsc-section-head h2 { margin: 5px 0 0; color: var(--locz-text); font-size: clamp(1.35rem, 2.5vw, 1.8rem); line-height: 1.15; }
+.ifsc-section-head > svg { width: 28px; height: 28px; color: #0a765c; }
+.ifsc-facts { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); margin: 0; border-top: 1px solid var(--locz-border); }
+.ifsc-fact { min-width: 0; padding: 18px 26px; border-right: 1px solid var(--locz-border); border-bottom: 1px solid var(--locz-border); }
+.ifsc-fact:nth-child(2n) { border-right: 0; }
+.ifsc-fact--wide { grid-column: 1 / -1; border-right: 0; }
+.ifsc-fact dt { margin-bottom: 8px; color: #536b64; font-size: 0.67rem; font-weight: 800; letter-spacing: 0.075em; text-transform: uppercase; }
+.ifsc-fact dd { margin: 0; color: var(--locz-text); font-size: 0.9rem; font-weight: 650; line-height: 1.5; overflow-wrap: anywhere; }
+.ifsc-fact dd a { color: var(--locz-primary); text-decoration: none; }
+.ifsc-fact dd a:hover { text-decoration: underline; }
+.ifsc-fact--code .bank-code { min-width: min(100%, 190px); justify-content: space-between; }
+.ifsc-transfer-card {
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  padding: 26px;
+  background:
+    radial-gradient(circle at 100% 0, rgb(229 186 97 / 14%), transparent 40%),
+    var(--locz-surface);
+}
+.ifsc-transfer-card::before {
+  position: absolute;
+  top: 0;
+  left: 26px;
+  width: 58px;
+  height: 3px;
+  border-radius: 0 0 4px 4px;
+  background: linear-gradient(90deg, #e4ac50, #0a755b);
+  content: '';
+}
+.ifsc-transfer-card__icon {
+  display: grid;
+  width: 46px;
+  height: 46px;
+  margin-bottom: 20px;
+  place-items: center;
+  border-radius: 15px;
+  background: #e6f4ef;
+  color: #0a755b;
+}
+.ifsc-transfer-card__icon svg { width: 23px; height: 23px; }
+.ifsc-transfer-card h2 { margin: 6px 0 0; color: var(--locz-text); font-size: 1.35rem; line-height: 1.2; }
+.ifsc-transfer-card > p { color: #536b64; font-size: 0.8rem; line-height: 1.55; }
+.ifsc-transfer-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 9px; width: 100%; margin: 20px 0; padding: 0; list-style: none; }
+.ifsc-transfer-list li { display: flex; align-items: center; gap: 7px; padding: 10px; border: 1px solid rgb(13 117 89 / 17%); border-radius: 12px; background: #f1f8f5; color: #155f4c; font-size: 0.75rem; font-weight: 750; }
+.ifsc-transfer-list svg { width: 15px; height: 15px; }
+.ifsc-transfer-card__note { margin: auto 0 18px; padding-top: 17px; border-top: 1px solid var(--locz-border); }
+.ifsc-transfer-card__link { display: inline-flex; align-items: center; gap: 7px; color: var(--locz-primary); font-size: 0.78rem; font-weight: 750; text-decoration: none; }
+.ifsc-transfer-card__link svg { width: 15px; height: 15px; transition: transform 160ms ease; }
+.ifsc-transfer-card__link:hover svg { transform: translateX(3px); }
+.ifsc-nearby { overflow: hidden; padding: 0 0 22px; }
+.ifsc-nearby__count { flex: 0 0 auto; padding: 7px 11px; border: 1px solid rgb(11 112 86 / 16%); border-radius: 999px; background: #edf7f3; color: #286354; font-size: 0.7rem; font-weight: 700; }
+.ifsc-nearby .bank-branch-table-wrap { margin: 0 22px; }
+.ifsc-nearby .bank-branch-table__branch-name { color: var(--locz-text); text-decoration: none; }
+.ifsc-nearby .bank-branch-table__branch-name:hover { color: var(--locz-primary); }
+.ifsc-nearby .bank-branch-table tbody tr { transition: background 150ms ease; }
+.ifsc-nearby .bank-branch-table tbody tr:hover { background: #f7fbf9; }
+.ifsc-page a:focus-visible,
+.ifsc-page button:focus-visible { outline: 3px solid rgb(244 108 88 / 42%); outline-offset: 3px; }
+
+@media (max-width: 880px) {
+  .ifsc-hero { grid-template-columns: auto minmax(0, 1fr); min-height: 0; }
+  .ifsc-hero__code { grid-column: 1 / -1; grid-template-columns: auto minmax(0, 1fr); align-items: center; width: 100%; }
+  .ifsc-hero__code p { grid-column: 2; }
+  .ifsc-content-grid { grid-template-columns: 1fr; }
+  .ifsc-transfer-list { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+}
+
+@media (max-width: 600px) {
+  .ifsc-page { gap: 13px; padding: 12px 10px 92px; }
+  .ifsc-crumbs { padding-inline: 6px; font-size: 0.73rem; }
+  .ifsc-hero { grid-template-columns: 1fr; gap: 16px; padding: 22px 18px; border-radius: 23px; }
+  .ifsc-hero__mark { width: 56px; height: 56px; border-radius: 17px; }
+  .ifsc-hero__mark svg { width: 29px; height: 29px; }
+  .ifsc-hero__copy h1 { font-size: clamp(2rem, 11vw, 2.8rem); }
+  .ifsc-hero__copy h1 span { font-size: 0.48em; }
+  .ifsc-hero__address { font-size: 0.72rem; }
+  .ifsc-hero__code { grid-column: auto; grid-template-columns: 1fr; padding: 17px; border-radius: 17px; }
+  .ifsc-hero__code p { grid-column: auto; }
+  .ifsc-assurance { grid-template-columns: auto minmax(0, 1fr); padding: 13px; }
+  .ifsc-assurance__status { display: none; }
+  .ifsc-assurance small { line-height: 1.4; }
+  .ifsc-details-card,
+  .ifsc-transfer-card,
+  .ifsc-nearby { border-radius: 20px; }
+  .ifsc-section-head { padding: 21px 18px 17px; }
+  .ifsc-section-head > svg { display: none; }
+  .ifsc-facts { grid-template-columns: 1fr; }
+  .ifsc-fact,
+  .ifsc-fact:nth-child(2n) { padding: 15px 18px; border-right: 0; }
+  .ifsc-fact--wide { grid-column: auto; }
+  .ifsc-transfer-card { padding: 22px 18px; }
+  .ifsc-transfer-list { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .ifsc-nearby .bank-branch-table-wrap { overflow: visible; margin: 0 12px; border: 0; background: transparent; }
+  .ifsc-nearby .bank-branch-table { min-width: 0; }
+  .ifsc-nearby .bank-branch-table thead {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+  }
+  .ifsc-nearby .bank-branch-table,
+  .ifsc-nearby .bank-branch-table tbody,
+  .ifsc-nearby .bank-branch-table tr,
+  .ifsc-nearby .bank-branch-table th,
+  .ifsc-nearby .bank-branch-table td { display: block; width: 100%; }
+  .ifsc-nearby .bank-branch-table tbody { display: grid; gap: 10px; }
+  .ifsc-nearby .bank-branch-table tbody tr { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); overflow: hidden; border: 1px solid var(--locz-border); border-radius: 15px; background: var(--locz-surface); }
+  .ifsc-nearby .bank-branch-table tbody th { grid-column: 1 / -1; padding: 14px; border-bottom: 1px solid var(--locz-border); }
+  .ifsc-nearby .bank-branch-table tbody td { position: relative; padding: 24px 14px 11px; border: 0; color: #435e56; }
+  .ifsc-nearby .bank-branch-table tbody td + td { border-left: 1px solid var(--locz-border); }
+  .ifsc-nearby .bank-branch-table tbody td::before { position: absolute; top: 8px; left: 14px; color: #60776f; content: attr(data-label); font-family: inherit; font-size: 0.58rem; font-weight: 800; letter-spacing: 0.07em; text-transform: uppercase; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ifsc-transfer-card__link svg,
+  .ifsc-nearby .bank-branch-table tbody tr { transition: none; }
+}
