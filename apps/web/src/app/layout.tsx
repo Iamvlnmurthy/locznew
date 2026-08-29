@@ -186,6 +186,23 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         <LocationPrompt hasLocation={Boolean(selectedCity)} />
         <MotionFrame>{children}</MotionFrame>
 
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              '@context': 'https://schema.org',
+              '@type': 'Organization',
+              name: 'LocZ',
+              url: SITE_URL,
+              logo: `${SITE_URL}/brand/locz-logo.webp`,
+              sameAs: [
+                'https://www.instagram.com/loczapp/',
+                'https://www.linkedin.com/company/locz/',
+              ],
+            }).replace(/</g, '\\u003c'),
+          }}
+        />
+
         <footer className="footer">
           <div className="container footer__inner">
             <div className="footer__brand">
@@ -200,6 +217,24 @@ export default async function RootLayout({ children }: { children: React.ReactNo
               <Link href="/post" className="footer__post-link">
                 <Icon name="plus" /> {t('footer.postFree')}
               </Link>
+              <nav className="footer__social" aria-label={t('footer.social')}>
+                <a
+                  href="https://www.instagram.com/loczapp/"
+                  target="_blank"
+                  rel="me noopener noreferrer"
+                  aria-label="LocZ on Instagram"
+                >
+                  <Icon name="instagram" />
+                </a>
+                <a
+                  href="https://www.linkedin.com/company/locz/"
+                  target="_blank"
+                  rel="me noopener noreferrer"
+                  aria-label="LocZ on LinkedIn"
+                >
+                  <Icon name="linkedin" />
+                </a>
+              </nav>
             </div>
             <nav className="footer__links" aria-label={t('footer.aria')}>
               <div>

@@ -248,6 +248,20 @@ const paths: Record<string, React.ReactNode> = {
       <path d="m8.6 10.5 6.8-4M8.6 13.5l6.8 4" />
     </>
   ),
+  instagram: (
+    <>
+      <rect x="2.5" y="2.5" width="19" height="19" rx="5.5" />
+      <circle cx="12" cy="12" r="4" />
+      <circle cx="17.4" cy="6.6" r="1" fill="currentColor" stroke="none" />
+    </>
+  ),
+  linkedin: (
+    <>
+      <path d="M15.5 8.5a5 5 0 0 1 5 5V21h-4v-7a2 2 0 0 0-4 0v7h-4V9h4v1.6a4.5 4.5 0 0 1 3-2.1Z" />
+      <rect x="2.5" y="9" width="4" height="12" />
+      <circle cx="4.5" cy="4.5" r="2" />
+    </>
+  ),
   expand: (
     <>
       <path d="M8 3H3v5M16 3h5v5M8 21H3v-5M16 21h5v-5" />

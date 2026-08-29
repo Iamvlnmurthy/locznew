@@ -22372,6 +22372,37 @@ h4,
   transform: translateY(-1px);
 }
 
+.footer__social {
+  display: flex;
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.footer__social a {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 999px;
+  color: rgb(255 255 255 / 82%);
+  border: 1px solid rgb(255 255 255 / 20%);
+  background: rgb(255 255 255 / 8%);
+  transition: 160ms ease;
+}
+
+.footer__social a:hover {
+  color: #fff;
+  border-color: rgb(255 255 255 / 40%);
+  background: rgb(255 255 255 / 16%);
+  transform: translateY(-1px);
+}
+
+.footer__social svg {
+  width: 20px;
+  height: 20px;
+}
+
 .footer__links {
   gap: clamp(32px, 5vw, 72px);
 }
