@@ -210,9 +210,23 @@ export class BankBranchService {
         bank,
         area,
       );
-      const clean = rows
+      let clean = rows
         .map((r) => this.toRecord(r))
         .filter((b) => addressMatchesState(b.address, b.state));
+      // Drop city/district mis-tags: a few razorpay rows carry the wrong city (e.g. a Maharashtra
+      // branch tagged city="NAINITAL"), and their own `state` then disagrees with the rest. Keep only
+      // the dominant state so a "… in Nainital" list never lists an out-of-state branch.
+      const stateCounts = new Map<string, number>();
+      for (const b of clean)
+        if (b.state) stateCounts.set(b.state, (stateCounts.get(b.state) ?? 0) + 1);
+      let domState: string | null = null;
+      let domN = 0;
+      for (const [s, n] of stateCounts)
+        if (n > domN) {
+          domN = n;
+          domState = s;
+        }
+      if (domState) clean = clean.filter((b) => !b.state || b.state === domState);
       branches = clean.slice(0, LIST_CAP);
       branchCount = clean.length; // capped indicator; exact count fetched below only if needed
       if (branches.length) areaLabel = area;
