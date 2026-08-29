@@ -100,6 +100,8 @@ interface BusinessDetail {
   postOffice: PostOfficeInfo | null;
   /** Station code + trains — present only on railway-station pages, null otherwise. */
   railway: RailwayInfo | null;
+  /** True when the category is under the "Public Services" tree — page reads as info, not a shop. */
+  isPublicService: boolean;
 }
 
 export interface RailwayTrain {

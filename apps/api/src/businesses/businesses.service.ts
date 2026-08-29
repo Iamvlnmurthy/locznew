@@ -61,7 +61,7 @@ const BUSINESS_INCLUDE = {
       nameTe: true,
       nameHi: true,
       slug: true,
-      parent: { select: { name: true } },
+      parent: { select: { name: true, slug: true } },
     },
   },
   // The state and the mandal complete a postal address. A LocZ "city" is a district, so the
@@ -1235,6 +1235,9 @@ export class BusinessesService {
       socialLinks: business.socialLinks,
       loczId: loczId(business.slug),
       parentCategoryName: business.category.parent?.name ?? null,
+      // True when the category sits under the "Public Services" tree — the UI reads this to present the
+      // page as an authoritative info page (no "claim"/"enquire" shop chrome) rather than a storefront.
+      isPublicService: business.category.parent?.slug === 'public-services',
       stateName: business.city.state?.name ?? null,
       // The slugs the hub pages are addressed by. Returned rather than derived,
       // because slugifying the display name guesses right most of the time and a

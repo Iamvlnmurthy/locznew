@@ -405,6 +405,9 @@ export class BusinessDetailDto extends BusinessSummaryDto {
   @ApiPropertyOptional({ type: RailwayInfoDto, nullable: true })
   railway?: RailwayInfoDto | null;
 
+  /** True when the business's category is under the "Public Services" tree. */
+  @ApiProperty() isPublicService!: boolean;
+
   @ApiPropertyOptional({
     enum: BusinessScale,
     description: 'Null on an imported record nobody has claimed — nobody may answer for them.',
