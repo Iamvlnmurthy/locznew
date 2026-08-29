@@ -21,6 +21,7 @@ import { localizedName } from '../common/utils/localized-name';
 import { businessSlug, loczId } from '../common/utils/slug.util';
 import { KeywordTranslationsService } from './keyword-translations.service';
 import { BankBranchService } from './bank-branch.service';
+import { PostOfficeService } from './post-office.service';
 import { categoryNameToArea } from '../common/utils/discovery-areas';
 import { attributionFor, describeBusiness } from './business-description';
 import { BusinessSearchService } from '../search/business-search.service';
@@ -111,6 +112,7 @@ export class BusinessesService {
     private readonly businessSearch: BusinessSearchService,
     private readonly keywordTranslations: KeywordTranslationsService,
     private readonly bankBranches: BankBranchService,
+    private readonly postOffices: PostOfficeService,
   ) {}
 
   async listPublic(query: BusinessSearchQueryDto): Promise<PaginatedDto<BusinessSummaryDto>> {
@@ -745,6 +747,11 @@ export class BusinessesService {
         locality: business.address?.locality?.name,
         pincode: business.pincodeCode,
       })
+      .catch(() => null);
+    // Post-office pages get authoritative India Post details (pincode, office type, delivery,
+    // division/circle). Best-effort and null on non-post-offices — every other storefront is unchanged.
+    detail.postOffice = await this.postOffices
+      .enrich({ name: business.name, pincode: business.pincodeCode })
       .catch(() => null);
     return detail;
   }

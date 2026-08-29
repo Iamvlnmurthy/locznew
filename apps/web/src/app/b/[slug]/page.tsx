@@ -22,6 +22,7 @@ import { BusinessActionTracker } from '@/components/business-action-tracker';
 import { StorefrontTabs } from './storefront-tabs';
 import { CopyAddressButton } from './copy-address-button';
 import { BankingDetails } from './banking-details';
+import { PostOfficeDetails } from './post-office-details';
 import { BookmarkBusiness } from './bookmark-business';
 
 interface BusinessHour {
@@ -94,6 +95,30 @@ interface BusinessDetail {
   keywords: string[];
   /** Authoritative RBI IFSC banking data — present only on bank/ATM pages, null otherwise. */
   banking: BankingInfo | null;
+  /** Authoritative India Post details — present only on post-office pages, null otherwise. */
+  postOffice: PostOfficeInfo | null;
+}
+
+export interface PostOfficeRecord {
+  officeName: string;
+  pincode: string;
+  officeType: string;
+  delivery: string | null;
+  division: string | null;
+  region: string | null;
+  circle: string | null;
+  district: string | null;
+  state: string | null;
+  latitude: number | null;
+  longitude: number | null;
+}
+
+export interface PostOfficeInfo {
+  matched: PostOfficeRecord | null;
+  offices: PostOfficeRecord[];
+  officeCount: number;
+  pincode: string | null;
+  areaLabel: string | null;
 }
 
 export interface BankBranch {
@@ -319,6 +344,35 @@ export async function generateMetadata({
     }
   }
 
+  // Post-office pages carry authoritative India Post data — target the searches people actually type
+  // ("<office> pincode", "<place> post office pincode").
+  const po = business.postOffice;
+  if (po) {
+    if (po.matched) {
+      const m = po.matched;
+      finalTitle = `${m.officeName} Pincode ${m.pincode} — ${m.officeType} | LocZ`;
+      finalDescription = `${m.officeName} (${m.officeType}) has pincode ${m.pincode}${m.district ? `, ${m.district}` : ''}. Delivery status, postal division and circle details from the official India Post directory.`;
+      bankKeywords.push(
+        `${m.officeName} pincode`,
+        `${m.officeName} pincode ${m.pincode}`,
+        `${m.pincode} pincode`,
+        `${m.officeName} ${m.officeType}`,
+        ...(m.district ? [`${m.district} post office pincode`] : []),
+      );
+    } else if (po.offices.length && po.pincode) {
+      const areaPo = po.areaLabel ?? business.cityName;
+      finalTitle = `Post Offices in Pincode ${po.pincode}${areaPo ? `, ${areaPo}` : ''} — India Post | LocZ`;
+      finalDescription = `List of India Post offices under pincode ${po.pincode}${areaPo ? ` in ${areaPo}` : ''}, with office type and delivery status from the official directory.`;
+      bankKeywords.push(
+        `pincode ${po.pincode}`,
+        `${po.pincode} post office`,
+        `${areaPo} post office pincode`,
+        `post offices pincode ${po.pincode}`,
+      );
+      for (const o of po.offices) bankKeywords.push(`${o.officeName} pincode`);
+    }
+  }
+
   // Match the sitemap's quality gate. Sparse imported entities remain useful to visitors and
   // remain followable for discovery, but do not ask a crawler to index millions of pages whose
   // only differentiator is a substituted name. A real phone, owner description, claim,
@@ -336,6 +390,7 @@ export async function generateMetadata({
       Boolean(business.primaryPhone) ||
       !business.descriptionIsGenerated ||
       Boolean(bk && (bk.matched || bk.branches.length)) ||
+      Boolean(po && (po.matched || po.offices.length)) ||
       business.listingCount > 0);
 
   return {
@@ -458,6 +513,17 @@ export default async function BusinessPage({ params }: { params: Promise<{ slug:
 
   // Rich, fact-driven conditional FAQs based on data density
   const faqs: Array<{ q: string; a: string }> = [
+    business.postOffice?.matched
+      ? {
+          q: `What is the pincode of ${business.postOffice.matched.officeName}?`,
+          a: `The pincode of ${business.postOffice.matched.officeName} (${business.postOffice.matched.officeType}) is ${business.postOffice.matched.pincode}${business.postOffice.matched.district ? `, in ${business.postOffice.matched.district}` : ''}. It is ${business.postOffice.matched.delivery === 'Delivery' ? 'a delivery post office' : 'listed in the official India Post directory'}.`,
+        }
+      : business.postOffice && business.postOffice.offices.length && business.postOffice.pincode
+        ? {
+            q: `Which post offices come under pincode ${business.postOffice.pincode}?`,
+            a: `Pincode ${business.postOffice.pincode} covers ${business.postOffice.officeCount} India Post office${business.postOffice.officeCount === 1 ? '' : 's'}. The list on this page shows each office with its type (Head, Sub or Branch) and delivery status.`,
+          }
+        : null,
     business.banking?.matched
       ? {
           q: `What is the IFSC code of ${business.banking.matched.bank}, ${business.banking.matched.branch} branch?`,
@@ -525,9 +591,11 @@ export default async function BusinessPage({ params }: { params: Promise<{ slug:
 
   const jsonLd = {
     '@context': 'https://schema.org',
-    '@type': business.banking
-      ? 'BankOrCreditUnion'
-      : schemaTypeFor(business.categoryName, business.parentCategoryName),
+    '@type': business.postOffice
+      ? 'PostOffice'
+      : business.banking
+        ? 'BankOrCreditUnion'
+        : schemaTypeFor(business.categoryName, business.parentCategoryName),
     '@id': `${SITE_URL}/b/${business.slug}#entity`,
     name: business.name,
     image: profileLogo ? new URL(profileLogo, SITE_URL).toString() : undefined,
@@ -836,6 +904,11 @@ export default async function BusinessPage({ params }: { params: Promise<{ slug:
 
           {business.banking && (business.banking.matched || business.banking.branches.length) ? (
             <BankingDetails banking={business.banking} place={placeLabel} />
+          ) : null}
+
+          {business.postOffice &&
+          (business.postOffice.matched || business.postOffice.offices.length) ? (
+            <PostOfficeDetails info={business.postOffice} place={placeLabel} />
           ) : null}
 
           <section className="business-profile-section business-profile-section--about" id="about">

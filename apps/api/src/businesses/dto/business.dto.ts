@@ -348,6 +348,29 @@ export class BankingInfoDto {
   @ApiPropertyOptional() areaLabel!: string | null;
 }
 
+export class PostOfficeRecordDto {
+  @ApiProperty() officeName!: string;
+  @ApiProperty() pincode!: string;
+  @ApiProperty() officeType!: string;
+  @ApiPropertyOptional() delivery!: string | null;
+  @ApiPropertyOptional() division!: string | null;
+  @ApiPropertyOptional() region!: string | null;
+  @ApiPropertyOptional() circle!: string | null;
+  @ApiPropertyOptional() district!: string | null;
+  @ApiPropertyOptional() state!: string | null;
+  @ApiPropertyOptional() latitude!: number | null;
+  @ApiPropertyOptional() longitude!: number | null;
+}
+
+export class PostOfficeInfoDto {
+  @ApiPropertyOptional({ type: PostOfficeRecordDto, nullable: true })
+  matched!: PostOfficeRecordDto | null;
+  @ApiProperty({ type: [PostOfficeRecordDto] }) offices!: PostOfficeRecordDto[];
+  @ApiProperty() officeCount!: number;
+  @ApiPropertyOptional() pincode!: string | null;
+  @ApiPropertyOptional() areaLabel!: string | null;
+}
+
 export class BusinessDetailDto extends BusinessSummaryDto {
   /** On the detail response only — a result card has no room for the shelf list. */
   @ApiProperty({ type: [String] }) keywords!: string[];
@@ -359,6 +382,10 @@ export class BusinessDetailDto extends BusinessSummaryDto {
    */
   @ApiPropertyOptional({ type: BankingInfoDto, nullable: true })
   banking?: BankingInfoDto | null;
+
+  /** Authoritative India Post details, present only on post-office pages. Null everywhere else. */
+  @ApiPropertyOptional({ type: PostOfficeInfoDto, nullable: true })
+  postOffice?: PostOfficeInfoDto | null;
 
   @ApiPropertyOptional({
     enum: BusinessScale,

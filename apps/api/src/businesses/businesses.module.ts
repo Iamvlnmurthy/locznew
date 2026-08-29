@@ -8,6 +8,7 @@ import { BusinessesController } from './businesses.controller';
 import { BusinessesService } from './businesses.service';
 import { KeywordTranslationsService } from './keyword-translations.service';
 import { BankBranchService } from './bank-branch.service';
+import { PostOfficeService } from './post-office.service';
 
 @Module({
   imports: [MediaModule, NotificationsModule, AuditModule],
@@ -19,6 +20,7 @@ import { BankBranchService } from './bank-branch.service';
     BusinessClaimsService,
     KeywordTranslationsService,
     BankBranchService,
+    PostOfficeService,
   ],
   exports: [BusinessesService],
 })
