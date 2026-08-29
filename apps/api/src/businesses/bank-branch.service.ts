@@ -85,6 +85,15 @@ const STATE_NAMES = [
   'puducherry',
 ];
 
+/** Title-case an ALL-CAPS razorpay place ("RANGA REDDY" → "Ranga Reddy") for display and keywords. */
+function titleCase(s: string): string {
+  return s
+    .toLowerCase()
+    .replace(/\b[a-z]/g, (c) => c.toUpperCase())
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
 /** True unless the free-text address explicitly names a state other than the branch's own state. */
 function addressMatchesState(address: string | null, state: string | null): boolean {
   if (!address || !state) return true;
@@ -249,7 +258,18 @@ export class BankBranchService {
     if (domState) clean = clean.filter((b) => !b.state || b.state === domState);
     const branches = clean.slice(0, LIST_CAP);
     const branchCount = clean.length;
-    const areaLabel = branches.length ? area || (branches[0]?.city ?? null) : null;
+    // Label the area by the branches' own dominant city (razorpay's name people actually search —
+    // "Hyderabad"), not the LocZ district ("K.V.Rangareddy", which nobody types into a search box).
+    const cityCounts = new Map<string, number>();
+    for (const b of branches) if (b.city) cityCounts.set(b.city, (cityCounts.get(b.city) ?? 0) + 1);
+    let domCity: string | null = null;
+    let domCityN = 0;
+    for (const [ci, n] of cityCounts)
+      if (n > domCityN) {
+        domCityN = n;
+        domCity = ci;
+      }
+    const areaLabel = branches.length ? (domCity ? titleCase(domCity) : area || null) : null;
 
     // Nothing authoritative to add (obscure bank / no area match) — don't render an empty block.
     if (!matched && !branches.length)

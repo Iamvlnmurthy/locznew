@@ -310,6 +310,12 @@ export async function generateMetadata({
         `${bk.bankName} branches ${areaBank}`,
         `${bk.bankName} MICR code`,
       );
+      // Real searches are BRANCH-level ("HDFC Bank Gachibowli IFSC code"), not district-level. Emit a
+      // keyword per listed branch — its name and its raw IFSC — so the page targets those queries.
+      for (const br of bk.branches) {
+        const branchName = br.branch.toLowerCase().replace(/\b[a-z]/g, (ch) => ch.toUpperCase());
+        bankKeywords.push(`${bk.bankName} ${branchName} IFSC code`, br.ifsc);
+      }
     }
   }
 
