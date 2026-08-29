@@ -103,12 +103,22 @@ export class PostOfficeService {
     const SELECT = `SELECT officename, pincode, officetype, delivery, divisionname, regionname, circlename, district, statename, latitude, longitude FROM post_offices`;
 
     // 1) PIN the exact office: a locality token from the name that resolves to ONE office in the pincode.
+    // Constrain the pin to the office TYPE the name states, so a "Head Post Office" can never pin a Sub
+    // Office (a generic token like "gate" otherwise mismatched "Head Post Office Gate 5" to "South Gate SO").
+    const nameL = input.name.toLowerCase();
+    const typeFilter = /\bhead\b/.test(nameL)
+      ? ` AND upper(officetype) = 'HO'`
+      : /\bsub\b/.test(nameL)
+        ? ` AND upper(officetype) IN ('SO','PO')`
+        : /\bbranch\b/.test(nameL)
+          ? ` AND upper(officetype) = 'BO'`
+          : '';
     let matched: PostOfficeRecord | null = null;
     const hints = this.hintTokens(input.name).slice(0, 6);
     if (hints.length) {
       const like = hints.map((_, i) => `lower(officename) LIKE $${i + 2}`).join(' OR ');
       const rows = await this.prisma.$queryRawUnsafe<Array<Record<string, unknown>>>(
-        `${SELECT} WHERE pincode = $1 AND (${like}) LIMIT 3`,
+        `${SELECT} WHERE pincode = $1 AND (${like})${typeFilter} LIMIT 3`,
         pin,
         ...hints.map((h) => `%${h}%`),
       );
