@@ -20,6 +20,7 @@ import { paginate, PaginatedDto } from '../common/dto/pagination.dto';
 import { localizedName } from '../common/utils/localized-name';
 import { businessSlug, loczId } from '../common/utils/slug.util';
 import { KeywordTranslationsService } from './keyword-translations.service';
+import { BankBranchService } from './bank-branch.service';
 import { categoryNameToArea } from '../common/utils/discovery-areas';
 import { attributionFor, describeBusiness } from './business-description';
 import { BusinessSearchService } from '../search/business-search.service';
@@ -109,6 +110,7 @@ export class BusinessesService {
     private readonly notifications: NotificationsService,
     private readonly businessSearch: BusinessSearchService,
     private readonly keywordTranslations: KeywordTranslationsService,
+    private readonly bankBranches: BankBranchService,
   ) {}
 
   async listPublic(query: BusinessSearchQueryDto): Promise<PaginatedDto<BusinessSummaryDto>> {
@@ -733,7 +735,17 @@ export class BusinessesService {
         .catch(() => undefined);
     }
 
-    return this.toDetail(business, viewerId, lang);
+    const detail = this.toDetail(business, viewerId, lang);
+    // Bank/ATM pages are rebuilt from authoritative RBI IFSC data (best-effort — a lookup failure
+    // must never break the profile). Non-bank businesses get null and render exactly as before.
+    detail.banking = await this.bankBranches
+      .enrich({
+        name: business.name,
+        city: business.city?.name,
+        locality: business.address?.locality?.name,
+      })
+      .catch(() => null);
+    return detail;
   }
 
   async listMine(userId: string): Promise<BusinessSummaryDto[]> {

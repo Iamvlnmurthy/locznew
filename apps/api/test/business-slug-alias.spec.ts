@@ -72,6 +72,7 @@ describe('a business whose URL has changed', () => {
       {} as never, // notifications
       {} as never, // businessSearch
       { localize: (keywords: string[]) => keywords } as never, // keyword translations
+      { enrich: jest.fn().mockResolvedValue(null) } as never, // bank branches
     );
     return { service, prisma };
   }

@@ -21,6 +21,7 @@ import { StorefrontHouseAd } from '@/components/storefront-house-ad';
 import { BusinessActionTracker } from '@/components/business-action-tracker';
 import { StorefrontTabs } from './storefront-tabs';
 import { CopyAddressButton } from './copy-address-button';
+import { BankingDetails } from './banking-details';
 import { BookmarkBusiness } from './bookmark-business';
 
 interface BusinessHour {
@@ -91,6 +92,32 @@ interface BusinessDetail {
   attribution: string | null;
   claimStatus: string;
   keywords: string[];
+  /** Authoritative RBI IFSC banking data — present only on bank/ATM pages, null otherwise. */
+  banking: BankingInfo | null;
+}
+
+export interface BankBranch {
+  ifsc: string;
+  bank: string;
+  branch: string;
+  address: string | null;
+  city: string | null;
+  district: string | null;
+  state: string | null;
+  micr: string | null;
+  contact: string | null;
+  neft: boolean;
+  rtgs: boolean;
+  imps: boolean;
+  upi: boolean;
+}
+
+export interface BankingInfo {
+  bankName: string;
+  matched: BankBranch | null;
+  branches: BankBranch[];
+  branchCount: number;
+  areaLabel: string | null;
 }
 
 /**
@@ -253,6 +280,39 @@ export async function generateMetadata({
     business.cityName,
   ];
 
+  // Bank/ATM pages carry authoritative IFSC data, so their title, summary and keywords are built
+  // around what people actually search for ("<bank> <branch> IFSC code"). This is real entity
+  // substance derived from data, not paraphrased filler.
+  let finalTitle = title;
+  let finalDescription = description;
+  const bankKeywords: string[] = [];
+  const bk = business.banking;
+  if (bk) {
+    if (bk.matched) {
+      const m = bk.matched;
+      finalTitle = `${m.bank} ${m.branch} IFSC Code ${m.ifsc} — ${place}`;
+      finalDescription = `IFSC code of ${m.bank}, ${m.branch} branch is ${m.ifsc}${m.micr ? `, MICR ${m.micr}` : ''}. Address, NEFT/RTGS/IMPS/UPI details and branch info in ${place}.`;
+      bankKeywords.push(
+        `${m.bank} ${m.branch} IFSC code`,
+        `${m.ifsc}`,
+        `${m.bank} ${m.branch} branch`,
+        `${m.bank} IFSC code ${m.branch}`,
+        ...(m.micr ? [`${m.bank} ${m.branch} MICR code`] : []),
+      );
+    } else {
+      const areaBank = bk.areaLabel ?? business.cityName;
+      finalTitle = `${bk.bankName} IFSC Codes in ${areaBank} — Branches, MICR`;
+      finalDescription = `Find IFSC and MICR codes for ${bk.bankName} branches in ${areaBank}, from the official RBI directory. Copy the code for your branch to make NEFT, RTGS, IMPS or UPI transfers.`;
+      bankKeywords.push(
+        `${bk.bankName} IFSC code ${areaBank}`,
+        `${bk.bankName} ${areaBank} IFSC code`,
+        `IFSC code ${bk.bankName} ${areaBank}`,
+        `${bk.bankName} branches ${areaBank}`,
+        `${bk.bankName} MICR code`,
+      );
+    }
+  }
+
   // Match the sitemap's quality gate. Sparse imported entities remain useful to visitors and
   // remain followable for discovery, but do not ask a crawler to index millions of pages whose
   // only differentiator is a substituted name. A real phone, owner description, claim,
@@ -269,12 +329,13 @@ export async function generateMetadata({
       business.verificationStatus === 'VERIFIED' ||
       Boolean(business.primaryPhone) ||
       !business.descriptionIsGenerated ||
+      Boolean(bk && (bk.matched || bk.branches.length)) ||
       business.listingCount > 0);
 
   return {
-    title,
-    description,
-    keywords,
+    title: finalTitle,
+    description: finalDescription,
+    keywords: [...bankKeywords, ...keywords],
     ...(!isIndexable ? { robots: { index: false, follow: true } } : {}),
     alternates: await localizedAlternates(`/b/${business.slug}`),
     openGraph: {
@@ -391,6 +452,17 @@ export default async function BusinessPage({ params }: { params: Promise<{ slug:
 
   // Rich, fact-driven conditional FAQs based on data density
   const faqs: Array<{ q: string; a: string }> = [
+    business.banking?.matched
+      ? {
+          q: `What is the IFSC code of ${business.banking.matched.bank}, ${business.banking.matched.branch} branch?`,
+          a: `The IFSC code of ${business.banking.matched.bank}, ${business.banking.matched.branch} branch is ${business.banking.matched.ifsc}${business.banking.matched.micr ? `, and its MICR code is ${business.banking.matched.micr}` : ''}. Use it for NEFT, RTGS, IMPS and UPI transfers.`,
+        }
+      : business.banking && business.banking.branches.length
+        ? {
+            q: `How do I find the IFSC code for a ${business.banking.bankName} branch in ${business.banking.areaLabel ?? business.cityName}?`,
+            a: `${business.banking.bankName} has ${business.banking.branchCount} branch${business.banking.branchCount === 1 ? '' : 'es'} in ${business.banking.areaLabel ?? business.cityName}. The branch list on this page shows the official IFSC and MICR code for each — copy the one that matches your branch.`,
+          }
+        : null,
     business.primaryPhone
       ? {
           q: p.faqPhoneQ.replace('{name}', business.name),
@@ -447,7 +519,9 @@ export default async function BusinessPage({ params }: { params: Promise<{ slug:
 
   const jsonLd = {
     '@context': 'https://schema.org',
-    '@type': schemaTypeFor(business.categoryName, business.parentCategoryName),
+    '@type': business.banking
+      ? 'BankOrCreditUnion'
+      : schemaTypeFor(business.categoryName, business.parentCategoryName),
     '@id': `${SITE_URL}/b/${business.slug}#entity`,
     name: business.name,
     image: profileLogo ? new URL(profileLogo, SITE_URL).toString() : undefined,
@@ -753,6 +827,10 @@ export default async function BusinessPage({ params }: { params: Promise<{ slug:
               ...(similar.length ? [{ id: 'nearby', icon: 'location', label: p.nearbyTab }] : []),
             ]}
           />
+
+          {business.banking && (business.banking.matched || business.banking.branches.length) ? (
+            <BankingDetails banking={business.banking} place={placeLabel} />
+          ) : null}
 
           <section className="business-profile-section business-profile-section--about" id="about">
             <span className="section-kicker">{p.meetBusiness}</span>

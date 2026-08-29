@@ -324,9 +324,41 @@ export class BusinessStaffDto {
   @ApiPropertyOptional() acceptedAt!: Date | null;
 }
 
+export class BankBranchDto {
+  @ApiProperty() ifsc!: string;
+  @ApiProperty() bank!: string;
+  @ApiProperty() branch!: string;
+  @ApiPropertyOptional() address!: string | null;
+  @ApiPropertyOptional() city!: string | null;
+  @ApiPropertyOptional() district!: string | null;
+  @ApiPropertyOptional() state!: string | null;
+  @ApiPropertyOptional() micr!: string | null;
+  @ApiPropertyOptional() contact!: string | null;
+  @ApiProperty() neft!: boolean;
+  @ApiProperty() rtgs!: boolean;
+  @ApiProperty() imps!: boolean;
+  @ApiProperty() upi!: boolean;
+}
+
+export class BankingInfoDto {
+  @ApiProperty() bankName!: string;
+  @ApiPropertyOptional({ type: BankBranchDto, nullable: true }) matched!: BankBranchDto | null;
+  @ApiProperty({ type: [BankBranchDto] }) branches!: BankBranchDto[];
+  @ApiProperty() branchCount!: number;
+  @ApiPropertyOptional() areaLabel!: string | null;
+}
+
 export class BusinessDetailDto extends BusinessSummaryDto {
   /** On the detail response only — a result card has no room for the shelf list. */
   @ApiProperty({ type: [String] }) keywords!: string[];
+
+  /**
+   * Authoritative RBI IFSC banking data, present only on bank/ATM pages. Null everywhere else.
+   * When `matched` is set it is a verified single branch; otherwise `branches` lists the bank's
+   * branches in the area so a visitor finds their exact IFSC. No IFSC is ever guessed.
+   */
+  @ApiPropertyOptional({ type: BankingInfoDto, nullable: true })
+  banking?: BankingInfoDto | null;
 
   @ApiPropertyOptional({
     enum: BusinessScale,
