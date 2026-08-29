@@ -2330,6 +2330,30 @@ html {
   overflow-x: clip;
 }
 
+/* Lenis smooth-scroll (see components/smooth-scroll.tsx). While Lenis drives the wheel it owns the
+   scroll position, so CSS smooth-scroll is disabled to stop the two fighting (which left some pages
+   loading at the footer). Touch and reduced-motion users keep native scrolling. */
+html.lenis,
+html.lenis body {
+  height: auto;
+}
+
+.lenis.lenis-smooth {
+  scroll-behavior: auto !important;
+}
+
+.lenis.lenis-smooth [data-lenis-prevent] {
+  overscroll-behavior: contain;
+}
+
+.lenis.lenis-stopped {
+  overflow: hidden;
+}
+
+.lenis.lenis-smooth iframe {
+  pointer-events: none;
+}
+
 /* ---------- Location-led discovery pages ---------- */
 
 .discovery-hero {

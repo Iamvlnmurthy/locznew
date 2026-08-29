@@ -18,6 +18,7 @@ import { headers } from 'next/headers';
 import { getLocale, getSelectedCity, localizedAlternates } from '@/lib/session';
 import { LocationPrompt } from '@/components/location-prompt';
 import { MotionFrame } from '@/components/motion-frame';
+import { SmoothScroll } from '@/components/smooth-scroll';
 import { NavigationFeedback } from '@/components/navigation-feedback';
 import './globals.css';
 import './theme-overrides.css';
@@ -184,6 +185,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         </Suspense>
         <Header locale={locale} />
         <LocationPrompt hasLocation={Boolean(selectedCity)} />
+        <SmoothScroll />
         <MotionFrame>{children}</MotionFrame>
 
         <script
