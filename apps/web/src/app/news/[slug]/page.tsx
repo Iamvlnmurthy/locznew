@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { Fragment } from 'react';
+import { cache, Fragment } from 'react';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { Icon } from '@/components/icons';
@@ -37,7 +37,10 @@ interface NewsStory {
   publishedAt: string | null;
 }
 
-async function loadEvent(slug: string, lang: string): Promise<NewsEvent | null> {
+// Memoised for the request so generateMetadata and the page component share ONE fetch instead of two.
+// This matters most on the slow legacy fallback below: a Telugu NewsEvent regenerates via the LLM
+// (~7s), and calling it twice per view doubled the wait.
+const loadEvent = cache(async (slug: string, lang: string): Promise<NewsEvent | null> => {
   // The regenerated news_stories engine carries a proper article body, image and translations, and
   // resolves by slug or id. Try it first for every slug; fall back to a legacy NewsEvent otherwise.
   const story = await apiSafe<NewsStory>(
@@ -61,7 +64,7 @@ async function loadEvent(slug: string, lang: string): Promise<NewsEvent | null> 
   return apiSafe<NewsEvent>(`/news/${encodeURIComponent(slug)}?lang=${encodeURIComponent(lang)}`, {
     revalidate: 300,
   });
-}
+});
 
 export async function generateMetadata({
   params,
