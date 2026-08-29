@@ -91,15 +91,26 @@ export default async function NewsFeedPage({
   const cards = feed?.cards ?? [];
   const hasMore = feed?.hasMore ?? false;
   const base = { topic, when, lang: lang === 'en' ? undefined : lang };
+  const cityName = city?.name ?? null;
 
   return (
     <main className="news-page">
       <header className="news-masthead news-masthead--compact">
-        <div className="container">
-          <span className="news-masthead__brand">
-            <Icon name="location" /> LocZ News · Hyperlocal
-          </span>
-          <h1>What’s happening near you</h1>
+        <div className="container news-masthead__inner">
+          <div className="news-masthead__copy">
+            <span className="news-masthead__brand">
+              <Icon name="location" /> LocZ News · Hyperlocal
+            </span>
+            <h1>{cityName ? `News around ${cityName}` : 'What’s happening near you'}</h1>
+            <p>Fresh local reporting, city updates and useful stories—organised around you.</p>
+          </div>
+          <div className="news-masthead__signal" aria-label="Live local news feed">
+            <span className="news-masthead__pulse" aria-hidden="true" />
+            <span>
+              <strong>Live local desk</strong>
+              <small>Latest stories first</small>
+            </span>
+          </div>
         </div>
       </header>
 
@@ -109,13 +120,20 @@ export default async function NewsFeedPage({
         topic={topic}
         dates={facets?.dates ?? { today: 0, yesterday: 0, week: 0, month: 0 }}
         topics={facets?.topics ?? []}
+        resultCount={cards.length}
+        cityName={cityName}
       />
 
       <div className="container news-feed">
         {cards.length === 0 ? (
-          <p className="news-feed__empty">
-            No stories yet for this filter — try a wider date range or topic.
-          </p>
+          <div className="news-feed__empty">
+            <span className="news-feed__empty-icon" aria-hidden="true">
+              <Icon name="sparkles" />
+            </span>
+            <strong>No stories match these filters</strong>
+            <p>Try a wider date range or browse every local topic.</p>
+            <Link href="/news">Show all news</Link>
+          </div>
         ) : (
           <div className="news-grid">
             {cards.map((s, i) => (
@@ -126,13 +144,23 @@ export default async function NewsFeedPage({
                 >
                   {s.imageUrl ? (
                     <span className="news-card__img">
-                      <img src={s.imageUrl} alt="" loading="lazy" />
+                      <img
+                        src={s.imageUrl}
+                        alt=""
+                        loading={i === 0 ? 'eager' : 'lazy'}
+                        fetchPriority={i === 0 ? 'high' : undefined}
+                      />
                       {s.imageCredit ? (
                         <small className="news-card__credit">Photo: {s.imageCredit}</small>
                       ) : null}
                     </span>
-                  ) : null}
+                  ) : (
+                    <span className="news-card__img news-card__img--empty" aria-hidden="true">
+                      <Icon name="image" />
+                    </span>
+                  )}
                   <span className="news-card__body">
+                    {i === 0 ? <span className="news-card__top-story">Top story</span> : null}
                     <span className="news-card__meta">
                       <span className="news-card__cat">{s.category}</span>
                       <span className="news-card__ring">{RING_LABEL[s.ring]}</span>
@@ -147,6 +175,9 @@ export default async function NewsFeedPage({
                     </span>
                     <span className={`news-card__dek${lang === 'te' ? ' te' : ''}`}>
                       {s.dek ?? s.summary}
+                    </span>
+                    <span className="news-card__read">
+                      Read story <Icon name="arrow" />
                     </span>
                   </span>
                 </Link>
