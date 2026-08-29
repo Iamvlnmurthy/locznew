@@ -48,13 +48,35 @@ jobs:
           # Don't gate the deploy on a host-key SCAN: ssh-keyscan returning non-zero (a transient
           # network flake from the runner) was killing the whole step under `bash -e`. Let the real
           # ssh/rsync connections learn the host key on first use instead.
-          printf 'Host *\n  StrictHostKeyChecking accept-new\n  IdentityFile ~/.ssh/id_deploy\n' > ~/.ssh/config
+          # GitHub runners intermittently time out connecting to the VPS on :22 (a runner↔VPS network
+          # flake, not auth), which failed the deploy and needed a manual re-run. ConnectionAttempts
+          # makes ssh (and rsync, which shells out to ssh) retry the CONNECT a few times on its own;
+          # the short ConnectTimeout means a dead attempt gives up quickly and retries sooner. The
+          # keepalives drop a mid-command stall instead of hanging the whole job.
+          {
+            printf 'Host *\n'
+            printf '  StrictHostKeyChecking accept-new\n'
+            printf '  IdentityFile ~/.ssh/id_deploy\n'
+            printf '  ConnectTimeout 20\n'
+            printf '  ConnectionAttempts 4\n'
+            printf '  ServerAliveInterval 15\n'
+            printf '  ServerAliveCountMax 4\n'
+          } > ~/.ssh/config
           chmod 600 ~/.ssh/config
 
       - name: Sync source to the exact deployed commit
         run: |
-          ssh -i ~/.ssh/id_deploy ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} \
-            "sudo -u locz bash -lc 'cd /home/locz/app && git fetch origin master -q && git reset --hard ${{ github.sha }} -q'"
+          # Retry across a longer network blip (beyond ssh's own ConnectionAttempts) so a transient
+          # runner↔VPS timeout doesn't fail the whole deploy and force a manual re-run.
+          for attempt in 1 2 3; do
+            if ssh -i ~/.ssh/id_deploy ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} \
+                 "sudo -u locz bash -lc 'cd /home/locz/app && git fetch origin master -q && git reset --hard ${{ github.sha }} -q'"; then
+              exit 0
+            fi
+            echo "sync attempt $attempt failed; retrying in 20s..."
+            sleep 20
+          done
+          echo "sync failed after 3 attempts"; exit 1
 
       - name: Ship prebuilt artifacts (.next + api dist)
         run: |
