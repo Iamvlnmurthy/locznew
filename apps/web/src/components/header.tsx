@@ -73,18 +73,12 @@ export async function Header({ locale }: { locale: Locale }) {
           <nav className="header__primary" aria-label={t('nav.primary')}>
             {primaryLinks.map((item) => {
               const isActive = pathname.startsWith(item.href);
-              const className = [
-                isActive ? 'is-active' : '',
-                item.href === '/c/public-services' ? 'header__primary-public-services' : '',
-              ]
-                .filter(Boolean)
-                .join(' ');
 
               return (
                 <Link
                   key={item.href}
                   href={item.href}
-                  className={className || undefined}
+                  className={isActive ? 'is-active' : undefined}
                   aria-current={isActive ? 'page' : undefined}
                 >
                   {item.label}

@@ -14,8 +14,8 @@ import { RadiusSelector } from '@/components/radius-selector';
 import { DiscoveryMotionLink } from '@/components/discovery-motion-link';
 import { AdSlot } from '@/components/ad-slot';
 import {
-  PUBLIC_SERVICE_ICONS,
   PUBLIC_SERVICE_SLUGS,
+  publicServiceArtwork,
   publicServiceLabel,
 } from '@/lib/public-services';
 
@@ -276,7 +276,7 @@ export default async function HomePage({
           slug,
           count: catCountById.get(category.id) ?? 0,
           label: publicServiceLabel(t, slug),
-          icon: PUBLIC_SERVICE_ICONS[slug],
+          artwork: publicServiceArtwork(slug),
         }
       : null;
   }).filter((category): category is NonNullable<typeof category> => Boolean(category?.count));
@@ -290,6 +290,7 @@ export default async function HomePage({
     'deals',
     'services',
     'marketplace',
+    'public-services',
   ];
   const areaCountByKey = new Map(areaSummary.areas.map(({ area, count }) => [area, count]));
   const heroAreas = primaryAreas.map((area) => ({ area, count: areaCountByKey.get(area) ?? 0 }));
@@ -356,6 +357,7 @@ export default async function HomePage({
       (areaCountByKey.get('marketplace') ?? 0)
         ? t('home.heroNearby', { count: nf(areaCountByKey.get('marketplace') ?? 0) })
         : t('home.heroExplore'),
+    'public-services': t('home.heroBrowse'),
   };
 
   return (
@@ -437,7 +439,11 @@ export default async function HomePage({
               {heroAreas.map(({ area, count }) => (
                 <DiscoveryMotionLink
                   key={area}
-                  href={`/discover/${encodeURIComponent(area)}`}
+                  href={
+                    area === 'public-services'
+                      ? '/c/public-services'
+                      : `/discover/${encodeURIComponent(area)}`
+                  }
                   className={`home-discovery-card home-discovery-card--${area}`}
                 >
                   <span className="home-discovery-card__art" aria-hidden="true">
@@ -537,7 +543,13 @@ export default async function HomePage({
         >
           <div className="home-public-services__intro">
             <span className="home-public-services__seal" aria-hidden="true">
-              <Icon name="government" />
+              <Image
+                src="/icons/public-services/public-services.webp"
+                alt=""
+                width={64}
+                height={64}
+                sizes="64px"
+              />
             </span>
             <div>
               <span className="section-kicker">{t('home.publicServicesKicker')}</span>
@@ -555,7 +567,7 @@ export default async function HomePage({
                 className="home-public-service-card"
               >
                 <span className="home-public-service-card__icon" aria-hidden="true">
-                  <Icon name={category.icon} />
+                  <Image src={category.artwork} alt="" width={52} height={52} sizes="52px" />
                 </span>
                 <span className="home-public-service-card__body">
                   <strong>{category.label}</strong>

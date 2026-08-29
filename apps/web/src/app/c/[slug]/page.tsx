@@ -12,9 +12,9 @@ import { premiumCategoryBanner } from '@/lib/premium-banner-catalog';
 import { premiumCategoryArtwork } from '@/lib/premium-icon-catalog';
 import { getLocale, getSelectedCity, localizedAlternates } from '@/lib/session';
 import {
-  PUBLIC_SERVICE_ICONS,
   PUBLIC_SERVICE_SLUGS,
   isPublicServiceSlug,
+  publicServiceArtwork,
   publicServiceLabel,
   type PublicServiceSlug,
 } from '@/lib/public-services';
@@ -358,7 +358,7 @@ function PublicServicesIndex({
   return (
     <main className="public-services-page">
       <PublicServicesHero
-        icon="government"
+        artwork="/icons/public-services/public-services.webp"
         breadcrumbLabel={t('publicServices.breadcrumb')}
         eyebrow={t('publicServices.directoryKicker')}
         title={t('publicServices.directoryTitle')}
@@ -376,7 +376,7 @@ function PublicServicesIndex({
         {categories.map(({ slug, count }) => (
           <Link href={`/c/${slug}`} className="public-services-directory-card" key={slug}>
             <span className="public-services-directory-card__icon" aria-hidden="true">
-              <Icon name={PUBLIC_SERVICE_ICONS[slug]} />
+              <Image src={publicServiceArtwork(slug)} alt="" width={64} height={64} />
             </span>
             <span>
               <strong>{publicServiceLabel(t, slug)}</strong>
@@ -417,7 +417,7 @@ function PublicServiceResults({
   return (
     <main className="public-services-page">
       <PublicServicesHero
-        icon={PUBLIC_SERVICE_ICONS[slug]}
+        artwork={publicServiceArtwork(slug)}
         breadcrumbLabel={t('publicServices.breadcrumb')}
         eyebrow={t('publicServices.directoryKicker')}
         title={title}
@@ -456,7 +456,7 @@ function PublicServiceResults({
                     {logo ? (
                       <Image src={logo} alt="" width={58} height={58} />
                     ) : (
-                      <Icon name={PUBLIC_SERVICE_ICONS[slug]} />
+                      <Image src={publicServiceArtwork(slug)} alt="" width={58} height={58} />
                     )}
                   </span>
                   <span className="public-service-result-card__body">
@@ -478,7 +478,7 @@ function PublicServiceResults({
           </div>
         ) : (
           <div className="public-service-results__empty">
-            <Icon name={PUBLIC_SERVICE_ICONS[slug]} />
+            <Image src={publicServiceArtwork(slug)} alt="" width={88} height={88} />
             <h2>{t('publicServices.noResults')}</h2>
             <Link href="/c/public-services">{t('publicServices.directoryTitle')}</Link>
           </div>
@@ -511,14 +511,14 @@ function PublicServiceResults({
 }
 
 function PublicServicesHero({
-  icon,
+  artwork,
   breadcrumbLabel,
   eyebrow,
   title,
   subtitle,
   context,
 }: {
-  icon: string;
+  artwork: string;
   breadcrumbLabel: string;
   eyebrow: string;
   title: string;
@@ -544,7 +544,7 @@ function PublicServicesHero({
           </span>
         </div>
         <span className="public-services-hero__emblem" aria-hidden="true">
-          <Icon name={icon} />
+          <Image src={artwork} alt="" width={210} height={210} sizes="210px" priority />
         </span>
       </div>
     </header>

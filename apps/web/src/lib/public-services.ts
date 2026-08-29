@@ -30,6 +30,11 @@ export const PUBLIC_SERVICE_ICONS: Record<PublicServiceSlug, string> = {
   'fire-stations': 'fire',
 };
 
+/** Premium miniature artwork shared by Home, the civic directory, and result fallbacks. */
+export function publicServiceArtwork(slug: PublicServiceSlug): string {
+  return `/icons/public-services/${slug}.webp`;
+}
+
 export const PUBLIC_SERVICE_SCHEMA_TYPES: Record<PublicServiceSlug, string> = {
   'banks-atms': 'BankOrCreditUnion',
   'post-offices': 'PostOffice',
