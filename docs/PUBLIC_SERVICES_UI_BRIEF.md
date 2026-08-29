@@ -112,12 +112,12 @@ Add **English, Hindi and Telugu** for **every** new public-service label — the
 "Suggest a correction," the reframed hero/section/FAQ copy, the ten category names, etc.). Keys go in
 `apps/web/src/i18n/messages/en.json`, `hi.json`, `te.json`.
 
-## Known boundary issue (flag, not silently ignore)
+## Claim enforcement — backend guard is now in place
 
-Hiding the claim controls in the UI does **not** prevent direct `/b/{slug}/claim` navigation or direct
-API claim calls. The claim service currently blocks public _brands_ but not every public _service_. If
-public services must be genuinely unclaimable, a **backend guard is required** (out of this UI-only
-scope — coordinate with the API owner). Do not present UI-hiding as if it enforces the rule.
+The backend now **rejects any claim on a public-service business** (`business-claims.service.ts`:
+category parent slug === `public-services` → `ConflictException`). So the UI hiding of claim controls
+is backed by real enforcement — a direct `/b/{slug}/claim` or API claim call is refused. Regression 1
+below should therefore see a rejection, not a silent success.
 
 ## SEE gate (acceptance)
 
