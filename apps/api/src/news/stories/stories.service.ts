@@ -68,12 +68,22 @@ export class StoriesService {
     if (lang === 'hi')
       return {
         title: (row.title_hi as string) ?? (row.title_en as string),
-        body: row.body_hi as string,
+        body: (row.body_hi as string) ?? (row.body_en as string),
       };
-    if (lang === 'te' || row.state_lang === lang)
+    // Telugu is a first-class UI language with its OWN columns (title_te/body_te). Fall back to
+    // English, NEVER to title_sl — for a story from a non-Telugu state that generic column holds a
+    // different regional language (Tamil, Kannada…), which is how Telugu readers were shown Tamil.
+    if (lang === 'te')
+      return {
+        title: (row.title_te as string) ?? (row.title_en as string),
+        body: (row.body_te as string) ?? (row.body_en as string),
+      };
+    // The reader's language is this story's own regional language (e.g. a Kannada reader, Kannada
+    // story) — the generic state-language columns are correct here.
+    if (row.state_lang === lang)
       return {
         title: (row.title_sl as string) ?? (row.title_en as string),
-        body: row.body_sl as string,
+        body: (row.body_sl as string) ?? (row.body_en as string),
       };
     return { title: row.title_en as string, body: row.body_en as string };
   }
@@ -120,6 +130,9 @@ export class StoriesService {
     // pick() silently falls back to English, so English headlines appear under the Telugu tab.
     if (lang === 'hi') {
       where.push('title_hi IS NOT NULL');
+    } else if (lang === 'te') {
+      // Telugu view = stories that actually have Telugu text, in Telugu's own column.
+      where.push('title_te IS NOT NULL');
     } else if (lang !== 'en') {
       where.push(`(state_lang = ${p()} AND title_sl IS NOT NULL)`);
       params.push(lang);
@@ -135,6 +148,7 @@ export class StoriesService {
             : 'published_at DESC';
     const sql = `
       SELECT id, slug, category, title_en, dek_en, title_hi, body_hi, title_sl, body_sl, body_en,
+             title_te, body_te,
              state_lang, image_url, image_credit, city, state, published_at,
              ${distSql} AS dist_m
       FROM news_stories
