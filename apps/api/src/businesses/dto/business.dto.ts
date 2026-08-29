@@ -371,6 +371,20 @@ export class PostOfficeInfoDto {
   @ApiPropertyOptional() areaLabel!: string | null;
 }
 
+export class RailwayTrainDto {
+  @ApiProperty() number!: string;
+  @ApiProperty() name!: string;
+  @ApiPropertyOptional() from!: string | null;
+  @ApiPropertyOptional() to!: string | null;
+}
+
+export class RailwayInfoDto {
+  @ApiProperty() stationCode!: string;
+  @ApiProperty() stationName!: string;
+  @ApiProperty({ type: [RailwayTrainDto] }) trains!: RailwayTrainDto[];
+  @ApiProperty() trainCount!: number;
+}
+
 export class BusinessDetailDto extends BusinessSummaryDto {
   /** On the detail response only — a result card has no room for the shelf list. */
   @ApiProperty({ type: [String] }) keywords!: string[];
@@ -386,6 +400,10 @@ export class BusinessDetailDto extends BusinessSummaryDto {
   /** Authoritative India Post details, present only on post-office pages. Null everywhere else. */
   @ApiPropertyOptional({ type: PostOfficeInfoDto, nullable: true })
   postOffice?: PostOfficeInfoDto | null;
+
+  /** Station code + trains, present only on railway-station pages. Null everywhere else. */
+  @ApiPropertyOptional({ type: RailwayInfoDto, nullable: true })
+  railway?: RailwayInfoDto | null;
 
   @ApiPropertyOptional({
     enum: BusinessScale,

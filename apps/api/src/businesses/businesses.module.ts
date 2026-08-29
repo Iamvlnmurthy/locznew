@@ -9,6 +9,7 @@ import { BusinessesService } from './businesses.service';
 import { KeywordTranslationsService } from './keyword-translations.service';
 import { BankBranchService } from './bank-branch.service';
 import { PostOfficeService } from './post-office.service';
+import { RailwayStationService } from './railway-station.service';
 
 @Module({
   imports: [MediaModule, NotificationsModule, AuditModule],
@@ -21,6 +22,7 @@ import { PostOfficeService } from './post-office.service';
     KeywordTranslationsService,
     BankBranchService,
     PostOfficeService,
+    RailwayStationService,
   ],
   exports: [BusinessesService],
 })

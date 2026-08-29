@@ -22,6 +22,7 @@ import { businessSlug, loczId } from '../common/utils/slug.util';
 import { KeywordTranslationsService } from './keyword-translations.service';
 import { BankBranchService } from './bank-branch.service';
 import { PostOfficeService } from './post-office.service';
+import { RailwayStationService } from './railway-station.service';
 import { categoryNameToArea } from '../common/utils/discovery-areas';
 import { attributionFor, describeBusiness } from './business-description';
 import { BusinessSearchService } from '../search/business-search.service';
@@ -113,6 +114,7 @@ export class BusinessesService {
     private readonly keywordTranslations: KeywordTranslationsService,
     private readonly bankBranches: BankBranchService,
     private readonly postOffices: PostOfficeService,
+    private readonly railwayStations: RailwayStationService,
   ) {}
 
   async listPublic(query: BusinessSearchQueryDto): Promise<PaginatedDto<BusinessSummaryDto>> {
@@ -753,6 +755,8 @@ export class BusinessesService {
     detail.postOffice = await this.postOffices
       .enrich({ name: business.name, pincode: business.pincodeCode })
       .catch(() => null);
+    // Railway-station pages get the station code + trains that serve it (stable facts only).
+    detail.railway = await this.railwayStations.enrich({ name: business.name }).catch(() => null);
     return detail;
   }
 

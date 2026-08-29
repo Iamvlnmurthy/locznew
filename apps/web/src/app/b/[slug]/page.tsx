@@ -23,6 +23,7 @@ import { StorefrontTabs } from './storefront-tabs';
 import { CopyAddressButton } from './copy-address-button';
 import { BankingDetails } from './banking-details';
 import { PostOfficeDetails } from './post-office-details';
+import { RailwayDetails } from './railway-details';
 import { BookmarkBusiness } from './bookmark-business';
 
 interface BusinessHour {
@@ -97,6 +98,22 @@ interface BusinessDetail {
   banking: BankingInfo | null;
   /** Authoritative India Post details — present only on post-office pages, null otherwise. */
   postOffice: PostOfficeInfo | null;
+  /** Station code + trains — present only on railway-station pages, null otherwise. */
+  railway: RailwayInfo | null;
+}
+
+export interface RailwayTrain {
+  number: string;
+  name: string;
+  from: string | null;
+  to: string | null;
+}
+
+export interface RailwayInfo {
+  stationCode: string;
+  stationName: string;
+  trains: RailwayTrain[];
+  trainCount: number;
 }
 
 export interface PostOfficeRecord {
@@ -373,6 +390,20 @@ export async function generateMetadata({
     }
   }
 
+  // Railway-station pages target the station-code searches people run ("<station> railway station code").
+  const rail = business.railway;
+  if (rail) {
+    finalTitle = `${rail.stationName} Railway Station Code ${rail.stationCode} — Trains | LocZ`;
+    finalDescription = `${rail.stationName} railway station code is ${rail.stationCode}. ${rail.trainCount} trains serve this station — see the train numbers, names and routes.`;
+    bankKeywords.push(
+      `${rail.stationName} railway station code`,
+      `${rail.stationName} station code`,
+      `${rail.stationCode} station code`,
+      `${rail.stationName} railway station`,
+      `trains at ${rail.stationName}`,
+    );
+  }
+
   // Match the sitemap's quality gate. Sparse imported entities remain useful to visitors and
   // remain followable for discovery, but do not ask a crawler to index millions of pages whose
   // only differentiator is a substituted name. A real phone, owner description, claim,
@@ -391,6 +422,7 @@ export async function generateMetadata({
       !business.descriptionIsGenerated ||
       Boolean(bk && (bk.matched || bk.branches.length)) ||
       Boolean(po && (po.matched || po.offices.length)) ||
+      Boolean(rail) ||
       business.listingCount > 0);
 
   return {
@@ -513,6 +545,12 @@ export default async function BusinessPage({ params }: { params: Promise<{ slug:
 
   // Rich, fact-driven conditional FAQs based on data density
   const faqs: Array<{ q: string; a: string }> = [
+    business.railway
+      ? {
+          q: `What is the station code of ${business.railway.stationName} railway station?`,
+          a: `The station code of ${business.railway.stationName} railway station is ${business.railway.stationCode}. ${business.railway.trainCount} trains serve this station; the train list on this page shows their numbers, names and routes.`,
+        }
+      : null,
     business.postOffice?.matched
       ? {
           q: `What is the pincode of ${business.postOffice.matched.officeName}?`,
@@ -591,11 +629,13 @@ export default async function BusinessPage({ params }: { params: Promise<{ slug:
 
   const jsonLd = {
     '@context': 'https://schema.org',
-    '@type': business.postOffice
-      ? 'PostOffice'
-      : business.banking
-        ? 'BankOrCreditUnion'
-        : schemaTypeFor(business.categoryName, business.parentCategoryName),
+    '@type': business.railway
+      ? 'TrainStation'
+      : business.postOffice
+        ? 'PostOffice'
+        : business.banking
+          ? 'BankOrCreditUnion'
+          : schemaTypeFor(business.categoryName, business.parentCategoryName),
     '@id': `${SITE_URL}/b/${business.slug}#entity`,
     name: business.name,
     image: profileLogo ? new URL(profileLogo, SITE_URL).toString() : undefined,
@@ -910,6 +950,8 @@ export default async function BusinessPage({ params }: { params: Promise<{ slug:
           (business.postOffice.matched || business.postOffice.offices.length) ? (
             <PostOfficeDetails info={business.postOffice} place={placeLabel} />
           ) : null}
+
+          {business.railway ? <RailwayDetails info={business.railway} /> : null}
 
           <section className="business-profile-section business-profile-section--about" id="about">
             <span className="section-kicker">{p.meetBusiness}</span>
