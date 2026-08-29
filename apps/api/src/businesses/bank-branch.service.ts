@@ -276,4 +276,60 @@ export class BankBranchService {
       return { bankName: bank, matched: null, branches: [], branchCount: 0, areaLabel: null };
     return { bankName: bank, matched, branches, branchCount, areaLabel };
   }
+
+  private readonly SELECT_COLS = `ifsc, bank, branch, address, city, district, state, micr, contact, neft, rtgs, imps, upi`;
+
+  /** A single branch by IFSC, plus other branches of the same bank in the same city (for a dedicated page). */
+  async getByIfsc(
+    ifsc: string,
+  ): Promise<{ branch: BankBranchRecord; nearby: BankBranchRecord[] } | null> {
+    if (!/^[A-Za-z]{4}0[A-Za-z0-9]{6}$/.test(ifsc)) return null;
+    if (!(await this.loadBankNames()).length) return null; // reuses the table-availability check
+    const rows = await this.prisma.$queryRawUnsafe<Array<Record<string, unknown>>>(
+      `SELECT ${this.SELECT_COLS} FROM bank_branches WHERE upper(ifsc) = upper($1) LIMIT 1`,
+      ifsc,
+    );
+    const row = rows[0];
+    if (!row) return null;
+    const branch = this.toRecord(row);
+    if (!addressMatchesState(branch.address, branch.state)) branch.address = null;
+    const nearbyRows = await this.prisma.$queryRawUnsafe<Array<Record<string, unknown>>>(
+      `SELECT ${this.SELECT_COLS} FROM bank_branches
+       WHERE lower(bank) = lower($1) AND lower(city) = lower($2) AND upper(ifsc) <> upper($3)
+       ORDER BY branch ASC LIMIT 12`,
+      branch.bank,
+      branch.city ?? '',
+      ifsc,
+    );
+    const nearby = nearbyRows
+      .map((r) => this.toRecord(r))
+      .filter((b) => addressMatchesState(b.address, b.state));
+    return { branch, nearby };
+  }
+
+  /** Total IFSC branches — sizes the sitemap shards. */
+  async ifscCount(): Promise<number> {
+    try {
+      const rows = await this.prisma.$queryRawUnsafe<Array<{ n: bigint }>>(
+        `SELECT count(*)::bigint AS n FROM bank_branches`,
+      );
+      return Number(rows[0]?.n ?? 0);
+    } catch {
+      return 0;
+    }
+  }
+
+  /** A page of IFSC codes for a sitemap shard (ordered by ifsc for stable pagination). */
+  async ifscSitemapPage(page: number, pageSize: number): Promise<string[]> {
+    try {
+      const rows = await this.prisma.$queryRawUnsafe<Array<{ ifsc: string }>>(
+        `SELECT ifsc FROM bank_branches ORDER BY ifsc ASC LIMIT $1 OFFSET $2`,
+        pageSize,
+        page * pageSize,
+      );
+      return rows.map((r) => r.ifsc);
+    } catch {
+      return [];
+    }
+  }
 }

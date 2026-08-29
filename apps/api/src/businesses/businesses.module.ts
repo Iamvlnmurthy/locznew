@@ -5,6 +5,7 @@ import { NotificationsModule } from '../notifications/notifications.module';
 import { BusinessClaimsController } from './business-claims.controller';
 import { BusinessClaimsService } from './business-claims.service';
 import { BusinessesController } from './businesses.controller';
+import { BanksController } from './banks.controller';
 import { BusinessesService } from './businesses.service';
 import { KeywordTranslationsService } from './keyword-translations.service';
 import { BankBranchService } from './bank-branch.service';
@@ -15,7 +16,7 @@ import { RailwayStationService } from './railway-station.service';
   imports: [MediaModule, NotificationsModule, AuditModule],
   // The claims controller is declared first so its literal `claims/...` paths are matched
   // before the businesses controller's `:id` parameter can swallow them.
-  controllers: [BusinessClaimsController, BusinessesController],
+  controllers: [BusinessClaimsController, BusinessesController, BanksController],
   providers: [
     BusinessesService,
     BusinessClaimsService,
