@@ -40,17 +40,30 @@ export class RetryAwareThrottlerGuard extends ThrottlerGuard {
    * browser. Browsers and everything else stay rate limited exactly as before.
    */
   protected override async shouldSkip(context: ExecutionContext): Promise<boolean> {
-    const expected = process.env.INTERNAL_API_KEY;
-    if (!expected) return super.shouldSkip(context);
+    const headers = context.switchToHttp().getRequest<Request>().headers;
 
-    const header = context.switchToHttp().getRequest<Request>().headers['x-locz-internal'];
-    const given = Array.isArray(header) ? header[0] : header;
-    if (given && given.length === expected.length) {
-      let diff = 0;
-      for (let i = 0; i < expected.length; i += 1) {
-        diff |= expected.charCodeAt(i) ^ given.charCodeAt(i);
+    // Trust internal loopback calls. Server-side rendering hits this API directly on 127.0.0.1 and so
+    // carries NONE of the forwarded-for headers that Cloudflare/LiteSpeed stamp on every external
+    // request (the same headers getTracker() below relies on to give each real user their own window).
+    // Absence of both is the unambiguous signature of an internal SSR call, so skip the limiter for it.
+    // This replaces the x-locz-internal shared-secret bypass, which those same proxies STRIP in transit
+    // and which kept silently breaking across process restarts — this check needs no env var at all.
+    if (!headers['cf-connecting-ip'] && !headers['x-forwarded-for']) {
+      return true;
+    }
+
+    // Legacy explicit-key bypass, kept for any caller that still sets it.
+    const expected = process.env.INTERNAL_API_KEY;
+    if (expected) {
+      const header = headers['x-locz-internal'];
+      const given = Array.isArray(header) ? header[0] : header;
+      if (given && given.length === expected.length) {
+        let diff = 0;
+        for (let i = 0; i < expected.length; i += 1) {
+          diff |= expected.charCodeAt(i) ^ given.charCodeAt(i);
+        }
+        if (diff === 0) return true;
       }
-      if (diff === 0) return true;
     }
     return super.shouldSkip(context);
   }
