@@ -100,6 +100,22 @@ describe('BusinessClaimsService', () => {
       expect(prisma.business.update).not.toHaveBeenCalled();
     });
 
+    it('refuses to claim a public service (category under the public-services tree)', async () => {
+      const { service, prisma } = build({
+        found: {
+          ...business,
+          category: { parent: { slug: 'public-services' } },
+        } as unknown as typeof business,
+      });
+
+      // A bank branch, post office or police station is an authoritative civic record — nobody may
+      // claim one. The UI hides the controls; this guard is what actually enforces it at the API.
+      await expect(service.create('user-1', 'biz-1', claimInput())).rejects.toThrow(
+        /public service/i,
+      );
+      expect(prisma.businessClaim.create).not.toHaveBeenCalled();
+    });
+
     it('marks the business as contested so a buyer and a second claimant can both see it', async () => {
       const { service, prisma } = build();
 

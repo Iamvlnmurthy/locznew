@@ -38,19 +38,54 @@ Parent category slug: **`public-services`**. Ten direct children (slug — curre
 - `category-counts` gives city-specific counts; join the ten fixed slugs against the already-fetched
   category IDs / counts rather than re-querying.
 
+## The fixed ten-slug allowlist (in THIS order)
+
+1. `banks-atms`
+2. `post-offices`
+3. `government-hospitals`
+4. `police-stations`
+5. `universities`
+6. `railway-stations`
+7. `government-offices`
+8. `bus-stations`
+9. `courts`
+10. `fire-stations`
+
+Use this exact order everywhere the categories are listed.
+
 ## Task 1 — Home "Public Services" section (internal linking)
 
 File: `apps/web/src/app/page.tsx`.
 
 - Place the section **immediately after "Popular in {city}"**.
-- Render the **ten fixed slugs** as an ordered allowlist. Join them against the already-fetched category
-  IDs; show **city-specific counts** from the existing `category-counts` response.
+- Render the ten fixed slugs (order above). Join them against the already-fetched category IDs; show
+  **city-specific counts** from the existing `category-counts` response.
 - Each card = **civic SVG icon + localized name + count**, wrapped in a **server-rendered
-  `<Link href="/c/{slug}">`** (crawlable anchors are the whole point — Home → Public Services →
-  category → business pages).
-- **Hide a category only when it has zero local results** — OR show it with its global count if you
-  intend nationwide discovery (pick one and be consistent).
+  `<Link href="/c/{slug}">`** (crawlable anchors are the point — Home → Public Services → category →
+  business pages). **This requires Task 1b — `/c/[slug]` does not currently list businesses.**
+- **Zero-count behaviour (decided — do this, don't choose):** on the **home** section, show **only the
+  categories that have local results** (hide zero-count ones). The **national `/c` category page** (Task
+  1b) keeps **all ten** available regardless of the viewer's city.
 - Restrained, civic/official identity distinct from the commercial "Popular" grid, but on-brand.
+
+## Task 1b — `/c/[slug]` must actually list public-service BUSINESSES (critical)
+
+**The internal-link chain does not currently exist.** `apps/web/src/app/c/[slug]/page.tsx` (~line 80)
+queries `/search`, receives `ListingSummary[]`, and renders marketplace **`ListingCard`** components — so
+`/c/{public-service-slug}` shows marketplace listings, not the recategorized businesses, and links
+nowhere useful.
+
+- **Required (recommended path — preserves the crawlable `/c/{slug}` architecture, no new routes):**
+  make `/c/[slug]` **detect the ten public-service slugs** and, for those, render **`BusinessSummary`
+  cards that link to `/b/{slug}`** (query businesses in that category, e.g. via the business listing/
+  search API filtered by `categoryId`, paginated, server-rendered). Non-public-service slugs keep their
+  current marketplace behaviour untouched.
+- **Remove marketplace language on public-service `/c` pages:** no "Free to list", no listing-oriented
+  empty-state "Post …" CTA, no marketplace copy — use civic/directory wording.
+- **Localize the child-category name** on the parent `public-services` page — it currently renders
+  `child.name` directly (`c/[slug]/page.tsx` ~line 189); use the localized label for the viewer's locale.
+- (Alternative, only if the above is infeasible: link home cards to `/in/{city}/{category}` for
+  city-specific discovery — but that loses the national category landing page. Prefer the `/c` fix.)
 
 ## Task 2 — Reframe public-service business pages (`/b/[slug]`)
 
@@ -84,20 +119,21 @@ Handle **all** of these storefront elements:
 The **seven types without a data block** (hospitals, police, fire, courts, govt offices, bus,
 universities) get **only** the reframe — no invented data.
 
-### JSON-LD (important — do not fall back to `LocalBusiness`)
+### JSON-LD — map ALL ten by `business.categorySlug` (not by enrichment presence)
 
-The three enriched types already emit `BankOrCreditUnion`, `PostOffice`, `TrainStation`. Map the other
-seven to their proper schema.org types (by category slug), never generic `LocalBusiness`:
+**Gotcha:** the current page selects `BankOrCreditUnion`/`PostOffice`/`TrainStation` only when the
+enrichment block matched (`page.tsx` ~line 634), so an **unmatched** bank / post office / railway
+station still falls back to generic `LocalBusiness`. Fix this: map **all ten categories by
+`business.categorySlug`** (available on `BusinessDetail`), **regardless of whether the banking /
+post-office / railway enrichment matched**. Never `LocalBusiness` for a public service.
 
-| slug                   | schema.org `@type`    |
-| ---------------------- | --------------------- |
-| `police-stations`      | `PoliceStation`       |
-| `fire-stations`        | `FireStation`         |
-| `government-hospitals` | `Hospital`            |
-| `courts`               | `Courthouse`          |
-| `universities`         | `CollegeOrUniversity` |
-| `bus-stations`         | `BusStation`          |
-| `government-offices`   | `GovernmentOffice`    |
+| slug               | schema.org `@type`  | slug                   | schema.org `@type`    |
+| ------------------ | ------------------- | ---------------------- | --------------------- |
+| `banks-atms`       | `BankOrCreditUnion` | `courts`               | `Courthouse`          |
+| `post-offices`     | `PostOffice`        | `universities`         | `CollegeOrUniversity` |
+| `railway-stations` | `TrainStation`      | `bus-stations`         | `BusStation`          |
+| `police-stations`  | `PoliceStation`     | `government-offices`   | `GovernmentOffice`    |
+| `fire-stations`    | `FireStation`       | `government-hospitals` | `Hospital`            |
 
 ### Icons (new work — the library is missing these)
 
@@ -112,28 +148,36 @@ Add **English, Hindi and Telugu** for **every** new public-service label — the
 "Suggest a correction," the reframed hero/section/FAQ copy, the ten category names, etc.). Keys go in
 `apps/web/src/i18n/messages/en.json`, `hi.json`, `te.json`.
 
-## Claim enforcement — backend guard is now in place
+## Claim enforcement
 
-The backend now **rejects any claim on a public-service business** (`business-claims.service.ts`:
-category parent slug === `public-services` → `ConflictException`). So the UI hiding of claim controls
-is backed by real enforcement — a direct `/b/{slug}/claim` or API claim call is refused. Regression 1
-below should therefore see a rejection, not a silent success.
+- **Backend (done):** the claim service now **rejects any claim submission on a public-service
+  business** (`business-claims.service.ts`: category parent slug === `public-services` →
+  `ConflictException`), with a unit test. A direct claim POST is refused.
+- **Claim page (Task for you):** visiting **`/b/{slug}/claim`** may still render the claim form even
+  though submission is refused. Make **`apps/web/src/app/b/[slug]/claim/page.tsx` inspect
+  `business.isPublicService`** and, when true, **`redirect()` back to the public-service profile
+  (`/b/{slug}`) or return `notFound()`** — do not render the form at all. This closes the gap between a
+  refused POST and a still-visible form.
 
 ## SEE gate (acceptance)
 
 Screenshot at **390px and 1440px**:
 
 - (a) the home Public-Services section,
-- (b) a bank page, (c) a post-office page,
-- (d) a page of a type with **no** data block (e.g. a police station),
-- (e) a **normal shop page** (regression — shop chrome must be intact there).
+- (b) a **`/c/{public-service-slug}`** category page (the middle step in the internal-link path — must
+  show BusinessSummary cards linking to `/b/`, no marketplace chrome),
+- (c) a bank page, (d) a post-office page,
+- (e) a page of a type with **no** data block (e.g. a police station),
+- (f) a **normal shop page** AND a **normal `/c` category page** (regression — marketplace behaviour must
+  be intact for non-public-service slugs).
 
 Plus:
 
 - `git diff --check` clean; typecheck + build pass; no horizontal overflow; axe: no new violations.
-- **Regression 1:** directly opening `/b/{public-service}/claim` must eventually be **rejected**, not
-  merely hidden (this exposes the backend-guard gap above — record the actual behaviour).
-- **Regression 2:** validate the emitted **JSON-LD for one page of each public-service subtype**
-  (confirm the correct `@type`, no `LocalBusiness` fallback).
+- **Regression 1:** opening `/b/{public-service}/claim` must **redirect / notFound** (not render the
+  form), and a direct claim POST must be **rejected** (backend guard already does this).
+- **Regression 2:** validate the emitted **JSON-LD for one page of each public-service subtype** —
+  confirm the correct `@type` selected **by `categorySlug`**, with **no `LocalBusiness` fallback** even
+  when the enrichment block did not match.
 
 Report all findings as `file:line`.
