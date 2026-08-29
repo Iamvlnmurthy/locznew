@@ -166,6 +166,7 @@ export class BankBranchService {
     name: string;
     city?: string | null;
     locality?: string | null;
+    pincode?: string | null;
   }): Promise<BankingInfo | null> {
     const names = await this.loadBankNames();
     if (!names.length) return null;
@@ -173,21 +174,44 @@ export class BankBranchService {
     if (!bank) return null;
 
     const area = (input.city ?? '').trim();
+    const pin = (input.pincode ?? '').trim();
+    if (!area && !pin) return null;
     const SELECT = `SELECT ifsc, bank, branch, address, city, district, state, micr, contact, neft, rtgs, imps, upi FROM bank_branches`;
 
-    // 1) Try to PIN a single branch: a locality token from the name that resolves to exactly ONE
-    //    branch in the bank's city. Unique substring match only — this is the trust-critical path.
+    // Area predicate: match by city/district NAME or by the business's exact pincode appearing in the
+    // branch address. Pincode is essential because LocZ districts (e.g. "K.V.Rangareddy") don't match
+    // razorpay's city names ("Hyderabad" / "Rangareddy") — the pincode ties a page to its real local
+    // branches. `$1` is always the bank; area params begin at `$2`.
+    const buildArea = (): { sql: string; params: string[] } => {
+      const parts: string[] = [];
+      const params: string[] = [];
+      if (area) {
+        params.push(area);
+        const i = params.length + 1; // +1 for $1 = bank
+        parts.push(`(lower(city) = lower($${i}) OR lower(district) = lower($${i}))`);
+      }
+      if (pin) {
+        params.push(`%${pin}%`);
+        parts.push(`address LIKE $${params.length + 1}`);
+      }
+      return { sql: parts.join(' OR '), params };
+    };
+
+    // 1) PIN a single branch: a locality token from the name that resolves to exactly ONE branch in
+    //    the area. Unique substring match only — this is the trust-critical path.
     let matched: BankBranchRecord | null = null;
     const hints = [input.locality, input.name]
       .filter(Boolean)
       .flatMap((s) => this.hintTokens(String(s), bank));
-    if (area && hints.length) {
+    if (hints.length) {
       const uniqueHints = [...new Set(hints)].slice(0, 6);
-      const like = uniqueHints.map((_, i) => `lower(branch) LIKE $${i + 3}`).join(' OR ');
+      const ap = buildArea();
+      const hintStart = 2 + ap.params.length;
+      const like = uniqueHints.map((_, i) => `lower(branch) LIKE $${hintStart + i}`).join(' OR ');
       const rows = await this.prisma.$queryRawUnsafe<Array<Record<string, unknown>>>(
-        `${SELECT} WHERE lower(bank) = lower($1) AND lower(city) = lower($2) AND (${like}) LIMIT 3`,
+        `${SELECT} WHERE lower(bank) = lower($1) AND (${ap.sql}) AND (${like}) LIMIT 3`,
         bank,
-        area,
+        ...ap.params,
         ...uniqueHints.map((h) => `%${h}%`),
       );
       const only = rows[0];
@@ -198,49 +222,36 @@ export class BankBranchService {
       }
     }
 
-    // 2) The authoritative city/district branch list — what the page is built around when unpinned.
-    let branches: BankBranchRecord[] = [];
-    let branchCount = 0;
-    let areaLabel: string | null = null;
-    if (area) {
-      // Fetch a buffer beyond the cap so dropping stale-address rows still leaves a full list.
-      const rows = await this.prisma.$queryRawUnsafe<Array<Record<string, unknown>>>(
-        `${SELECT} WHERE lower(bank) = lower($1) AND (lower(city) = lower($2) OR lower(district) = lower($2))
-         ORDER BY branch ASC LIMIT ${LIST_CAP + 8}`,
-        bank,
-        area,
-      );
-      let clean = rows
-        .map((r) => this.toRecord(r))
-        .filter((b) => addressMatchesState(b.address, b.state));
-      // Drop city/district mis-tags: a few razorpay rows carry the wrong city (e.g. a Maharashtra
-      // branch tagged city="NAINITAL"), and their own `state` then disagrees with the rest. Keep only
-      // the dominant state so a "… in Nainital" list never lists an out-of-state branch.
-      const stateCounts = new Map<string, number>();
-      for (const b of clean)
-        if (b.state) stateCounts.set(b.state, (stateCounts.get(b.state) ?? 0) + 1);
-      let domState: string | null = null;
-      let domN = 0;
-      for (const [s, n] of stateCounts)
-        if (n > domN) {
-          domN = n;
-          domState = s;
-        }
-      if (domState) clean = clean.filter((b) => !b.state || b.state === domState);
-      branches = clean.slice(0, LIST_CAP);
-      branchCount = clean.length; // capped indicator; exact count fetched below only if needed
-      if (branches.length) areaLabel = area;
-      if (clean.length > LIST_CAP) {
-        const c = await this.prisma.$queryRawUnsafe<Array<{ n: bigint }>>(
-          `SELECT count(*)::bigint AS n FROM bank_branches WHERE lower(bank) = lower($1) AND (lower(city) = lower($2) OR lower(district) = lower($2))`,
-          bank,
-          area,
-        );
-        branchCount = Number(c[0]?.n ?? branches.length);
+    // 2) The authoritative area branch list — what the page is built around when unpinned.
+    // Fetch a buffer beyond the cap so the two data-quality filters still leave a full list.
+    const ap = buildArea();
+    const rows = await this.prisma.$queryRawUnsafe<Array<Record<string, unknown>>>(
+      `${SELECT} WHERE lower(bank) = lower($1) AND (${ap.sql}) ORDER BY branch ASC LIMIT ${LIST_CAP + 10}`,
+      bank,
+      ...ap.params,
+    );
+    let clean = rows
+      .map((r) => this.toRecord(r))
+      .filter((b) => addressMatchesState(b.address, b.state));
+    // Drop city/district mis-tags: a few razorpay rows carry the wrong city (e.g. a Maharashtra branch
+    // tagged city="NAINITAL"), and their own `state` then disagrees with the rest. Keep only the
+    // dominant state so a "… in Nainital" list never lists an out-of-state branch.
+    const stateCounts = new Map<string, number>();
+    for (const b of clean)
+      if (b.state) stateCounts.set(b.state, (stateCounts.get(b.state) ?? 0) + 1);
+    let domState: string | null = null;
+    let domN = 0;
+    for (const [s, n] of stateCounts)
+      if (n > domN) {
+        domN = n;
+        domState = s;
       }
-    }
+    if (domState) clean = clean.filter((b) => !b.state || b.state === domState);
+    const branches = clean.slice(0, LIST_CAP);
+    const branchCount = clean.length;
+    const areaLabel = branches.length ? area || (branches[0]?.city ?? null) : null;
 
-    // Nothing authoritative to add (obscure bank / no city match) — don't render an empty block.
+    // Nothing authoritative to add (obscure bank / no area match) — don't render an empty block.
     if (!matched && !branches.length)
       return { bankName: bank, matched: null, branches: [], branchCount: 0, areaLabel: null };
     return { bankName: bank, matched, branches, branchCount, areaLabel };

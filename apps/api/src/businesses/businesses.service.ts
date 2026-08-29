@@ -743,6 +743,7 @@ export class BusinessesService {
         name: business.name,
         city: business.city?.name,
         locality: business.address?.locality?.name,
+        pincode: business.pincodeCode,
       })
       .catch(() => null);
     return detail;
