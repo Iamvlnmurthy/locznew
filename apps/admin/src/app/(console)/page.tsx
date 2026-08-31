@@ -17,6 +17,7 @@ interface AdminMetrics {
   openReports: number;
   totalBusinesses: number;
   verifiedBusinesses: number;
+  claimedBusinesses: number;
   pendingClaims: number;
   pendingVerifications: number;
   openJobs: number;
@@ -169,7 +170,7 @@ export default async function OverviewPage() {
         </Link>
         <Link href="/businesses/claims" className="attention-item">
           <strong>{metrics.pendingClaims ?? 0}</strong>
-          <span>Business claims</span>
+          <span>Claims to review</span>
         </Link>
         <Link href="/businesses?verification=PENDING" className="attention-item">
           <strong>{metrics.pendingVerifications ?? 0}</strong>
@@ -198,7 +199,7 @@ export default async function OverviewPage() {
         <Metric
           label="Businesses"
           value={metrics.totalBusinesses}
-          note={`${metrics.verifiedBusinesses} verified`}
+          note={`${metrics.claimedBusinesses ?? 0} claimed · ${metrics.verifiedBusinesses} verified`}
           icon="building"
           tone="amber"
         />

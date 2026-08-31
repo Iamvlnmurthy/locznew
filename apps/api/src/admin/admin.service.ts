@@ -106,6 +106,7 @@ export class AdminService {
       openReports,
       totalBusinesses,
       verifiedBusinesses,
+      claimedBusinesses,
       pendingClaims,
       pendingVerifications,
       openJobs,
@@ -128,6 +129,7 @@ export class AdminService {
       }),
       this.businessTotal(),
       this.prisma.business.count({ where: { verificationStatus: 'VERIFIED', deletedAt: null } }),
+      this.prisma.business.count({ where: { claimStatus: 'CLAIMED', deletedAt: null } }),
       this.prisma.businessClaim.count({ where: { status: ClaimReviewStatus.PENDING } }),
       this.prisma.business.count({ where: { verificationStatus: 'PENDING', deletedAt: null } }),
       this.prisma.listing.count({
@@ -157,6 +159,7 @@ export class AdminService {
       openReports,
       totalBusinesses,
       verifiedBusinesses,
+      claimedBusinesses,
       pendingClaims,
       pendingVerifications,
       openJobs,

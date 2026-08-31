@@ -13,3 +13,18 @@ rejects the sitemap with **"URL not allowed"** (all URLs point at localhost).
 - **Never build web without sourcing `.env` first.** After any web deploy, spot-check:
   `curl -s https://locz.in/sitemap.xml | grep -c localhost` → must be `0`.
 - If GSC shows localhost URLs, the fix is a rebuild + re-submit the sitemap in GSC (remove, re-add).
+
+## Admin (`locz-admin`) deploy: STOP the process before rebuilding `.next`
+
+There is no `deploy-admin.sh`. `locz-admin` runs `next start -p 3202` (Turbopack) from
+`apps/admin`. Rebuilding `.next` **while the process is still running** leaves the live process
+serving an old page manifest that references chunk files the rebuild deleted → the browser gets a
+`500`/`404` on a chunk (e.g. `Failed to load chunk …`) → the whole view drops into the error
+boundary ("That view couldn't be loaded"), even in incognito (it's a server-side build mismatch,
+not cache). Chunks are Cloudflare-cached `immutable`, which is fine as long as the build is coherent.
+
+Correct admin deploy (atomic): `pm2 stop locz-admin` → `pkill -f apps/admin` → `rm -rf apps/admin/.next`
+→ source `.env`, `export NODE_ENV=production`, `npm run build -w @locz/admin` → `pm2 start locz-admin`.
+Verify: fetch `/login` and confirm **every** `/_next/static/chunks/*.js` it references returns 200
+(via the public URL, not just `127.0.0.1:3202`). The Turbopack build can also fail once with an
+`ENOENT _buildManifest.js.tmp` on a stale `.next` — clearing `.next` first avoids it.
