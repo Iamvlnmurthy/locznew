@@ -24,9 +24,21 @@ const th: React.CSSProperties = { textAlign: 'left', padding: '6px 8px', fontWei
 const td: React.CSSProperties = { padding: '6px 8px', borderTop: '1px solid var(--border, #eee)' };
 
 export default async function DataHealthPage() {
-  const data = await api<Coverage>('/admin/data-sources/health');
-  const claimed = data.businesses.byClaimStatus['CLAIMED'] ?? 0;
-  const unclaimed = data.businesses.byClaimStatus['UNCLAIMED'] ?? 0;
+  const data = await api<Coverage>('/admin/data-sources/health').catch(() => null);
+  if (!data) {
+    return (
+      <div style={{ display: 'grid', gap: 20 }}>
+        <header>
+          <h1 style={{ margin: 0 }}>Data health</h1>
+        </header>
+        <div className="alert alert--error" role="alert">
+          We could not load data-source health. Check the API connection and your permission.
+        </div>
+      </div>
+    );
+  }
+  const claimed = data.businesses?.byClaimStatus?.['CLAIMED'] ?? 0;
+  const unclaimed = data.businesses?.byClaimStatus?.['UNCLAIMED'] ?? 0;
 
   return (
     <div style={{ display: 'grid', gap: 20 }}>

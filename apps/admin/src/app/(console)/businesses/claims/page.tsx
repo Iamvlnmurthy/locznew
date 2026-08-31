@@ -79,7 +79,11 @@ export default async function BusinessClaimsPage({
         </div>
         <div className="claim-review-count">
           <strong>{queue.meta.total}</strong>
-          {copy.waiting.replace('{count}', String(queue.meta.total))}
+          {status === 'PENDING'
+            ? copy.waiting.replace('{count}', String(queue.meta.total))
+            : status === 'APPROVED'
+              ? 'approved'
+              : 'rejected'}
         </div>
       </header>
       <form className="business-review-filters" action="/businesses/claims" method="get">
@@ -104,8 +108,8 @@ export default async function BusinessClaimsPage({
       ) : (
         <div className="card empty">
           <ConsoleIcon name="shield" size={36} />
-          <h2>{copy.emptyTitle}</h2>
-          <p>{copy.emptyBody}</p>
+          <h2>{status === 'PENDING' ? copy.emptyTitle : `No ${status.toLowerCase()} claims`}</h2>
+          <p>{status === 'PENDING' ? copy.emptyBody : 'Nothing to show for this filter.'}</p>
         </div>
       )}
       {queue.meta.totalPages > 1 ? (

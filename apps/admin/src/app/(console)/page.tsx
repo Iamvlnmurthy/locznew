@@ -98,7 +98,8 @@ export default async function OverviewPage() {
       openRequirements: number;
       fulfilledRequirements: number;
       unansweredRequirements: number;
-      demandFulfillmentRate: number;
+      totalResponses: number;
+      newRequirementsThisWeek: number;
     }>('/admin/metrics/demand').catch(() => null),
     api<Bucket[]>('/admin/metrics/unmet-demand?limit=5').catch(() => []),
   ]);
@@ -172,7 +173,7 @@ export default async function OverviewPage() {
           <strong>{metrics.pendingClaims ?? 0}</strong>
           <span>Claims to review</span>
         </Link>
-        <Link href="/businesses?verification=PENDING" className="attention-item">
+        <Link href="/businesses?status=PENDING" className="attention-item">
           <strong>{metrics.pendingVerifications ?? 0}</strong>
           <span>To verify</span>
         </Link>
@@ -305,10 +306,15 @@ export default async function OverviewPage() {
               <span className="panel__kicker">Buyer Intent & Demand</span>
               <h2>Unmet Search Demand</h2>
             </div>
-            {demand ? (
+            {demand && demand.openRequirements + demand.fulfilledRequirements > 0 ? (
               <span className="health-pill health-pill--good">
                 <span />
-                {Math.round(demand.demandFulfillmentRate * 100)}% Fulfilled
+                {Math.round(
+                  (demand.fulfilledRequirements /
+                    (demand.openRequirements + demand.fulfilledRequirements)) *
+                    100,
+                )}
+                % Fulfilled
               </span>
             ) : null}
           </div>

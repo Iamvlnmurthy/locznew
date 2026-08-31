@@ -123,11 +123,7 @@ export default async function BusinessesPage({
                     <ConsoleIcon name={business.hours.length ? 'shield' : 'pulse'} size={15} />
                     Hours
                   </span>
-                  <a
-                    href={`http://localhost:3000/b/${business.slug}`}
-                    target="_blank"
-                    rel="noreferrer"
-                  >
+                  <a href={`https://locz.in/b/${business.slug}`} target="_blank" rel="noreferrer">
                     Open public profile <ConsoleIcon name="arrow" size={14} />
                   </a>
                 </div>

@@ -15,9 +15,11 @@ export default async function ReportsPage({
 }) {
   const params = await searchParams;
   const page = Math.max(1, Number(params.page ?? '1') || 1);
+  const allowed = ['OPEN', 'UNDER_REVIEW', 'RESOLVED', 'DISMISSED'];
+  const status = allowed.includes(params.status ?? '') ? (params.status as string) : '';
 
   const query = new URLSearchParams({ page: String(page), limit: '20' });
-  if (params.status) query.set('status', params.status);
+  if (status) query.set('status', status);
 
   let reports: Paginated<ReportItem>;
   try {
@@ -42,15 +44,31 @@ export default async function ReportsPage({
           <h1>Reports</h1>
           <p>
             {reports.meta.total === 0
-              ? 'Nothing waiting'
-              : `${reports.meta.total} open report${reports.meta.total === 1 ? '' : 's'}, oldest first`}
+              ? 'Nothing in this view'
+              : `${reports.meta.total} report${reports.meta.total === 1 ? '' : 's'}, oldest first`}
           </p>
         </div>
       </div>
 
+      <form className="business-review-filters" action="/reports" method="get">
+        <label className="visually-hidden" htmlFor="report-status">
+          Report status
+        </label>
+        <select id="report-status" name="status" defaultValue={status}>
+          <option value="">Open &amp; under review</option>
+          <option value="OPEN">Open</option>
+          <option value="UNDER_REVIEW">Under review</option>
+          <option value="RESOLVED">Resolved</option>
+          <option value="DISMISSED">Dismissed</option>
+        </select>
+        <button type="submit" className="btn btn--primary">
+          Apply
+        </button>
+      </form>
+
       {reports.items.length === 0 ? (
         <div className="card empty">
-          <p style={{ fontSize: '1.125rem', margin: 0 }}>No open reports.</p>
+          <p style={{ fontSize: '1.125rem', margin: 0 }}>No reports in this view.</p>
           <p style={{ margin: '8px 0 0' }}>
             Reports from users appear here. Three against the same listing pull it from public view
             automatically.
@@ -70,7 +88,7 @@ export default async function ReportsPage({
           aria-label="Pagination"
         >
           {page > 1 ? (
-            <a className="btn btn--ghost" href={`/reports?page=${page - 1}`}>
+            <a className="btn btn--ghost" href={`/reports?status=${status}&page=${page - 1}`}>
               ← Previous
             </a>
           ) : null}
@@ -78,7 +96,7 @@ export default async function ReportsPage({
             Page {reports.meta.page} of {reports.meta.totalPages}
           </span>
           {reports.meta.hasNextPage ? (
-            <a className="btn btn--ghost" href={`/reports?page=${page + 1}`}>
+            <a className="btn btn--ghost" href={`/reports?status=${status}&page=${page + 1}`}>
               Next →
             </a>
           ) : null}

@@ -17,18 +17,24 @@ interface AuditLog {
 }
 
 /** Actions worth spotting at a glance in a long list. */
-const NOTABLE = ['user.suspend', 'listing.remove', 'business.verification', 'moderation.reject'];
+const NOTABLE = ['user.suspend', 'listing.delete', 'business.verification', 'moderation.reject'];
 
 export default async function AuditPage({
   searchParams,
 }: {
-  searchParams: Promise<{ page?: string; entityType?: string; entityId?: string; action?: string }>;
+  searchParams: Promise<{
+    page?: string;
+    entityType?: string;
+    entityId?: string;
+    action?: string;
+    actorId?: string;
+  }>;
 }) {
   const params = await searchParams;
   const page = Math.max(1, Number(params.page ?? '1') || 1);
 
   const query = new URLSearchParams({ page: String(page), limit: '50' });
-  for (const key of ['entityType', 'entityId', 'action'] as const) {
+  for (const key of ['entityType', 'entityId', 'action', 'actorId'] as const) {
     if (params[key]) query.set(key, params[key]!);
   }
 
@@ -58,6 +64,7 @@ export default async function AuditPage({
       </div>
 
       <form className="card" style={{ marginBottom: 16 }} action="/audit" method="get">
+        {params.actorId ? <input type="hidden" name="actorId" value={params.actorId} /> : null}
         <div style={{ display: 'flex', gap: 12, alignItems: 'flex-end', flexWrap: 'wrap' }}>
           <div className="field" style={{ marginBottom: 0, flex: '0 1 180px' }}>
             <label htmlFor="entityType">Entity type</label>
@@ -68,7 +75,10 @@ export default async function AuditPage({
               <option value="Business">Business</option>
               <option value="Report">Report</option>
               <option value="Category">Category</option>
+              <option value="CategoryAttribute">Category attribute</option>
               <option value="Session">Session</option>
+              <option value="Device">Device</option>
+              <option value="BusinessClaim">Business claim</option>
             </select>
           </div>
           <div className="field" style={{ marginBottom: 0, flex: '1 1 200px' }}>
