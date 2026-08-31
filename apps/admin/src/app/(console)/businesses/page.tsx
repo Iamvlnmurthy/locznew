@@ -142,7 +142,7 @@ export default async function BusinessesPage({
                     <strong>{business.viewCount}</strong> profile views
                   </span>
                 </div>
-                {business.verificationStatus === 'PENDING' ? (
+                {business.verificationStatus !== 'VERIFIED' ? (
                   <VerificationDecision businessId={business.id} />
                 ) : null}
               </article>
