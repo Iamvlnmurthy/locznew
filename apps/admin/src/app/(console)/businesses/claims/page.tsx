@@ -33,20 +33,25 @@ interface BusinessClaimItem {
   };
 }
 
+const CLAIM_STATUSES = ['PENDING', 'APPROVED', 'REJECTED'] as const;
+
 export default async function BusinessClaimsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ page?: string }>;
+  searchParams: Promise<{ page?: string; status?: string }>;
 }) {
-  const [{ page: rawPage }, { copy, locale }] = await Promise.all([
+  const [{ page: rawPage, status: rawStatus }, { copy, locale }] = await Promise.all([
     searchParams,
     getAdminQueueCopy(),
   ]);
   const page = Math.max(1, Number(rawPage ?? '1') || 1);
+  const status = (CLAIM_STATUSES as readonly string[]).includes(rawStatus ?? '')
+    ? (rawStatus as string)
+    : 'PENDING';
   let queue: Paginated<BusinessClaimItem>;
   try {
     queue = await api<Paginated<BusinessClaimItem>>(
-      `/businesses/claims/queue?status=PENDING&page=${page}&limit=20`,
+      `/businesses/claims/queue?status=${status}&page=${page}&limit=20`,
     );
   } catch (error) {
     return (
@@ -77,10 +82,23 @@ export default async function BusinessClaimsPage({
           {copy.waiting.replace('{count}', String(queue.meta.total))}
         </div>
       </header>
+      <form className="business-review-filters" action="/businesses/claims" method="get">
+        <label className="visually-hidden" htmlFor="claim-status">
+          Claim status
+        </label>
+        <select id="claim-status" name="status" defaultValue={status}>
+          <option value="PENDING">Waiting for review</option>
+          <option value="APPROVED">Approved</option>
+          <option value="REJECTED">Rejected</option>
+        </select>
+        <button type="submit" className="btn btn--primary">
+          Apply
+        </button>
+      </form>
       {queue.items.length ? (
         <div className="claim-review-list">
           {queue.items.map((claim) => (
-            <ClaimCard key={claim.id} claim={claim} copy={copy} locale={locale} />
+            <ClaimCard key={claim.id} claim={claim} copy={copy} locale={locale} status={status} />
           ))}
         </div>
       ) : (
@@ -98,7 +116,10 @@ export default async function BusinessClaimsPage({
             .replace('{total}', String(queue.meta.totalPages))}
         >
           {page > 1 ? (
-            <a className="btn btn--ghost" href={`/businesses/claims?page=${page - 1}`}>
+            <a
+              className="btn btn--ghost"
+              href={`/businesses/claims?status=${status}&page=${page - 1}`}
+            >
               ← {copy.previous}
             </a>
           ) : (
@@ -110,7 +131,10 @@ export default async function BusinessClaimsPage({
               .replace('{total}', String(queue.meta.totalPages))}
           </span>
           {queue.meta.hasNextPage ? (
-            <a className="btn btn--ghost" href={`/businesses/claims?page=${page + 1}`}>
+            <a
+              className="btn btn--ghost"
+              href={`/businesses/claims?status=${status}&page=${page + 1}`}
+            >
               {copy.next} →
             </a>
           ) : null}
@@ -124,10 +148,12 @@ function ClaimCard({
   claim,
   copy,
   locale,
+  status,
 }: {
   claim: BusinessClaimItem;
   copy: AdminQueueCopy;
   locale: AdminQueueLocale;
+  status: string;
 }) {
   const scale =
     claim.proposedScale === 'INDIVIDUAL_SHOP'
@@ -213,7 +239,7 @@ function ClaimCard({
           </span>
         ) : null}
       </div>
-      <ClaimDecision claimId={claim.id} copy={copy} />
+      {status === 'PENDING' ? <ClaimDecision claimId={claim.id} copy={copy} /> : null}
     </article>
   );
 }
