@@ -168,9 +168,9 @@ export default async function HomePage({
   // Businesses near you — the cold-start payoff: even with no listings yet, the imported
   // directory (millions of geocoded businesses) gives a new user real nearby places on Home.
   const searchLabels = getMessageGroup(locale, 'searchUi');
-  const homeBusinesses =
+  const homeBusinessesPromise =
     city?.latitude !== undefined && city?.longitude !== undefined
-      ? await loadNearbyBusinesses({
+      ? loadNearbyBusinesses({
           latitude: city.latitude,
           longitude: city.longitude,
           radiusKm,
@@ -178,12 +178,12 @@ export default async function HomePage({
           page: 1,
         })
       : city?.pincode
-        ? await loadNearbyBusinesses({ pincode: city.pincode, page: 1 })
+        ? loadNearbyBusinesses({ pincode: city.pincode, page: 1 })
         : feed?.cityId
           ? // No stated location: fall back to the feed's resolved city so a first-time
             // visitor still sees nearby businesses (by city, without a distance).
-            await loadNearbyBusinesses({ cityId: feed.cityId, page: 1 })
-          : { items: [], total: 0, page: 1, hasNextPage: false };
+            loadNearbyBusinesses({ cityId: feed.cityId, page: 1 })
+          : Promise.resolve({ items: [], total: 0, page: 1, hasNextPage: false });
 
   // Scope live discovery counts to the visitor's selected city or pincode.
   const countScope = new URLSearchParams();
@@ -196,37 +196,39 @@ export default async function HomePage({
   // explicit selection still wins.
   const wxLat = city?.latitude ?? 17.385;
   const wxLon = city?.longitude ?? 78.4867;
-  const weather =
-    (
-      await apiSafe<{ weather: LocalWeather | null }>(
-        `/local-now/weather?latitude=${wxLat}&longitude=${wxLon}`,
-        { revalidate: 900 },
-      )
-    )?.weather ?? null;
+  const weatherPromise = apiSafe<{ weather: LocalWeather | null }>(
+    `/local-now/weather?latitude=${wxLat}&longitude=${wxLon}`,
+    { revalidate: 900 },
+  );
 
   // "Around you" — how many known places sit in each discovery area, rolled up from the POIs we
   // already hold. This is the cold-start payoff: even before anyone posts, a new area reads as
   // alive ("1,240 food · 380 health · 920 services nearby").
-  const areaSummary = countCityId
-    ? ((await apiSafe<{ areas: Array<{ area: string; count: number }> }>(
+  const areaSummaryPromise = countCityId
+    ? apiSafe<{ areas: Array<{ area: string; count: number }> }>(
         `/local-now/area-summary?${countScope.toString()}`,
-      )) ?? { areas: [] })
-    : { areas: [] };
+      )
+    : Promise.resolve({ areas: [] });
 
   // "Popular in {city}" — the biggest business categories for the visitor's city, each linking to
   // its city × category hub page. This is the cold-start payoff surfaced on Home: the millions of
   // imported businesses become browsable the moment someone lands, and the links thread Home into
   // the hub pages (the indexable "{category} in {area}" surfaces). Falls back to the default
   // launched city so it is never empty for a first-time, location-less visitor.
-  const homeCity =
-    city ??
-    (
-      await apiSafe<Array<{ id: string; name: string; slug: string; tier: 1 | 2 | 3 }>>(
+  const homeCityPromise = city
+    ? Promise.resolve(city)
+    : apiSafe<Array<{ id: string; name: string; slug: string; tier: 1 | 2 | 3 }>>(
         '/locations/cities?launchedOnly=true&limit=1',
         { revalidate: 3600 },
-      )
-    )?.[0] ??
-    null;
+      ).then((cities) => cities?.[0] ?? null);
+  const [homeBusinesses, weatherResponse, areaSummaryResponse, homeCity] = await Promise.all([
+    homeBusinessesPromise,
+    weatherPromise,
+    areaSummaryPromise,
+    homeCityPromise,
+  ]);
+  const weather = weatherResponse?.weather ?? null;
+  const areaSummary = areaSummaryResponse ?? { areas: [] };
   const homeCityRecord =
     homeCity?.slug && homeCity.tier === undefined
       ? await apiSafe<{ tier: 1 | 2 | 3 }>(
@@ -307,29 +309,27 @@ export default async function HomePage({
     newsQuery.set('latitude', String(city.latitude));
     newsQuery.set('longitude', String(city.longitude));
   }
-  const newsPool =
-    (
-      await apiSafe<{ cards: NewsHeadline[] }>(`/news/stories?${newsQuery.toString()}`, {
-        revalidate: 120,
-      })
-    )?.cards ?? [];
-  const newsHeadlines = newsPool;
-
   // "Local Now" alerts — official NDMA SACHET public-safety warnings naming the area. Verbatim,
   // display-only, hidden when there is nothing.
   const alertQuery = new URLSearchParams({ q: feedCity });
   if (countCityId) alertQuery.set('cityId', countCityId);
-  const alerts = feedCity
-    ? ((await apiSafe<{ alerts: LocalAlert[] }>(`/local-now/alerts?${alertQuery.toString()}`))
-        ?.alerts ?? [])
-    : [];
 
   // "Local Now" jobs — live local openings (Adzuna), pulled on demand, cached, never stored.
   // Empty (section hidden) when the Adzuna credentials are not configured.
-  const jobs = feedCity
-    ? ((await apiSafe<{ jobs: JobPosting[] }>(`/local-now/jobs?q=${encodeURIComponent(feedCity)}`))
-        ?.jobs ?? [])
-    : [];
+  const [newsResponse, alertsResponse, jobsResponse] = await Promise.all([
+    apiSafe<{ cards: NewsHeadline[] }>(`/news/stories?${newsQuery.toString()}`, {
+      revalidate: 120,
+    }),
+    feedCity
+      ? apiSafe<{ alerts: LocalAlert[] }>(`/local-now/alerts?${alertQuery.toString()}`)
+      : Promise.resolve(null),
+    feedCity
+      ? apiSafe<{ jobs: JobPosting[] }>(`/local-now/jobs?q=${encodeURIComponent(feedCity)}`)
+      : Promise.resolve(null),
+  ]);
+  const newsHeadlines = newsResponse?.cards ?? [];
+  const alerts = alertsResponse?.alerts ?? [];
+  const jobs = jobsResponse?.jobs ?? [];
 
   const heroMetrics: Record<string, string> = {
     'local-now': newsHeadlines.length
@@ -365,13 +365,21 @@ export default async function HomePage({
       <section
         className={`home-hero home-hero--discovery${cityHeroImage ? ' home-hero--city' : ''}`}
         id="home-top"
-        style={
-          cityHeroImage
-            ? ({ '--city-hero-image': `url("${cityHeroImage}")` } as React.CSSProperties)
-            : undefined
-        }
       >
-        {cityHeroImage ? <div className="home-hero__citybg" aria-hidden="true" /> : null}
+        {cityHeroImage ? (
+          <div className="home-hero__citybg" aria-hidden="true">
+            <Image
+              className="home-hero__city-image"
+              src={cityHeroImage}
+              alt=""
+              fill
+              sizes="100vw"
+              quality={68}
+              priority
+              fetchPriority="high"
+            />
+          </div>
+        ) : null}
         <div className="container home-hero__inner">
           <div className="home-hero__copy">
             {hasCityGuide && homeCity ? (
@@ -650,7 +658,13 @@ export default async function HomePage({
                     return (
                       <Link key={item.slug} href={`/news/${item.slug}`} className="local-news-hero">
                         <div className="local-news-hero__img">
-                          <img src={item.imageUrl} alt="" loading="lazy" />
+                          <Image
+                            src={item.imageUrl}
+                            alt=""
+                            fill
+                            sizes="(max-width: 760px) calc(100vw - 48px), 340px"
+                            quality={64}
+                          />
                         </div>
                         <div className="local-news-hero__body">
                           <div className="local-news-meta">
@@ -675,7 +689,7 @@ export default async function HomePage({
                       </div>
                       {item.imageUrl ? (
                         <div className="local-news-row__thumb">
-                          <img src={item.imageUrl} alt="" loading="lazy" />
+                          <Image src={item.imageUrl} alt="" fill sizes="96px" quality={58} />
                         </div>
                       ) : null}
                     </Link>

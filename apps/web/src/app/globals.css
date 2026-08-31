@@ -21372,7 +21372,7 @@ h4,
         rgb(7 29 25 / 24%) 74%,
         rgb(7 29 25 / 42%) 100%
       ),
-      url('/illustrations/locz-hyderabad-premium-hero-v2.webp') center / cover no-repeat;
+      #07362d;
     box-shadow: inset 0 -1px rgb(255 255 255 / 18%);
   }
 
@@ -23056,16 +23056,26 @@ h4,
   position: absolute;
   inset: 0;
   z-index: 0;
+  overflow: hidden;
   pointer-events: none;
-  background-image: linear-gradient(
-      115deg,
-      rgba(11, 61, 46, 0.94) 0%,
-      rgba(11, 61, 46, 0.74) 45%,
-      rgba(11, 61, 46, 0.55) 100%
-    ),
-    var(--city-hero-image);
-  background-size: cover;
-  background-position: center;
+  background: #0b3d2e;
+}
+.home-hero--city .home-hero__city-image {
+  z-index: 0;
+  object-fit: cover;
+  object-position: center;
+}
+.home-hero--city .home-hero__citybg::after {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  background: linear-gradient(
+    115deg,
+    rgba(11, 61, 46, 0.94) 0%,
+    rgba(11, 61, 46, 0.74) 45%,
+    rgba(11, 61, 46, 0.55) 100%
+  );
+  content: '';
 }
 .home-hero--city .home-hero__inner {
   position: relative;
@@ -23241,6 +23251,7 @@ h4,
   box-shadow: 0 8px 24px -10px rgba(11, 61, 46, 0.2);
 }
 .local-news-hero__img {
+  position: relative;
   width: 100%;
   aspect-ratio: 16 / 9;
   overflow: hidden;
@@ -23326,6 +23337,7 @@ h4,
   overflow: hidden;
 }
 .local-news-row__thumb {
+  position: relative;
   width: 68px;
   height: 52px;
   flex-shrink: 0;

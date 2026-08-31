@@ -21,7 +21,12 @@ loadEnv({ path: resolve(import.meta.dirname, '..', '..', '.env'), quiet: true })
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
-  transpilePackages: ['@locz/shared-types', '@locz/ui-tokens', '@locz/validation', '@locz/api-client'],
+  transpilePackages: [
+    '@locz/shared-types',
+    '@locz/ui-tokens',
+    '@locz/validation',
+    '@locz/api-client',
+  ],
   poweredByHeader: false,
   experimental: {
     serverActions: {
@@ -47,9 +52,19 @@ const nextConfig = {
       { protocol: 'http', hostname: 'localhost', port: '9000' },
     ],
     formats: ['image/webp'],
+    qualities: [58, 64, 68, 75],
   },
   async headers() {
     return [
+      ...['/brand/:path*', '/icons/:path*', '/illustrations/:path*'].map((source) => ({
+        source,
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'public, max-age=31536000, immutable',
+          },
+        ],
+      })),
       {
         source: '/:path*',
         headers: [

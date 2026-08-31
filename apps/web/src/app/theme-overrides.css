@@ -380,8 +380,7 @@
       rgb(10 20 17 / 88%) 43%,
       rgb(10 20 17 / 68%) 100%
     ),
-    linear-gradient(180deg, transparent 56%, #0d1714 100%),
-    url('/illustrations/locz-hyderabad-premium-hero-v2.webp') center / cover no-repeat !important;
+    linear-gradient(180deg, transparent 56%, #0d1714 100%) !important;
 }
 
 :root[data-theme='dark'] .home-hero--discovery::before {
@@ -940,8 +939,7 @@
         rgb(7 54 44 / 97%) 0%,
         rgb(8 67 54 / 91%) 52%,
         rgb(8 67 54 / 52%) 100%
-      ),
-      url('/illustrations/locz-hyderabad-premium-hero-v2.webp') 62% center / cover no-repeat;
+      );
     box-shadow: 0 20px 42px rgb(17 73 59 / 20%);
   }
 
@@ -1121,9 +1119,12 @@
 
   :root[data-theme='dark'] .home-hero--discovery .home-hero__copy {
     border-color: #315148;
-    background:
-      linear-gradient(100deg, rgb(5 34 28 / 97%), rgb(8 56 46 / 89%), rgb(8 56 46 / 60%)),
-      url('/illustrations/locz-hyderabad-premium-hero-v2.webp') 62% center / cover no-repeat;
+    background: linear-gradient(
+      100deg,
+      rgb(5 34 28 / 97%),
+      rgb(8 56 46 / 89%),
+      rgb(8 56 46 / 60%)
+    );
   }
 
   :root[data-theme='dark'] .home-hero--discovery .home-discovery--bento {
