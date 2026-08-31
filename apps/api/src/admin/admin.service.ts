@@ -2,6 +2,7 @@ import { BadRequestException, Injectable, Logger } from '@nestjs/common';
 import { InjectQueue } from '@nestjs/bullmq';
 import { Queue } from 'bullmq';
 import {
+  ClaimReviewStatus,
   ListingStatus,
   ListingType,
   ModerationStatus,
@@ -105,6 +106,8 @@ export class AdminService {
       openReports,
       totalBusinesses,
       verifiedBusinesses,
+      pendingClaims,
+      pendingVerifications,
       openJobs,
       liveOffers,
     ] = await Promise.all([
@@ -125,6 +128,8 @@ export class AdminService {
       }),
       this.businessTotal(),
       this.prisma.business.count({ where: { verificationStatus: 'VERIFIED', deletedAt: null } }),
+      this.prisma.businessClaim.count({ where: { status: ClaimReviewStatus.PENDING } }),
+      this.prisma.business.count({ where: { verificationStatus: 'PENDING', deletedAt: null } }),
       this.prisma.listing.count({
         where: { type: 'JOB', status: ListingStatus.PUBLISHED, deletedAt: null },
       }),
@@ -152,6 +157,8 @@ export class AdminService {
       openReports,
       totalBusinesses,
       verifiedBusinesses,
+      pendingClaims,
+      pendingVerifications,
       openJobs,
       liveOffers,
     };

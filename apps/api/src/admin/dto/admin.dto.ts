@@ -14,6 +14,8 @@ export class AdminMetricsDto {
   @ApiProperty() openReports!: number;
   @ApiProperty() totalBusinesses!: number;
   @ApiProperty() verifiedBusinesses!: number;
+  @ApiProperty({ description: 'Business claims awaiting review' }) pendingClaims!: number;
+  @ApiProperty({ description: 'Businesses awaiting verification' }) pendingVerifications!: number;
   @ApiProperty() openJobs!: number;
   @ApiProperty() liveOffers!: number;
 }

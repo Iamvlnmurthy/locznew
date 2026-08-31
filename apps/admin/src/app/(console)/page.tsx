@@ -17,6 +17,8 @@ interface AdminMetrics {
   openReports: number;
   totalBusinesses: number;
   verifiedBusinesses: number;
+  pendingClaims: number;
+  pendingVerifications: number;
   openJobs: number;
   liveOffers: number;
 }
@@ -117,7 +119,12 @@ export default async function OverviewPage() {
   }
 
   const queueFailures = queues.reduce((sum, queue) => sum + queue.failed, 0);
-  const needsAttention = metrics.pendingListings + metrics.openReports + queueFailures;
+  const needsAttention =
+    metrics.pendingListings +
+    metrics.openReports +
+    (metrics.pendingClaims ?? 0) +
+    (metrics.pendingVerifications ?? 0) +
+    queueFailures;
   const todayLabel = new Intl.DateTimeFormat('en-IN', {
     weekday: 'long',
     day: 'numeric',
@@ -159,6 +166,14 @@ export default async function OverviewPage() {
         <Link href="/reports" className="attention-item">
           <strong>{metrics.openReports}</strong>
           <span>Open reports</span>
+        </Link>
+        <Link href="/businesses/claims" className="attention-item">
+          <strong>{metrics.pendingClaims ?? 0}</strong>
+          <span>Business claims</span>
+        </Link>
+        <Link href="/businesses?verification=PENDING" className="attention-item">
+          <strong>{metrics.pendingVerifications ?? 0}</strong>
+          <span>To verify</span>
         </Link>
         <Link href="/system" className="attention-item">
           <strong>{queueFailures}</strong>

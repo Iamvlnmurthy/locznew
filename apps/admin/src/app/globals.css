@@ -370,14 +370,23 @@ a {
 }
 
 .attention-strip {
-  display: grid;
-  grid-template-columns: minmax(220px, 1.45fr) repeat(3, minmax(120px, 0.65fr));
+  display: flex;
+  flex-wrap: wrap;
+  align-items: stretch;
   margin-bottom: 18px;
   padding: 12px;
   gap: 5px;
   border: 1px solid #dfe5df;
   border-radius: 17px;
   background: #fff;
+}
+
+.attention-strip__lead {
+  flex: 1 1 220px;
+}
+
+.attention-item {
+  flex: 1 1 108px;
 }
 
 .attention-strip__lead,
@@ -1288,12 +1297,8 @@ tbody tr:hover {
     display: none;
   }
 
-  .attention-strip {
-    grid-template-columns: repeat(3, 1fr);
-  }
-
   .attention-strip__lead {
-    grid-column: 1 / -1;
+    flex-basis: 100%;
   }
 
   .attention-item:first-of-type {
@@ -1304,6 +1309,7 @@ tbody tr:hover {
     flex-direction: column;
     gap: 0;
     text-align: center;
+    flex-basis: 84px;
   }
 
   .dashboard-grid {
