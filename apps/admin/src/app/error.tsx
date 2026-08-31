@@ -11,7 +11,29 @@ export default function ErrorPage({
   error: Error & { digest?: string };
   reset: () => void;
 }) {
-  useEffect(() => reportClientError(error, 'error_boundary'), [error]);
+  useEffect(() => {
+    reportClientError(error, 'error_boundary');
+    // A chunk that 404s means this tab is still running a build that a deploy has since replaced
+    // (its chunk filenames no longer exist). A one-time full reload fetches the current build and
+    // recovers silently. A 10s time-guard prevents a reload loop if the chunk is genuinely broken,
+    // while still allowing recovery from a later deploy in the same session.
+    const message = `${error?.name ?? ''} ${error?.message ?? ''}`;
+    const isChunkError =
+      /ChunkLoadError|Loading chunk|Failed to load chunk|error loading dynamically imported module/i.test(
+        message,
+      );
+    if (!isChunkError) return;
+    try {
+      const KEY = 'locz-chunk-reload-at';
+      const last = Number(sessionStorage.getItem(KEY) || 0);
+      if (Date.now() - last > 10_000) {
+        sessionStorage.setItem(KEY, String(Date.now()));
+        window.location.reload();
+      }
+    } catch {
+      window.location.reload();
+    }
+  }, [error]);
 
   return (
     <main className="login-shell">
