@@ -514,3 +514,20 @@ export class BusinessDetailDto extends BusinessSummaryDto {
   @ApiProperty() isOwner!: boolean;
   @ApiProperty() createdAt!: Date;
 }
+
+/**
+ * Admin verification decision body. Typed so the global ValidationPipe actually validates it —
+ * an inline object type erases to `Object` at runtime and is silently skipped, letting a bad
+ * status through to Prisma as a 500.
+ */
+export class SetVerificationDto {
+  @ApiProperty({ enum: VerificationStatus })
+  @IsEnum(VerificationStatus)
+  status!: VerificationStatus;
+
+  @ApiPropertyOptional({ description: 'Reviewer note; required when declining.' })
+  @IsOptional()
+  @IsString()
+  @MaxLength(500)
+  note?: string;
+}

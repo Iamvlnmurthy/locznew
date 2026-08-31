@@ -11,7 +11,6 @@ import {
   Query,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
-import { VerificationStatus } from '@prisma/client';
 import { AuthenticatedUser, CurrentUser } from '../common/decorators/current-user.decorator';
 import { PaginatedDto } from '../common/dto/pagination.dto';
 import { OptionalAuth, Public, RequirePermissions } from '../rbac/rbac.decorators';
@@ -24,6 +23,7 @@ import {
   BusinessStaffDto,
   BusinessSummaryDto,
   CreateBusinessDto,
+  SetVerificationDto,
   UpdateBusinessDto,
 } from './dto/business.dto';
 
@@ -223,7 +223,7 @@ export class BusinessesController {
   setVerification(
     @Param('id') id: string,
     @CurrentUser() user: AuthenticatedUser,
-    @Body() body: { status: VerificationStatus; note?: string },
+    @Body() body: SetVerificationDto,
   ): Promise<void> {
     return this.businesses.setVerification(id, user.id, body.status, body.note);
   }

@@ -122,31 +122,65 @@ export class ReportsService {
     ]);
 
     // Reports against the same target, so a moderator sees "one complaint" versus
-    // "the eighth complaint" without opening each one.
-    const targetIds = reports.map((report) => report.listingId ?? report.reportedUserId ?? '');
-    const grouped = await this.prisma.report.groupBy({
-      by: ['listingId'],
-      where: {
-        listingId: { in: targetIds.filter(Boolean) },
-        status: { in: [ReportStatus.OPEN, ReportStatus.UNDER_REVIEW] },
-      },
-      _count: { _all: true },
-    });
-    const countByTarget = new Map(grouped.map((entry) => [entry.listingId, entry._count._all]));
+    // "the eighth complaint" without opening each one. Counted across every target type
+    // (listing/business/user/conversation), not just listings — a user reported eight times
+    // must not read as one.
+    const ids = (pick: (r: (typeof reports)[number]) => string | null): string[] =>
+      reports.map(pick).filter((x): x is string => Boolean(x));
+    const open = { status: { in: [ReportStatus.OPEN, ReportStatus.UNDER_REVIEW] } };
+    const [byListing, byBusiness, byUser, byConversation] = await Promise.all([
+      this.prisma.report.groupBy({
+        by: ['listingId'],
+        where: { listingId: { in: ids((r) => r.listingId) }, ...open },
+        _count: { _all: true },
+      }),
+      this.prisma.report.groupBy({
+        by: ['businessId'],
+        where: { businessId: { in: ids((r) => r.businessId) }, ...open },
+        _count: { _all: true },
+      }),
+      this.prisma.report.groupBy({
+        by: ['reportedUserId'],
+        where: { reportedUserId: { in: ids((r) => r.reportedUserId) }, ...open },
+        _count: { _all: true },
+      }),
+      this.prisma.report.groupBy({
+        by: ['conversationId'],
+        where: { conversationId: { in: ids((r) => r.conversationId) }, ...open },
+        _count: { _all: true },
+      }),
+    ]);
+    const countByTarget = new Map<string, number>();
+    for (const entry of byListing)
+      if (entry.listingId) countByTarget.set(entry.listingId, entry._count._all);
+    for (const entry of byBusiness)
+      if (entry.businessId) countByTarget.set(entry.businessId, entry._count._all);
+    for (const entry of byUser)
+      if (entry.reportedUserId) countByTarget.set(entry.reportedUserId, entry._count._all);
+    for (const entry of byConversation)
+      if (entry.conversationId) countByTarget.set(entry.conversationId, entry._count._all);
 
-    const items: ReportDto[] = reports.map((report) => ({
-      id: report.id,
-      targetType: report.targetType,
-      targetId: report.listingId ?? report.businessId ?? report.reportedUserId ?? '',
-      targetTitle: report.listing?.title ?? null,
-      reason: report.reason,
-      details: report.details,
-      status: report.status,
-      reporterName: report.reporter.displayName,
-      reportsAgainstTarget: countByTarget.get(report.listingId) ?? 1,
-      createdAt: report.createdAt,
-      resolutionNote: report.resolutionNote,
-    }));
+    const items: ReportDto[] = reports.map((report) => {
+      const targetId =
+        report.listingId ??
+        report.businessId ??
+        report.reportedUserId ??
+        report.conversationId ??
+        '';
+      return {
+        id: report.id,
+        targetType: report.targetType,
+        targetId,
+        targetTitle: report.listing?.title ?? null,
+        reason: report.reason,
+        details: report.details,
+        status: report.status,
+        reporterName: report.reporter.displayName,
+        reportsAgainstTarget: countByTarget.get(targetId) ?? 1,
+        createdAt: report.createdAt,
+        resolutionNote: report.resolutionNote,
+      };
+    });
 
     return paginate(items, total, query.page, query.limit);
   }
@@ -163,8 +197,27 @@ export class ReportsService {
       await this.moderation.removeListing(report.listingId, moderatorId, dto.note);
     }
 
-    await this.prisma.report.update({
-      where: { id: reportId },
+    // Match every open report against the SAME target — listing, business, user or conversation.
+    // Captured BEFORE any update so the report being resolved is itself included (it would drop
+    // out of an OPEN/UNDER_REVIEW filter the moment its status changed). Falls back to just this
+    // report if somehow no target column is set.
+    const targetWhere = report.listingId
+      ? { listingId: report.listingId }
+      : report.businessId
+        ? { businessId: report.businessId }
+        : report.reportedUserId
+          ? { reportedUserId: report.reportedUserId }
+          : report.conversationId
+            ? { conversationId: report.conversationId }
+            : { id: reportId };
+
+    const siblings = await this.prisma.report.findMany({
+      where: { ...targetWhere, status: { in: [ReportStatus.OPEN, ReportStatus.UNDER_REVIEW] } },
+      select: { id: true, reporterId: true },
+    });
+
+    await this.prisma.report.updateMany({
+      where: { id: { in: siblings.map((entry) => entry.id) } },
       data: {
         status: dto.status,
         resolvedById: moderatorId,
@@ -173,39 +226,19 @@ export class ReportsService {
       },
     });
 
-    // Everyone who reported this target learns the outcome — otherwise reporting feels
-    // like shouting into a void and people stop doing it.
-    if (report.listingId) {
-      const related = await this.prisma.report.findMany({
-        where: {
-          listingId: report.listingId,
-          status: { in: [ReportStatus.OPEN, ReportStatus.UNDER_REVIEW] },
-        },
-        select: { id: true, reporterId: true },
+    // Everyone who reported this target learns the outcome — otherwise reporting feels like
+    // shouting into a void and people stop doing it.
+    for (const reporterId of new Set(siblings.map((entry) => entry.reporterId))) {
+      await this.notifications.create({
+        userId: reporterId,
+        type: NotificationType.REPORT_RESOLUTION,
+        title: 'Thanks for your report',
+        body:
+          dto.status === ReportStatus.RESOLVED
+            ? 'We reviewed the content you reported and took action.'
+            : 'We reviewed the content you reported and found no breach of our rules.',
+        data: { entityType: 'Report', entityId: reportId, route: '/notifications' },
       });
-
-      await this.prisma.report.updateMany({
-        where: { id: { in: related.map((entry) => entry.id) } },
-        data: {
-          status: dto.status,
-          resolvedById: moderatorId,
-          resolutionNote: dto.note,
-          resolvedAt: new Date(),
-        },
-      });
-
-      for (const reporterId of new Set(related.map((entry) => entry.reporterId))) {
-        await this.notifications.create({
-          userId: reporterId,
-          type: NotificationType.REPORT_RESOLUTION,
-          title: 'Thanks for your report',
-          body:
-            dto.status === ReportStatus.RESOLVED
-              ? 'We reviewed the content you reported and took action.'
-              : 'We reviewed the content you reported and found no breach of our rules.',
-          data: { entityType: 'Report', entityId: reportId, route: '/notifications' },
-        });
-      }
     }
 
     await this.audit.record({

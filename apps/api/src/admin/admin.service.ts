@@ -116,7 +116,7 @@ export class AdminService {
       this.prisma.user.count({ where: { createdAt: { gte: dayAgo }, deletedAt: null } }),
       this.prisma.user.count({ where: { createdAt: { gte: weekAgo }, deletedAt: null } }),
       this.prisma.user.count({ where: { lastActiveAt: { gte: monthAgo }, deletedAt: null } }),
-      this.prisma.user.count({ where: { status: UserStatus.SUSPENDED } }),
+      this.prisma.user.count({ where: { status: UserStatus.SUSPENDED, deletedAt: null } }),
       this.prisma.listing.count({ where: { status: ListingStatus.PUBLISHED, deletedAt: null } }),
       this.prisma.listing.count({
         where: { moderationStatus: ModerationStatus.PENDING, deletedAt: null },
@@ -445,7 +445,7 @@ export class AdminService {
     // each listing rather than by scanning the reports table.
     const reportsByOwner = new Map<string, number>();
     const grouped = await this.prisma.listing.findMany({
-      where: { ownerId: { in: users.map((user) => user.id) } },
+      where: { ownerId: { in: users.map((user) => user.id) }, deletedAt: null },
       select: { ownerId: true, reportCount: true },
     });
     for (const listing of grouped) {
