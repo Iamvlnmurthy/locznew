@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useTransition } from 'react';
+import { useEffect, useRef, useState, useTransition } from 'react';
 import { reinstateUserAction, suspendUserAction } from './actions';
 
 export function UserActions({
@@ -14,15 +14,54 @@ export function UserActions({
 }) {
   const [isPending, startTransition] = useTransition();
   const [showSuspendModal, setShowSuspendModal] = useState(false);
+  const [confirmingReinstate, setConfirmingReinstate] = useState(false);
   const [reason, setReason] = useState('');
   const [durationDays, setDurationDays] = useState<number | undefined>(undefined);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const dialogRef = useRef<HTMLDivElement>(null);
 
   const isSuspended = status === 'SUSPENDED';
 
+  // Dialog a11y: focus the first field on open, trap Tab inside, close on Escape, and
+  // restore focus to the trigger on close.
+  useEffect(() => {
+    if (!showSuspendModal) return;
+    const previouslyFocused = document.activeElement as HTMLElement | null;
+    const dialog = dialogRef.current;
+    const focusables = dialog?.querySelectorAll<HTMLElement>(
+      'a[href], button, textarea, input, select, [tabindex]:not([tabindex="-1"])',
+    );
+    focusables?.[0]?.focus();
+    function onKeyDown(e: KeyboardEvent) {
+      if (e.key === 'Escape') {
+        setShowSuspendModal(false);
+        return;
+      }
+      if (e.key !== 'Tab' || !focusables || focusables.length === 0) return;
+      const first = focusables[0];
+      const last = focusables[focusables.length - 1];
+      if (e.shiftKey && document.activeElement === first) {
+        e.preventDefault();
+        last.focus();
+      } else if (!e.shiftKey && document.activeElement === last) {
+        e.preventDefault();
+        first.focus();
+      }
+    }
+    document.addEventListener('keydown', onKeyDown);
+    return () => {
+      document.removeEventListener('keydown', onKeyDown);
+      previouslyFocused?.focus();
+    };
+  }, [showSuspendModal]);
+
   function handleReinstate() {
-    if (!confirm(`Are you sure you want to reinstate ${displayName}?`)) return;
+    if (!confirmingReinstate) {
+      setConfirmingReinstate(true);
+      return;
+    }
+    setConfirmingReinstate(false);
     setError(null);
     setMessage(null);
     startTransition(async () => {
@@ -58,12 +97,17 @@ export function UserActions({
         {isSuspended ? (
           <button
             type="button"
-            className="btn btn--outline"
+            className={confirmingReinstate ? 'btn btn--primary' : 'btn btn--outline'}
             style={{ padding: '3px 8px', fontSize: '0.72rem', minHeight: '26px' }}
             onClick={handleReinstate}
+            onBlur={() => setConfirmingReinstate(false)}
             disabled={isPending}
           >
-            {isPending ? 'Working…' : 'Reinstate'}
+            {isPending
+              ? 'Working…'
+              : confirmingReinstate
+                ? `Confirm reinstate ${displayName}?`
+                : 'Reinstate'}
           </button>
         ) : (
           <button
@@ -89,7 +133,11 @@ export function UserActions({
       {error ? (
         <small style={{ color: 'var(--locz-danger, #ef4444)', fontSize: '0.68rem' }}>{error}</small>
       ) : null}
-      {message ? <small style={{ color: '#10b981', fontSize: '0.68rem' }}>{message}</small> : null}
+      {message ? (
+        <small style={{ color: 'var(--locz-success, #10b981)', fontSize: '0.68rem' }}>
+          {message}
+        </small>
+      ) : null}
 
       {showSuspendModal ? (
         <div
@@ -106,19 +154,26 @@ export function UserActions({
           onClick={() => setShowSuspendModal(false)}
         >
           <div
+            ref={dialogRef}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby={`suspend-title-${userId}`}
             className="card"
             style={{
               maxWidth: 420,
               width: '100%',
-              background: '#ffffff',
+              background: 'var(--locz-surface, #fff)',
+              color: 'var(--locz-text)',
               padding: 20,
               borderRadius: 12,
-              boxShadow: '0 20px 25px -5px rgba(0,0,0,0.1)',
+              boxShadow: '0 20px 25px -5px rgba(0,0,0,0.25)',
             }}
             onClick={(e) => e.stopPropagation()}
           >
-            <h3 style={{ margin: '0 0 8px', fontSize: '1.1rem' }}>Suspend User</h3>
-            <p style={{ margin: '0 0 16px', fontSize: '0.85rem', color: '#64748b' }}>
+            <h3 id={`suspend-title-${userId}`} style={{ margin: '0 0 8px', fontSize: '1.1rem' }}>
+              Suspend user
+            </h3>
+            <p style={{ margin: '0 0 16px', fontSize: '0.85rem', color: 'var(--locz-text-muted)' }}>
               Suspend <strong>{displayName}</strong>. This immediately revokes all active sessions.
             </p>
             <form onSubmit={handleSuspendSubmit}>
@@ -136,7 +191,7 @@ export function UserActions({
                     width: '100%',
                     padding: 8,
                     borderRadius: 6,
-                    border: '1px solid #cbd5e1',
+                    border: '1px solid var(--locz-border)',
                   }}
                 />
               </div>
@@ -153,7 +208,7 @@ export function UserActions({
                     width: '100%',
                     padding: 8,
                     borderRadius: 6,
-                    border: '1px solid #cbd5e1',
+                    border: '1px solid var(--locz-border)',
                   }}
                 >
                   <option value="">Indefinite</option>

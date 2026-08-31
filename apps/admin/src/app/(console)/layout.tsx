@@ -19,7 +19,7 @@ const NAV: Array<{
     permissions: ['listing:moderate'],
   },
   { href: '/reports', label: 'Reports', icon: 'reports', permissions: ['report:resolve'] },
-  { href: '/safety', label: 'Safety cases', icon: 'shield', permissions: ['safety:case:read'] },
+  { href: '/safety', label: 'Safety cases', icon: 'flag', permissions: ['safety:case:read'] },
   { href: '/listings', label: 'Listings', icon: 'listings', permissions: ['listing:moderate'] },
   { href: '/users', label: 'Users', icon: 'users', permissions: ['user:manage'] },
   {
@@ -43,7 +43,7 @@ const NAV: Array<{
   {
     href: '/data-health',
     label: 'Data health',
-    icon: 'system',
+    icon: 'database',
     permissions: ['category:manage'],
   },
   { href: '/audit', label: 'Audit logs', icon: 'audit', permissions: ['audit:read'] },

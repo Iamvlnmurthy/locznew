@@ -118,6 +118,7 @@ export class BusinessSearchService {
     pincode?: string;
     categoryId?: string;
     businessType?: string;
+    verificationStatus?: string;
     latitude?: number;
     longitude?: number;
     radiusKm?: number;
@@ -141,6 +142,9 @@ export class BusinessSearchService {
         : Prisma.sql`TRUE`,
       params.businessType
         ? Prisma.sql`b."businessType"::text = ${params.businessType}`
+        : Prisma.sql`TRUE`,
+      params.verificationStatus
+        ? Prisma.sql`b."verificationStatus"::text = ${params.verificationStatus}`
         : Prisma.sql`TRUE`,
       hasGeo
         ? Prisma.sql`ST_DWithin(b."geo", ST_MakePoint(${params.longitude}, ${params.latitude})::geography, ${radiusMetres})`
@@ -195,6 +199,7 @@ export class BusinessSearchService {
       pincode?: string;
       categoryId?: string;
       businessType?: string;
+      verificationStatus?: string;
       latitude?: number;
       longitude?: number;
       radiusKm?: number;
@@ -217,6 +222,9 @@ export class BusinessSearchService {
         : Prisma.sql`TRUE`,
       params.businessType
         ? Prisma.sql`b."businessType"::text = ${params.businessType}`
+        : Prisma.sql`TRUE`,
+      params.verificationStatus
+        ? Prisma.sql`b."verificationStatus"::text = ${params.verificationStatus}`
         : Prisma.sql`TRUE`,
       hasGeo
         ? Prisma.sql`ST_DWithin(b."geo", ST_MakePoint(${params.longitude}, ${params.latitude})::geography, ${radiusMetres})`

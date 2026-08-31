@@ -129,6 +129,9 @@ export class BusinessesService {
         cityId: query.cityId,
         pincode: query.pincode,
         categoryId: query.categoryId,
+        // Admin verification review searches by name within a status; without this the search
+        // path ignored the status filter and returned businesses of every verification state.
+        verificationStatus: query.verificationStatus ?? undefined,
         page: query.page,
         limit: query.limit,
       });

@@ -31,6 +31,14 @@ function CategoryRow({ category, depth }: { category: Category; depth: number })
   );
 }
 
+function countMissingTe(categories: Category[]): number {
+  return categories.reduce(
+    (total, category) =>
+      total + (category.nameTe ? 0 : 1) + countMissingTe(category.children ?? []),
+    0,
+  );
+}
+
 function countTree(categories: Category[]): number {
   return categories.reduce((total, category) => total + 1 + countTree(category.children ?? []), 0);
 }
@@ -58,7 +66,7 @@ export default async function CategoriesPage() {
   }
 
   const total = countTree(categories);
-  const missingTranslations = JSON.stringify(categories).split('"nameTe":null').length - 1;
+  const missingTranslations = countMissingTe(categories);
 
   return (
     <>

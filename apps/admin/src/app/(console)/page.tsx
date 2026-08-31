@@ -162,23 +162,23 @@ export default async function OverviewPage() {
           </span>
         </div>
         <Link href="/moderation" className="attention-item">
-          <strong>{metrics.pendingListings}</strong>
+          <strong>{metrics.pendingListings.toLocaleString('en-IN')}</strong>
           <span>Pending review</span>
         </Link>
         <Link href="/reports" className="attention-item">
-          <strong>{metrics.openReports}</strong>
+          <strong>{metrics.openReports.toLocaleString('en-IN')}</strong>
           <span>Open reports</span>
         </Link>
         <Link href="/businesses/claims" className="attention-item">
-          <strong>{metrics.pendingClaims ?? 0}</strong>
+          <strong>{(metrics.pendingClaims ?? 0).toLocaleString('en-IN')}</strong>
           <span>Claims to review</span>
         </Link>
         <Link href="/businesses?status=PENDING" className="attention-item">
-          <strong>{metrics.pendingVerifications ?? 0}</strong>
+          <strong>{(metrics.pendingVerifications ?? 0).toLocaleString('en-IN')}</strong>
           <span>To verify</span>
         </Link>
         <Link href="/system" className="attention-item">
-          <strong>{queueFailures}</strong>
+          <strong>{queueFailures.toLocaleString('en-IN')}</strong>
           <span>Failed jobs</span>
         </Link>
       </section>

@@ -13,7 +13,9 @@ export type ConsoleIconName =
   | 'building'
   | 'briefcase'
   | 'tag'
-  | 'shield';
+  | 'shield'
+  | 'flag'
+  | 'database';
 
 const PATHS: Record<ConsoleIconName, React.ReactNode> = {
   overview: (
@@ -97,6 +99,17 @@ const PATHS: Record<ConsoleIconName, React.ReactNode> = {
     <>
       <path d="M12 3 4.5 6v5.3c0 4.5 3.2 8.7 7.5 9.7 4.3-1 7.5-5.2 7.5-9.7V6L12 3Z" />
       <path d="M9 12h6M12 9v6" />
+    </>
+  ),
+  flag: (
+    <>
+      <path d="M5 21V4M5 4h11l-2 4 2 4H5" />
+    </>
+  ),
+  database: (
+    <>
+      <ellipse cx="12" cy="5" rx="7" ry="3" />
+      <path d="M5 5v6c0 1.7 3.1 3 7 3s7-1.3 7-3V5M5 11v6c0 1.7 3.1 3 7 3s7-1.3 7-3v-6" />
     </>
   ),
 };
