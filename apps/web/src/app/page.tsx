@@ -170,11 +170,14 @@ export default async function HomePage({
   const searchLabels = getMessageGroup(locale, 'searchUi');
   const homeBusinessesPromise =
     city?.latitude !== undefined && city?.longitude !== undefined
-      ? loadNearbyBusinesses({
+      ? // With a real GPS fix, measure distance from the caller's coordinates + a radius.
+        // Do NOT also pass the pincode: the API would then switch the distance origin to the
+        // pincode's business centroid (correct for an explicit pincode search, but here it can
+        // sit kilometres from the user and inflate every "nearby" distance).
+        loadNearbyBusinesses({
           latitude: city.latitude,
           longitude: city.longitude,
           radiusKm,
-          pincode: city.pincode,
           page: 1,
         })
       : city?.pincode

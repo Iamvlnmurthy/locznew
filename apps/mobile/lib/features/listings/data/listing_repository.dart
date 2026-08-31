@@ -163,7 +163,10 @@ class ListingRepository {
           'longitude': longitude,
           'radiusKm': radiusKm ?? 25,
         },
-        if (pincode != null) 'pincode': pincode,
+        // Only send the pincode when there is NO GPS fix. With real coordinates the API must
+        // measure distance from them; adding a pincode makes it switch the origin to the
+        // pincode's business centroid (often km away), inflating every "nearby" distance.
+        if (!geo && pincode != null) 'pincode': pincode,
         if (!geo && cityId != null) 'cityId': cityId,
         if (categoryId != null) 'categoryId': categoryId,
         if (area != null) 'area': area,
