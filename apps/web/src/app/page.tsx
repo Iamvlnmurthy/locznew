@@ -13,11 +13,7 @@ import { relativeTime } from '@/lib/relative-time';
 import { RadiusSelector } from '@/components/radius-selector';
 import { DiscoveryMotionLink } from '@/components/discovery-motion-link';
 import { AdSlot } from '@/components/ad-slot';
-import {
-  PUBLIC_SERVICE_SLUGS,
-  publicServiceArtwork,
-  publicServiceLabel,
-} from '@/lib/public-services';
+import { PUBLIC_SERVICE_SLUGS, publicServiceLabel } from '@/lib/public-services';
 
 interface LocalWeather {
   tempC: number;
@@ -275,16 +271,12 @@ export default async function HomePage({
   );
   const publicServiceCategories = PUBLIC_SERVICE_SLUGS.map((slug) => {
     const category = categoryBySlug.get(slug);
-    return category
-      ? {
-          ...category,
-          slug,
-          count: catCountById.get(category.id) ?? 0,
-          label: publicServiceLabel(t, slug),
-          artwork: publicServiceArtwork(slug),
-        }
-      : null;
-  }).filter((category): category is NonNullable<typeof category> => Boolean(category?.count));
+    return {
+      slug,
+      count: category ? (catCountById.get(category.id) ?? 0) : 0,
+      label: publicServiceLabel(t, slug),
+    };
+  });
   const areaLabels = getMessageGroup(locale, 'discoveryAreas');
   const primaryAreas = [
     'local-now',
@@ -547,51 +539,50 @@ export default async function HomePage({
         </section>
       ) : null}
 
-      {homeCity && publicServiceCategories.length > 0 ? (
+      {homeCity ? (
         <section
-          className="container home-public-services"
-          aria-labelledby="home-public-services-title"
+          className="container home-public-services-compact"
+          aria-labelledby="home-public-services-compact-title"
         >
-          <div className="home-public-services__intro">
-            <span className="home-public-services__seal" aria-hidden="true">
+          <Link href="/c/public-services" className="home-public-services-compact__directory">
+            <span className="home-public-services-compact__icon" aria-hidden="true">
               <Image
                 src="/icons/public-services/public-services.webp"
                 alt=""
-                width={64}
-                height={64}
-                sizes="64px"
+                width={48}
+                height={48}
+                sizes="48px"
               />
             </span>
-            <div>
+            <span className="home-public-services-compact__copy">
               <span className="section-kicker">{t('home.publicServicesKicker')}</span>
-              <h2 id="home-public-services-title">
+              <h2 id="home-public-services-compact-title">
                 {t('home.publicServicesTitle', { city: homeCity.name })}
               </h2>
-              <p>{t('home.publicServicesSubtitle')}</p>
-            </div>
-          </div>
-          <div className="home-public-services__grid">
+            </span>
+            <span className="home-public-services-compact__arrow" aria-hidden="true">
+              <Icon name="arrow" />
+            </span>
+          </Link>
+          <nav
+            className="home-public-services-compact__links"
+            aria-label={t('home.publicServicesTitle', { city: homeCity.name })}
+          >
             {publicServiceCategories.map((category) => (
               <Link
                 key={category.slug}
                 href={`/c/${category.slug}`}
-                className="home-public-service-card"
+                className="home-public-services-compact__link"
               >
-                <span className="home-public-service-card__icon" aria-hidden="true">
-                  <Image src={category.artwork} alt="" width={52} height={52} sizes="52px" />
-                </span>
-                <span className="home-public-service-card__body">
-                  <strong>{category.label}</strong>
-                  <small>
-                    {t('home.publicServicesCount', {
-                      count: category.count.toLocaleString(`${locale}-IN`),
-                    })}
-                  </small>
-                </span>
-                <Icon name="arrow" />
+                <strong>{category.label}</strong>
+                <small>
+                  {t('home.publicServicesCount', {
+                    count: category.count.toLocaleString(`${locale}-IN`),
+                  })}
+                </small>
               </Link>
             ))}
-          </div>
+          </nav>
         </section>
       ) : null}
 
