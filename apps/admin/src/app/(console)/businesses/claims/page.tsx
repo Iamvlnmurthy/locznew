@@ -2,6 +2,7 @@ import type { Paginated } from '@locz/shared-types';
 import { ApiRequestError, api } from '@/lib/api';
 import { getAdminQueueCopy, type AdminQueueCopy, type AdminQueueLocale } from '@/lib/queue-copy';
 import { ConsoleIcon } from '../../console-icon';
+import { VerificationDecision } from '../verification-decision';
 import { ClaimDecision } from './claim-decision';
 
 export const dynamic = 'force-dynamic';
@@ -243,7 +244,11 @@ function ClaimCard({
           </span>
         ) : null}
       </div>
-      {status === 'PENDING' ? <ClaimDecision claimId={claim.id} copy={copy} /> : null}
+      {status === 'PENDING' ? (
+        <ClaimDecision claimId={claim.id} copy={copy} />
+      ) : status === 'APPROVED' ? (
+        <VerificationDecision businessId={claim.business.id} />
+      ) : null}
     </article>
   );
 }
