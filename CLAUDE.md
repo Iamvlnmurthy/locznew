@@ -28,3 +28,14 @@ Correct admin deploy (atomic): `pm2 stop locz-admin` → `pkill -f apps/admin` �
 Verify: fetch `/login` and confirm **every** `/_next/static/chunks/*.js` it references returns 200
 (via the public URL, not just `127.0.0.1:3202`). The Turbopack build can also fail once with an
 `ENOENT _buildManifest.js.tmp` on a stale `.next` — clearing `.next` first avoids it.
+
+## Run VPS repo/git ops as `sudo -u locz`, NEVER as root
+
+`ssh onrol` lands as **root**. Running `git fetch`/`git reset`/anything that writes into
+`/home/locz/app` as root makes those files (and `.git` objects, and `package-lock.json`)
+**root-owned**, after which `npm install` (run by the `locz` deploy scripts) fails with
+`EACCES: permission denied, open '/home/locz/app/package-lock.json'` and git breaks for `locz`.
+Always wrap repo commands: `ssh onrol "cd /home/locz/app && sudo -u locz bash -c '...'"`. If it
+already happened, fix with `chown -R locz:locz /home/locz/app` (harmless `.next.bak` ENOENT noise
+is fine). The `deploy-*.sh` scripts already run their git steps correctly when invoked via
+`sudo -u locz bash scripts/deploy-*.sh`.
