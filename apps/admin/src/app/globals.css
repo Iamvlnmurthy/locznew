@@ -1549,6 +1549,28 @@ tbody tr:hover {
   border-top: 1px solid var(--locz-border);
 }
 
+.business-review-profile-link {
+  grid-column: 1 / -1;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--locz-primary);
+}
+
+.business-review-profile-link:hover {
+  text-decoration: underline;
+}
+
+.business-review-decision .form-message {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0;
+}
+
 .business-review-decision label {
   display: grid;
   gap: 6px;

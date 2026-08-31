@@ -139,7 +139,7 @@ export default async function BusinessesPage({
                   </span>
                 </div>
                 {business.verificationStatus !== 'VERIFIED' ? (
-                  <VerificationDecision businessId={business.id} />
+                  <VerificationDecision businessId={business.id} slug={business.slug} />
                 ) : null}
               </article>
             );

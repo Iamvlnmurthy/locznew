@@ -247,7 +247,7 @@ function ClaimCard({
       {status === 'PENDING' ? (
         <ClaimDecision claimId={claim.id} copy={copy} />
       ) : status === 'APPROVED' ? (
-        <VerificationDecision businessId={claim.business.id} />
+        <VerificationDecision businessId={claim.business.id} slug={claim.business.slug} />
       ) : null}
     </article>
   );

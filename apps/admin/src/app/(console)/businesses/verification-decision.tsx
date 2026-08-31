@@ -20,12 +20,25 @@ function DecisionButtons() {
   );
 }
 
-export function VerificationDecision({ businessId }: { businessId: string }) {
+export function VerificationDecision({ businessId, slug }: { businessId: string; slug?: string }) {
   const boundAction = setBusinessVerificationAction.bind(null, businessId);
   const [state, action] = useActionState<VerificationDecisionState, FormData>(boundAction, {});
+  const profileUrl = slug ? `https://locz.in/b/${slug}` : null;
+  const verified = state.message?.toLowerCase().includes('verified');
 
   return (
     <form className="business-review-decision" action={action}>
+      {profileUrl ? (
+        <a
+          className="business-review-profile-link"
+          href={profileUrl}
+          target="_blank"
+          rel="noreferrer"
+        >
+          <ConsoleIcon name="search" size={14} /> Review the public profile before verifying
+          <ConsoleIcon name="arrow" size={14} />
+        </a>
+      ) : null}
       <label>
         <span>Review note</span>
         <textarea
@@ -43,7 +56,15 @@ export function VerificationDecision({ businessId }: { businessId: string }) {
       ) : null}
       {state.message ? (
         <p className="form-message" role="status">
-          {state.message}
+          <ConsoleIcon name="shield" size={14} /> {state.message}
+          {verified && profileUrl ? (
+            <>
+              {' — '}
+              <a href={profileUrl} target="_blank" rel="noreferrer">
+                view the verified page
+              </a>
+            </>
+          ) : null}
         </p>
       ) : null}
     </form>
