@@ -72,57 +72,63 @@ export default async function DataHealthPage() {
       >
         <section style={card}>
           <h2 style={{ marginTop: 0, fontSize: 16 }}>Top cities</h2>
-          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-            <tbody>
-              {data.topCities.map((c) => (
-                <tr key={c.name}>
-                  <td style={td}>{c.name}</td>
-                  <td style={{ ...td, textAlign: 'right' }}>{c.count.toLocaleString()}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+          <div className="table-wrap">
+            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+              <tbody>
+                {data.topCities.map((c) => (
+                  <tr key={c.name}>
+                    <td style={td}>{c.name}</td>
+                    <td style={{ ...td, textAlign: 'right' }}>{c.count.toLocaleString()}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </section>
 
         <section style={card}>
           <h2 style={{ marginTop: 0, fontSize: 16 }}>Top categories</h2>
-          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-            <tbody>
-              {data.topCategories.map((c) => (
-                <tr key={c.name}>
-                  <td style={td}>{c.name}</td>
-                  <td style={{ ...td, textAlign: 'right' }}>{c.count.toLocaleString()}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+          <div className="table-wrap">
+            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+              <tbody>
+                {data.topCategories.map((c) => (
+                  <tr key={c.name}>
+                    <td style={td}>{c.name}</td>
+                    <td style={{ ...td, textAlign: 'right' }}>{c.count.toLocaleString()}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </section>
       </div>
 
       <section style={card}>
         <h2 style={{ marginTop: 0, fontSize: 16 }}>Data sources</h2>
-        <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-          <thead>
-            <tr>
-              <th style={th}>Source</th>
-              <th style={{ ...th, textAlign: 'right' }}>Records</th>
-              <th style={th}>Health</th>
-              <th style={th}>Runnable</th>
-              <th style={th}>Attribution</th>
-            </tr>
-          </thead>
-          <tbody>
-            {data.sources.map((s) => (
-              <tr key={s.id}>
-                <td style={td}>{s.name}</td>
-                <td style={{ ...td, textAlign: 'right' }}>{s.recordsCreated.toLocaleString()}</td>
-                <td style={td}>{s.health}</td>
-                <td style={td}>{s.runnable ? 'Yes' : 'No'}</td>
-                <td style={td}>{s.attributionRequired ? 'Required' : '—'}</td>
+        <div className="table-wrap">
+          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+            <thead>
+              <tr>
+                <th style={th}>Source</th>
+                <th style={{ ...th, textAlign: 'right' }}>Records</th>
+                <th style={th}>Health</th>
+                <th style={th}>Runnable</th>
+                <th style={th}>Attribution</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {data.sources.map((s) => (
+                <tr key={s.id}>
+                  <td style={td}>{s.name}</td>
+                  <td style={{ ...td, textAlign: 'right' }}>{s.recordsCreated.toLocaleString()}</td>
+                  <td style={td}>{s.health}</td>
+                  <td style={td}>{s.runnable ? 'Yes' : 'No'}</td>
+                  <td style={td}>{s.attributionRequired ? 'Required' : '—'}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </section>
     </div>
   );

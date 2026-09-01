@@ -45,10 +45,10 @@ export default function ErrorPage({
           team.
         </p>
         <div style={{ display: 'flex', justifyContent: 'center', gap: 10 }}>
-          <button className="button button--primary" type="button" onClick={reset}>
+          <button className="btn btn--primary" type="button" onClick={reset}>
             Retry
           </button>
-          <Link className="button" href="/">
+          <Link className="btn btn--ghost" href="/">
             Console home
           </Link>
         </div>

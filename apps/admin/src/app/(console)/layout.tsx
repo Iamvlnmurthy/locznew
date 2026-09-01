@@ -61,9 +61,45 @@ function canSeeNavigationItem(user: DisplayUser, permissions: string[]): boolean
 export default async function ConsoleLayout({ children }: { children: React.ReactNode }) {
   const [user, { copy: queueCopy }] = await Promise.all([getCurrentUser(), getAdminQueueCopy()]);
   if (!user) redirect('/login');
+  const visibleNav = NAV.filter((item) => canSeeNavigationItem(user, item.permissions));
+
+  const navigation = (label: string) => (
+    <nav className="sidebar__nav" aria-label={label}>
+      {visibleNav.map((item) => (
+        <NavLink
+          key={item.href}
+          href={item.href}
+          label={item.href === '/businesses/claims' ? queueCopy.claimsNav : item.label}
+          icon={item.icon}
+        />
+      ))}
+    </nav>
+  );
+
+  const account = (mobile = false) => (
+    <div className={mobile ? 'sidebar__mobile-account' : 'sidebar__footer'}>
+      <div className="sidebar__user">
+        <span className="sidebar__avatar" aria-hidden="true">
+          {user.displayName.slice(0, 1).toUpperCase()}
+        </span>
+        <span>
+          <strong>{user.displayName}</strong>
+          <small>{user.roles[0]?.toLowerCase().replace(/_/g, ' ') ?? 'team member'}</small>
+        </span>
+      </div>
+      <form action={logoutAction}>
+        <button type="submit" className="sidebar__signout">
+          Sign out
+        </button>
+      </form>
+    </div>
+  );
 
   return (
     <div className="shell">
+      <a className="skip-link" href="#admin-main">
+        Skip to console content
+      </a>
       <aside className="sidebar">
         <div className="sidebar__brand-row">
           <div className="brand-mark" aria-hidden="true">
@@ -77,38 +113,35 @@ export default async function ConsoleLayout({ children }: { children: React.Reac
           </div>
         </div>
 
-        <nav className="sidebar__nav" aria-label="Sections">
-          {NAV.filter((item) => canSeeNavigationItem(user, item.permissions)).map((item) => (
-            <NavLink
-              key={item.href}
-              href={item.href}
-              label={item.href === '/businesses/claims' ? queueCopy.claimsNav : item.label}
-              icon={item.icon}
-            />
-          ))}
-        </nav>
+        {navigation('Console sections')}
+        {account()}
 
-        <div className="sidebar__footer">
-          <div className="sidebar__user">
-            <span className="sidebar__avatar" aria-hidden="true">
-              {user.displayName.slice(0, 1).toUpperCase()}
+        <div className="sidebar__mobile-bar">
+          <div className="sidebar__mobile-branding">
+            <span className="brand-mark" aria-hidden="true">
+              L<span>Z</span>
             </span>
             <span>
-              <strong>{user.displayName}</strong>
-              <small>{user.roles[0]?.toLowerCase().replace(/_/g, ' ') ?? 'team member'}</small>
+              <strong>LocZ operations</strong>
+              <small>
+                <i className="status-dot" /> Platform operational
+              </small>
             </span>
           </div>
-          <form action={logoutAction}>
-            <button type="submit" className="sidebar__signout">
-              Sign out
-            </button>
-          </form>
+          <details className="sidebar__mobile-menu">
+            <summary>
+              Menu <span aria-hidden="true">⌄</span>
+            </summary>
+            <div className="sidebar__mobile-panel">
+              {navigation('Mobile console sections')}
+              {account(true)}
+            </div>
+          </details>
         </div>
       </aside>
 
       <div className="workspace">
         <header className="workspace__bar">
-          <div className="workspace__mobile-brand">LocZ operations</div>
           <div className="workspace__status">
             <span className="status-dot" aria-hidden="true" />
             Platform operational
@@ -121,7 +154,9 @@ export default async function ConsoleLayout({ children }: { children: React.Reac
             }).format(new Date())}
           </span>
         </header>
-        <main className="main">{children}</main>
+        <main className="main" id="admin-main">
+          {children}
+        </main>
       </div>
     </div>
   );
