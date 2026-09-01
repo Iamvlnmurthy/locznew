@@ -23298,6 +23298,12 @@ h4,
 .news-card__title { font-family: var(--font-display, serif); font-size: 1.08rem; line-height: 1.24; text-wrap: balance; }
 .news-card__dek { color: var(--locz-muted, #5c6b64); font-size: 0.9rem; }
 .news-card__title.te, .news-card__dek.te { font-family: var(--font-locz-telugu), var(--font-locz-sans), sans-serif; }
+/* Telugu (and other Indic) glyphs carry vowel marks well above the consonant line; the tight
+   Latin line-height clips them at the -webkit-box top/clamp edge. Give the .te variants room. */
+.news-card__title.te { line-height: 1.5; }
+.news-card__dek.te { line-height: 1.55; }
+.news-page .news-card__title.te { line-height: 1.5; }
+.news-page .news-card--lead .news-card__title.te { line-height: 1.32; }
 /* article additions */
 .news-article__dek { font-family: var(--font-display, serif); font-style: italic; font-size: 1.15rem; color: var(--locz-muted, #5c6b64); margin: 0 0 18px; }
 .news-article__hero { margin: 6px 0 8px; }

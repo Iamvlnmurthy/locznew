@@ -64,11 +64,15 @@ export class StoriesService {
     }
   }
 
-  private pick(row: Record<string, unknown>, lang: string): { title: string; body: string | null } {
+  private pick(
+    row: Record<string, unknown>,
+    lang: string,
+  ): { title: string; body: string | null; dek: string | null } {
     if (lang === 'hi')
       return {
         title: (row.title_hi as string) ?? (row.title_en as string),
         body: (row.body_hi as string) ?? (row.body_en as string),
+        dek: (row.dek_hi as string) ?? (row.dek_en as string) ?? null,
       };
     // Telugu is a first-class UI language with its OWN columns (title_te/body_te). Fall back to
     // English, NEVER to title_sl — for a story from a non-Telugu state that generic column holds a
@@ -77,6 +81,7 @@ export class StoriesService {
       return {
         title: (row.title_te as string) ?? (row.title_en as string),
         body: (row.body_te as string) ?? (row.body_en as string),
+        dek: (row.dek_te as string) ?? (row.dek_en as string) ?? null,
       };
     // The reader's language is this story's own regional language (e.g. a Kannada reader, Kannada
     // story) — the generic state-language columns are correct here.
@@ -84,8 +89,13 @@ export class StoriesService {
       return {
         title: (row.title_sl as string) ?? (row.title_en as string),
         body: (row.body_sl as string) ?? (row.body_en as string),
+        dek: (row.dek_sl as string) ?? (row.dek_en as string) ?? null,
       };
-    return { title: row.title_en as string, body: row.body_en as string };
+    return {
+      title: row.title_en as string,
+      body: row.body_en as string,
+      dek: (row.dek_en as string) ?? null,
+    };
   }
 
   private ring(distanceKm: number | null, sameState: boolean): StoryCard['ring'] {
@@ -144,7 +154,7 @@ export class StoriesService {
             : 'published_at DESC';
     const sql = `
       SELECT id, slug, category, title_en, dek_en, title_hi, body_hi, title_sl, body_sl, body_en,
-             title_te, body_te,
+             title_te, body_te, dek_hi, dek_te, dek_sl,
              state_lang, image_url, image_credit, city, state, published_at,
              ${distSql} AS dist_m
       FROM news_stories
@@ -158,13 +168,13 @@ export class StoriesService {
       const distM = row.dist_m === null ? null : Number(row.dist_m);
       const distanceKm = distM === null ? null : Math.round(distM / 100) / 10;
       const sameState = !!q.state && (row.state as string)?.toLowerCase() === q.state.toLowerCase();
-      const { title, body } = this.pick(row, lang);
+      const { title, body, dek } = this.pick(row, lang);
       return {
         id: row.id as string,
         slug: row.slug as string,
         category: row.category as string,
         title,
-        dek: (row.dek_en as string) ?? null,
+        dek,
         summary: body ? (body.split('\n')[0] ?? '').slice(0, 240) : null,
         lang,
         imageUrl: (row.image_url as string) ?? null,
@@ -187,14 +197,14 @@ export class StoriesService {
     );
     const row = rows[0];
     if (!row) return null;
-    const { title, body } = this.pick(row, lang);
+    const { title, body, dek } = this.pick(row, lang);
     return {
       id: row.id,
       slug: row.slug,
       category: row.category,
       lang,
       title,
-      dek: row.dek_en,
+      dek,
       body,
       imageUrl: row.image_url,
       imageCredit: row.image_credit,

@@ -4,9 +4,9 @@ import sys, re, json, psycopg
 rows = json.load(sys.stdin)
 c = psycopg.connect(open("/tmp/locz_dburl").read().strip(), connect_timeout=60)
 cols = ["content_hash","slug","category","title_en","dek_en","body_en","title_hi","body_hi",
-        "title_te","body_te","state_lang","title_sl","body_sl","image_url","image_credit",
-        "city","state","latitude","longitude","src_url","src_publisher","src_lang",
-        "published_at","status"]
+        "title_te","body_te","dek_hi","dek_te","dek_sl","state_lang","title_sl","body_sl",
+        "image_url","image_credit","city","state","latitude","longitude","src_url",
+        "src_publisher","src_lang","published_at","status"]
 
 
 def slugify(title, ch):
