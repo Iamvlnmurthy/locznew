@@ -325,6 +325,52 @@ export class BusinessesService {
     return value;
   }
 
+  // --- Service-area SEO pages: /services/{category}/{locality} ("Plumbers in Gachibowli") ---
+  // Only category+locality pairs with >= 5 CONTACTABLE providers become pages — the quality gate
+  // that keeps these off the thin/doorway pile (a page must list real, callable local providers).
+  private static readonly SERVICE_AREA_MIN = 5;
+  private serviceAreaTotalCache: { value: number; at: number } | null = null;
+
+  async serviceAreaSitemapCount(): Promise<number> {
+    const now = Date.now();
+    if (this.serviceAreaTotalCache && now - this.serviceAreaTotalCache.at < 86_400_000) {
+      return this.serviceAreaTotalCache.value;
+    }
+    const rows = await this.prisma.$queryRaw<Array<{ count: bigint }>>(
+      Prisma.sql`SELECT count(*)::bigint AS count FROM (
+        SELECT c.slug, l.slug AS lslug
+        FROM businesses b
+          JOIN addresses a ON a.id = b."addressId"
+          JOIN localities l ON l.id = a."localityId"
+          JOIN categories c ON c.id = b."categoryId"
+        WHERE b."businessType" = 'SERVICE_PROVIDER' AND b."primaryPhone" IS NOT NULL
+          AND b."deletedAt" IS NULL AND c.slug IS NOT NULL AND l.slug IS NOT NULL
+        GROUP BY c.slug, l.slug HAVING count(*) >= ${BusinessesService.SERVICE_AREA_MIN}
+      ) t`,
+    );
+    const value = Number(rows[0]?.count ?? 0);
+    this.serviceAreaTotalCache = { value, at: now };
+    return value;
+  }
+
+  async serviceAreaSitemapPage(
+    page: number,
+    pageSize: number,
+  ): Promise<Array<{ categorySlug: string; localitySlug: string }>> {
+    return this.prisma.$queryRaw<Array<{ categorySlug: string; localitySlug: string }>>(
+      Prisma.sql`SELECT c.slug AS "categorySlug", l.slug AS "localitySlug"
+        FROM businesses b
+          JOIN addresses a ON a.id = b."addressId"
+          JOIN localities l ON l.id = a."localityId"
+          JOIN categories c ON c.id = b."categoryId"
+        WHERE b."businessType" = 'SERVICE_PROVIDER' AND b."primaryPhone" IS NOT NULL
+          AND b."deletedAt" IS NULL AND c.slug IS NOT NULL AND l.slug IS NOT NULL
+        GROUP BY c.slug, l.slug HAVING count(*) >= ${BusinessesService.SERVICE_AREA_MIN}
+        ORDER BY c.slug, l.slug
+        LIMIT ${pageSize} OFFSET ${page * pageSize}`,
+    );
+  }
+
   async sitemapSlugs(
     page: number,
     pageSize: number,

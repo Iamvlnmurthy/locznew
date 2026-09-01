@@ -65,6 +65,27 @@ export class BusinessesController {
   }
 
   @Public()
+  @Get('service-areas/sitemap-count')
+  @ApiOperation({ summary: 'Count of service-area SEO pages (category+locality, >=5 providers)' })
+  async serviceAreaSitemapCount(): Promise<{ total: number }> {
+    return { total: await this.businesses.serviceAreaSitemapCount() };
+  }
+
+  @Public()
+  @Get('service-areas/sitemap')
+  @ApiOperation({
+    summary: 'A page of {categorySlug, localitySlug} service-area pairs for the sitemap',
+  })
+  async serviceAreaSitemap(
+    @Query('page') page?: string,
+    @Query('pageSize') pageSize?: string,
+  ): Promise<{ areas: Array<{ categorySlug: string; localitySlug: string }> }> {
+    const size = Math.min(10000, Math.max(1, Number(pageSize) || 10000));
+    const p = Math.max(0, Number(page) || 0);
+    return { areas: await this.businesses.serviceAreaSitemapPage(p, size) };
+  }
+
+  @Public()
   @Get('sitemap-shard-cursors')
   @ApiOperation({ summary: 'First id of each XML sitemap shard, for keyset pagination' })
   async sitemapShardCursors(
