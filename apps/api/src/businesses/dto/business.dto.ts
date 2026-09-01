@@ -227,7 +227,12 @@ export class BusinessSummaryDto {
   @ApiProperty({ enum: BusinessType }) businessType!: BusinessType;
   @ApiProperty() categoryName!: string;
   @ApiProperty() cityName!: string;
+  @ApiPropertyOptional() citySlug!: string | null;
+  @ApiPropertyOptional() localityName!: string | null;
+  @ApiPropertyOptional() localitySlug!: string | null;
   @ApiPropertyOptional() pincode!: string | null;
+  @ApiPropertyOptional({ description: 'Public contact number for one-tap calling' })
+  primaryPhone!: string | null;
   @ApiPropertyOptional({ description: 'Present only for nearby (geo) queries' })
   distanceMeters?: number;
   @ApiPropertyOptional() logoUrl!: string | null;
@@ -434,7 +439,7 @@ export class BusinessDetailDto extends BusinessSummaryDto {
   attribution!: string | null;
 
   @ApiPropertyOptional({ description: 'Neighbourhood/locality within the city, when known.' })
-  localityName!: string | null;
+  override localityName: string | null = null;
 
   @ApiPropertyOptional({ description: 'A nearby landmark from the address, when known.' })
   landmark!: string | null;
@@ -458,7 +463,7 @@ export class BusinessDetailDto extends BusinessSummaryDto {
     description: 'Slug of the city hub page, for breadcrumbs and internal links.',
     example: 'hyderabad',
   })
-  citySlug!: string;
+  override citySlug = '';
 
   @ApiProperty({
     description: 'Slug of the category hub page, for breadcrumbs and internal links.',
@@ -497,7 +502,7 @@ export class BusinessDetailDto extends BusinessSummaryDto {
   cityId!: string;
 
   // latitude/longitude are inherited from BusinessSummaryDto.
-  @ApiPropertyOptional() primaryPhone!: string | null;
+  @ApiPropertyOptional() override primaryPhone: string | null = null;
   @ApiPropertyOptional() whatsappNumber!: string | null;
   @ApiPropertyOptional() email!: string | null;
   @ApiPropertyOptional() website!: string | null;

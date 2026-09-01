@@ -32,6 +32,7 @@ export default function robots(): MetadataRoute.Robots {
       `${SITE_URL}/sitemap-businesses.xml`,
       `${SITE_URL}/sitemap-ifsc.xml`,
       `${SITE_URL}/sitemap-listings.xml`,
+      `${SITE_URL}/sitemap-services.xml`,
       `${SITE_URL}/news-sitemap.xml`,
     ],
     host: SITE_URL,

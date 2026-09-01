@@ -86,7 +86,7 @@ const BUSINESS_INCLUDE = {
       landmarkHi: true,
       // The neighbourhood is the most specific thing the page says about where a shop is,
       // so it travels in the reader's script too.
-      locality: { select: { name: true, nameTe: true, nameHi: true, mandal: true } },
+      locality: { select: { name: true, nameTe: true, nameHi: true, slug: true, mandal: true } },
     },
   },
   hours: true,
@@ -1179,7 +1179,13 @@ export class BusinessesService {
       businessType: business.businessType,
       categoryName: localizedName(business.category, lang),
       cityName: localizedName(business.city, lang),
+      citySlug: business.city.slug,
+      localityName: business.address?.locality
+        ? localizedName(business.address.locality, lang)
+        : null,
+      localitySlug: business.address?.locality?.slug ?? null,
       pincode: business.pincodeCode ?? null,
+      primaryPhone: business.primaryPhone,
       ...(distanceMeters !== undefined ? { distanceMeters: Math.round(distanceMeters) } : {}),
       logoUrl: business.logoMediaId ? this.storage.publicUrl(business.logoMediaId) : null,
       publicBrandKey: publicBrand?.key ?? null,
