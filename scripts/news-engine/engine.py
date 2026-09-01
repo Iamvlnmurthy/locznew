@@ -43,6 +43,18 @@ UA = ("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
 S = requests.Session(); S.headers.update({"User-Agent": UA})
 
 HI = "hin_Deva"
+# Modern-Telugu polish. We rotate over (key x model): each Gemini key has its OWN free daily quota,
+# and 3.5-flash-lite / 3.1-flash-lite are 500 requests/day EACH (3.6-flash 20/day as a tail). So N
+# keys x ~1020/day ≈ plenty for a day of te refine calls. On 429 we mark that (key,model) spent and
+# fall through; if everything is spent we keep the raw IT2 Telugu (never drops a story).
+GEMINI_KEYS = [k.strip() for k in os.environ.get(
+    "GEMINI_API_KEYS", os.environ.get("GEMINI_API_KEY", "")).split(",") if k.strip()]
+GEMINI_MODELS = [m.strip() for m in os.environ.get(
+    "GEMINI_MODELS", "gemini-3.5-flash-lite,gemini-3.1-flash-lite,gemini-3.6-flash").split(",") if m.strip()]
+GROQ_KEY = os.environ.get("GROQ_API_KEY", "").strip()   # optional dormant backstop, unused if unset
+GROQ_MODELS = [m.strip() for m in os.environ.get(
+    "GROQ_MODELS", "qwen/qwen3.8-27b,openai/gpt-oss-20b").split(",") if m.strip()]
+_TE_EXHAUSTED = set()   # (key,model) pairs that hit their daily quota this process
 LANG_TRIPLE = {"te": "tel_Telu", "hi": "hin_Deva", "ta": "tam_Taml", "kn": "kan_Knda",
                "mr": "mar_Deva", "bn": "ben_Beng", "ml": "mal_Mlym", "gu": "guj_Gujr",
                "or": "ory_Orya", "pa": "pan_Guru", "as": "asm_Beng"}
@@ -125,11 +137,11 @@ def fetch_article(url):
 
 
 # ---------- regenerate (LocZ journalist voice) ----------
-BRIEF = """You are LocZ's senior news editor, thirty years on the city desk. Rewrite the report
-below as an ORIGINAL LocZ story a busy local reader wants to read.
+BRIEF = """You are a senior local news editor, thirty years on the city desk. Rewrite the report
+below as an original story a busy local reader wants to read.
 
 OUTPUT EXACTLY:
-HEADLINE: <specific, active, <=70 chars, names the place, no clickbait, no caps-lock>
+HEADLINE: <specific, active, <=70 chars, no clickbait, no caps-lock>
 DEK: <one line: why a local reader cares>
 <blank line>
 <2-4 short paragraphs, inverted pyramid: what happened + why it matters locally first, then
@@ -137,6 +149,10 @@ context, then what's next. Active voice, concrete nouns, one idea per sentence.>
 
 RULES (never break):
 - Every fact, name, number, date and place EXACTLY as in the report.
+- Use ONLY place names that appear in the report. If the report names no place, do NOT invent
+  one and do NOT add a place to the headline.
+- "LocZ" is our publication's name, NOT a place, person or event. NEVER write the word "LocZ"
+  anywhere in the headline, dek or body.
 - NEVER put words in quotation marks unless those exact words are in the report.
 - Add nothing not in the report. Neutral on unproven claims (police allege / residents say).
 - No hype, no invented drama.
@@ -170,6 +186,10 @@ def norm(s):
 def integrity_ok(title, body, src):
     nsrc = norm(src)
     text = title + "\n" + body
+    # Brand-leak guard: the small model sometimes drops "LocZ" into the copy as if it were a
+    # place ("LocZ Residents Warned..."). LocZ is the publisher, never appears in a source report.
+    if re.search(r"\blocz\b", text, re.I):
+        return False, "brand word 'LocZ' leaked into story"
     for q in re.findall(r"[\"“]([^\"”]{6,})[\"”]", text):
         if norm(q) not in nsrc:
             return False, f"fabricated quote: {q[:40]}"
@@ -209,6 +229,94 @@ def translate(text, tgt_code):
         out = model.generate(**inp, max_length=256, num_beams=5)
     dec = tok.batch_decode(out, skip_special_tokens=True)
     return " ".join(ip.postprocess_batch(dec, lang=tgt_code))
+
+
+# ---------- modern-language polish (Gemini key x model rotation, optional Groq) ----------
+# Per-language: display name + Unicode block for the "is this the right script" guard.
+_LANGS = {
+    "hi": ("Hindi", (0x0900, 0x097F)), "mr": ("Marathi", (0x0900, 0x097F)),
+    "te": ("Telugu", (0x0C00, 0x0C7F)), "kn": ("Kannada", (0x0C80, 0x0CFF)),
+    "ta": ("Tamil", (0x0B80, 0x0BFF)), "ml": ("Malayalam", (0x0D00, 0x0D7F)),
+    "bn": ("Bengali", (0x0980, 0x09FF)), "as": ("Assamese", (0x0980, 0x09FF)),
+    "gu": ("Gujarati", (0x0A80, 0x0AFF)), "or": ("Odia", (0x0B00, 0x0B7F)),
+    "pa": ("Punjabi", (0x0A00, 0x0A7F)),
+}
+
+
+def _prompt(lang):
+    name = _LANGS[lang][0]
+    return (f"You are a {name} news sub-editor for a young Indian readership. Rewrite the given "
+            f"{name} text into clear, MODERN, everyday {name} people actually speak and read today "
+            f"— natural flow, common words, short sentences. Keep {name} script. Do NOT translate to "
+            f"English, do NOT add/drop/change any fact, name, number, date or place. Do NOT add "
+            f"quotes or commentary. Return ONLY the rewritten {name} text, nothing else.")
+
+
+def _in_script(s, lang):
+    lo, hi = _LANGS[lang][1]
+    return bool(s) and any(lo <= ord(ch) <= hi for ch in s)
+
+
+def _gemini_lang(text, lang, key, model):
+    """One Gemini call. Returns modern <lang> text, or None (retryable), or 'QUOTA' on 429."""
+    url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent"
+    body = json.dumps({
+        "system_instruction": {"parts": [{"text": _prompt(lang)}]},
+        "contents": [{"parts": [{"text": text}]}],
+        "generationConfig": {"temperature": 0.4},
+    }).encode("utf-8")
+    r = S.post(url, params={"key": key}, data=body,
+               headers={"Content-Type": "application/json"}, timeout=60)
+    if r.status_code == 429:
+        return "QUOTA"
+    r.raise_for_status()
+    out = (r.json()["candidates"][0]["content"]["parts"][0]["text"] or "").strip()
+    return out if _in_script(out, lang) else None
+
+
+def _groq_lang(text, lang, model):
+    """Optional backstop when every Gemini (key,model) is spent. OpenAI-compatible chat."""
+    r = S.post("https://api.groq.com/openai/v1/chat/completions",
+               headers={"Authorization": f"Bearer {GROQ_KEY}", "Content-Type": "application/json"},
+               data=json.dumps({"model": model, "temperature": 0.4, "messages": [
+                   {"role": "system", "content": _prompt(lang)}, {"role": "user", "content": text}]}).encode("utf-8"),
+               timeout=60)
+    r.raise_for_status()
+    out = (r.json()["choices"][0]["message"]["content"] or "").strip()
+    return out if _in_script(out, lang) else None
+
+
+def refine_lang(text, lang):
+    """IT2 <lang> -> modern <lang>. Rotates over (Gemini key x model), then optional Groq. Any
+    total failure / exhaustion / unknown lang -> return the input unchanged (never drops a story)."""
+    if not text or not text.strip() or lang not in _LANGS:
+        return text
+    for key in GEMINI_KEYS:
+        for model in GEMINI_MODELS:
+            if (key, model) in _TE_EXHAUSTED:
+                continue
+            try:
+                res = _gemini_lang(text, lang, key, model)
+                if res == "QUOTA":
+                    _TE_EXHAUSTED.add((key, model)); continue
+                if res:
+                    return res
+            except Exception:
+                continue
+    if GROQ_KEY:
+        for model in GROQ_MODELS:
+            try:
+                res = _groq_lang(text, lang, model)
+                if res:
+                    return res
+            except Exception:
+                continue
+    return text
+
+
+def refine_te(text):
+    """Back-compat shim — Telugu refine."""
+    return refine_lang(text, "te")
 
 
 # ---------- push to VPS ----------
@@ -316,19 +424,25 @@ def cycle(limit=None):
             seen_titles.add(tkey)
             tgt = feed.get("state_lang", "hi")
             try:
-                title_hi = translate(title, HI); body_hi = translate(body_en, HI)
-                dek_hi = translate(dek, HI) if dek else None
+                # Translate with IT2, then polish into MODERN language (Gemini, key x model rotation,
+                # falls back to raw IT2 on quota/failure). Hindi is served for every story; the state
+                # language (sl) only for its own feeds. This is what makes NEW stories read modern in
+                # every language, not just Telugu.
+                title_hi = refine_lang(translate(title, HI), "hi")
+                body_hi = refine_lang(translate(body_en, HI), "hi")
+                dek_hi = refine_lang(translate(dek, HI), "hi") if dek else None
                 if tgt != "hi" and tgt in LANG_TRIPLE:
                     triple = LANG_TRIPLE[tgt]
-                    title_sl = translate(title, triple); body_sl = translate(body_en, triple)
-                    dek_sl = translate(dek, triple) if dek else None
+                    title_sl = refine_lang(translate(title, triple), tgt)
+                    body_sl = refine_lang(translate(body_en, triple), tgt)
+                    dek_sl = refine_lang(translate(dek, triple), tgt) if dek else None
                 else:
                     title_sl = body_sl = dek_sl = None
             except Exception:
                 dropped += 1; continue
-            # Telugu is a first-class UI language (its own switcher tab) that reads the dedicated
-            # title_te/body_te columns — so for te feeds, mirror the translation there, not only in
-            # the generic state-lang columns the site never queries.
+            # Telugu is a first-class UI language (its own switcher tab) reading the dedicated te
+            # columns — for te feeds the state language IS Telugu, so mirror the already-refined sl
+            # into the te columns (no second refine call needed).
             title_te = title_sl if tgt == "te" else None
             body_te = body_sl if tgt == "te" else None
             dek_te = dek_sl if tgt == "te" else None
