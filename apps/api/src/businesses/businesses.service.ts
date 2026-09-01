@@ -340,7 +340,17 @@ export class BusinessesService {
   async serviceAreaSitemapPage(
     page: number,
     pageSize: number,
+    categorySlug?: string,
   ): Promise<Array<{ categorySlug: string; localitySlug: string }>> {
+    if (categorySlug) {
+      return this.prisma.$queryRaw<Array<{ categorySlug: string; localitySlug: string }>>(
+        Prisma.sql`SELECT category_slug AS "categorySlug", locality_slug AS "localitySlug"
+          FROM service_area_pages
+          WHERE category_slug = ${categorySlug}
+          ORDER BY locality_slug
+          LIMIT ${pageSize} OFFSET ${page * pageSize}`,
+      );
+    }
     return this.prisma.$queryRaw<Array<{ categorySlug: string; localitySlug: string }>>(
       Prisma.sql`SELECT category_slug AS "categorySlug", locality_slug AS "localitySlug"
         FROM service_area_pages
@@ -1190,7 +1200,11 @@ export class BusinessesService {
       logoUrl: business.logoMediaId ? this.storage.publicUrl(business.logoMediaId) : null,
       publicBrandKey: publicBrand?.key ?? null,
       isClaimable:
-        !publicBrand && business.ownerId === null && business.claimStatus === 'UNCLAIMED',
+        !publicBrand &&
+        business.category.parent?.slug !== 'public-services' &&
+        business.ownerId === null &&
+        business.claimStatus === 'UNCLAIMED',
+      isPublicService: business.category.parent?.slug === 'public-services',
       verificationStatus: business.verificationStatus,
       claimStatus: business.claimStatus,
       listingCount: business._count.listings,

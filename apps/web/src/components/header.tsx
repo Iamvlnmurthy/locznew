@@ -40,7 +40,9 @@ export async function Header({ locale }: { locale: Locale }) {
     { href: '/discover/businesses', label: discoveryLabels.businesses },
     { href: '/c/public-services', label: discoveryLabels['public-services'] },
     { href: '/discover/jobs', label: discoveryLabels.jobs },
-    { href: '/discover/services', label: discoveryLabels.services },
+    // Services now has a dedicated finder-first marketplace. Keep the home discovery tile's
+    // nearby feed at /discover/services, while the global nav opens the complete section hub.
+    { href: '/services', label: discoveryLabels.services },
   ];
   const activeClass = (active: boolean, extra = '') =>
     [extra, active ? 'is-active' : ''].filter(Boolean).join(' ') || undefined;

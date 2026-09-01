@@ -243,6 +243,8 @@ export class BusinessSummaryDto {
   publicBrandKey!: string | null;
   @ApiProperty({ description: 'False for owned, in-review, and curated public-brand records' })
   isClaimable!: boolean;
+  @ApiProperty({ description: 'True when this record belongs to the public-services tree' })
+  isPublicService!: boolean;
   @ApiProperty({ enum: VerificationStatus }) verificationStatus!: VerificationStatus;
   @ApiProperty({ enum: BusinessClaimStatus }) claimStatus!: BusinessClaimStatus;
   @ApiProperty() listingCount!: number;
@@ -411,8 +413,6 @@ export class BusinessDetailDto extends BusinessSummaryDto {
   railway?: RailwayInfoDto | null;
 
   /** True when the business's category is under the "Public Services" tree. */
-  @ApiProperty() isPublicService!: boolean;
-
   @ApiPropertyOptional({
     enum: BusinessScale,
     description: 'Null on an imported record nobody has claimed — nobody may answer for them.',

@@ -79,10 +79,11 @@ export class BusinessesController {
   async serviceAreaSitemap(
     @Query('page') page?: string,
     @Query('pageSize') pageSize?: string,
+    @Query('category') category?: string,
   ): Promise<{ areas: Array<{ categorySlug: string; localitySlug: string }> }> {
     const size = Math.min(10000, Math.max(1, Number(pageSize) || 10000));
     const p = Math.max(0, Number(page) || 0);
-    return { areas: await this.businesses.serviceAreaSitemapPage(p, size) };
+    return { areas: await this.businesses.serviceAreaSitemapPage(p, size, category) };
   }
 
   @Public()
