@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable, Logger } from '@nestjs/common';
+import { BadRequestException, Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { InjectQueue } from '@nestjs/bullmq';
 import { Queue } from 'bullmq';
 import {
@@ -45,7 +45,7 @@ const RUNNABLE_JOBS: string[] = [
 ];
 
 @Injectable()
-export class AdminService {
+export class AdminService implements OnModuleInit {
   private readonly logger = new Logger(AdminService.name);
 
   /**
@@ -63,15 +63,38 @@ export class AdminService {
    * SELECT count(*) is a dashboard people stop trusting.
    */
   private businessTotalCache: { value: number; at: number } | null = null;
+  private businessTotalRefreshing = false;
 
+  /**
+   * Stale-while-revalidate: serve the cached exact count instantly and refresh in the background
+   * when it ages past 5 min, so the ~3s scan of 4.2M rows never blocks a dashboard load. The cache
+   * is warmed on boot (onModuleInit) so a fresh process — e.g. right after a deploy — is not cold
+   * for the first admin who opens the page.
+   */
   private async businessTotal(): Promise<number> {
-    const now = Date.now();
-    if (this.businessTotalCache && now - this.businessTotalCache.at < 300_000) {
+    if (this.businessTotalCache) {
+      if (Date.now() - this.businessTotalCache.at >= 300_000) void this.refreshBusinessTotal();
       return this.businessTotalCache.value;
     }
-    const value = await this.prisma.business.count({ where: { deletedAt: null } });
-    this.businessTotalCache = { value, at: now };
-    return value;
+    return this.refreshBusinessTotal();
+  }
+
+  private async refreshBusinessTotal(): Promise<number> {
+    if (this.businessTotalRefreshing && this.businessTotalCache)
+      return this.businessTotalCache.value;
+    this.businessTotalRefreshing = true;
+    try {
+      const value = await this.prisma.business.count({ where: { deletedAt: null } });
+      this.businessTotalCache = { value, at: Date.now() };
+      return value;
+    } finally {
+      this.businessTotalRefreshing = false;
+    }
+  }
+
+  onModuleInit(): void {
+    // Warm the expensive business-count cache in the background at startup.
+    void this.refreshBusinessTotal().catch(() => undefined);
   }
 
   constructor(
