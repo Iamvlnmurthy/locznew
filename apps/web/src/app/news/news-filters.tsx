@@ -1,7 +1,7 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { useTransition } from 'react';
+import { useId, useState, useTransition } from 'react';
 
 const WHENS = ['today', 'yesterday', 'week', 'month'] as const;
 const WHEN_LABEL: Record<(typeof WHENS)[number], string> = {
@@ -39,6 +39,8 @@ export function NewsFilters({
   cityName: string | null;
 }) {
   const router = useRouter();
+  const controlsId = useId();
+  const [mobileOpen, setMobileOpen] = useState(false);
   const [isPending, startTransition] = useTransition();
 
   const go = (patch: Record<string, string | undefined>) => {
@@ -55,6 +57,7 @@ export function NewsFilters({
   };
 
   const hasFilters = Boolean(when || topic);
+  const activeFilterCount = Number(Boolean(when)) + Number(Boolean(topic));
 
   return (
     <div className="news-filterbar" aria-busy={isPending}>
@@ -66,7 +69,23 @@ export function NewsFilters({
             <small>{cityName ? `Around ${cityName}` : 'Near your selected location'}</small>
           </span>
         </div>
-        <div className="news-filterbar__controls">
+        <button
+          className="news-filterbar__toggle"
+          type="button"
+          aria-expanded={mobileOpen}
+          aria-controls={controlsId}
+          onClick={() => setMobileOpen((open) => !open)}
+        >
+          Filters
+          {activeFilterCount > 0 ? (
+            <span aria-label={`${activeFilterCount} active filters`}>{activeFilterCount}</span>
+          ) : null}
+        </button>
+        <div
+          className="news-filterbar__controls"
+          id={controlsId}
+          data-mobile-open={mobileOpen ? 'true' : 'false'}
+        >
           <div className="news-filterbar__langs" role="group" aria-label="Language">
             {LANGS.map((l) => (
               <button

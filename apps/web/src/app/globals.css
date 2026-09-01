@@ -4247,7 +4247,8 @@ textarea {
   html,
   body {
     max-width: 100%;
-    overflow-x: hidden;
+    /* `hidden` makes the page shell a scroll container and breaks descendant sticky rails. */
+    overflow-x: clip;
   }
 
   body {
@@ -23526,7 +23527,9 @@ h4,
 /* ============ Premium LocZ News feed pass ============ */
 .news-page {
   min-width: 0;
-  overflow-x: clip;
+  /* A clipped ancestor disables the sticky filter rail in Chromium. The document shell already
+     guards horizontal overflow, so keep this axis visible and let the filter remain sticky. */
+  overflow-x: visible;
   background:
     radial-gradient(circle at 4% 16%, rgb(35 128 101 / 7%), transparent 28rem),
     var(--locz-bg, #f6f4ee);
@@ -23637,6 +23640,9 @@ h4,
   justify-content: flex-end;
   gap: 9px;
   min-width: 0;
+}
+.news-filterbar__toggle {
+  display: none;
 }
 .news-page .news-filterbar__langs {
   display: inline-flex;
@@ -23852,18 +23858,78 @@ h4,
 }
 
 @media (max-width: 720px) {
-  .news-page .news-masthead { padding: 25px 0 23px; }
-  .news-masthead__inner { align-items: flex-start; flex-direction: column; gap: 18px; }
-  .news-page .news-masthead h1 { font-size: clamp(1.9rem, 9vw, 2.55rem); }
-  .news-masthead__signal { min-width: 0; width: 100%; padding: 10px 13px; }
+  .news-page .news-masthead { padding: 15px 0 14px; }
+  .news-masthead__inner { display: block; }
+  .news-page .news-masthead h1 {
+    max-width: 19ch;
+    margin-top: 5px;
+    font-size: clamp(1.58rem, 7.2vw, 2rem);
+    line-height: 1.04;
+  }
+  .news-page .news-masthead p,
+  .news-masthead__signal { display: none; }
+  .news-masthead__brand { font-size: 0.68rem; }
   .news-page .news-filterbar { top: 0; }
-  .news-filterbar__controls { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+  .news-filterbar__inner {
+    min-height: 58px;
+    padding-block: 7px;
+    align-items: center;
+    flex-flow: row wrap;
+    gap: 8px 12px;
+  }
+  .news-filterbar__status {
+    min-width: 0;
+    flex: 1;
+    gap: 10px;
+  }
+  .news-filterbar__status strong { font-size: 0.78rem; }
+  .news-filterbar__status small {
+    max-width: 54vw;
+    overflow: hidden;
+    font-size: 0.64rem;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .news-filterbar__toggle {
+    display: inline-flex;
+    min-width: 82px;
+    min-height: 44px;
+    padding: 8px 13px;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+    border: 1px solid rgb(20 65 53 / 13%);
+    border-radius: 14px;
+    color: var(--locz-primary, #0b3d2e);
+    background: rgb(255 255 255 / 88%);
+    font: inherit;
+    font-size: 0.78rem;
+    font-weight: 800;
+    cursor: pointer;
+  }
+  .news-filterbar__toggle span {
+    display: grid;
+    width: 19px;
+    height: 19px;
+    place-items: center;
+    border-radius: 50%;
+    color: #fff;
+    background: var(--locz-primary, #0b3d2e);
+    font-size: 0.65rem;
+  }
+  .news-filterbar__controls { display: none; }
+  .news-filterbar__controls[data-mobile-open='true'] {
+    display: grid;
+    width: 100%;
+    padding: 4px 0 6px;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  }
   .news-page .news-filterbar__langs { grid-column: 1 / -1; width: 100%; }
-  .news-page .news-langbtn { flex: 1; }
+  .news-page .news-langbtn { min-height: 42px; flex: 1; }
   .news-page .news-select { display: grid; gap: 5px; min-width: 0; }
-  .news-page .news-select select { width: 100%; min-width: 0; }
+  .news-page .news-select select { width: 100%; min-width: 0; min-height: 44px; }
   .news-filterbar__clear { grid-column: 1 / -1; }
-  .news-page .news-feed { padding: 22px 14px 50px; }
+  .news-page .news-feed { padding: 16px 14px 50px; }
   .news-page .news-grid { grid-template-columns: minmax(0, 1fr); gap: 16px; }
   .news-page .news-card--lead { grid-template-columns: minmax(0, 1fr); min-height: 0; }
   .news-page .news-card--lead .news-card__img { width: 100%; min-height: 0; aspect-ratio: 16 / 9; }
@@ -23873,7 +23939,6 @@ h4,
 }
 
 @media (max-width: 420px) {
-  .news-masthead__signal { display: none; }
   .news-page .news-card { border-radius: 17px; }
   .news-page .news-feed__empty { margin-block: 14px; padding: 38px 20px; }
 }
