@@ -1,8 +1,8 @@
 'use client';
 
-import { useRouter } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { useEffect, useRef, useTransition } from 'react';
-import { LOCALES, LOCALE_LABELS, type Locale } from '@/i18n';
+import { LOCALES, LOCALE_LABELS, DEFAULT_LOCALE, type Locale } from '@/i18n';
 import { changeLocaleAction } from '@/app/actions';
 
 /**
@@ -12,6 +12,7 @@ import { changeLocaleAction } from '@/app/actions';
  */
 export function LocaleSwitcher({ current, label }: { current: Locale; label: string }) {
   const router = useRouter();
+  const pathname = usePathname();
   const [isPending, startTransition] = useTransition();
   const startedNavigation = useRef(false);
 
@@ -33,10 +34,18 @@ export function LocaleSwitcher({ current, label }: { current: Locale; label: str
         disabled={isPending}
         onChange={(event) => {
           const next = event.target.value as Locale;
+          // The served locale is forced by any /te or /hi URL prefix (it wins over the cookie so
+          // crawlers get each language), so a cookie change alone can't switch a prefixed URL —
+          // we must navigate to the target locale's URL. Strip the current prefix to the neutral
+          // path, then re-prefix for te/hi (English is the un-prefixed canonical).
+          const neutral = pathname.replace(/^\/(te|hi)(?=\/|$)/, '') || '/';
+          const target =
+            next === DEFAULT_LOCALE ? neutral : `/${next}${neutral === '/' ? '' : neutral}`;
           startedNavigation.current = true;
           window.dispatchEvent(new Event('locz:navigation-start'));
           startTransition(async () => {
             await changeLocaleAction(next);
+            router.push(target);
             router.refresh();
           });
         }}
