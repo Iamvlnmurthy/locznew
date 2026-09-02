@@ -628,5 +628,41 @@
       "q": "What are the general timings and booking procedures for naturopathy centres in {locality}?",
       "a": "Most naturopathy centres in {locality} operate during standard business hours, with some offering weekend appointments. Booking is usually done via phone or online. Check individual LocZ listings for specific operating hours and direct booking links or contact information."
     }
+  ],
+  "fitness-gyms": [
+    {
+      "q": "What are the main factors that influence gym membership costs in {locality}?",
+      "a": "Gym membership costs in {locality} are primarily driven by the type of equipment, class offerings, trainer availability, and membership duration. Shorter-term memberships or those with premium amenities often cost more. Compare options on LocZ to find the best value for your budget."
+    },
+    {
+      "q": "How can I choose the best fitness gym for my needs in {locality}?",
+      "a": "To choose the best gym in {locality}, consider your fitness goals, preferred workout style, and desired atmosphere. Look for gyms offering the equipment and classes you enjoy, and check reviews on LocZ for insights into member experiences and trainer quality."
+    },
+    {
+      "q": "What should I ask or check before joining a gym in {locality}?",
+      "a": "Before joining a gym in {locality}, ask about membership terms, cancellation policies, and any hidden fees. Check the cleanliness of facilities, the availability of equipment during peak hours, and consider a trial session. Contact gyms directly through LocZ for details."
+    },
+    {
+      "q": "What are the typical operating hours and booking procedures for gyms in {locality}?",
+      "a": "Gym operating hours in {locality} vary, with most open early mornings to late evenings, and some offering 24/7 access. Class schedules and personal training sessions often require advance booking. You can find specific hours and contact information for gyms on their LocZ pages."
+    }
+  ],
+  "metal-fabricators": [
+    {
+      "q": "What factors influence the cost of metal fabrication services in {locality}?",
+      "a": "The cost of metal fabrication in {locality} primarily depends on the complexity of the design, the type and quantity of metal used, and the finishing processes required. You can get precise quotes by contacting fabricators directly through their LocZ listings."
+    },
+    {
+      "q": "How can I find a reliable metal fabricator in {locality}?",
+      "a": "To find a reliable metal fabricator in {locality}, look for businesses with positive reviews and a strong portfolio of past work on LocZ. Checking their experience with similar projects and asking about their quality control processes is also recommended."
+    },
+    {
+      "q": "What should I ask a metal fabricator before hiring them in {locality}?",
+      "a": "Before hiring, ask about their lead times, warranty on workmanship, and the specific types of metals they commonly work with. Understanding their process for handling custom designs and any potential challenges will also be helpful."
+    },
+    {
+      "q": "What is the typical turnaround time for custom metal fabrication projects in {locality}?",
+      "a": "Turnaround times for custom metal fabrication in {locality} vary based on project size and complexity, but typically range from a few days to several weeks. Contacting providers on LocZ will give you the most accurate estimates for your specific needs."
+    }
   ]
 }
