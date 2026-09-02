@@ -36,7 +36,7 @@ TOPIC_MAP = [
     ("festival", ["festival", "bonalu", "bathukamma", "ganesh", "diwali", "dussehra", "utsav", "navratri"]),
     ("cricket", ["cricket", " ipl", "batsman", "bowler", "wicket", "test match", " odi", " t20"]),
     ("farmer", ["farmer", "crop", "paddy", "harvest", "agricultur", "irrigation", "rythu", "kisan"]),
-    ("metro", ["metro", "railway", " train ", "mmts", "local train"]),
+    ("metro", ["metro", "railway", "mmts", "local train", "passenger train", "train derail", "suburban train"]),
     ("hospital", ["hospital", "health", "dengue", "fever", "medic", "patient", "vaccine", "disease"]),
     ("school", ["school", "student", " exam", "college", "university", "education", "eamcet", " ssc "]),
     ("water", ["drinking water", "water supply", " tap ", "borewell", "pipeline"]),
