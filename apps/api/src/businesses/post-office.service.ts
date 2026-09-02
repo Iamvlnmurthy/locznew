@@ -78,7 +78,7 @@ export class PostOfficeService {
   private toRecord(r: Record<string, unknown>): PostOfficeRecord {
     const lat = Number(r.latitude);
     const lng = Number(r.longitude);
-    const type = String(r.officetype ?? '').toUpperCase();
+    const type = typeof r.officetype === 'string' ? r.officetype.toUpperCase() : '';
     return {
       officeName: (r.officename as string) ?? '',
       pincode: (r.pincode as string) ?? '',

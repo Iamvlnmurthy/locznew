@@ -55,7 +55,7 @@ function hashString(str: string): number {
 /** Strips spammy keyword dumps from scraped business titles (e.g. "Name | Best in City...") */
 export function cleanBusinessTitle(raw?: string | null): string {
   if (!raw) return '';
-  let name = raw.split(/[|\/]/)[0]?.trim() || '';
+  let name = raw.split(/[|/]/)[0]?.trim() || '';
   name = name
     .replace(
       /[-–—]\s*(Interior|Best|Car Wash|Ladies|Building|Sainik|Dental|Clinic|Hospital|Shop|Store).*/i,

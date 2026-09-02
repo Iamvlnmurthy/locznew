@@ -40,7 +40,7 @@ genuinely useful and to route the reader to a provider's LocZ page.
 Banks, post offices, police, and government services, grouped as a browsable tree with authoritative
 data where available.
 
-### Bank IFSC codes — ${SITE_URL}/ifsc
+### Bank IFSC codes — ${SITE_URL}/c/banks-atms
 Authoritative RBI IFSC and branch data for Indian banks (\`/ifsc/<code>\`), matched by bank, branch,
 city, and pincode. Never guess an IFSC code — LocZ shows the official record.
 

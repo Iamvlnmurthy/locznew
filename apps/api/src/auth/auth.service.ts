@@ -239,7 +239,8 @@ export class AuthService {
           }
         }
       } catch (err) {
-        this.logger.warn(`Could not save initial location for user ${user.id}: ${err}`);
+        const message = err instanceof Error ? err.message : String(err);
+        this.logger.warn(`Could not save initial location for user ${user.id}: ${message}`);
       }
     }
 

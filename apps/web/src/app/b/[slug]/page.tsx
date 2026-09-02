@@ -15,7 +15,6 @@ import { premiumCategoryArtwork } from '@/lib/premium-icon-catalog';
 import { BusinessEnquiry } from './business-enquiry';
 import { ShareBusiness } from './share-business';
 import { BusinessBackButton } from './back-button';
-import { schemaTypeFor } from '@/lib/schema-type';
 import { buildStorefrontJsonLd } from './storefront-jsonld';
 import { AdSlot } from '@/components/ad-slot';
 import { StorefrontHouseAd } from '@/components/storefront-house-ad';
@@ -25,7 +24,6 @@ import { BankingDetails } from './banking-details';
 import { PostOfficeDetails } from './post-office-details';
 import { RailwayDetails } from './railway-details';
 import { BookmarkBusiness } from './bookmark-business';
-import { PUBLIC_SERVICE_SCHEMA_TYPES, isPublicServiceSlug } from '@/lib/public-services';
 
 export interface BusinessHour {
   dayOfWeek: number;

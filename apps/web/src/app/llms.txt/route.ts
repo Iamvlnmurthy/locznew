@@ -19,7 +19,7 @@ export function GET(): Response {
 - [Business directory](${SITE_URL}/business): millions of local businesses across India, searchable by category and locality — each with contact, address, hours, and map.
 - [Local services](${SITE_URL}/services): find and compare local service providers (electricians, plumbers, dentists, salons, hospitals, and more) by area, with practical FAQs and provider listings.
 - [Public services](${SITE_URL}/c/public-services): banks, post offices, police, and government services with authoritative records.
-- [Bank IFSC codes](${SITE_URL}/ifsc): authoritative RBI IFSC and branch data for Indian banks.
+- [Bank and ATM directory](${SITE_URL}/c/banks-atms): browse banks and open official RBI-backed IFSC branch records.
 - [Local news](${SITE_URL}/news): AI-refined hyperlocal news for Indian cities, in English, Hindi, and Telugu.
 - [City guides](${SITE_URL}/in/hyderabad): local guides for Indian cities and localities.
 
