@@ -15,17 +15,16 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 POOL = nim.load_pool(os.path.join(HERE, "news-images"))
 DRY = "--dry" in sys.argv
 
-# Pull id, title, category from prod.
-q = "SELECT id, coalesce(title_en,''), category FROM news_stories;"
-raw = subprocess.check_output(
-    ["ssh", "onrol", f"docker exec locz-postgres psql -U locz -d locz -At -F'\\t' -c \"{q}\""],
-    timeout=120).decode("utf-8", "replace")
+# Pull id, title, category from prod as JSON (tab separators don't survive ssh/docker quoting).
+import json as _json
+q = ("SELECT coalesce(json_agg(json_build_object('id',id,'t',coalesce(title_en,''),'c',category)),'[]') "
+     "FROM news_stories;")
+raw = subprocess.run(["ssh", "onrol", "docker exec -i locz-postgres psql -U locz -d locz -t -A"],
+                     input=q.encode("utf-8"), capture_output=True, timeout=120).stdout.decode("utf-8", "replace")
 
 rows = []
-for line in raw.splitlines():
-    if not line.strip():
-        continue
-    sid, title, cat = (line.split("\t") + ["", "", ""])[:3]
+for r in _json.loads(raw.strip() or "[]"):
+    sid, title, cat = r["id"], r["t"] or "", r["c"] or ""
     topic = nim.topic_of(title)
     if not topic or not POOL.get(f"t-{topic}"):
         continue                                   # no topic image -> leave the category rotation as-is
@@ -46,9 +45,8 @@ if DRY:
 
 values = ",".join(f"('{sid}','{url}')" for sid, url, _ in rows)
 sql = (f"UPDATE news_stories s SET image_url=v.u, image_credit=NULL "
-       f"FROM (VALUES {values}) v(id,u) WHERE s.id=v.id::uuid;")
-p = subprocess.run(["ssh", "onrol",
-                    "docker exec -i locz-postgres psql -U locz -d locz -c \"" + sql + "\""],
-                   capture_output=True, timeout=180)
+       f"FROM (VALUES {values}) v(id,u) WHERE s.id=v.id::uuid;\n")
+p = subprocess.run(["ssh", "onrol", "docker exec -i locz-postgres psql -U locz -d locz"],
+                   input=sql.encode("utf-8"), capture_output=True, timeout=180)
 sys.stdout.write(p.stdout.decode("utf-8", "replace"))
 sys.stderr.write(p.stderr.decode("utf-8", "replace"))
