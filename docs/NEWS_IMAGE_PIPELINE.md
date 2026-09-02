@@ -20,6 +20,18 @@ the pool — category art doesn't need daily refresh. `refresh_news_images.py` e
 local ledger (`magnific_ledger.json`, default budget 90/day, headroom under 100). A 402 mid-run
 stops cleanly; re-run next day and it resumes from the next free slot. Append-only + idempotent.
 
+## Relevance: topic-keyed layer
+
+Category art is generic (a "state" photo on a lake story). `news_image_map.py` maps each headline to
+a **topic** by keyword (26 topics: lake, tax, weapon, flood, cricket, election, temple, farmer,
+metro…). If that topic has images (`t-<topic>-<i>.webp`), the story gets a topical image; otherwise
+it falls back to the category pool — so topics only ever improve relevance. `engine.py` (new stories)
+and `backfill_news_images.py` (existing rows) both import this module, so they never drift.
+
+**Repetition** is killed by deterministic spread: the engine picks by `content_hash` (stable per
+story, evenly spread); existing rows were rotated by publish order so adjacent same-category cards
+never share an image.
+
 ## Schedule
 
 | When                                     | Action                                                                                                                                                             |
