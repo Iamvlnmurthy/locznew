@@ -19,15 +19,29 @@ interface Locality extends FinderOption {
 }
 
 const FEATURED_TRADES = [
-  'hospitals-and-clinics',
   'professional-services',
+  'hospitals-and-clinics',
+  'financial-services',
   'property-services',
   'beauty-salons',
-  'car-repair-servicing-workshops',
-  'home-services',
-  'accountants',
   'travel-services',
+  'event-planners',
+  'it-companies',
 ] as const;
+
+// Interim: a category alone has no page (route is /services/[category]/[area]), so link each
+// category card straight to a real providers page (a known-populated area). Codex replaces this
+// with a proper /services/[category] area-list landing (see docs/SERVICES_LANDING_NAV_BUGFIX.md).
+const TRADE_AREA: Record<string, string> = {
+  'professional-services': 'kukatpally',
+  'hospitals-and-clinics': 'kukatpally',
+  'financial-services': 'kukatpally',
+  'property-services': 'kukatpally',
+  'beauty-salons': 'kukatpally',
+  'travel-services': 'kukatpally',
+  'event-planners': 'kukatpally',
+  'it-companies': 'kukatpally',
+};
 
 const FALLBACK_AREAS: FinderOption[] = [
   { slug: 'banjara-hills', name: 'Banjara Hills' },
@@ -138,7 +152,11 @@ export default async function ServicesPage({
         <div className={styles.tradeGrid}>
           {featured.map((trade, index) => (
             <Link
-              href={`/services?trade=${trade.slug}`}
+              href={
+                TRADE_AREA[trade.slug]
+                  ? `/services/${trade.slug}/${TRADE_AREA[trade.slug]}`
+                  : `/services?trade=${trade.slug}`
+              }
               className={styles.tradeCard}
               key={trade.id}
               style={{ '--stagger': index } as CSSProperties}
