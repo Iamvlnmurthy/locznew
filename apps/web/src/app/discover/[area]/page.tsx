@@ -84,6 +84,10 @@ export default async function DiscoveryAreaPage({ params }: { params: Promise<{ 
   // The dedicated /news section (regenerated bodies, translations, topic/date filters) supersedes
   // the old discover news feed — consolidate to one news surface and avoid duplicate content.
   if (rawArea === 'news') redirect('/news');
+  // The dedicated /services marketplace (category grid, area finder, provider comparison) supersedes
+  // the old discover services feed, which relied on empty SERVICE-type feed items ("Nothing nearby
+  // yet"). Send the services tab to the real marketplace.
+  if (rawArea === 'services') redirect('/services');
   if (!destinations.includes(rawArea as Destination)) notFound();
   const area = rawArea as Destination;
 
