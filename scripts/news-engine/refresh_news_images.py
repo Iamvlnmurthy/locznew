@@ -17,6 +17,7 @@ Usage:  MAGNIFIC_API_KEY=... python refresh_news_images.py [--target 15] [--budg
 """
 import os, io, sys, json, time, glob, re, argparse, datetime, urllib.parse, urllib.request
 from PIL import Image
+import news_image_map as nim
 
 KEY = os.environ["MAGNIFIC_API_KEY"]
 OUT = r"E:\vs code projects\scratch\locz\locznew\apps\web\public\news-images"
@@ -26,6 +27,7 @@ os.makedirs(OUT, exist_ok=True)
 
 ap = argparse.ArgumentParser()
 ap.add_argument("--target", type=int, default=15, help="images per category to reach")
+ap.add_argument("--topic-target", type=int, default=3, help="images per topic to reach (relevance layer)")
 ap.add_argument("--budget", type=int, default=90, help="max Magnific downloads today (< 100 cap)")
 args = ap.parse_args()
 
@@ -102,40 +104,52 @@ if budget_left == 0:
     sys.exit(0)
 
 added = 0
-for cat, terms in TERMS.items():
-    if budget_left <= 0:
-        break
-    slots = have(cat)
+stop = False
+
+
+def fill(name, terms, target):
+    """Top a single pool (category slug or 't-<topic>') up to target, append-only, cap-guarded."""
+    global added, budget_left, stop
+    if stop or budget_left <= 0:
+        return
+    slots = have(name)
     nxt = (max(slots) + 1) if slots else 1
-    need = max(0, args.target - len(slots))
+    need = max(0, target - len(slots))
     if need == 0:
-        continue
-    term = terms[len(slots) % len(terms)]           # rotate phrasing as the pool fills
+        return
+    term = terms[len(slots) % len(terms)] if isinstance(terms, list) else terms
     try:
         got = api(f"/resources?term={urllib.parse.quote(term)}"
                   f"&content_type=photo&limit={need * 3}").get("data", [])
     except Exception as e:
-        print(f"  ! {cat} search failed: {str(e)[:60]}"); continue
+        print(f"  ! {name} search failed: {str(e)[:60]}"); return
     for it in got:
         if need <= 0 or budget_left <= 0:
             break
-        dest = os.path.join(OUT, f"{cat}-{nxt}.webp")
+        dest = os.path.join(OUT, f"{name}-{nxt}.webp")
         try:
             dl = api(f"/resources/{it['id']}/download").get("data", {}).get("url")
             if not dl:
                 continue
             kb = compress_to(dl, dest) // 1024
-            print(f"  +{cat}-{nxt}.webp  {kb} KB  <- {it.get('title','')[:40]}", flush=True)
+            print(f"  +{name}-{nxt}.webp  {kb} KB  <- {it.get('title','')[:40]}", flush=True)
             nxt += 1; need -= 1; budget_left -= 1; added += 1
             bump(today, led, 1)                      # persist after EACH pull (cap-safe on crash)
             time.sleep(0.3)
         except urllib.error.HTTPError as e:
             if e.code == 402:
                 print("  ! Magnific daily cap hit (402) -- stopping, resume tomorrow.")
-                budget_left = 0; break
-            print(f"  ! {cat}-{nxt} failed: {e}")
+                stop = True; return
+            print(f"  ! {name}-{nxt} failed: {e}")
         except Exception as e:
-            print(f"  ! {cat}-{nxt} failed: {str(e)[:50]}")
+            print(f"  ! {name}-{nxt} failed: {str(e)[:50]}")
+
+
+# 1) Category pools first (guaranteed art for every story), 2) then the topic relevance layer.
+for cat, terms in TERMS.items():
+    fill(cat, terms, args.target)
+for topic, term in nim.TOPIC_TERMS.items():
+    fill(f"t-{topic}", term, args.topic_target)
 
 # Rebuild manifest from whatever is actually on disk
 m = {}

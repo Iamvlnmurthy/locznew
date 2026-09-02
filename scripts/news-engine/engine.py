@@ -59,16 +59,18 @@ LANG_TRIPLE = {"te": "tel_Telu", "hi": "hin_Deva", "ta": "tam_Taml", "kn": "kan_
                "mr": "mar_Deva", "bn": "ben_Beng", "ml": "mal_Mlym", "gu": "guj_Gujr",
                "or": "ory_Orya", "pa": "pan_Guru", "as": "asm_Beng"}
 
-# Own, compressed, premium-licensed category photos served from the web app's public/news-images/
-# (webp, ~1400px). Replaces the old source og:image (copyright risk + e-paper scans blocked Discover).
-# One of 5 per category, picked at random for variety; unknown category -> a safe local/state photo.
-NEWS_IMG_CATS = {"local", "tech", "state", "entertainment", "crime", "politics",
-                 "business", "weather", "sports", "civic"}
+# Own, compressed, premium-licensed photos served from the web app's public/news-images/ (webp
+# <=46KB). Replaces the old source og:image (copyright risk + e-paper scans blocked Discover).
+# Selection = topic-keyed (relevance) with a deterministic-per-story spread (no side-by-side dups),
+# falling back to category art. All logic + the topic keyword map live in news_image_map.py so the
+# engine and the backfill script never drift. Pool sizes come from manifest.json, so the pool GROWS
+# (refresh_news_images.py, under the Magnific 100/day cap) with no code edit here.
+import news_image_map as nim
+NEWS_IMG_POOL = nim.load_pool(os.path.join(HERE, "news-images")) or {c: 5 for c in nim.DEFAULT_CATS}
 
 
-def news_image(category):
-    c = category if category in NEWS_IMG_CATS else "state"
-    return f"/news-images/{c}-{random.randint(1, 5)}.webp"
+def news_image_for(title, category, key=""):
+    return nim.image_for(NEWS_IMG_POOL, title, category, key)
 
 
 FEEDS_JSON = os.path.join(HERE, "feeds.json")
@@ -492,7 +494,7 @@ def cycle(limit=None):
                 title_hi=title_hi, body_hi=body_hi, title_te=title_te, body_te=body_te,
                 dek_hi=dek_hi, dek_te=dek_te, dek_sl=dek_sl,
                 state_lang=tgt, title_sl=title_sl, body_sl=body_sl,
-                image_url=news_image(feed["category"]), image_credit=None,
+                image_url=news_image_for(title, feed["category"], ch), image_credit=None,
                 city=feed["city"], state=feed["state"], latitude=feed["lat"], longitude=feed["lng"],
                 src_url=src, src_publisher=it.get("source") or "", src_lang="en",
                 published_at=it.get("published"), status="PUBLISHED"))
