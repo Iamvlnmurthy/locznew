@@ -142,7 +142,7 @@ below as an original story a busy local reader wants to read.
 
 OUTPUT EXACTLY:
 HEADLINE: <specific, active, <=70 chars, no clickbait, no caps-lock>
-DEK: <one line: why a local reader cares>
+DEK: <one plain sentence of context; do NOT begin with "Local residents" or "This matters">
 <blank line>
 <2-4 short paragraphs, inverted pyramid: what happened + why it matters locally first, then
 context, then what's next. Active voice, concrete nouns, one idea per sentence.>
@@ -175,7 +175,15 @@ def regenerate(src_body):
     parts = re.split(r"\n\s*\n", out, 1)
     body_txt = parts[1].strip() if len(parts) > 1 else out
     body_txt = re.sub(r"^(HEADLINE|DEK):.*$", "", body_txt, flags=re.M).strip()
-    return (head.group(1).strip() if head else "", dek.group(1).strip() if dek else "", body_txt)
+    # The model often opens the body with a horizontal-rule/bullet separator ("---", "***", "- ").
+    # Strip any such leading separator run so the article doesn't start with stray punctuation.
+    body_txt = re.sub(r"^\s*[-–—*_=]{1,}\s*", "", body_txt).strip()
+    dek_txt = dek.group(1).strip() if dek else ""
+    # Guard against the DEK instruction ("why a local reader cares") leaking verbatim as content.
+    if re.match(r"(?i)^(local residents?|a local reader|this matters|why (this|a) )", dek_txt):
+        dek_txt = re.sub(r"(?i)^local residents?( care)?( because| since| as)?[,:]?\s*", "", dek_txt).strip()
+        dek_txt = dek_txt[:1].upper() + dek_txt[1:] if dek_txt else ""
+    return (head.group(1).strip() if head else "", dek_txt, body_txt)
 
 
 # ---------- integrity gate (drop-on-fail) ----------
@@ -190,6 +198,9 @@ def integrity_ok(title, body, src):
     # place ("LocZ Residents Warned..."). LocZ is the publisher, never appears in a source report.
     if re.search(r"\blocz\b", text, re.I):
         return False, "brand word 'LocZ' leaked into story"
+    # No tabloid hype in the headline — the brief forbids invented drama.
+    if re.search(r"\b(mysterious|shocking|horrific|sensational|jaw-dropping)\b", title, re.I):
+        return False, "hype word in headline"
     for q in re.findall(r"[\"“]([^\"”]{6,})[\"”]", text):
         if norm(q) not in nsrc:
             return False, f"fabricated quote: {q[:40]}"
@@ -253,8 +264,15 @@ def _prompt(lang):
 
 
 def _in_script(s, lang):
+    """True only if the text is in the target script AND free of OTHER Indic scripts. Gemini
+    sometimes bleeds Tamil/Kannada/Devanagari into a translation; that mixed output is rejected so
+    the caller keeps the reliable IT2 text (refine) or retries (fill)."""
     lo, hi = _LANGS[lang][1]
-    return bool(s) and any(lo <= ord(ch) <= hi for ch in s)
+    if not s:
+        return False
+    has_target = any(lo <= ord(c) <= hi for c in s)
+    has_other = any(0x900 <= ord(c) <= 0xD7F and not (lo <= ord(c) <= hi) for c in s)
+    return has_target and not has_other
 
 
 def _gemini_lang(text, lang, key, model):
@@ -440,12 +458,19 @@ def cycle(limit=None):
                     title_sl = body_sl = dek_sl = None
             except Exception:
                 dropped += 1; continue
-            # Telugu is a first-class UI language (its own switcher tab) reading the dedicated te
-            # columns — for te feeds the state language IS Telugu, so mirror the already-refined sl
-            # into the te columns (no second refine call needed).
-            title_te = title_sl if tgt == "te" else None
-            body_te = body_sl if tgt == "te" else None
-            dek_te = dek_sl if tgt == "te" else None
+            # Telugu is a first-class UI tab shown for EVERY story (like Hindi), not just Telugu-state
+            # feeds — so always fill the te columns. For te feeds the state language already IS Telugu
+            # (reuse the refined sl); for every other feed, translate + modernise into Telugu here so
+            # the Telugu tab never falls back to English.
+            try:
+                if tgt == "te":
+                    title_te, body_te, dek_te = title_sl, body_sl, dek_sl
+                else:
+                    title_te = refine_lang(translate(title, "tel_Telu"), "te")
+                    body_te = refine_lang(translate(body_en, "tel_Telu"), "te")
+                    dek_te = refine_lang(translate(dek, "tel_Telu"), "te") if dek else None
+            except Exception:
+                title_te = body_te = dek_te = None
             # Identity = the story, not the URL. Hashing the normalized headline (not src+title) means
             # the DB's ON CONFLICT (content_hash) also rejects the same story arriving via a different
             # feed/URL or in a later cycle — the src-based hash let those through as duplicates.

@@ -47,8 +47,13 @@ def prompt_for(lang):
 
 
 def in_script(s, rng):
+    """Target script present AND free of OTHER Indic scripts (Gemini sometimes mixes scripts)."""
     lo, hi = rng
-    return bool(s) and any(lo <= ord(ch) <= hi for ch in s)
+    if not s:
+        return False
+    has_target = any(lo <= ord(c) <= hi for c in s)
+    has_other = any(0x900 <= ord(c) <= 0xD7F and not (lo <= ord(c) <= hi) for c in s)
+    return has_target and not has_other
 
 
 def refine(row, key):
