@@ -72,6 +72,12 @@ const nextConfig = {
           { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
           { key: 'X-Frame-Options', value: 'SAMEORIGIN' },
           { key: 'Permissions-Policy', value: 'camera=(self), microphone=(), geolocation=(self)' },
+          // HSTS: locz.in + subdomains are HTTPS-only behind Cloudflare. No `preload` (kept
+          // reversible). Lighthouse Best-Practices expects a strong HSTS policy.
+          { key: 'Strict-Transport-Security', value: 'max-age=31536000; includeSubDomains' },
+          // COOP: isolate the browsing context. `allow-popups` so Google OAuth's popup sign-in
+          // (window.open) still works — plain `same-origin` would break it.
+          { key: 'Cross-Origin-Opener-Policy', value: 'same-origin-allow-popups' },
         ],
       },
     ];
