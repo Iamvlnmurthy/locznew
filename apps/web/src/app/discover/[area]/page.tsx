@@ -331,7 +331,7 @@ export default async function DiscoveryAreaPage({ params }: { params: Promise<{ 
                       ) : null}
                       <small>
                         {[
-                          item.distanceKm != null
+                          item.distanceKm !== null && item.distanceKm !== undefined
                             ? `${item.distanceKm.toFixed(item.distanceKm < 10 ? 1 : 0)} ${t('common.km')}`
                             : null,
                           item.category,
@@ -456,6 +456,7 @@ export default async function DiscoveryAreaPage({ params }: { params: Promise<{ 
                 radiusKm={radiusKm}
                 initial={businesses.items}
                 initialHasMore={businesses.hasNextPage}
+                initialTotal={businesses.total}
                 verifiedLabel={searchLabels.businessVerified}
                 claimLabel={searchLabels.businessClaim}
                 directionsLabel={searchLabels.directions}
@@ -463,6 +464,8 @@ export default async function DiscoveryAreaPage({ params }: { params: Promise<{ 
                 listingsLabel={searchLabels.listingCount}
                 nearYou={searchLabels.nearYou}
                 loadingLabel={searchLabels.loadingMoreBusinesses}
+                showingLabel={searchLabels.showingBusinesses}
+                loadMoreLabel={searchLabels.loadMoreBusinesses}
                 kmLabel={t('common.km')}
                 withinKm={searchLabels.withinKm}
                 areaOptions={[]}

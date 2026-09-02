@@ -1115,6 +1115,8 @@
     "businessCountOne": "1 local business matches this search",
     "businessesKicker": "Places nearby",
     "loadingMoreBusinesses": "Loading more nearby businesses…",
+    "showingBusinesses": "Showing {shown} of {total} businesses",
+    "loadMoreBusinesses": "Load more businesses",
     "businessesTitle": "Businesses near you",
     "businessVerified": "Verified",
     "businessClaim": "Claim this",

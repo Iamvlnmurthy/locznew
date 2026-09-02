@@ -789,6 +789,7 @@ export default async function HomePage({
                   radiusKm={radiusKm}
                   initial={homeBusinesses.items.slice(0, 9)}
                   initialHasMore={false}
+                  initialTotal={homeBusinesses.total}
                   verifiedLabel={searchLabels.businessVerified}
                   claimLabel={searchLabels.businessClaim}
                   directionsLabel={searchLabels.directions}
@@ -796,6 +797,8 @@ export default async function HomePage({
                   listingsLabel={searchLabels.listingCount}
                   nearYou={searchLabels.nearYou}
                   loadingLabel={searchLabels.loadingMoreBusinesses}
+                  showingLabel={searchLabels.showingBusinesses}
+                  loadMoreLabel={searchLabels.loadMoreBusinesses}
                   kmLabel={t('common.km')}
                   withinKm={searchLabels.withinKm}
                   areaOptions={areaSummary.areas.map(({ area }) => ({

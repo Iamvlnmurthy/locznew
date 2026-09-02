@@ -13,6 +13,7 @@ export interface ResolvedPincode {
   cityId: string | null;
   cityName: string | null;
   listingCount?: number;
+  locality?: Omit<ResolvedLocality, 'distanceMeters'> | null;
 }
 
 /**
@@ -24,6 +25,9 @@ export interface ResolvedLocality {
   id: string;
   name: string;
   slug: string;
+  postalCode?: string | null;
+  latitude: number | null;
+  longitude: number | null;
   distanceMeters: number;
 }
 

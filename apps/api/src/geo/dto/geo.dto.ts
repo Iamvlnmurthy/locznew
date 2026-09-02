@@ -191,6 +191,14 @@ export class PincodeAreaDto extends PincodeDto {
   @ApiProperty({ description: 'Published listings anchored to this exact pincode' })
   listingCount!: number;
 
+  @ApiPropertyOptional({
+    type: LocalityDto,
+    nullable: true,
+    description:
+      'A precise mapped locality for this pincode when one can be identified confidently',
+  })
+  locality!: LocalityDto | null;
+
   @ApiProperty({
     type: [PincodeDto],
     description: 'Adjacent codes within 10 km — "the area", not just the exact code',

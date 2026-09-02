@@ -53,6 +53,7 @@ export function NearbyBusinesses({
   radiusKm,
   initial,
   initialHasMore,
+  initialTotal,
   verifiedLabel,
   claimLabel,
   directionsLabel,
@@ -60,6 +61,8 @@ export function NearbyBusinesses({
   listingsLabel,
   nearYou,
   loadingLabel,
+  showingLabel,
+  loadMoreLabel,
   kmLabel,
   withinKm,
   areaOptions = [],
@@ -76,6 +79,7 @@ export function NearbyBusinesses({
   radiusKm?: number;
   initial: NearbyBusiness[];
   initialHasMore: boolean;
+  initialTotal: number;
   verifiedLabel: string;
   claimLabel: string;
   directionsLabel: string;
@@ -83,6 +87,8 @@ export function NearbyBusinesses({
   listingsLabel: string;
   nearYou: string;
   loadingLabel: string;
+  showingLabel: string;
+  loadMoreLabel: string;
   kmLabel: string;
   withinKm: string;
   areaOptions?: Array<{ key: string; label: string }>;
@@ -102,13 +108,16 @@ export function NearbyBusinesses({
   const [items, setItems] = useState(initial);
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(initialHasMore);
+  const [total, setTotal] = useState(Math.max(initialTotal, initial.length));
   const [loading, setLoading] = useState(false);
   const [area, setArea] = useState('');
   const [verifiedOnly, setVerifiedOnly] = useState(false);
   const sentinel = useRef<HTMLDivElement>(null);
+  const loadingRef = useRef(false);
 
   const loadMore = useCallback(async () => {
-    if (loading || !hasMore) return;
+    if (loadingRef.current || !hasMore) return;
+    loadingRef.current = true;
     setLoading(true);
     try {
       const next = await loadNearbyBusinesses({
@@ -128,26 +137,16 @@ export function NearbyBusinesses({
       });
       setPage(next.page);
       setHasMore(next.hasNextPage);
+      setTotal((current) => Math.max(next.total, current));
     } finally {
+      loadingRef.current = false;
       setLoading(false);
     }
-  }, [
-    loading,
-    hasMore,
-    page,
-    q,
-    pincode,
-    cityId,
-    latitude,
-    longitude,
-    radiusKm,
-    area,
-    verifiedOnly,
-  ]);
+  }, [hasMore, page, q, pincode, cityId, latitude, longitude, radiusKm, area, verifiedOnly]);
 
   useEffect(() => {
     const el = sentinel.current;
-    if (!el) return;
+    if (!el || !('IntersectionObserver' in window)) return;
     const io = new IntersectionObserver(
       (entries) => {
         if (entries[0]?.isIntersecting) void loadMore();
@@ -167,6 +166,7 @@ export function NearbyBusinesses({
       return;
     }
     let cancelled = false;
+    loadingRef.current = true;
     setLoading(true);
     void loadNearbyBusinesses({
       q,
@@ -184,16 +184,20 @@ export function NearbyBusinesses({
         setItems(fresh.items);
         setPage(1);
         setHasMore(fresh.hasNextPage);
+        setTotal(Math.max(fresh.total, fresh.items.length));
       })
       .finally(() => {
-        if (!cancelled) setLoading(false);
+        if (!cancelled) {
+          loadingRef.current = false;
+          setLoading(false);
+        }
       });
     return () => {
       cancelled = true;
+      loadingRef.current = false;
     };
     // Only filter changes drive a reset; scope inputs (q/pincode/…) are fixed per mount.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [area, verifiedOnly]);
+  }, [area, cityId, latitude, longitude, pincode, q, radiusKm, verifiedOnly]);
 
   return (
     <>
@@ -342,6 +346,21 @@ export function NearbyBusinesses({
         <p className="nearby-businesses__loading" aria-live="polite">
           {loadingLabel}
         </p>
+      ) : null}
+      {items.length > 0 ? (
+        <div className="nearby-businesses__pagination">
+          <p aria-live="polite">
+            {showingLabel
+              .replace('{shown}', String(items.length))
+              .replace('{total}', String(Math.max(total, items.length)))}
+          </p>
+          {hasMore ? (
+            <button type="button" onClick={() => void loadMore()} disabled={loading}>
+              {loading ? loadingLabel : loadMoreLabel}
+              <Icon name="arrow" />
+            </button>
+          ) : null}
+        </div>
       ) : null}
       {hasMore ? <div ref={sentinel} aria-hidden="true" style={{ height: 1 }} /> : null}
     </>

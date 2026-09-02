@@ -602,6 +602,7 @@ function CityDirectory({
             cityId={city.id}
             initial={businesses.items.slice(0, 9)}
             initialHasMore={false}
+            initialTotal={businesses.total}
             verifiedLabel={searchLabels.businessVerified}
             claimLabel={searchLabels.businessClaim}
             directionsLabel={searchLabels.directions}
@@ -609,6 +610,8 @@ function CityDirectory({
             listingsLabel={searchLabels.listingCount}
             nearYou={searchLabels.nearYou}
             loadingLabel={searchLabels.loadingMoreBusinesses}
+            showingLabel={searchLabels.showingBusinesses}
+            loadMoreLabel={searchLabels.loadMoreBusinesses}
             kmLabel={t('common.km')}
             withinKm={searchLabels.withinKm}
             allCategoriesLabel={searchLabels.allCategories}

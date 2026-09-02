@@ -1083,6 +1083,8 @@
     "businessCountOne": "ఈ శోధనకు 1 స్థానిక వ్యాపారం సరిపోలింది",
     "businessesKicker": "సమీపంలోని ప్రదేశాలు",
     "loadingMoreBusinesses": "సమీపంలోని మరిన్ని వ్యాపారాలను లోడ్ చేస్తోంది…",
+    "showingBusinesses": "మొత్తం {total} వ్యాపారాల్లో {shown} చూపిస్తున్నాము",
+    "loadMoreBusinesses": "మరిన్ని వ్యాపారాలు చూపించండి",
     "businessesTitle": "మీ దగ్గరలోని వ్యాపారాలు",
     "businessVerified": "వెరిఫైడ్",
     "businessClaim": "క్లెయిమ్ చేయండి",

@@ -67,11 +67,11 @@ export function LocationPicker({
 
   useEffect(() => {
     const needle = query.trim();
-    if (!needle) return;
+    if (needle.length < 2) return;
 
     let current = true;
-    setIsSearching(true);
     const timer = window.setTimeout(() => {
+      setIsSearching(true);
       void searchCitiesAction(needle, true).then((matches) => {
         if (!current) return;
         setCityResults(matches);
@@ -117,13 +117,19 @@ export function LocationPicker({
 
       setPincodeError(null);
       const resolvedCity = cities.find((city) => city.id === resolved.cityId);
+      const preciseLocality = resolved.locality;
+      const locationName = preciseLocality
+        ? [preciseLocality.name, resolved.cityName ?? resolved.districtName]
+            .filter((part, index, parts) => part && parts.indexOf(part) === index)
+            .join(', ')
+        : (resolved.cityName ?? `${resolved.name}, ${resolved.districtName}`);
       await selectCityAction({
         id: resolved.cityId ?? '',
-        name: resolved.cityName ?? `${resolved.name}, ${resolved.districtName}`,
+        name: locationName,
         slug: resolvedCity?.slug ?? '',
         tier: resolvedCity?.tier,
-        latitude: resolved.latitude,
-        longitude: resolved.longitude,
+        latitude: preciseLocality?.latitude ?? resolved.latitude,
+        longitude: preciseLocality?.longitude ?? resolved.longitude,
         pincode: resolved.code,
       });
       router.replace('/');

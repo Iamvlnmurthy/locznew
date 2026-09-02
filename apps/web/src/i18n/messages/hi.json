@@ -1083,6 +1083,8 @@
     "businessCountOne": "इस खोज से 1 स्थानीय व्यवसाय मिला",
     "businessesKicker": "आस-पास की जगहें",
     "loadingMoreBusinesses": "आस-पास के और व्यवसाय लोड हो रहे हैं…",
+    "showingBusinesses": "{total} में से {shown} व्यवसाय दिखाए जा रहे हैं",
+    "loadMoreBusinesses": "और व्यवसाय दिखाएँ",
     "businessesTitle": "आपके पास के व्यवसाय",
     "businessVerified": "सत्यापित",
     "businessClaim": "इसे क्लेम करें",

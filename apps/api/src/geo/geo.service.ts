@@ -253,8 +253,8 @@ export class GeoService {
         name: locality.name,
         slug: locality.slug,
         postalCode: null,
-        latitude: null,
-        longitude: null,
+        latitude: locality.latitude,
+        longitude: locality.longitude,
         distanceMeters: Math.round(locality.distanceMeters),
       })),
     };
@@ -304,12 +304,36 @@ export class GeoService {
     const latitude = Number(pincode.latitude);
     const longitude = Number(pincode.longitude);
 
-    const [listingCount, neighbours] = await Promise.all([
+    const [listingCount, neighbours, localityCandidates] = await Promise.all([
       this.prisma.listing.count({
         where: { pincodeCode: code, status: ListingStatus.PUBLISHED, deletedAt: null },
       }),
       this.geo.findNearbyPincodes(latitude, longitude, 10_000, 8),
+      this.prisma.locality.findMany({
+        where: {
+          postalCode: code,
+          isActive: true,
+          latitude: { not: null },
+          longitude: { not: null },
+          ...(pincode.cityId ? { cityId: pincode.cityId } : {}),
+        },
+        select: {
+          id: true,
+          name: true,
+          slug: true,
+          postalCode: true,
+          latitude: true,
+          longitude: true,
+        },
+      }),
     ]);
+
+    const placeKey = (value: string) => value.toLocaleLowerCase('en-IN').replace(/[^a-z0-9]/g, '');
+    const pincodePlaceKey = placeKey(pincode.name);
+    const locality =
+      (pincodePlaceKey
+        ? localityCandidates.find((candidate) => placeKey(candidate.name) === pincodePlaceKey)
+        : null) ?? (localityCandidates.length === 1 ? localityCandidates[0] : null);
 
     const nearby = await this.prisma.pincode.findMany({
       where: { code: { in: neighbours.map((entry) => entry.code), not: code } },
@@ -319,6 +343,16 @@ export class GeoService {
     return {
       ...this.toPincodeDto(pincode),
       listingCount,
+      locality: locality
+        ? {
+            id: locality.id,
+            name: locality.name,
+            slug: locality.slug,
+            postalCode: locality.postalCode,
+            latitude: locality.latitude === null ? null : Number(locality.latitude),
+            longitude: locality.longitude === null ? null : Number(locality.longitude),
+          }
+        : null,
       nearbyPincodes: nearby.map((entry) => this.toPincodeDto(entry)),
     };
   }

@@ -36,6 +36,11 @@ export interface NearbyCityRow {
   distanceMeters: number;
 }
 
+export interface NearbyLocalityRow extends NearbyCityRow {
+  latitude: number | null;
+  longitude: number | null;
+}
+
 /**
  * The only place in the codebase that writes PostGIS SQL (ADR-0003).
  *
@@ -193,11 +198,13 @@ export class GeoRepository {
     latitude: number,
     longitude: number,
     limit = 10,
-  ): Promise<NearbyCityRow[]> {
+  ): Promise<NearbyLocalityRow[]> {
     const point = Prisma.sql`ST_SetSRID(ST_MakePoint(${longitude}::double precision, ${latitude}::double precision), 4326)::geography`;
 
-    return this.prisma.$queryRaw<NearbyCityRow[]>`
+    return this.prisma.$queryRaw<NearbyLocalityRow[]>`
       SELECT lo."id", lo."name", lo."slug",
+             lo."latitude"::double precision AS "latitude",
+             lo."longitude"::double precision AS "longitude",
              ST_Distance(lo."geo", ${point}) AS "distanceMeters"
       FROM "localities" lo
       WHERE lo."cityId" = ${cityId}::uuid

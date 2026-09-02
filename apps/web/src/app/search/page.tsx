@@ -81,7 +81,8 @@ export default async function SearchPage({
     'verifiedOnly',
     'sort',
   ] as const) {
-    if (params[key]) query.set(key, params[key]!);
+    const value = params[key];
+    if (value) query.set(key, value);
   }
   for (const attribute of attributeParams) query.append('attr', attribute);
 
@@ -301,6 +302,7 @@ export default async function SearchPage({
                   radiusKm={bizRadiusKm}
                   initial={businessPage.items}
                   initialHasMore={businessPage.hasNextPage}
+                  initialTotal={businessPage.total}
                   verifiedLabel={s.businessVerified}
                   claimLabel={s.businessClaim}
                   directionsLabel={s.directions}
@@ -308,6 +310,8 @@ export default async function SearchPage({
                   listingsLabel={s.listingCount}
                   nearYou={s.nearYou}
                   loadingLabel={s.loadingMoreBusinesses}
+                  showingLabel={s.showingBusinesses}
+                  loadMoreLabel={s.loadMoreBusinesses}
                   kmLabel={t('common.km')}
                   withinKm={s.withinKm}
                   areaOptions={areaSummary.areas.map(({ area }) => ({
