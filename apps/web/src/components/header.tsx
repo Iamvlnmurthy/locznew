@@ -105,8 +105,8 @@ export async function Header({ locale }: { locale: Locale }) {
                   className="header__notification"
                   aria-label={
                     unreadNotifications?.count
-                      ? `${unreadNotifications.count} unread notifications`
-                      : 'Notifications'
+                      ? `${unreadNotifications.count} ${t('nav.notifications')}`
+                      : t('nav.notifications')
                   }
                 >
                   <Icon name="bell" />
@@ -186,7 +186,7 @@ export async function Header({ locale }: { locale: Locale }) {
             <Icon name={user ? 'bell' : 'user'} />
             {unreadNotifications?.count ? <strong>{unreadNotifications.count}</strong> : null}
           </span>
-          <span>{user ? 'Alerts' : t('nav.signIn')}</span>
+          <span>{user ? t('nav.notifications') : t('nav.signIn')}</span>
         </Link>
       </nav>
     </>

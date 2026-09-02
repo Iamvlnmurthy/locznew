@@ -365,7 +365,7 @@
     padding: 10px 10px 94px;
   }
   .hero {
-    min-height: 690px;
+    min-height: 600px;
     border-radius: 26px;
   }
   .heroImage {
@@ -385,16 +385,20 @@
     border-radius: 19px;
   }
   .heroContent {
-    padding: 34px 22px 310px;
+    padding: 30px 22px 250px;
   }
   .hero h1 {
-    font-size: 52px;
+    margin-block: 12px 14px;
+    font-size: clamp(40px, 12vw, 46px);
+    line-height: 0.94;
   }
   .heroContent > p {
-    font-size: 16px;
+    font-size: 15px;
+    line-height: 1.45;
   }
   .heroProof {
     gap: 20px;
+    margin-top: 16px;
   }
   .finderWrap {
     right: 16px;

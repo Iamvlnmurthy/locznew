@@ -17017,7 +17017,7 @@ body {
   box-shadow: 0 0 0 5px rgba(244, 182, 80, 0.12);
 }
 
-.auth-experience__story h1 {
+.auth-experience__story h2 {
   max-width: 520px;
   margin: 18px 0 16px;
   color: #fff;
@@ -17307,7 +17307,7 @@ body {
   .auth-experience__story {
     padding: 38px 30px;
   }
-  .auth-experience__story h1 {
+  .auth-experience__story h2 {
     font-size: 2.7rem;
   }
   .auth-experience__visual {

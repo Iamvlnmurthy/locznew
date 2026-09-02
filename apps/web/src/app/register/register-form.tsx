@@ -35,6 +35,12 @@ interface Labels {
   googleButton: string;
   googleUnavailable: string;
   googleFailed: string;
+  locationLabel: string;
+  locationPlaceholder: string;
+  locationHint: string;
+  clearLocation: string;
+  city: string;
+  area: string;
 }
 
 function Submit({ idle, busy }: { idle: string; busy: string }) {
@@ -136,14 +142,18 @@ export function RegisterForm({
       </div>
 
       <div className="field">
-        <label htmlFor="register-location">Your City, Area or PIN Code</label>
+        <label htmlFor="register-location">{labels.locationLabel}</label>
         <LocationTypeahead
           defaultCityId={state.values?.cityId}
           defaultPincode={state.values?.pincode}
+          labels={{
+            placeholder: labels.locationPlaceholder,
+            clear: labels.clearLocation,
+            city: labels.city,
+            area: labels.area,
+          }}
         />
-        <small className="field__hint">
-          Type any city, area name or 6-digit PIN code across India.
-        </small>
+        <small className="field__hint">{labels.locationHint}</small>
       </div>
 
       <div className="field">

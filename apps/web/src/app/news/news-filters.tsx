@@ -4,12 +4,6 @@ import { useRouter } from 'next/navigation';
 import { useId, useState, useTransition } from 'react';
 
 const WHENS = ['today', 'yesterday', 'week', 'month'] as const;
-const WHEN_LABEL: Record<(typeof WHENS)[number], string> = {
-  today: 'Today',
-  yesterday: 'Yesterday',
-  week: 'This week',
-  month: 'This month',
-};
 const LANGS: Array<{ code: string; label: string; te?: boolean }> = [
   { code: 'en', label: 'EN' },
   { code: 'te', label: 'తెలుగు', te: true },
@@ -29,6 +23,7 @@ export function NewsFilters({
   topics,
   resultCount,
   cityName,
+  labels,
 }: {
   lang: string;
   when?: string;
@@ -37,6 +32,7 @@ export function NewsFilters({
   topics: { key: string; count: number }[];
   resultCount: number;
   cityName: string | null;
+  labels: Record<string, string>;
 }) {
   const router = useRouter();
   const controlsId = useId();
@@ -65,8 +61,16 @@ export function NewsFilters({
         <div className="news-filterbar__status" aria-live="polite">
           <span className="news-filterbar__status-icon" aria-hidden="true" />
           <span>
-            <strong>{isPending ? 'Updating…' : `${resultCount} latest stories`}</strong>
-            <small>{cityName ? `Around ${cityName}` : 'Near your selected location'}</small>
+            <strong>
+              {isPending
+                ? labels.updating
+                : labels.latestStories.replace('{count}', String(resultCount))}
+            </strong>
+            <small>
+              {cityName
+                ? labels.aroundCity.replace('{city}', cityName)
+                : labels.nearSelectedLocation}
+            </small>
           </span>
         </div>
         <button
@@ -76,9 +80,11 @@ export function NewsFilters({
           aria-controls={controlsId}
           onClick={() => setMobileOpen((open) => !open)}
         >
-          Filters
+          {labels.filters}
           {activeFilterCount > 0 ? (
-            <span aria-label={`${activeFilterCount} active filters`}>{activeFilterCount}</span>
+            <span aria-label={labels.activeFilters.replace('{count}', String(activeFilterCount))}>
+              {activeFilterCount}
+            </span>
           ) : null}
         </button>
         <div
@@ -86,7 +92,7 @@ export function NewsFilters({
           id={controlsId}
           data-mobile-open={mobileOpen ? 'true' : 'false'}
         >
-          <div className="news-filterbar__langs" role="group" aria-label="Language">
+          <div className="news-filterbar__langs" role="group" aria-label={labels.language}>
             {LANGS.map((l) => (
               <button
                 key={l.code}
@@ -102,29 +108,29 @@ export function NewsFilters({
           </div>
 
           <label className="news-select">
-            <span>When</span>
+            <span>{labels.when}</span>
             <select
               value={when ?? ''}
               onChange={(e) => go({ when: e.target.value || undefined })}
               disabled={isPending}
             >
-              <option value="">All time</option>
+              <option value="">{labels.allTime}</option>
               {WHENS.map((w) => (
                 <option key={w} value={w}>
-                  {WHEN_LABEL[w]} ({dates[w]})
+                  {labels[w]} ({dates[w]})
                 </option>
               ))}
             </select>
           </label>
 
           <label className="news-select">
-            <span>Topic</span>
+            <span>{labels.topic}</span>
             <select
               value={topic ?? ''}
               onChange={(e) => go({ topic: e.target.value || undefined })}
               disabled={isPending}
             >
-              <option value="">All topics</option>
+              <option value="">{labels.allTopics}</option>
               {topics.map((t) => (
                 <option key={t.key} value={t.key}>
                   {t.key} ({t.count})
@@ -140,7 +146,7 @@ export function NewsFilters({
               onClick={() => go({ when: undefined, topic: undefined })}
               disabled={isPending}
             >
-              Clear
+              {labels.clear}
             </button>
           ) : null}
         </div>

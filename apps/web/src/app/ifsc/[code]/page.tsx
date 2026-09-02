@@ -5,6 +5,8 @@ import { cache } from 'react';
 import { Icon } from '@/components/icons';
 import { apiSafe, SITE_URL } from '@/lib/api';
 import { CopyCode } from '../../b/[slug]/copy-code';
+import { getMessageGroup } from '@/i18n';
+import { getLocale, localizedAlternates } from '@/lib/session';
 
 interface Branch {
   ifsc: string;
@@ -57,17 +59,23 @@ export async function generateMetadata({
   params: Promise<{ code: string }>;
 }): Promise<Metadata> {
   const { code } = await params;
-  const data = await loadIfsc(code);
-  if (!data) return { title: 'IFSC code not found', robots: { index: false, follow: false } };
+  const [data, locale] = await Promise.all([loadIfsc(code), getLocale()]);
+  const n = getMessageGroup(locale, 'ifscUi');
+  if (!data) return { title: n.notFound, robots: { index: false, follow: false } };
   const b = data.branch;
   const canonical = `${SITE_URL}/ifsc/${b.ifsc}`;
+  const city = b.city ? title(b.city) : n.india;
   return {
-    title: `${b.bank} ${b.branch} IFSC Code ${b.ifsc}${b.city ? ` — ${title(b.city)}` : ''}`,
-    description:
-      `IFSC code of ${b.bank}, ${b.branch} branch is ${b.ifsc}${b.micr ? `, MICR ${b.micr}` : ''}. ${b.address ?? ''} Use it for NEFT, RTGS, IMPS and UPI transfers.`.slice(
-        0,
-        250,
-      ),
+    title: n.metaTitle
+      .replace('{bank}', b.bank)
+      .replace('{branch}', title(b.branch))
+      .replace('{ifsc}', b.ifsc)
+      .replace('{city}', city),
+    description: n.metaDescription
+      .replace('{bank}', b.bank)
+      .replace('{branch}', title(b.branch))
+      .replace('{ifsc}', b.ifsc)
+      .replace('{address}', b.address ?? ''),
     keywords: [
       `${b.bank} ${b.branch} IFSC code`,
       b.ifsc,
@@ -76,7 +84,7 @@ export async function generateMetadata({
       ...(b.city ? [`${b.bank} IFSC code ${title(b.city)}`] : []),
       `${b.bank} ${b.branch} branch`,
     ],
-    alternates: { canonical },
+    alternates: await localizedAlternates(`/ifsc/${b.ifsc}`),
     openGraph: { title: `${b.bank} ${b.branch} — IFSC ${b.ifsc}`, url: canonical, type: 'website' },
   };
 }
@@ -85,8 +93,9 @@ export const revalidate = 86400;
 
 export default async function IfscPage({ params }: { params: Promise<{ code: string }> }) {
   const { code } = await params;
-  const data = await loadIfsc(code);
+  const [data, locale] = await Promise.all([loadIfsc(code), getLocale()]);
   if (!data) notFound();
+  const n = getMessageGroup(locale, 'ifscUi');
   const b = data.branch;
   const place = [b.district && title(b.district), b.state && title(b.state)]
     .filter(Boolean)
@@ -110,10 +119,14 @@ export default async function IfscPage({ params }: { params: Promise<{ code: str
     mainEntity: [
       {
         '@type': 'Question',
-        name: `What is the IFSC code of ${b.bank}, ${b.branch} branch?`,
+        name: n.faqQuestion.replace('{bank}', b.bank).replace('{branch}', branchName),
         acceptedAnswer: {
           '@type': 'Answer',
-          text: `The IFSC code of ${b.bank}, ${b.branch} branch is ${b.ifsc}${b.micr ? `, and the MICR code is ${b.micr}` : ''}.`,
+          text: (b.micr ? n.faqAnswerMicr : n.faqAnswer)
+            .replace('{bank}', b.bank)
+            .replace('{branch}', branchName)
+            .replace('{ifsc}', b.ifsc)
+            .replace('{micr}', b.micr ?? ''),
         },
       },
     ],
@@ -130,10 +143,10 @@ export default async function IfscPage({ params }: { params: Promise<{ code: str
         dangerouslySetInnerHTML={{ __html: JSON.stringify(faqLd).replace(/</g, '\\u003c') }}
       />
 
-      <nav className="ifsc-crumbs" aria-label="Breadcrumb">
-        <Link href="/">Home</Link>
+      <nav className="ifsc-crumbs" aria-label={n.breadcrumb}>
+        <Link href="/">{n.home}</Link>
         <span aria-hidden="true"> › </span>
-        <Link href="/c/banks-atms">Banks &amp; ATMs</Link>
+        <Link href="/c/banks-atms">{n.banksAtms}</Link>
         <span aria-hidden="true"> › </span>
         <span>{b.bank}</span>
       </nav>
@@ -143,34 +156,34 @@ export default async function IfscPage({ params }: { params: Promise<{ code: str
           <Icon name="bank" />
         </span>
         <div className="ifsc-hero__copy">
-          <span className="ifsc-hero__eyebrow">Official bank branch information</span>
+          <span className="ifsc-hero__eyebrow">{n.officialInformation}</span>
           <h1>
             {b.bank}
-            <span>{branchName} branch</span>
+            <span>{n.branchSuffix.replace('{branch}', branchName)}</span>
           </h1>
           <p className="ifsc-hero__place">
             <Icon name="location" />
-            {place || 'India'}
+            {place || n.india}
           </p>
           {b.address ? <p className="ifsc-hero__address">{b.address}</p> : null}
         </div>
-        <aside className="ifsc-hero__code" aria-label={`IFSC code ${b.ifsc}`}>
-          <span>IFSC code</span>
-          <CopyCode value={b.ifsc} label="IFSC" />
-          <p>Copy the code for bank transfers</p>
+        <aside className="ifsc-hero__code" aria-label={`${n.ifscCode} ${b.ifsc}`}>
+          <span>{n.ifscCode}</span>
+          <CopyCode value={b.ifsc} label="IFSC" copyLabel={n.copyCode} copiedLabel={n.copied} />
+          <p>{n.copyForTransfers}</p>
         </aside>
       </header>
 
-      <section className="ifsc-assurance" aria-label="Information source">
+      <section className="ifsc-assurance" aria-label={n.informationSource}>
         <span className="ifsc-assurance__icon" aria-hidden="true">
           <Icon name="shield" />
         </span>
         <span>
-          <strong>Reserve Bank of India directory</strong>
-          <small>Branch and routing information from the official IFSC dataset</small>
+          <strong>{n.sourceTitle}</strong>
+          <small>{n.sourceBody}</small>
         </span>
         <span className="ifsc-assurance__status">
-          <i aria-hidden="true" /> Official record
+          <i aria-hidden="true" /> {n.officialRecord}
         </span>
       </section>
 
@@ -178,37 +191,47 @@ export default async function IfscPage({ params }: { params: Promise<{ code: str
         <section className="ifsc-details-card" aria-labelledby="ifsc-details-title">
           <div className="ifsc-section-head">
             <div>
-              <span className="section-kicker">Branch information</span>
-              <h2 id="ifsc-details-title">Codes and contact details</h2>
+              <span className="section-kicker">{n.branchInformation}</span>
+              <h2 id="ifsc-details-title">{n.codesContact}</h2>
             </div>
             <Icon name="bank" />
           </div>
           <dl className="ifsc-facts">
             <div className="ifsc-fact ifsc-fact--code">
-              <dt>IFSC code</dt>
+              <dt>{n.ifscCode}</dt>
               <dd>
-                <CopyCode value={b.ifsc} label="IFSC" />
+                <CopyCode
+                  value={b.ifsc}
+                  label="IFSC"
+                  copyLabel={n.copyCode}
+                  copiedLabel={n.copied}
+                />
               </dd>
             </div>
             {b.micr ? (
               <div className="ifsc-fact ifsc-fact--code">
-                <dt>MICR code</dt>
+                <dt>{n.micrCode}</dt>
                 <dd>
-                  <CopyCode value={b.micr} label="MICR" />
+                  <CopyCode
+                    value={b.micr}
+                    label="MICR"
+                    copyLabel={n.copyCode}
+                    copiedLabel={n.copied}
+                  />
                 </dd>
               </div>
             ) : null}
             <div className="ifsc-fact">
-              <dt>Bank</dt>
+              <dt>{n.bank}</dt>
               <dd>{b.bank}</dd>
             </div>
             <div className="ifsc-fact">
-              <dt>Branch</dt>
+              <dt>{n.branch}</dt>
               <dd>{branchName}</dd>
             </div>
             {b.contact ? (
               <div className="ifsc-fact">
-                <dt>Contact</dt>
+                <dt>{n.contact}</dt>
                 <dd>
                   {cleanContact ? <a href={`tel:${cleanContact}`}>{b.contact}</a> : b.contact}
                 </dd>
@@ -216,7 +239,7 @@ export default async function IfscPage({ params }: { params: Promise<{ code: str
             ) : null}
             {b.address ? (
               <div className="ifsc-fact ifsc-fact--wide">
-                <dt>Branch address</dt>
+                <dt>{n.branchAddress}</dt>
                 <dd>{b.address}</dd>
               </div>
             ) : null}
@@ -227,10 +250,10 @@ export default async function IfscPage({ params }: { params: Promise<{ code: str
           <span className="ifsc-transfer-card__icon" aria-hidden="true">
             <Icon name="sparkles" />
           </span>
-          <span className="section-kicker">Transfer support</span>
-          <h2 id="ifsc-transfer-title">Available payment rails</h2>
+          <span className="section-kicker">{n.transferSupport}</span>
+          <h2 id="ifsc-transfer-title">{n.paymentRails}</h2>
           {transferServices.length ? (
-            <ul className="ifsc-transfer-list" aria-label="Supported transfers">
+            <ul className="ifsc-transfer-list" aria-label={n.supportedTransfers}>
               {transferServices.map((service) => (
                 <li key={service}>
                   <Icon name="check" /> {service}
@@ -238,13 +261,11 @@ export default async function IfscPage({ params }: { params: Promise<{ code: str
               ))}
             </ul>
           ) : (
-            <p>Transfer availability is not listed for this branch.</p>
+            <p>{n.transferUnavailable}</p>
           )}
-          <p className="ifsc-transfer-card__note">
-            Confirm the beneficiary name and account number with your bank before transferring.
-          </p>
+          <p className="ifsc-transfer-card__note">{n.transferNote}</p>
           <Link href="/c/banks-atms" className="ifsc-transfer-card__link">
-            Browse banks &amp; ATMs <Icon name="arrow" />
+            {n.browseBanks} <Icon name="arrow" />
           </Link>
         </aside>
       </div>
@@ -253,38 +274,45 @@ export default async function IfscPage({ params }: { params: Promise<{ code: str
         <section className="ifsc-nearby" aria-labelledby="ifsc-nearby-title">
           <div className="ifsc-section-head">
             <div>
-              <span className="section-kicker">Nearby branches</span>
+              <span className="section-kicker">{n.nearbyBranches}</span>
               <h2 id="ifsc-nearby-title">
-                Other {b.bank} branches in {b.city ? title(b.city) : place}
+                {n.otherBranches
+                  .replace('{bank}', b.bank)
+                  .replace('{place}', b.city ? title(b.city) : place)}
               </h2>
             </div>
-            <span className="ifsc-nearby__count">{data.nearby.length} listed</span>
+            <span className="ifsc-nearby__count">
+              {n.listed.replace('{count}', String(data.nearby.length))}
+            </span>
           </div>
           <div className="bank-branch-table-wrap">
             <table className="bank-branch-table">
               <thead>
                 <tr>
-                  <th scope="col">Branch</th>
+                  <th scope="col">{n.branch}</th>
                   <th scope="col">IFSC</th>
                   <th scope="col">MICR</th>
                 </tr>
               </thead>
               <tbody>
-                {data.nearby.map((n) => (
-                  <tr key={n.ifsc}>
+                {data.nearby.map((nearbyBranch) => (
+                  <tr key={nearbyBranch.ifsc}>
                     <th scope="row" className="bank-branch-table__branch">
-                      <Link href={`/ifsc/${n.ifsc}`} className="bank-branch-table__branch-name">
-                        {title(n.branch)}
+                      <Link
+                        href={`/ifsc/${nearbyBranch.ifsc}`}
+                        className="bank-branch-table__branch-name"
+                      >
+                        {title(nearbyBranch.branch)}
                       </Link>
-                      {n.address ? (
-                        <span className="bank-branch-table__addr">{n.address}</span>
+                      {nearbyBranch.address ? (
+                        <span className="bank-branch-table__addr">{nearbyBranch.address}</span>
                       ) : null}
                     </th>
                     <td className="bank-branch-table__micr" data-label="IFSC">
-                      {n.ifsc}
+                      {nearbyBranch.ifsc}
                     </td>
                     <td className="bank-branch-table__micr" data-label="MICR">
-                      {n.micr ?? '—'}
+                      {nearbyBranch.micr ?? '—'}
                     </td>
                   </tr>
                 ))}

@@ -17,7 +17,10 @@ export function StorefrontHouseAd({
   businessName,
   city,
   category,
-}: OnrolBannerContext) {
+  labels,
+}: OnrolBannerContext & {
+  labels: { region: string; link: string; imageAlt: string };
+}) {
   const bannerRef = useRef<HTMLElement>(null);
   const viewTracked = useRef(false);
 
@@ -57,7 +60,7 @@ export function StorefrontHouseAd({
   }, [businessId, businessName, category, city]);
 
   return (
-    <aside ref={bannerRef} className="storefront-house-ad" aria-label="Onrol learning program">
+    <aside ref={bannerRef} className="storefront-house-ad" aria-label={labels.region}>
       <a
         href={ONROL_PROGRAM_URL}
         target="_blank"
@@ -71,7 +74,7 @@ export function StorefrontHouseAd({
             category,
           })
         }
-        aria-label="Explore the Onrol AI Generalist Program (opens in a new tab)"
+        aria-label={labels.link}
       >
         <picture>
           <source
@@ -80,7 +83,7 @@ export function StorefrontHouseAd({
           />
           <Image
             src="/ads/onrol-ai-generalist-storefront-desktop-v1.webp"
-            alt="Onrol AI Execution School — build your AI career with the AI Generalist Program"
+            alt={labels.imageAlt}
             width={1800}
             height={600}
             sizes="(max-width: 760px) calc(100vw - 24px), (max-width: 1179px) calc(100vw - 48px), 1076px"

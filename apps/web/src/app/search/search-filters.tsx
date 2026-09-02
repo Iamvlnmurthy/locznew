@@ -1,8 +1,9 @@
 'use client';
 
 import type { Category, CategoryAttribute, CategoryAttributeOption } from '@locz/shared-types';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Icon } from '@/components/icons';
+import { useDialogFocus } from '@/components/use-dialog-focus';
 import type { Locale } from '@/i18n';
 
 interface FilterValues {
@@ -244,6 +245,9 @@ export function SearchFilters({
   labels: Record<string, string>;
 }) {
   const [isOpen, setIsOpen] = useState(false);
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  const drawerRef = useRef<HTMLElement>(null);
+  const closeFilters = useCallback(() => setIsOpen(false), []);
   const [categoryId, setCategoryId] = useState(values.categoryId ?? '');
   const selectedCategory = findCategory(categories, categoryId);
   const filterableAttributes = (selectedCategory?.attributes ?? []).filter(
@@ -252,24 +256,22 @@ export function SearchFilters({
 
   useEffect(() => {
     if (!isOpen) return;
-    function onKeyDown(event: KeyboardEvent) {
-      if (event.key === 'Escape') setIsOpen(false);
-    }
-    document.addEventListener('keydown', onKeyDown);
     document.body.classList.add('has-search-drawer');
     return () => {
-      document.removeEventListener('keydown', onKeyDown);
       document.body.classList.remove('has-search-drawer');
     };
   }, [isOpen]);
+  useDialogFocus(isOpen, drawerRef, triggerRef, closeFilters);
 
   return (
     <>
       <button
+        ref={triggerRef}
         type="button"
         className="search-filter-trigger"
         onClick={() => setIsOpen(true)}
         aria-expanded={isOpen}
+        aria-controls="search-filter-drawer"
       >
         <Icon name="sliders" />
         {s.filters}
@@ -280,19 +282,27 @@ export function SearchFilters({
         <button
           type="button"
           className="search-filters__backdrop"
-          onClick={() => setIsOpen(false)}
+          onClick={closeFilters}
           aria-label={s.closeFilters}
         />
       ) : null}
 
-      <aside className={`search-filters${isOpen ? ' is-open' : ''}`} aria-label={s.searchFilters}>
+      <aside
+        id="search-filter-drawer"
+        ref={drawerRef}
+        className={`search-filters${isOpen ? ' is-open' : ''}`}
+        role={isOpen ? 'dialog' : undefined}
+        aria-modal={isOpen ? 'true' : undefined}
+        aria-labelledby="search-filter-title"
+        tabIndex={isOpen ? -1 : undefined}
+      >
         <form className="panel" action="/search" method="get">
           <div className="search-filters__head">
             <div>
               <span className="section-kicker">{s.narrowDown}</span>
-              <h2>{s.filters}</h2>
+              <h2 id="search-filter-title">{s.filters}</h2>
             </div>
-            <button type="button" onClick={() => setIsOpen(false)} aria-label={s.closeFilters}>
+            <button type="button" onClick={closeFilters} aria-label={s.closeFilters}>
               ×
             </button>
           </div>

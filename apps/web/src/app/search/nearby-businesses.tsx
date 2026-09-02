@@ -70,6 +70,7 @@ export function NearbyBusinesses({
   verifiedOnlyLabel,
   emptyLabel,
   adPlacement,
+  showPaginationSummary = true,
 }: {
   q?: string;
   pincode?: string;
@@ -97,6 +98,8 @@ export function NearbyBusinesses({
   emptyLabel: string;
   /** A single curated unit after the fifth organic card; it never repeats on pagination. */
   adPlacement?: PlacementId;
+  /** Teaser surfaces already carry a See all link and should not read like a truncated result set. */
+  showPaginationSummary?: boolean;
 }) {
   const bandLabel = (index: number): string =>
     index === 0
@@ -347,13 +350,15 @@ export function NearbyBusinesses({
           {loadingLabel}
         </p>
       ) : null}
-      {items.length > 0 ? (
+      {items.length > 0 && (showPaginationSummary || hasMore) ? (
         <div className="nearby-businesses__pagination">
-          <p aria-live="polite">
-            {showingLabel
-              .replace('{shown}', String(items.length))
-              .replace('{total}', String(Math.max(total, items.length)))}
-          </p>
+          {showPaginationSummary ? (
+            <p aria-live="polite">
+              {showingLabel
+                .replace('{shown}', String(items.length))
+                .replace('{total}', String(Math.max(total, items.length)))}
+            </p>
+          ) : null}
           {hasMore ? (
             <button type="button" onClick={() => void loadMore()} disabled={loading}>
               {loading ? loadingLabel : loadMoreLabel}

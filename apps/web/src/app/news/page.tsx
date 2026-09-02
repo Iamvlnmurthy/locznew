@@ -1,20 +1,21 @@
 import type { Metadata } from 'next';
+import Image from 'next/image';
 import Link from 'next/link';
 import { Fragment } from 'react';
 import { Icon } from '@/components/icons';
 import { AdSlot } from '@/components/ad-slot';
 import { apiSafe } from '@/lib/api';
 import { getLocale, getSelectedCity } from '@/lib/session';
+import { getMessageGroup } from '@/i18n';
 import { relativeTime } from '@/lib/relative-time';
 import { NewsFilters } from './news-filters';
 
 export const dynamic = 'force-dynamic';
 
-export const metadata: Metadata = {
-  title: 'LocZ News — what’s happening near you',
-  description:
-    'Hyperlocal news for your area, rewritten in LocZ’s own voice and translated into your language — filter by topic, date and place.',
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const n = getMessageGroup(await getLocale(), 'newsUi');
+  return { title: n.metadataTitle, description: n.metadataDescription };
+}
 
 interface StoryCard {
   id: string;
@@ -38,17 +39,53 @@ interface Facets {
 }
 
 const WHENS = ['today', 'yesterday', 'week', 'month'] as const;
-const RING_LABEL: Record<StoryCard['ring'], string> = {
-  local: 'Local',
-  city: 'City',
-  district: 'District',
-  state: 'State',
-  national: 'India',
-};
+const NEWS_STOP_WORDS = new Set([
+  'a',
+  'an',
+  'and',
+  'as',
+  'at',
+  'for',
+  'from',
+  'in',
+  'into',
+  'is',
+  'of',
+  'on',
+  'the',
+  'to',
+  'with',
+]);
 
-function qs(base: Record<string, string | undefined>, patch: Record<string, string | undefined>) {
+function headlineTokens(value: string): Set<string> {
+  return new Set(
+    value
+      .toLocaleLowerCase('en-IN')
+      .replace(/[^\p{L}\p{N}\s]/gu, ' ')
+      .split(/\s+/)
+      .filter((token) => token.length > 2 && !NEWS_STOP_WORDS.has(token)),
+  );
+}
+
+function dedupeStories(stories: StoryCard[]): StoryCard[] {
+  const accepted: Array<{ story: StoryCard; tokens: Set<string> }> = [];
+  for (const story of stories) {
+    const tokens = headlineTokens(story.title);
+    const duplicate = accepted.some(({ story: previous, tokens: priorTokens }) => {
+      if (story.category !== previous.category || !tokens.size || !priorTokens.size) return false;
+      const overlap = [...tokens].filter((token) => priorTokens.has(token)).length;
+      return overlap / Math.min(tokens.size, priorTokens.size) >= 0.62;
+    });
+    if (!duplicate) accepted.push({ story, tokens });
+  }
+  return accepted.map(({ story }) => story);
+}
+
+type NewsQuery = Record<string, string | undefined>;
+
+function qs(base: NewsQuery, changes: NewsQuery) {
   const p = new URLSearchParams();
-  for (const [k, v] of Object.entries({ ...base, ...patch })) if (v) p.set(k, v);
+  for (const [k, v] of Object.entries({ ...base, ...changes })) if (v) p.set(k, v);
   const s = p.toString();
   return s ? `/news?${s}` : '/news';
 }
@@ -60,6 +97,7 @@ export default async function NewsFeedPage({
 }) {
   const sp = await searchParams;
   const [locale, city] = await Promise.all([getLocale(), getSelectedCity()]);
+  const n = getMessageGroup(locale, 'newsUi');
   const lang = sp.lang || locale || 'en';
   const when = WHENS.includes(sp.when as (typeof WHENS)[number]) ? sp.when : undefined;
   const topic = sp.topic;
@@ -88,7 +126,9 @@ export default async function NewsFeedPage({
     }),
     apiSafe<Facets>('/news/stories/facets', { revalidate: 300 }),
   ]);
-  const cards = feed?.cards ?? [];
+  // Different publishers frequently syndicate the same incident under lightly rewritten
+  // headlines. Keep the newest card and avoid presenting those copies as separate local events.
+  const cards = dedupeStories(feed?.cards ?? []);
   const hasMore = feed?.hasMore ?? false;
   const base = { topic, when, lang: lang === 'en' ? undefined : lang };
   const cityName = city?.name ?? null;
@@ -99,16 +139,16 @@ export default async function NewsFeedPage({
         <div className="container news-masthead__inner">
           <div className="news-masthead__copy">
             <span className="news-masthead__brand">
-              <Icon name="location" /> LocZ News · Hyperlocal
+              <Icon name="location" /> {n.mastheadBrand}
             </span>
-            <h1>{cityName ? `News around ${cityName}` : 'What’s happening near you'}</h1>
-            <p>Fresh local reporting, city updates and useful stories—organised around you.</p>
+            <h1>{cityName ? n.aroundCity.replace('{city}', cityName) : n.happeningNearYou}</h1>
+            <p>{n.intro}</p>
           </div>
-          <div className="news-masthead__signal" aria-label="Live local news feed">
+          <div className="news-masthead__signal" aria-label={n.liveFeed}>
             <span className="news-masthead__pulse" aria-hidden="true" />
             <span>
-              <strong>Live local desk</strong>
-              <small>Latest stories first</small>
+              <strong>{n.liveDesk}</strong>
+              <small>{n.latestFirst}</small>
             </span>
           </div>
         </div>
@@ -122,6 +162,7 @@ export default async function NewsFeedPage({
         topics={facets?.topics ?? []}
         resultCount={cards.length}
         cityName={cityName}
+        labels={n}
       />
 
       <div className="container news-feed">
@@ -130,9 +171,9 @@ export default async function NewsFeedPage({
             <span className="news-feed__empty-icon" aria-hidden="true">
               <Icon name="sparkles" />
             </span>
-            <strong>No stories match these filters</strong>
-            <p>Try a wider date range or browse every local topic.</p>
-            <Link href="/news">Show all news</Link>
+            <strong>{n.emptyTitle}</strong>
+            <p>{n.emptyBody}</p>
+            <Link href="/news">{n.showAll}</Link>
           </div>
         ) : (
           <div className="news-grid">
@@ -144,14 +185,21 @@ export default async function NewsFeedPage({
                 >
                   {s.imageUrl ? (
                     <span className="news-card__img">
-                      <img
+                      <Image
                         src={s.imageUrl}
-                        alt=""
-                        loading={i === 0 ? 'eager' : 'lazy'}
-                        fetchPriority={i === 0 ? 'high' : undefined}
+                        alt={s.title}
+                        fill
+                        priority={i === 0}
+                        sizes={
+                          i === 0
+                            ? '(max-width: 760px) 100vw, 66vw'
+                            : '(max-width: 760px) 100vw, 33vw'
+                        }
                       />
                       {s.imageCredit ? (
-                        <small className="news-card__credit">Photo: {s.imageCredit}</small>
+                        <small className="news-card__credit">
+                          {n.photoCredit.replace('{credit}', s.imageCredit)}
+                        </small>
                       ) : null}
                     </span>
                   ) : (
@@ -160,10 +208,10 @@ export default async function NewsFeedPage({
                     </span>
                   )}
                   <span className="news-card__body">
-                    {i === 0 ? <span className="news-card__top-story">Top story</span> : null}
+                    {i === 0 ? <span className="news-card__top-story">{n.topStory}</span> : null}
                     <span className="news-card__meta">
                       <span className="news-card__cat">{s.category}</span>
-                      <span className="news-card__ring">{RING_LABEL[s.ring]}</span>
+                      <span className="news-card__ring">{n[s.ring]}</span>
                       {relativeTime(s.publishedAt, lang) ? (
                         <time className="news-card__time" dateTime={s.publishedAt ?? undefined}>
                           {relativeTime(s.publishedAt, lang)}
@@ -177,7 +225,7 @@ export default async function NewsFeedPage({
                       {s.dek ?? s.summary}
                     </span>
                     <span className="news-card__read">
-                      Read story <Icon name="arrow" />
+                      {n.readStory} <Icon name="arrow" />
                     </span>
                   </span>
                 </Link>
@@ -190,21 +238,21 @@ export default async function NewsFeedPage({
         )}
 
         {cards.length > 0 && (page > 1 || hasMore) ? (
-          <nav className="news-pagination" aria-label="More news">
+          <nav className="news-pagination" aria-label={n.moreNews}>
             {page > 1 ? (
               <Link
                 className="news-pagination__link news-pagination__link--prev"
                 href={qs(base, { page: String(page - 1) })}
               >
-                <Icon name="arrow" /> Newer
+                <Icon name="arrow" /> {n.newer}
               </Link>
             ) : (
               <span />
             )}
-            <span className="news-pagination__page">Page {page}</span>
+            <span className="news-pagination__page">{n.page.replace('{page}', String(page))}</span>
             {hasMore ? (
               <Link className="news-pagination__link" href={qs(base, { page: String(page + 1) })}>
-                Older <Icon name="arrow" />
+                {n.older} <Icon name="arrow" />
               </Link>
             ) : (
               <span />

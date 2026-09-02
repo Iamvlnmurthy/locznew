@@ -57,6 +57,24 @@ export async function generateMetadata({
   const { slug } = await params;
   const [category, locale] = await Promise.all([loadCategory(slug).catch(() => null), getLocale()]);
   const t = getTranslator(locale);
+  if (slug === 'public-services' || isPublicServiceSlug(slug)) {
+    const publicTitle =
+      slug === 'public-services'
+        ? t('publicServices.directoryTitle')
+        : t('publicServices.resultsTitleNational', {
+            category: publicServiceLabel(t, slug),
+          });
+    return {
+      title: publicTitle,
+      description: t('publicServices.directorySubtitle'),
+      alternates: await localizedAlternates(`/c/${slug}`),
+      openGraph: {
+        title: publicTitle,
+        description: t('publicServices.directorySubtitle'),
+        type: 'website',
+      },
+    };
+  }
   if (!category) {
     return {
       title: t('discovery.categoryNotFound'),
@@ -74,25 +92,6 @@ export async function generateMetadata({
   const description = t('discovery.categoryMetadataDescription', {
     category: localisedName,
   });
-
-  if (slug === 'public-services' || isPublicServiceSlug(slug)) {
-    const publicTitle =
-      slug === 'public-services'
-        ? t('publicServices.directoryTitle')
-        : t('publicServices.resultsTitleNational', {
-            category: publicServiceLabel(t, slug),
-          });
-    return {
-      title: publicTitle,
-      description: t('publicServices.directorySubtitle'),
-      alternates: await localizedAlternates(`/c/${category.slug}`),
-      openGraph: {
-        title: publicTitle,
-        description: t('publicServices.directorySubtitle'),
-        type: 'website',
-      },
-    };
-  }
 
   return {
     title,
@@ -116,29 +115,15 @@ export default async function CategoryPage({
   const { slug } = await params;
   const [locale, category, city, pageParams] = await Promise.all([
     getLocale(),
-    loadCategory(slug),
+    loadCategory(slug).catch((error) => {
+      if (slug === 'public-services' || isPublicServiceSlug(slug)) return null;
+      throw error;
+    }),
     getSelectedCity(),
     searchParams,
   ]);
 
-  if (!category) notFound();
-
   const t = getTranslator(locale);
-  const query = new URLSearchParams({ categoryId: category.id, limit: '24' });
-  if (city?.id) query.set('cityId', city.id);
-
-  const result = await apiSafe<{ items: ListingSummary[]; total: number }>(
-    `/search?${query.toString()}`,
-    { revalidate: 120 },
-  );
-
-  const localisedName =
-    locale === 'te'
-      ? (category.nameTe ?? category.name)
-      : locale === 'hi'
-        ? (category.nameHi ?? category.name)
-        : category.name;
-
   if (slug === 'public-services' || isPublicServiceSlug(slug)) {
     const page = Math.max(1, Number(pageParams.page ?? '1') || 1);
     const allCategories =
@@ -162,16 +147,15 @@ export default async function CategoryPage({
     }
 
     const publicCategory = categoryBySlug.get(slug);
-    const businessQuery = new URLSearchParams({
-      categoryId: publicCategory?.id ?? category.id,
-      page: String(page),
-      limit: '24',
-    });
+    const categoryId = publicCategory?.id ?? category?.id;
+    const businessQuery = new URLSearchParams({ page: String(page), limit: '24' });
+    if (categoryId) businessQuery.set('categoryId', categoryId);
     if (city?.id) businessQuery.set('cityId', city.id);
-    const businesses = await apiSafe<Paginated<PublicBusinessSummary>>(
-      `/businesses?${businessQuery.toString()}`,
-      { revalidate: 300 },
-    );
+    const businesses = categoryId
+      ? await apiSafe<Paginated<PublicBusinessSummary>>(`/businesses?${businessQuery.toString()}`, {
+          revalidate: 300,
+        })
+      : null;
     return (
       <PublicServiceResults
         slug={slug}
@@ -184,6 +168,23 @@ export default async function CategoryPage({
       />
     );
   }
+
+  if (!category) notFound();
+
+  const query = new URLSearchParams({ categoryId: category.id, limit: '24' });
+  if (city?.id) query.set('cityId', city.id);
+
+  const result = await apiSafe<{ items: ListingSummary[]; total: number }>(
+    `/search?${query.toString()}`,
+    { revalidate: 120 },
+  );
+
+  const localisedName =
+    locale === 'te'
+      ? (category.nameTe ?? category.name)
+      : locale === 'hi'
+        ? (category.nameHi ?? category.name)
+        : category.name;
   const categoryBanner = premiumCategoryBanner(category.name);
 
   return (

@@ -78,7 +78,11 @@ export default async function BusinessDirectoryPage({
   if (params.verifiedOnly === 'true') query.set('verifiedOnly', 'true');
   if (['popular', 'newest'].includes(params.sort ?? '')) query.set('sort', params.sort!);
 
-  const result = await apiSafe<Paginated<BusinessSummary>>(`/businesses?${query.toString()}`);
+  // Directory reads are public and repeat heavily across visitors. A short cache removes the
+  // multi-second API wait without making filters or newly listed businesses feel stale.
+  const result = await apiSafe<Paginated<BusinessSummary>>(`/businesses?${query.toString()}`, {
+    revalidate: 60,
+  });
   const businesses = result?.items ?? [];
   const topCategories = (categories ?? []).filter((category) => !category.parentId);
   let activeCity = (cities ?? []).find((city) => city.id === activeCityId);

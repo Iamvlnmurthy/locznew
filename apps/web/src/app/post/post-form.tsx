@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useActionState, useEffect, useMemo, useRef, useState } from 'react';
+import { useActionState, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useFormStatus } from 'react-dom';
 import type {
   Category,
@@ -16,6 +16,7 @@ import { ListingTypeFields } from './listing-type-fields';
 import { PhotoUploader } from './photo-uploader';
 import { CityCombobox } from '@/components/city-combobox';
 import { Icon } from '@/components/icons';
+import { useDialogFocus } from '@/components/use-dialog-focus';
 
 interface Labels {
   title: string;
@@ -303,6 +304,8 @@ export function PostForm({
   const [previewOpen, setPreviewOpen] = useState(false);
   const [previewPrice, setPreviewPrice] = useState('');
   const formRef = useRef<HTMLFormElement>(null);
+  const previewTriggerRef = useRef<HTMLButtonElement>(null);
+  const previewDialogRef = useRef<HTMLElement>(null);
   const saveTimerRef = useRef<number | null>(null);
   const w = labels.wizard;
   const isEdit = Boolean(initialListing);
@@ -464,6 +467,9 @@ export function PostForm({
     );
     setPreviewOpen(true);
   }
+
+  const closePreview = useCallback(() => setPreviewOpen(false), []);
+  useDialogFocus(previewOpen, previewDialogRef, previewTriggerRef, closePreview);
 
   useEffect(() => {
     const errors = state.fieldErrors;
@@ -896,7 +902,13 @@ export function PostForm({
                 {w.back}
               </button>
               <div className="post-actions__finish">
-                <button type="button" className="btn btn--outline" onClick={openPreview}>
+                <button
+                  ref={previewTriggerRef}
+                  type="button"
+                  className="btn btn--outline"
+                  onClick={openPreview}
+                  aria-haspopup="dialog"
+                >
                   <Icon name="image" /> {labels.preview}
                 </button>
                 {!isEdit || initialListing?.status === 'DRAFT' ? (
@@ -950,22 +962,20 @@ export function PostForm({
       </div>
 
       {previewOpen ? (
-        <div
-          className="post-preview-backdrop"
-          role="presentation"
-          onMouseDown={() => setPreviewOpen(false)}
-        >
+        <div className="post-preview-backdrop" role="presentation" onMouseDown={closePreview}>
           <section
+            ref={previewDialogRef}
             className="post-preview"
             role="dialog"
             aria-modal="true"
             aria-labelledby="post-preview-title"
+            tabIndex={-1}
             onMouseDown={(event) => event.stopPropagation()}
           >
             <button
               type="button"
               className="post-preview__close"
-              onClick={() => setPreviewOpen(false)}
+              onClick={closePreview}
               aria-label={labels.closePreview}
             >
               ×

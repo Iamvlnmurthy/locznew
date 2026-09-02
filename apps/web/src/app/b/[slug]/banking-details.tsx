@@ -3,16 +3,17 @@ import { CopyCode } from './copy-code';
 import type { BankingInfo, BankBranch } from './page';
 
 /** The RTGS/NEFT/etc. a branch supports, as labelled chips (bank-level facts, never invented). */
-function ServiceChips({ b }: { b: BankBranch }) {
-  const services = [
+function ServiceChips({ b, supportedLabel }: { b: BankBranch; supportedLabel: string }) {
+  const candidates: Array<[string, boolean]> = [
     ['NEFT', b.neft],
     ['RTGS', b.rtgs],
     ['IMPS', b.imps],
     ['UPI', b.upi],
-  ].filter(([, on]) => on) as Array<[string, boolean]>;
+  ];
+  const services = candidates.filter((entry) => entry[1]);
   if (!services.length) return null;
   return (
-    <ul className="bank-services" aria-label="Supported transfers">
+    <ul className="bank-services" aria-label={supportedLabel}>
       {services.map(([name]) => (
         <li key={name} className="bank-services__chip">
           {name}
@@ -28,7 +29,15 @@ function ServiceChips({ b }: { b: BankBranch }) {
  *  - `matched` → one verified branch: its IFSC is stated outright.
  *  - otherwise → the bank's branches in the area, so the reader finds their own exact IFSC.
  */
-export function BankingDetails({ banking, place }: { banking: BankingInfo; place: string }) {
+export function BankingDetails({
+  banking,
+  place,
+  labels: l,
+}: {
+  banking: BankingInfo;
+  place: string;
+  labels: Record<string, string>;
+}) {
   const { matched, branches, bankName, areaLabel, branchCount } = banking;
   const area = areaLabel ?? place;
 
@@ -39,10 +48,10 @@ export function BankingDetails({ banking, place }: { banking: BankingInfo; place
       aria-labelledby="banking-h"
     >
       <div className="bank-panel__head">
-        <span className="section-kicker">Banking details</span>
+        <span className="section-kicker">{l.bankingDetails}</span>
         <span className="bank-source">
           <Icon name="shield" />
-          Reserve Bank of India · IFSC directory
+          {l.rbiDirectory}
         </span>
       </div>
 
@@ -51,36 +60,49 @@ export function BankingDetails({ banking, place }: { banking: BankingInfo; place
           <div className="bank-branch-card__id">
             <h2 id="banking-h" className="bank-branch-card__name">
               {matched.bank}
-              <span className="bank-branch-card__branch"> · {matched.branch} Branch</span>
+              <span className="bank-branch-card__branch">
+                {' '}
+                · {l.branchSuffix.replace('{branch}', matched.branch)}
+              </span>
             </h2>
             {matched.address ? <p className="bank-branch-card__addr">{matched.address}</p> : null}
           </div>
 
           <dl className="bank-codes">
             <div className="bank-codes__row">
-              <dt>IFSC code</dt>
+              <dt>{l.ifscCode}</dt>
               <dd>
-                <CopyCode value={matched.ifsc} label="IFSC" />
+                <CopyCode
+                  value={matched.ifsc}
+                  label="IFSC"
+                  copyLabel={l.copyCode}
+                  copiedLabel={l.copied}
+                />
               </dd>
             </div>
             {matched.micr ? (
               <div className="bank-codes__row">
-                <dt>MICR code</dt>
+                <dt>{l.micrCode}</dt>
                 <dd>
-                  <CopyCode value={matched.micr} label="MICR" />
+                  <CopyCode
+                    value={matched.micr}
+                    label="MICR"
+                    copyLabel={l.copyCode}
+                    copiedLabel={l.copied}
+                  />
                 </dd>
               </div>
             ) : null}
             {matched.contact ? (
               <div className="bank-codes__row">
-                <dt>Contact</dt>
+                <dt>{l.contact}</dt>
                 <dd className="bank-codes__plain">{matched.contact}</dd>
               </div>
             ) : null}
             <div className="bank-codes__row">
-              <dt>Transfers</dt>
+              <dt>{l.transfers}</dt>
               <dd>
-                <ServiceChips b={matched} />
+                <ServiceChips b={matched} supportedLabel={l.supportedTransfers} />
               </dd>
             </div>
           </dl>
@@ -88,21 +110,20 @@ export function BankingDetails({ banking, place }: { banking: BankingInfo; place
       ) : (
         <>
           <h2 id="banking-h" className="bank-panel__title">
-            {bankName} IFSC codes in {area}
+            {l.bankCodesTitle.replace('{bank}', bankName).replace('{area}', area)}
           </h2>
           <p className="bank-panel__lead">
-            Find the exact IFSC and MICR for your {bankName} branch in {area}. Each code below is
-            from the official RBI directory — copy the one that matches your branch.
+            {l.bankCodesBody.replace('{bank}', bankName).replace('{area}', area)}
           </p>
           <div className="bank-branch-table-wrap">
             <table className="bank-branch-table">
               <thead>
                 <tr>
-                  <th scope="col">Branch</th>
+                  <th scope="col">{l.branch}</th>
                   <th scope="col">IFSC</th>
                   <th scope="col">MICR</th>
                   <th scope="col" className="bank-branch-table__svc">
-                    Transfers
+                    {l.transfers}
                   </th>
                 </tr>
               </thead>
@@ -116,11 +137,16 @@ export function BankingDetails({ banking, place }: { banking: BankingInfo; place
                       ) : null}
                     </th>
                     <td>
-                      <CopyCode value={b.ifsc} label="IFSC" />
+                      <CopyCode
+                        value={b.ifsc}
+                        label="IFSC"
+                        copyLabel={l.copyCode}
+                        copiedLabel={l.copied}
+                      />
                     </td>
                     <td className="bank-branch-table__micr">{b.micr ?? '—'}</td>
                     <td className="bank-branch-table__svc">
-                      <ServiceChips b={b} />
+                      <ServiceChips b={b} supportedLabel={l.supportedTransfers} />
                     </td>
                   </tr>
                 ))}
@@ -129,7 +155,11 @@ export function BankingDetails({ banking, place }: { banking: BankingInfo; place
           </div>
           {branchCount > branches.length ? (
             <p className="bank-panel__more">
-              Showing {branches.length} of {branchCount} {bankName} branches in {area}.
+              {l.showingBranches
+                .replace('{shown}', String(branches.length))
+                .replace('{total}', String(branchCount))
+                .replace('{bank}', bankName)
+                .replace('{area}', area)}
             </p>
           ) : null}
         </>

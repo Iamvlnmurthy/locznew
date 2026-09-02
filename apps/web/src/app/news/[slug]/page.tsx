@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { cache, Fragment } from 'react';
+import Image from 'next/image';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { Icon } from '@/components/icons';
@@ -77,8 +78,9 @@ export async function generateMetadata({
   const { slug } = await params;
   const { lang: langParam } = await searchParams;
   const locale = await getLocale();
+  const t = getTranslator(locale);
   const event = await loadEvent(slug, langParam || locale || 'en');
-  if (!event) return { title: 'News' };
+  if (!event) return { title: t('newsUi.metadataTitle') };
   const description = event.summary?.slice(0, 160) ?? event.title;
   const canonical = `${SITE_URL}/news/${event.slug}`;
   const alternates = await localizedAlternates(`/news/${event.slug}`);
@@ -157,7 +159,7 @@ export default async function NewsEventPage({
           <Link href="/news" className="news-article__back">
             <Icon name="arrow" /> {t('discoveryAreas.news')}
           </Link>
-          <nav className="news-article__langs" aria-label="Language">
+          <nav className="news-article__langs" aria-label={t('newsUi.language')}>
             {ART_LANGS.map((l) => (
               <Link
                 key={l.code}
@@ -186,8 +188,17 @@ export default async function NewsEventPage({
 
         {event.imageUrl ? (
           <figure className="news-article__hero">
-            <img src={event.imageUrl} alt="" />
-            {event.imageCredit ? <figcaption>Photo: {event.imageCredit}</figcaption> : null}
+            <Image
+              src={event.imageUrl}
+              alt=""
+              width={1200}
+              height={675}
+              sizes="(max-width: 760px) calc(100vw - 32px), 820px"
+              unoptimized
+            />
+            {event.imageCredit ? (
+              <figcaption>{t('newsUi.photoCredit', { credit: event.imageCredit })}</figcaption>
+            ) : null}
           </figure>
         ) : null}
         <TrackView slug={event.slug} />
@@ -210,6 +221,11 @@ export default async function NewsEventPage({
           businessName={event.title}
           city="News"
           category={event.categories?.[0] ?? 'news'}
+          labels={{
+            region: t('businessProfile.onrolProgram'),
+            link: t('businessProfile.onrolOpen'),
+            imageAlt: t('businessProfile.onrolAlt'),
+          }}
         />
 
         <p className="news-article__byline">{'LocZ News'}</p>

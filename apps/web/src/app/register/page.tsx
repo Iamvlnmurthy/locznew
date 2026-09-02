@@ -74,6 +74,12 @@ export default async function RegisterPage() {
           googleButton: a.googleButton,
           googleUnavailable: a.googleUnavailable,
           googleFailed: a.googleFailed,
+          locationLabel: s.locationLabel,
+          locationPlaceholder: s.locationPlaceholder,
+          locationHint: s.locationHint,
+          clearLocation: s.clearLocation,
+          city: s.city,
+          area: s.area,
         }}
       />
     </AuthShell>

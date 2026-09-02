@@ -1,7 +1,8 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Icon } from '@/components/icons';
+import { useDialogFocus } from '@/components/use-dialog-focus';
 
 interface GalleryMedia {
   id: string;
@@ -26,6 +27,9 @@ export function ListingGallery({
   const photos = media.filter((item) => item.fullUrl || item.cardUrl || item.thumbUrl);
   const [activeIndex, setActiveIndex] = useState(0);
   const [isExpanded, setIsExpanded] = useState(false);
+  const expandTriggerRef = useRef<HTMLButtonElement>(null);
+  const lightboxRef = useRef<HTMLDivElement>(null);
+  const closeLightbox = useCallback(() => setIsExpanded(false), []);
   const active = photos[activeIndex];
 
   function move(direction: -1 | 1) {
@@ -35,7 +39,6 @@ export function ListingGallery({
   useEffect(() => {
     if (!isExpanded) return;
     function onKeyDown(event: KeyboardEvent) {
-      if (event.key === 'Escape') setIsExpanded(false);
       if (event.key === 'ArrowLeft' && photos.length > 1) {
         setActiveIndex((current) => (current - 1 + photos.length) % photos.length);
       }
@@ -50,6 +53,7 @@ export function ListingGallery({
       document.body.classList.remove('has-gallery-lightbox');
     };
   }, [isExpanded, photos.length]);
+  useDialogFocus(isExpanded, lightboxRef, expandTriggerRef, closeLightbox);
 
   const imageUrl = active?.fullUrl ?? active?.cardUrl ?? active?.thumbUrl;
 
@@ -60,6 +64,7 @@ export function ListingGallery({
           <span className="listing-gallery__badge">{badge}</span>
           {imageUrl ? (
             <button
+              ref={expandTriggerRef}
               type="button"
               className="listing-gallery__image"
               onClick={() => setIsExpanded(true)}
@@ -150,14 +155,16 @@ export function ListingGallery({
       {isExpanded && imageUrl ? (
         <div
           className="listing-gallery__lightbox"
+          ref={lightboxRef}
           role="dialog"
           aria-modal="true"
           aria-label={labels.photoViewer}
+          tabIndex={-1}
         >
           <button
             type="button"
             className="listing-gallery__close"
-            onClick={() => setIsExpanded(false)}
+            onClick={closeLightbox}
             aria-label={labels.closePhotoViewer}
           >
             ×

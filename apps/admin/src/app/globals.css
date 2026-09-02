@@ -62,7 +62,9 @@ a {
   background: #12604f;
   transform: translateY(-150%);
 }
-.skip-link:focus { transform: translateY(0); }
+.skip-link:focus {
+  transform: translateY(0);
+}
 
 .shell {
   display: grid;
@@ -1302,7 +1304,9 @@ tbody tr:hover {
     align-items: center;
   }
 
-  .sidebar__mobile-branding { gap: 10px; }
+  .sidebar__mobile-branding {
+    gap: 10px;
+  }
   .sidebar__mobile-branding .brand-mark {
     width: 38px;
     height: 38px;
@@ -1314,7 +1318,9 @@ tbody tr:hover {
     align-items: flex-start;
     flex-direction: column;
   }
-  .sidebar__mobile-branding strong { font-size: 0.82rem; }
+  .sidebar__mobile-branding strong {
+    font-size: 0.82rem;
+  }
   .sidebar__mobile-branding small {
     gap: 6px;
     color: rgb(255 255 255 / 66%);
@@ -1326,7 +1332,9 @@ tbody tr:hover {
     box-shadow: none;
   }
 
-  .sidebar__mobile-menu { position: static; }
+  .sidebar__mobile-menu {
+    position: static;
+  }
   .sidebar__mobile-menu summary {
     min-width: 78px;
     min-height: 44px;
@@ -1344,9 +1352,15 @@ tbody tr:hover {
     cursor: pointer;
     list-style: none;
   }
-  .sidebar__mobile-menu summary::-webkit-details-marker { display: none; }
-  .sidebar__mobile-menu[open] summary { background: rgb(255 255 255 / 14%); }
-  .sidebar__mobile-menu[open] summary span { transform: rotate(180deg); }
+  .sidebar__mobile-menu summary::-webkit-details-marker {
+    display: none;
+  }
+  .sidebar__mobile-menu[open] summary {
+    background: rgb(255 255 255 / 14%);
+  }
+  .sidebar__mobile-menu[open] summary span {
+    transform: rotate(180deg);
+  }
   .sidebar__mobile-panel {
     position: fixed;
     top: 66px;
@@ -1359,8 +1373,12 @@ tbody tr:hover {
     background: #0d352d;
     box-shadow: 0 22px 44px rgb(6 29 24 / 30%);
   }
-  body:has(.sidebar__mobile-menu[open]) { overflow: hidden; }
-  .sidebar__mobile-panel .sidebar__nav { gap: 4px; }
+  body:has(.sidebar__mobile-menu[open]) {
+    overflow: hidden;
+  }
+  .sidebar__mobile-panel .sidebar__nav {
+    gap: 4px;
+  }
   .sidebar__mobile-panel .sidebar__link {
     min-height: 46px;
     color: rgb(255 255 255 / 76%);
@@ -1370,7 +1388,9 @@ tbody tr:hover {
     padding-top: 14px;
     border-top: 1px solid rgb(255 255 255 / 11%);
   }
-  .sidebar__mobile-account .sidebar__signout { min-height: 44px; }
+  .sidebar__mobile-account .sidebar__signout {
+    min-height: 44px;
+  }
 
   .workspace__bar {
     display: none;
@@ -1386,6 +1406,44 @@ tbody tr:hover {
 }
 
 @media (max-width: 720px) {
+  .table-wrap {
+    max-width: calc(100vw - 32px);
+    border: 1px solid var(--locz-border);
+    border-radius: 14px;
+    overflow-x: auto;
+    overscroll-behavior-inline: contain;
+    scrollbar-gutter: stable;
+    scroll-snap-type: x proximity;
+    background: var(--locz-surface);
+    box-shadow: 0 10px 28px rgb(20 48 39 / 7%);
+  }
+
+  .table-wrap::before {
+    position: sticky;
+    left: 0;
+    z-index: 3;
+    display: block;
+    width: max-content;
+    padding: 9px 11px 2px;
+    color: var(--locz-text-secondary);
+    font-size: 0.68rem;
+    font-weight: 650;
+    content: 'Swipe to see all columns →';
+  }
+
+  .table-wrap table {
+    min-width: 720px;
+  }
+
+  .table-wrap th:first-child,
+  .table-wrap td:first-child {
+    position: sticky;
+    left: 0;
+    z-index: 2;
+    background: var(--locz-surface);
+    box-shadow: 8px 0 14px rgb(20 48 39 / 5%);
+  }
+
   .main {
     padding-top: 24px;
   }
@@ -1486,7 +1544,10 @@ tbody tr:hover {
 }
 
 /* Shared route feedback: console pages should never look frozen while server data resolves. */
-.console-loading { display: grid; gap: 18px; }
+.console-loading {
+  display: grid;
+  gap: 18px;
+}
 .console-loading__heading,
 .console-loading__summary span,
 .console-loading__panel i {
@@ -1495,13 +1556,20 @@ tbody tr:hover {
   background-size: 220% 100%;
   animation: console-shimmer 1.35s ease-in-out infinite;
 }
-.console-loading__heading { width: min(380px, 72%); height: 56px; border-radius: 14px; }
+.console-loading__heading {
+  width: min(380px, 72%);
+  height: 56px;
+  border-radius: 14px;
+}
 .console-loading__summary {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 12px;
 }
-.console-loading__summary span { height: 112px; border-radius: 16px; }
+.console-loading__summary span {
+  height: 112px;
+  border-radius: 16px;
+}
 .console-loading__panel {
   padding: 20px;
   display: grid;
@@ -1510,11 +1578,22 @@ tbody tr:hover {
   border-radius: 18px;
   background: #fff;
 }
-.console-loading__panel i { height: 54px; border-radius: 11px; }
-@keyframes console-shimmer { to { background-position: -220% 0; } }
+.console-loading__panel i {
+  height: 54px;
+  border-radius: 11px;
+}
+@keyframes console-shimmer {
+  to {
+    background-position: -220% 0;
+  }
+}
 @media (max-width: 720px) {
-  .console-loading__summary { grid-template-columns: 1fr 1fr; }
-  .console-loading__summary span { height: 92px; }
+  .console-loading__summary {
+    grid-template-columns: 1fr 1fr;
+  }
+  .console-loading__summary span {
+    height: 92px;
+  }
 }
 
 /* ---------- Business trust operations ---------- */
@@ -2689,9 +2768,14 @@ tbody tr:hover {
 
 /* The rules on either side of the word. */
 .google-console-signin::before {
-  background-image: linear-gradient(currentColor, currentColor), linear-gradient(currentColor, currentColor);
-  background-size: calc(50% - 1.5rem) 1px, calc(50% - 1.5rem) 1px;
-  background-position: left center, right center;
+  background-image:
+    linear-gradient(currentColor, currentColor), linear-gradient(currentColor, currentColor);
+  background-size:
+    calc(50% - 1.5rem) 1px,
+    calc(50% - 1.5rem) 1px;
+  background-position:
+    left center,
+    right center;
   background-repeat: no-repeat;
   justify-content: center;
   opacity: 0.35;
@@ -2704,54 +2788,265 @@ tbody tr:hover {
   text-align: center;
 }
 
+.google-console-signin__loading {
+  min-height: 44px;
+  width: min(320px, 100%);
+  margin: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  border: 1px solid var(--locz-border);
+  border-radius: 8px;
+  color: var(--locz-text-secondary);
+  background: var(--locz-surface);
+  font-size: 0.84rem;
+}
+
+.google-console-signin__loading span {
+  width: 16px;
+  height: 16px;
+  border: 2px solid color-mix(in srgb, var(--locz-primary) 22%, transparent);
+  border-top-color: var(--locz-primary);
+  border-radius: 50%;
+  animation: admin-signin-spin 700ms linear infinite;
+}
+
+@keyframes admin-signin-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
 /* Business ownership queue */
-.claim-review-page { max-width: 1180px; }
-.claim-review-count { min-width: 150px; padding: 13px 16px; display: grid; border: 1px solid var(--locz-border); border-radius: 14px; background: var(--locz-surface); color: var(--locz-text-secondary); font-size: 0.68rem; }
-.claim-review-count strong { color: var(--locz-text); font-size: 1.4rem; line-height: 1; }
-.claim-review-list { display: grid; gap: 16px; }
-.claim-review-card { overflow: hidden; border: 1px solid var(--locz-border); border-radius: 18px; background: var(--locz-surface); box-shadow: 0 8px 26px rgba(24, 48, 39, 0.045); }
-.claim-review-card > header { display: grid; padding: 19px 20px; grid-template-columns: 46px minmax(0, 1fr) auto; align-items: center; gap: 13px; }
-.claim-review-logo { display: grid; width: 46px; height: 46px; place-items: center; border-radius: 13px; background: var(--locz-primary-soft); color: var(--locz-primary); font-size: 1.08rem; font-weight: 800; }
-.claim-review-card h2 { margin: 2px 0; font-size: 1.04rem; }
-.claim-review-card header p { margin: 0; color: var(--locz-text-secondary); font-size: 0.67rem; }
-.claim-review-card header > a { display: inline-flex; align-items: center; gap: 5px; color: var(--locz-primary); font-size: 0.67rem; font-weight: 700; }
-.claim-review-grid { display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(270px, 0.7fr); border-block: 1px solid var(--locz-border); background: var(--locz-surface-muted); }
-.claim-review-grid > section { padding: 17px 20px; border-right: 1px solid var(--locz-border); }
-.claim-review-grid > section > span, .claim-review-grid dt { color: var(--locz-text-muted); font-size: 0.62rem; font-weight: 700; }
-.claim-review-grid blockquote { margin: 5px 0 0; color: var(--locz-text); font-size: 0.76rem; line-height: 1.55; }
-.claim-review-grid dl { display: grid; margin: 0; padding: 13px 18px; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px 16px; }
-.claim-review-grid dl > div { min-width: 0; }
-.claim-review-grid dd { margin: 2px 0 0; overflow: hidden; color: var(--locz-text); font-size: 0.69rem; font-weight: 650; text-overflow: ellipsis; white-space: nowrap; }
-.claim-review-signals { display: flex; padding: 12px 20px; flex-wrap: wrap; gap: 8px; border-bottom: 1px solid var(--locz-border); }
-.claim-review-signals > span { display: inline-flex; padding: 6px 9px; align-items: center; gap: 5px; border-radius: 999px; background: var(--locz-surface-muted); color: var(--locz-text-secondary); font-size: 0.62rem; }
-.claim-review-signals strong { color: var(--locz-text); }
-.claim-review-signals .is-ready { background: var(--locz-success-surface); color: var(--locz-success); }
-.claim-review-decision { display: grid; padding: 16px 20px 19px; grid-template-columns: minmax(0, 1fr) auto; align-items: end; gap: 12px; }
-.claim-review-decision label { display: grid; gap: 5px; }
-.claim-review-decision label > span { color: var(--locz-text); font-size: 0.68rem; font-weight: 700; }
-.claim-review-decision textarea { width: 100%; min-height: 56px; padding: 9px 11px; resize: vertical; border: 1px solid var(--locz-border); border-radius: 10px; background: var(--locz-surface-muted); color: var(--locz-text); font: inherit; font-size: 0.71rem; }
-.claim-review-decision label > small { color: var(--locz-text-muted); font-size: 0.61rem; }
-.claim-review-actions { display: flex; gap: 8px; }
-.claim-review-actions .btn { min-height: 42px; font-size: 0.67rem; }
-.claim-review-actions .btn--danger { border-color: #e1bbb5; background: #fff5f2; color: #9a3f35; }
-.claim-review-decision .form-message { grid-column: 1 / -1; margin: 0; color: var(--locz-success); font-size: 0.67rem; }
-.claim-review-decision .form-message.is-error { color: var(--locz-danger); }
-.claim-review-pagination { display: flex; margin-top: 22px; align-items: center; justify-content: space-between; gap: 12px; }
-.claim-review-pagination > span { color: var(--locz-text-secondary); font-size: 0.69rem; }
+.claim-review-page {
+  max-width: 1180px;
+}
+.claim-review-count {
+  min-width: 150px;
+  padding: 13px 16px;
+  display: grid;
+  border: 1px solid var(--locz-border);
+  border-radius: 14px;
+  background: var(--locz-surface);
+  color: var(--locz-text-secondary);
+  font-size: 0.68rem;
+}
+.claim-review-count strong {
+  color: var(--locz-text);
+  font-size: 1.4rem;
+  line-height: 1;
+}
+.claim-review-list {
+  display: grid;
+  gap: 16px;
+}
+.claim-review-card {
+  overflow: hidden;
+  border: 1px solid var(--locz-border);
+  border-radius: 18px;
+  background: var(--locz-surface);
+  box-shadow: 0 8px 26px rgba(24, 48, 39, 0.045);
+}
+.claim-review-card > header {
+  display: grid;
+  padding: 19px 20px;
+  grid-template-columns: 46px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 13px;
+}
+.claim-review-logo {
+  display: grid;
+  width: 46px;
+  height: 46px;
+  place-items: center;
+  border-radius: 13px;
+  background: var(--locz-primary-soft);
+  color: var(--locz-primary);
+  font-size: 1.08rem;
+  font-weight: 800;
+}
+.claim-review-card h2 {
+  margin: 2px 0;
+  font-size: 1.04rem;
+}
+.claim-review-card header p {
+  margin: 0;
+  color: var(--locz-text-secondary);
+  font-size: 0.67rem;
+}
+.claim-review-card header > a {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: var(--locz-primary);
+  font-size: 0.67rem;
+  font-weight: 700;
+}
+.claim-review-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.3fr) minmax(270px, 0.7fr);
+  border-block: 1px solid var(--locz-border);
+  background: var(--locz-surface-muted);
+}
+.claim-review-grid > section {
+  padding: 17px 20px;
+  border-right: 1px solid var(--locz-border);
+}
+.claim-review-grid > section > span,
+.claim-review-grid dt {
+  color: var(--locz-text-muted);
+  font-size: 0.62rem;
+  font-weight: 700;
+}
+.claim-review-grid blockquote {
+  margin: 5px 0 0;
+  color: var(--locz-text);
+  font-size: 0.76rem;
+  line-height: 1.55;
+}
+.claim-review-grid dl {
+  display: grid;
+  margin: 0;
+  padding: 13px 18px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px 16px;
+}
+.claim-review-grid dl > div {
+  min-width: 0;
+}
+.claim-review-grid dd {
+  margin: 2px 0 0;
+  overflow: hidden;
+  color: var(--locz-text);
+  font-size: 0.69rem;
+  font-weight: 650;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.claim-review-signals {
+  display: flex;
+  padding: 12px 20px;
+  flex-wrap: wrap;
+  gap: 8px;
+  border-bottom: 1px solid var(--locz-border);
+}
+.claim-review-signals > span {
+  display: inline-flex;
+  padding: 6px 9px;
+  align-items: center;
+  gap: 5px;
+  border-radius: 999px;
+  background: var(--locz-surface-muted);
+  color: var(--locz-text-secondary);
+  font-size: 0.62rem;
+}
+.claim-review-signals strong {
+  color: var(--locz-text);
+}
+.claim-review-signals .is-ready {
+  background: var(--locz-success-surface);
+  color: var(--locz-success);
+}
+.claim-review-decision {
+  display: grid;
+  padding: 16px 20px 19px;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: end;
+  gap: 12px;
+}
+.claim-review-decision label {
+  display: grid;
+  gap: 5px;
+}
+.claim-review-decision label > span {
+  color: var(--locz-text);
+  font-size: 0.68rem;
+  font-weight: 700;
+}
+.claim-review-decision textarea {
+  width: 100%;
+  min-height: 56px;
+  padding: 9px 11px;
+  resize: vertical;
+  border: 1px solid var(--locz-border);
+  border-radius: 10px;
+  background: var(--locz-surface-muted);
+  color: var(--locz-text);
+  font: inherit;
+  font-size: 0.71rem;
+}
+.claim-review-decision label > small {
+  color: var(--locz-text-muted);
+  font-size: 0.61rem;
+}
+.claim-review-actions {
+  display: flex;
+  gap: 8px;
+}
+.claim-review-actions .btn {
+  min-height: 42px;
+  font-size: 0.67rem;
+}
+.claim-review-actions .btn--danger {
+  border-color: #e1bbb5;
+  background: #fff5f2;
+  color: #9a3f35;
+}
+.claim-review-decision .form-message {
+  grid-column: 1 / -1;
+  margin: 0;
+  color: var(--locz-success);
+  font-size: 0.67rem;
+}
+.claim-review-decision .form-message.is-error {
+  color: var(--locz-danger);
+}
+.claim-review-pagination {
+  display: flex;
+  margin-top: 22px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.claim-review-pagination > span {
+  color: var(--locz-text-secondary);
+  font-size: 0.69rem;
+}
 
 @media (max-width: 780px) {
-  .claim-review-card > header { grid-template-columns: 46px 1fr; }
-  .claim-review-card header > a { grid-column: 1 / -1; }
-  .claim-review-grid { grid-template-columns: 1fr; }
-  .claim-review-grid > section { border-right: 0; border-bottom: 1px solid var(--locz-border); }
-  .claim-review-decision { grid-template-columns: 1fr; }
-  .claim-review-actions { justify-content: flex-end; }
+  .claim-review-card > header {
+    grid-template-columns: 46px 1fr;
+  }
+  .claim-review-card header > a {
+    grid-column: 1 / -1;
+  }
+  .claim-review-grid {
+    grid-template-columns: 1fr;
+  }
+  .claim-review-grid > section {
+    border-right: 0;
+    border-bottom: 1px solid var(--locz-border);
+  }
+  .claim-review-decision {
+    grid-template-columns: 1fr;
+  }
+  .claim-review-actions {
+    justify-content: flex-end;
+  }
 }
 
 @media (max-width: 480px) {
-  .claim-review-grid dl { grid-template-columns: 1fr; }
-  .claim-review-actions { align-items: stretch; flex-direction: column-reverse; }
-  .claim-review-actions .btn { width: 100%; }
+  .claim-review-grid dl {
+    grid-template-columns: 1fr;
+  }
+  .claim-review-actions {
+    align-items: stretch;
+    flex-direction: column-reverse;
+  }
+  .claim-review-actions .btn {
+    width: 100%;
+  }
 }
 
 /* Final login contrast floor after all legacy and responsive rules. */

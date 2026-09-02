@@ -224,7 +224,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
                   href="https://www.instagram.com/loczapp/"
                   target="_blank"
                   rel="me noopener noreferrer"
-                  aria-label="LocZ on Instagram"
+                  aria-label={t('footer.instagram')}
                 >
                   <Icon name="instagram" />
                 </a>
@@ -232,7 +232,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
                   href="https://www.linkedin.com/company/locz/"
                   target="_blank"
                   rel="me noopener noreferrer"
-                  aria-label="LocZ on LinkedIn"
+                  aria-label={t('footer.linkedin')}
                 >
                   <Icon name="linkedin" />
                 </a>

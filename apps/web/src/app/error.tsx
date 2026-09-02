@@ -29,10 +29,10 @@ export default function ErrorPage({
         {t('errorPage.body')}
       </p>
       <div style={{ display: 'flex', justifyContent: 'center', gap: 12, flexWrap: 'wrap' }}>
-        <button className="button button--primary" type="button" onClick={reset}>
+        <button className="btn btn--primary" type="button" onClick={reset}>
           {t('errorPage.tryAgain')}
         </button>
-        <Link className="button button--secondary" href="/">
+        <Link className="btn btn--ghost" href="/">
           {t('errorPage.goHome')}
         </Link>
       </div>

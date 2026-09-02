@@ -501,9 +501,7 @@ export default async function HomePage({
             </div>
             <span className="home-popular__summary" aria-label={areaLabels.businesses}>
               <Icon name="location" />
-              <strong>
-                {nf(popularCategories.reduce((total, category) => total + category.count, 0))}
-              </strong>
+              <strong>{nf(homeBusinesses.total)}</strong>
               <span>{areaLabels.businesses}</span>
             </span>
           </div>
@@ -691,7 +689,7 @@ export default async function HomePage({
                 })}
               </div>
               <Link href="/news" className="local-news__more-btn">
-                <span>View all local stories</span> <Icon name="arrow" />
+                <span>{t('newsUi.viewAllLocalStories')}</span> <Icon name="arrow" />
               </Link>
             </section>
           ) : null}
@@ -735,7 +733,7 @@ export default async function HomePage({
 
             {!feed || feed.sections.length === 0 ? (
               <div className="empty-state empty-state--compact">
-                <h1 className="page-title">{t('brand.tagline')}</h1>
+                <h2 className="page-title">{t('brand.tagline')}</h2>
                 <p>{t('feed.empty')}</p>
                 <Link href="/post" className="btn btn--primary" style={{ marginTop: 16 }}>
                   <Icon name="plus" width="18" height="18" /> {t('nav.post')}
@@ -808,6 +806,7 @@ export default async function HomePage({
                   allCategoriesLabel={searchLabels.allCategories}
                   verifiedOnlyLabel={searchLabels.verifiedOnly}
                   emptyLabel={searchLabels.noBusinessesMatch}
+                  showPaginationSummary={false}
                 />
               </section>
             ) : null}

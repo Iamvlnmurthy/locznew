@@ -46,7 +46,6 @@ export function CityCombobox({
     if (query.trim().length < 1 || query === selectedLabel) return;
 
     let current = true;
-    setLoading(true);
     const timer = window.setTimeout(() => {
       void searchCitiesAction(query).then((matches) => {
         if (!current) return;

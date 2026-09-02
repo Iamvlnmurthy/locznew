@@ -8,9 +8,18 @@ import type { PostOfficeInfo } from './page';
  *  - `matched` → one verified office: its pincode, type and delivery status are stated outright.
  *  - otherwise → the offices in the pincode, so the reader finds theirs.
  */
-export function PostOfficeDetails({ info, place }: { info: PostOfficeInfo; place: string }) {
+export function PostOfficeDetails({
+  info,
+  place,
+  labels: l,
+}: {
+  info: PostOfficeInfo;
+  place: string;
+  labels: Record<string, string>;
+}) {
   const { matched, offices, pincode, areaLabel, officeCount } = info;
   const area = areaLabel ?? place;
+  const pin = pincode ?? '—';
 
   return (
     <section
@@ -19,10 +28,10 @@ export function PostOfficeDetails({ info, place }: { info: PostOfficeInfo; place
       aria-labelledby="po-h"
     >
       <div className="bank-panel__head">
-        <span className="section-kicker">Post office details</span>
+        <span className="section-kicker">{l.postOfficeDetails}</span>
         <span className="bank-source">
           <Icon name="shield" />
-          India Post · official directory
+          {l.indiaPostDirectory}
         </span>
       </div>
 
@@ -41,26 +50,31 @@ export function PostOfficeDetails({ info, place }: { info: PostOfficeInfo; place
           </div>
           <dl className="bank-codes">
             <div className="bank-codes__row">
-              <dt>Pincode</dt>
+              <dt>{l.pincode}</dt>
               <dd>
-                <CopyCode value={matched.pincode} label="pincode" />
+                <CopyCode
+                  value={matched.pincode}
+                  label={l.pincode}
+                  copyLabel={l.copyCode}
+                  copiedLabel={l.copied}
+                />
               </dd>
             </div>
             {matched.delivery ? (
               <div className="bank-codes__row">
-                <dt>Delivery</dt>
+                <dt>{l.delivery}</dt>
                 <dd className="bank-codes__plain">{matched.delivery}</dd>
               </div>
             ) : null}
             {matched.division ? (
               <div className="bank-codes__row">
-                <dt>Division</dt>
+                <dt>{l.division}</dt>
                 <dd className="bank-codes__plain">{matched.division}</dd>
               </div>
             ) : null}
             {matched.circle ? (
               <div className="bank-codes__row">
-                <dt>Postal circle</dt>
+                <dt>{l.postalCircle}</dt>
                 <dd className="bank-codes__plain">{matched.circle}</dd>
               </div>
             ) : null}
@@ -69,21 +83,17 @@ export function PostOfficeDetails({ info, place }: { info: PostOfficeInfo; place
       ) : (
         <>
           <h2 id="po-h" className="bank-panel__title">
-            Post offices in pincode {pincode}
-            {area ? `, ${area}` : ''}
+            {l.postOfficesTitle.replace('{pincode}', pin).replace('{area}', area)}
           </h2>
-          <p className="bank-panel__lead">
-            Official India Post offices under pincode {pincode}. Each is listed with its type and
-            delivery status — find the one you need below.
-          </p>
+          <p className="bank-panel__lead">{l.postOfficesBody.replace('{pincode}', pin)}</p>
           <div className="bank-branch-table-wrap">
             <table className="bank-branch-table">
               <thead>
                 <tr>
-                  <th scope="col">Post office</th>
-                  <th scope="col">Type</th>
-                  <th scope="col">Pincode</th>
-                  <th scope="col">Delivery</th>
+                  <th scope="col">{l.postOffice}</th>
+                  <th scope="col">{l.type}</th>
+                  <th scope="col">{l.pincode}</th>
+                  <th scope="col">{l.delivery}</th>
                 </tr>
               </thead>
               <tbody>
@@ -94,7 +104,12 @@ export function PostOfficeDetails({ info, place }: { info: PostOfficeInfo; place
                     </th>
                     <td className="bank-branch-table__micr">{o.officeType}</td>
                     <td>
-                      <CopyCode value={o.pincode} label="pincode" />
+                      <CopyCode
+                        value={o.pincode}
+                        label={l.pincode}
+                        copyLabel={l.copyCode}
+                        copiedLabel={l.copied}
+                      />
                     </td>
                     <td className="bank-branch-table__svc">{o.delivery ?? '—'}</td>
                   </tr>
@@ -104,7 +119,10 @@ export function PostOfficeDetails({ info, place }: { info: PostOfficeInfo; place
           </div>
           {officeCount > offices.length ? (
             <p className="bank-panel__more">
-              Showing {offices.length} of {officeCount} offices under pincode {pincode}.
+              {l.showingOffices
+                .replace('{shown}', String(offices.length))
+                .replace('{total}', String(officeCount))
+                .replace('{pincode}', pin)}
             </p>
           ) : null}
         </>

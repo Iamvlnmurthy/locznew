@@ -935,11 +935,6 @@ export default async function BusinessPage({ params }: { params: Promise<{ slug:
                       <Icon name="location" /> {p.getDirections}
                     </a>
                   ) : null}
-                  {!business.isPublicService && !business.isOwner ? (
-                    <a href="#contact" data-track="enquiry_open" className="is-enquiry">
-                      <Icon name="message" /> {p.sendEnquiry}
-                    </a>
-                  ) : null}
                 </div>
               </div>
             </div>
@@ -961,15 +956,15 @@ export default async function BusinessPage({ params }: { params: Promise<{ slug:
           />
 
           {business.banking && (business.banking.matched || business.banking.branches.length) ? (
-            <BankingDetails banking={business.banking} place={placeLabel} />
+            <BankingDetails banking={business.banking} place={placeLabel} labels={p} />
           ) : null}
 
           {business.postOffice &&
           (business.postOffice.matched || business.postOffice.offices.length) ? (
-            <PostOfficeDetails info={business.postOffice} place={placeLabel} />
+            <PostOfficeDetails info={business.postOffice} place={placeLabel} labels={p} />
           ) : null}
 
-          {business.railway ? <RailwayDetails info={business.railway} /> : null}
+          {business.railway ? <RailwayDetails info={business.railway} labels={p} /> : null}
 
           <section className="business-profile-section business-profile-section--about" id="about">
             <span className="section-kicker">
@@ -1051,13 +1046,12 @@ export default async function BusinessPage({ params }: { params: Promise<{ slug:
           </section>
 
           {/* The reader has the identity, primary actions and business story by now. */}
-          <AdSlot placement="BUSINESS_AFTER_ABOUT" contentScore={adContentScore} />
-
           <StorefrontHouseAd
             businessId={business.id}
             businessName={business.name}
             city={business.cityName}
             category={business.categoryName}
+            labels={{ region: p.onrolProgram, link: p.onrolOpen, imageAlt: p.onrolAlt }}
           />
 
           {!business.isPublicService ? (
@@ -1467,7 +1461,7 @@ export default async function BusinessPage({ params }: { params: Promise<{ slug:
                 </span>
                 <div>
                   <strong>Own this business?</strong>
-                  <small>Claim verified profile</small>
+                  <small>{p.claimVerifiedProfile}</small>
                 </div>
               </div>
               <p>Get a verified badge, update details & receive direct WhatsApp customer leads.</p>
@@ -1502,7 +1496,7 @@ export default async function BusinessPage({ params }: { params: Promise<{ slug:
       </div>
 
       {/* Sticky Quick-Action Bar on mobile viewports */}
-      <div className="business-profile-sticky-bar" aria-label="Quick contact actions">
+      <div className="business-profile-sticky-bar" aria-label={p.quickContactActions}>
         {business.primaryPhone ? (
           <a
             href={`tel:${business.primaryPhone}`}

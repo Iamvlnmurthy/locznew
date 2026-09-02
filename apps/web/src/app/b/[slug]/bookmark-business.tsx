@@ -21,17 +21,21 @@ export function BookmarkBusiness({
   const [saved, setSaved] = useState(false);
 
   useEffect(() => {
-    try {
-      const raw = localStorage.getItem(STORAGE_KEY);
-      if (raw) {
-        const items = JSON.parse(raw);
-        if (Array.isArray(items)) {
-          setSaved(items.some((item: { id: string }) => item.id === id));
+    const frame = window.requestAnimationFrame(() => {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (raw) {
+          const items = JSON.parse(raw);
+          if (Array.isArray(items)) {
+            setSaved(items.some((item: { id: string }) => item.id === id));
+          }
         }
+      } catch {
+        // A blocked or malformed local store should not prevent the profile loading.
       }
-    } catch {
-      // ignore
-    }
+    });
+
+    return () => window.cancelAnimationFrame(frame);
   }, [id]);
 
   function toggleSave() {

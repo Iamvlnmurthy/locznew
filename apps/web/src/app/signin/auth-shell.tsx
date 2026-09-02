@@ -33,7 +33,7 @@ export function AuthShell({
             <span className="eyebrow">
               <i /> {labels.eyebrow}
             </span>
-            <h1 id="auth-story-title">{labels.title}</h1>
+            <h2 id="auth-story-title">{labels.title}</h2>
             <p>{labels.subtitle}</p>
 
             <div className="auth-experience__proof">

@@ -130,7 +130,14 @@ export default async function CitiesPage({
                   : t('cityDirectory.allTitle')}
               </h2>
             </div>
-            <p>{t('cityDirectory.resultCount', { count: visibleCities.length })}</p>
+            <p>
+              {t(
+                visibleCities.length === 1
+                  ? 'cityDirectory.resultCountOne'
+                  : 'cityDirectory.resultCount',
+                { count: visibleCities.length },
+              )}
+            </p>
           </div>
 
           {grouped.length ? (
@@ -145,7 +152,14 @@ export default async function CitiesPage({
                     <span>{String(stateIndex + 1).padStart(2, '0')}</span>
                     <div>
                       <h3 id={`state-${stateIndex}`}>{state}</h3>
-                      <small>{t('cityDirectory.citiesInState', { count: cities.length })}</small>
+                      <small>
+                        {t(
+                          cities.length === 1
+                            ? 'cityDirectory.citiesInStateOne'
+                            : 'cityDirectory.citiesInState',
+                          { count: cities.length },
+                        )}
+                      </small>
                     </div>
                   </header>
                   <div className={styles.cityGrid}>

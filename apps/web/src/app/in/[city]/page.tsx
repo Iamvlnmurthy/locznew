@@ -241,7 +241,11 @@ export default async function CityPage({ params }: { params: Promise<{ city: str
           label={t('cityGuide.population')}
           value={formatPopulation(data.population, locale)}
         />
-        <Fact icon="sparkles" label={t('cityGuide.cityTier')} value={`Tier ${data.tier}`} />
+        <Fact
+          icon="sparkles"
+          label={t('cityGuide.cityTier')}
+          value={t('cityGuide.tierValue', { tier: data.tier })}
+        />
         <Fact
           icon="location"
           label={t('cityGuide.region')}
@@ -386,6 +390,7 @@ export default async function CityPage({ params }: { params: Promise<{ city: str
                   section={section}
                   index={index}
                   readMore={t('cityGuide.readFullSection')}
+                  referenceLabel={t('cityGuide.referenceText', { source: '__SOURCE__' })}
                 />
               ))}
               <AdSlot
@@ -401,6 +406,7 @@ export default async function CityPage({ params }: { params: Promise<{ city: str
                     section={section}
                     index={index}
                     readMore={t('cityGuide.readFullSection')}
+                    referenceLabel={t('cityGuide.referenceText', { source: '__SOURCE__' })}
                   />
                 );
               })}
@@ -549,14 +555,16 @@ function CityDirectory({
 
       {localities.length > 0 ? (
         <div className={styles.localityMesh}>
-          <span className={styles.sectionKicker}>Popular Areas & Localities in {cityName}</span>
+          <span className={styles.sectionKicker}>
+            {t('cityGuide.localitiesTitle', { city: cityName })}
+          </span>
           <div className={styles.localityGrid}>
             {localities.map((loc) => (
               <Link
                 key={loc.id}
                 href={`/search?cityId=${city.id}&q=${encodeURIComponent(loc.name)}`}
                 className={styles.localityChip}
-                title={`Explore businesses and services in ${loc.name}, ${cityName}`}
+                title={t('cityGuide.localityLinkTitle', { locality: loc.name, city: cityName })}
               >
                 <Icon name="location" width="13" height="13" />
                 <span>{loc.name}</span>
@@ -568,14 +576,16 @@ function CityDirectory({
 
       {pincodes.length > 0 ? (
         <div className={styles.pincodeMesh}>
-          <span className={styles.sectionKicker}>Browse by PIN Code in {cityName}</span>
+          <span className={styles.sectionKicker}>
+            {t('cityGuide.pincodeTitle', { city: cityName })}
+          </span>
           <div className={styles.pincodeGrid}>
             {pincodes.map((pin) => (
               <Link
                 key={pin.code}
                 href={`/search?pincode=${pin.code}`}
                 className={styles.pincodeChip}
-                title={`Find verified shops and services in PIN ${pin.code} (${pin.name})`}
+                title={t('cityGuide.pincodeLinkTitle', { code: pin.code, area: pin.name })}
               >
                 <strong>{pin.code}</strong>
                 <small>{pin.name}</small>
@@ -661,10 +671,12 @@ function GuideCard({
   section,
   index,
   readMore,
+  referenceLabel,
 }: {
   section: CityGuideSection;
   index: number;
   readMore: string;
+  referenceLabel: string;
 }) {
   const preview = sectionPreview(section.content);
   return (
@@ -684,18 +696,25 @@ function GuideCard({
           </div>
         </details>
       ) : null}
-      <SourceCredit section={section} />
+      <SourceCredit section={section} referenceLabel={referenceLabel} />
     </article>
   );
 }
-function SourceCredit({ section }: { section: CityGuideSection }) {
+function SourceCredit({
+  section,
+  referenceLabel,
+}: {
+  section: CityGuideSection;
+  referenceLabel: string;
+}) {
   const label = [section.source, section.license].filter(Boolean).join(' · ') || 'Source';
+  const copy = referenceLabel.replace('__SOURCE__', label);
   return section.sourceUrl ? (
     <a href={section.sourceUrl} target="_blank" rel="noreferrer" className={styles.source}>
-      Reference text from {label} <span>↗</span>
+      {copy} <span>↗</span>
     </a>
   ) : (
-    <span className={styles.source}>Reference text from {label}</span>
+    <span className={styles.source}>{copy}</span>
   );
 }
 function ImageCredit({ image, dark = false }: { image: CityGuideImage; dark?: boolean }) {

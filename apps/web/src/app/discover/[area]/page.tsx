@@ -1,5 +1,6 @@
 import Image from 'next/image';
 import Link from 'next/link';
+import type { Metadata } from 'next';
 import { Fragment } from 'react';
 import { notFound, redirect } from 'next/navigation';
 import type { ListingSummary } from '@locz/shared-types';
@@ -78,6 +79,24 @@ const listingTypes: Partial<Record<Destination, ReadonlySet<ListingSummary['type
 };
 
 export const dynamic = 'force-dynamic';
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ area: string }>;
+}): Promise<Metadata> {
+  const { area } = await params;
+  if (!destinations.includes(area as Destination)) return {};
+  const [locale, city] = await Promise.all([getLocale(), getSelectedCity()]);
+  const t = getTranslator(locale);
+  const areaLabels = getMessageGroup(locale, 'discoveryAreas');
+  const areaLabel = areaLabels[area] ?? area;
+  const cityName = city?.name ?? t('home.yourCity');
+  return {
+    title: t('discoverUi.metaTitle', { area: areaLabel, city: cityName }),
+    description: t('discoverUi.metaDescription', { area: areaLabel, city: cityName }),
+  };
+}
 
 export default async function DiscoveryAreaPage({ params }: { params: Promise<{ area: string }> }) {
   const { area: rawArea } = await params;

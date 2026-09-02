@@ -4,7 +4,17 @@ import { useState } from 'react';
 import { Icon } from '@/components/icons';
 
 /** A monospace code (IFSC/MICR) that copies itself on click — banking codes exist to be copied. */
-export function CopyCode({ value, label }: { value: string; label?: string }) {
+export function CopyCode({
+  value,
+  label,
+  copyLabel,
+  copiedLabel,
+}: {
+  value: string;
+  label: string;
+  copyLabel: string;
+  copiedLabel: string;
+}) {
   const [copied, setCopied] = useState(false);
 
   async function handleCopy() {
@@ -22,13 +32,13 @@ export function CopyCode({ value, label }: { value: string; label?: string }) {
       type="button"
       onClick={handleCopy}
       className={`bank-code ${copied ? 'is-copied' : ''}`}
-      aria-label={`Copy ${label ?? 'code'} ${value}`}
+      aria-label={copyLabel.replace('{label}', label).replace('{value}', value)}
     >
       <span className="bank-code__value">{value}</span>
       <span className="bank-code__icon" aria-hidden="true">
         <Icon name={copied ? 'check' : 'code'} />
       </span>
-      {copied ? <span className="bank-code__flash">Copied</span> : null}
+      {copied ? <span className="bank-code__flash">{copiedLabel}</span> : null}
     </button>
   );
 }

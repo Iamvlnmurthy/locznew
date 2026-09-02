@@ -47,11 +47,11 @@ const FALLBACK_AREAS: FinderOption[] = [
   { slug: 'banjara-hills', name: 'Banjara Hills' },
   { slug: 'jubilee-hills', name: 'Jubilee Hills' },
   { slug: 'kukatpally', name: 'Kukatpally' },
-  { slug: 'hsr-layout', name: 'HSR Layout' },
-  { slug: 'andheri-east', name: 'Andheri East' },
-  { slug: 'anna-nagar-chennai', name: 'Anna Nagar' },
-  { slug: 'alkapuri', name: 'Alkapuri' },
-  { slug: 'navrangpura', name: 'Navrangpura' },
+  { slug: 'gachibowli', name: 'Gachibowli' },
+  { slug: 'madhapur', name: 'Madhapur' },
+  { slug: 'kondapur', name: 'Kondapur' },
+  { slug: 'ameerpet', name: 'Ameerpet' },
+  { slug: 'secunderabad', name: 'Secunderabad' },
 ];
 
 export const revalidate = 1800;

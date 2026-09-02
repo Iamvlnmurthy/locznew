@@ -8,10 +8,12 @@ export function LocationTypeahead({
   defaultCityId = '',
   defaultPincode = '',
   defaultLabel = '',
+  labels,
 }: {
   defaultCityId?: string;
   defaultPincode?: string;
   defaultLabel?: string;
+  labels: { placeholder: string; clear: string; city: string; area: string };
 }) {
   const [query, setQuery] = useState(defaultLabel);
   const [selectedCityId, setSelectedCityId] = useState(defaultCityId);
@@ -23,12 +25,8 @@ export function LocationTypeahead({
 
   useEffect(() => {
     const term = query.trim();
-    if (!term || term === selectedLabel) {
-      setSuggestions([]);
-      return;
-    }
+    if (!term || term === selectedLabel) return;
 
-    setLoading(true);
     let active = true;
     const timer = setTimeout(async () => {
       try {
@@ -79,15 +77,23 @@ export function LocationTypeahead({
           id="register-location"
           type="text"
           autoComplete="off"
-          placeholder="Enter city, area or PIN code (e.g. Hyderabad, 500081)"
+          placeholder={labels.placeholder}
           value={query}
           required={!selectedCityId && !selectedPincode}
           onChange={(e) => {
-            setQuery(e.target.value);
+            const nextQuery = e.target.value;
+            setQuery(nextQuery);
             if (selectedCityId || selectedPincode) {
               setSelectedCityId('');
               setSelectedPincode('');
               setSelectedLabel('');
+            }
+            if (!nextQuery.trim()) {
+              setSuggestions([]);
+              setIsOpen(false);
+              setLoading(false);
+            } else {
+              setLoading(true);
             }
           }}
           onFocus={() => {
@@ -106,7 +112,7 @@ export function LocationTypeahead({
             type="button"
             className="location-typeahead__clear"
             onClick={handleClear}
-            aria-label="Clear location"
+            aria-label={labels.clear}
           >
             ×
           </button>
@@ -124,7 +130,7 @@ export function LocationTypeahead({
               }}
             >
               <span className={`location-typeahead__tag is-${item.type}`}>
-                {item.type === 'city' ? 'City' : 'Area'}
+                {item.type === 'city' ? labels.city : labels.area}
               </span>
               <div className="location-typeahead__details">
                 <strong>{item.label}</strong>

@@ -471,7 +471,7 @@ export default async function ListingPage({ params }: { params: Promise<{ slug: 
       ) : null}
 
       {!isOwner ? (
-        <aside className="ad-profile-sticky-bar" aria-label="Quick contact">
+        <aside className="ad-profile-sticky-bar" aria-label={t('listing.quickContact')}>
           <a href="#contact-seller" className="btn btn--sticky-chat">
             <Icon name="message" /> {labels.contactSeller}
           </a>

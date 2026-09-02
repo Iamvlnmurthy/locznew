@@ -7,15 +7,21 @@ import type { RailwayInfo } from './page';
  * Only stable facts — code, train number, name and route — are shown; schedule times are omitted so the
  * page never presents a stale timing as current.
  */
-export function RailwayDetails({ info }: { info: RailwayInfo }) {
+export function RailwayDetails({
+  info,
+  labels: l,
+}: {
+  info: RailwayInfo;
+  labels: Record<string, string>;
+}) {
   const { stationCode, stationName, trains, trainCount } = info;
   return (
     <section className="business-profile-section bank-panel" id="railway" aria-labelledby="rail-h">
       <div className="bank-panel__head">
-        <span className="section-kicker">Station details</span>
+        <span className="section-kicker">{l.stationDetails}</span>
         <span className="bank-source">
           <Icon name="shield" />
-          Indian Railways · public timetable
+          {l.railwayTimetable}
         </span>
       </div>
 
@@ -23,19 +29,26 @@ export function RailwayDetails({ info }: { info: RailwayInfo }) {
         <div className="bank-branch-card__id">
           <h2 id="rail-h" className="bank-branch-card__name">
             {stationName}
-            <span className="bank-branch-card__branch"> · Railway Station</span>
+            <span className="bank-branch-card__branch"> · {l.railwayStation}</span>
           </h2>
         </div>
         <dl className="bank-codes">
           <div className="bank-codes__row">
-            <dt>Station code</dt>
+            <dt>{l.stationCode}</dt>
             <dd>
-              <CopyCode value={stationCode} label="station code" />
+              <CopyCode
+                value={stationCode}
+                label={l.stationCode}
+                copyLabel={l.copyCode}
+                copiedLabel={l.copied}
+              />
             </dd>
           </div>
           <div className="bank-codes__row">
-            <dt>Trains</dt>
-            <dd className="bank-codes__plain">{trainCount} trains serve this station</dd>
+            <dt>{l.trains}</dt>
+            <dd className="bank-codes__plain">
+              {l.trainsCount.replace('{count}', String(trainCount))}
+            </dd>
           </div>
         </dl>
       </div>
@@ -43,15 +56,15 @@ export function RailwayDetails({ info }: { info: RailwayInfo }) {
       {trains.length ? (
         <>
           <h3 className="bank-panel__title" style={{ marginTop: '20px', fontSize: '1.05rem' }}>
-            Trains serving {stationName}
+            {l.trainsServing.replace('{station}', stationName)}
           </h3>
           <div className="bank-branch-table-wrap">
             <table className="bank-branch-table">
               <thead>
                 <tr>
-                  <th scope="col">Train</th>
-                  <th scope="col">Name</th>
-                  <th scope="col">Route</th>
+                  <th scope="col">{l.train}</th>
+                  <th scope="col">{l.name}</th>
+                  <th scope="col">{l.route}</th>
                 </tr>
               </thead>
               <tbody>
@@ -79,13 +92,13 @@ export function RailwayDetails({ info }: { info: RailwayInfo }) {
           </div>
           {trainCount > trains.length ? (
             <p className="bank-panel__more">
-              Showing {trains.length} of {trainCount} trains. Always check live running status and
-              timings before you travel.
+              {l.showingTrains
+                .replace('{shown}', String(trains.length))
+                .replace('{total}', String(trainCount))}{' '}
+              {l.checkLive}
             </p>
           ) : (
-            <p className="bank-panel__more">
-              Always check live running status and timings before you travel.
-            </p>
+            <p className="bank-panel__more">{l.checkLive}</p>
           )}
         </>
       ) : null}

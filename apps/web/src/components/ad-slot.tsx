@@ -42,6 +42,8 @@ interface Props {
   className?: string;
 }
 
+const ADVERTISEMENT_LABEL = 'Advertisement';
+
 const FORMAT_ATTRIBUTES: Readonly<Record<AdFormat, Readonly<Record<string, string>>>> = {
   display: {
     'data-ad-format': 'auto',
@@ -156,7 +158,7 @@ export function AdSlot({ placement, contentScore = 0, className }: Props) {
       // Not part of the document's meaning. A screen reader announcing an
       // advertisement between the address and the opening hours is noise, and
       // ads must never read as LocZ content.
-      aria-label="Advertisement"
+      aria-label={ADVERTISEMENT_LABEL}
       aria-hidden={adState === 'unfilled' ? true : undefined}
       data-ad-state={adState}
       data-placement={placement}
@@ -167,7 +169,7 @@ export function AdSlot({ placement, contentScore = 0, className }: Props) {
         } as React.CSSProperties
       }
     >
-      <span className="ad-slot__label">Advertisement</span>
+      <span className="ad-slot__label">{ADVERTISEMENT_LABEL}</span>
       <ins
         ref={unitRef}
         className="adsbygoogle ad-slot__unit"
