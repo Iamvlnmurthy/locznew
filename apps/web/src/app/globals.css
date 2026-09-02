@@ -16747,10 +16747,7 @@ body {
   font-size: 0.9rem;
 }
 
-.btn {
-  padding-block: 9px;
-  padding-inline: 16px;
-}
+/* (.btn padding override removed here — exact duplicate of the canonical block ~line 1580) */
 
 .page-title,
 .post-form__intro h1,
