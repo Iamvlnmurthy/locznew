@@ -664,5 +664,59 @@
       "q": "What is the typical turnaround time for custom metal fabrication projects in {locality}?",
       "a": "Turnaround times for custom metal fabrication in {locality} vary based on project size and complexity, but typically range from a few days to several weeks. Contacting providers on LocZ will give you the most accurate estimates for your specific needs."
     }
+  ],
+  "law-firms": [
+    {
+      "q": "How much does it cost to hire a law firm in {locality} for a standard legal consultation?",
+      "a": "Costs vary, but a typical legal consultation might range from INR 500 to INR 5,000 depending on the firm's experience and the complexity of the case."
+    },
+    {
+      "q": "What should I check when choosing a law firm in {locality} for my legal needs?",
+      "a": "Verify the firm's specialization, read recent client reviews, and check their experience in handling cases similar to yours."
+    },
+    {
+      "q": "Are there specific timings I should consider when booking a consultation with a law firm in {locality}?",
+      "a": "Most law firms in {locality} offer consultations during business hours, typically from Monday to Friday, 9 AM to 6 PM, but some may offer evenings or weekends by appointment."
+    },
+    {
+      "q": "How can I book a consultation with a law firm in {locality} online?",
+      "a": "You can book a consultation directly on the LocZ platform for the law firm in {locality}. Simply select the firm, choose your preferred date and time, and follow the booking instructions."
+    }
+  ],
+  "accountants": [
+    {
+      "q": "How much does it cost to hire an accountant in {locality}?",
+      "a": "Costs vary based on services needed, but you can expect to pay between INR 5,000 to INR 20,000 per month. Compare rates on LocZ."
+    },
+    {
+      "q": "What should I look for when choosing an accountant in {locality}?",
+      "a": "Choose an accountant with a CA license, good reviews, and experience in your industry. Check their credentials and portfolio on LocZ."
+    },
+    {
+      "q": "Are accountants in {locality} available on weekends or evenings?",
+      "a": "Availability varies, but many accountants offer flexible hours. Check their schedules on LocZ to book at a convenient time."
+    },
+    {
+      "q": "How do I book an appointment with an accountant in {locality}?",
+      "a": "Book an appointment directly through their LocZ page. Most accountants can be booked within 24 hours for consultations."
+    }
+  ],
+  "tour-operators": [
+    {
+      "q": "How much does a tour in {locality} cost for a group of 4-6 people?",
+      "a": "Tour costs vary, but typically include transportation, entry fees, and guides. Compare prices and inclusions directly on the LocZ page."
+    },
+    {
+      "q": "What should I look for to choose a good tour operator in {locality}?",
+      "a": "Choose based on reviews, experience, and safety records. LocZ provides detailed profiles to help you make an informed decision."
+    },
+    {
+      "q": "What should I ask a tour operator before booking a tour in {locality}?",
+      "a": "Ask about the itinerary, included services, cancellation policies, and emergency contact details to ensure a smooth experience."
+    },
+    {
+      "q": "Are there any specific timings I should know for booking a tour in {locality}?",
+      "a": "There are {count} listed, but booking times can vary. Check the availability and contact details on the LocZ page for the best timing."
+    }
   ]
 }
