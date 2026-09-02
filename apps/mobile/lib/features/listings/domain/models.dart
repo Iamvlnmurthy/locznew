@@ -756,6 +756,7 @@ class NewsCard {
     this.distanceKm,
     this.publishedAt,
     this.sources = 1,
+    this.imageUrl,
   });
 
   final String slug;
@@ -767,6 +768,9 @@ class NewsCard {
 
   /// How many source articles collapsed into this card (1 = single report).
   final int sources;
+
+  /// Site-relative image path (e.g. /news-images/…) — prefix with Env.siteUrl to load. Web parity.
+  final String? imageUrl;
 }
 
 /// A full LocZ-regenerated news event (`/news/:slug`) with its source attributions.
@@ -778,6 +782,7 @@ class NewsEvent {
     this.summary,
     this.publishedAt,
     this.sources = const [],
+    this.imageUrl,
   });
 
   final String slug;
@@ -786,4 +791,7 @@ class NewsEvent {
   final String? summary;
   final String? publishedAt;
   final List<({String? publisher, String? url})> sources;
+
+  /// Site-relative image path — prefix with Env.siteUrl to load. Web parity.
+  final String? imageUrl;
 }

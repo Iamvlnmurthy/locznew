@@ -279,6 +279,7 @@ class ListingRepository {
           distanceKm: (entry['distanceKm'] as num?)?.toDouble(),
           publishedAt: entry['publishedAt'] as String?,
           sources: (entry['sources'] as num?)?.toInt() ?? 1,
+          imageUrl: entry['imageUrl'] as String?,
         ),
     ];
   }
@@ -301,6 +302,7 @@ class ListingRepository {
         categories: category != null && category.isNotEmpty ? [category] : const [],
         publishedAt: json['publishedAt'] as String?,
         sources: const [],
+        imageUrl: json['imageUrl'] as String?,
       );
     } catch (_) {
       return null;

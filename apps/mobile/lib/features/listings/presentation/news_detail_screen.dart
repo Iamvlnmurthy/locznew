@@ -1,7 +1,9 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../../../core/config/env.dart';
 import '../../../core/i18n/strings.dart';
 import '../../../core/providers.dart';
 import '../../../core/theme/tokens.g.dart';
@@ -99,6 +101,22 @@ class _NewsDetailScreenState extends ConsumerState<NewsDetailScreen> {
           return ListView(
             padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
             children: [
+              // Hero image (web parity). Relative /news-images path -> prefix siteUrl. 16:10.
+              if (event.imageUrl != null && event.imageUrl!.isNotEmpty)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 16),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(14),
+                    child: AspectRatio(
+                      aspectRatio: 16 / 10,
+                      child: CachedNetworkImage(
+                        imageUrl: '${Env.siteUrl}${event.imageUrl}',
+                        fit: BoxFit.cover,
+                        errorWidget: (_, __, ___) => const SizedBox.shrink(),
+                      ),
+                    ),
+                  ),
+                ),
               Wrap(
                 spacing: 8,
                 runSpacing: 8,

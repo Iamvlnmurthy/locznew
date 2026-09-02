@@ -4,6 +4,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:go_router/go_router.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../../../core/config/env.dart';
 import '../../../core/i18n/strings.dart';
 import '../../../core/motion/locz_motion.dart';
 import '../../../core/providers.dart';
@@ -1806,15 +1807,31 @@ class _LocalNewsSectionState extends ConsumerState<_LocalNewsSection> {
                     child: Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Container(
-                          width: 8,
-                          height: 8,
-                          margin: const EdgeInsets.only(top: 5, right: 10),
-                          decoration: BoxDecoration(
-                            color: theme.colorScheme.tertiary,
-                            shape: BoxShape.circle,
+                        // News thumbnail (web parity). Relative /news-images path -> prefix siteUrl.
+                        if (item.imageUrl != null && item.imageUrl!.isNotEmpty)
+                          Padding(
+                            padding: const EdgeInsets.only(right: 12),
+                            child: ClipRRect(
+                              borderRadius: BorderRadius.circular(10),
+                              child: CachedNetworkImage(
+                                imageUrl: '${Env.siteUrl}${item.imageUrl}',
+                                width: 64,
+                                height: 64,
+                                fit: BoxFit.cover,
+                                errorWidget: (_, __, ___) => const SizedBox.shrink(),
+                              ),
+                            ),
+                          )
+                        else
+                          Container(
+                            width: 8,
+                            height: 8,
+                            margin: const EdgeInsets.only(top: 5, right: 10),
+                            decoration: BoxDecoration(
+                              color: theme.colorScheme.tertiary,
+                              shape: BoxShape.circle,
+                            ),
                           ),
-                        ),
                         Expanded(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
