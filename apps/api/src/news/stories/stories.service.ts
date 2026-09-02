@@ -218,11 +218,13 @@ export class StoriesService {
    * Recent stories for the Google News sitemap — articles from the last 48h (Google News only
    * indexes fresh items), capped at 1000 URLs per the spec.
    */
-  async sitemap(): Promise<Array<{ slug: string; title: string; publishedAt: string }>> {
+  async sitemap(): Promise<
+    Array<{ slug: string; title: string; publishedAt: string; imageUrl: string | null }>
+  > {
     const rows = await this.prisma.$queryRawUnsafe<
-      Array<{ slug: string; title: string; published_at: string }>
+      Array<{ slug: string; title: string; published_at: string; image_url: string | null }>
     >(
-      `SELECT slug, title_en AS title, published_at FROM news_stories
+      `SELECT slug, title_en AS title, published_at, image_url FROM news_stories
        WHERE status = 'PUBLISHED' AND slug IS NOT NULL
          AND published_at >= now() - interval '48 hours'
        ORDER BY published_at DESC LIMIT 1000`,
@@ -231,6 +233,7 @@ export class StoriesService {
       slug: r.slug,
       title: r.title,
       publishedAt: new Date(r.published_at).toISOString(),
+      imageUrl: r.image_url ?? null,
     }));
   }
 

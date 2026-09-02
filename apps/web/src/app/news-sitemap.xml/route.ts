@@ -9,6 +9,7 @@ interface SitemapStory {
   slug: string;
   title: string;
   publishedAt: string;
+  imageUrl?: string | null;
 }
 
 function xmlEscape(s: string): string {
@@ -35,14 +36,22 @@ export async function GET(): Promise<Response> {
       </news:publication>
       <news:publication_date>${s.publishedAt}</news:publication_date>
       <news:title>${xmlEscape(s.title)}</news:title>
-    </news:news>
+    </news:news>${
+      s.imageUrl
+        ? `
+    <image:image>
+      <image:loc>${SITE_URL}${xmlEscape(s.imageUrl)}</image:loc>
+    </image:image>`
+        : ''
+    }
   </url>`,
     )
     .join('\n');
 
   const xml = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
-        xmlns:news="http://www.google.com/schemas/sitemap-news/0.9">
+        xmlns:news="http://www.google.com/schemas/sitemap-news/0.9"
+        xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">
 ${urls}
 </urlset>`;
 
