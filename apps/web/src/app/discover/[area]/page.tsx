@@ -138,7 +138,9 @@ export default async function DiscoveryAreaPage({ params }: { params: Promise<{ 
   const showNews = isLocalNow;
   const showJobs = area === 'jobs';
   const showDeals = area === 'deals';
-  const showBusinesses = area === 'businesses' || isLocalNow;
+  // 'services' also renders nearby businesses (the old SERVICE feed is empty). The redirect above
+  // sends most visits to the /services marketplace, but a direct load still gets real content here.
+  const showBusinesses = area === 'businesses' || area === 'services' || isLocalNow;
   const alertQuery = new URLSearchParams({ q: cityOnly });
   if (place?.id) alertQuery.set('cityId', place.id);
 
