@@ -16,6 +16,7 @@ import { BusinessEnquiry } from './business-enquiry';
 import { ShareBusiness } from './share-business';
 import { BusinessBackButton } from './back-button';
 import { schemaTypeFor } from '@/lib/schema-type';
+import { buildStorefrontJsonLd } from './storefront-jsonld';
 import { AdSlot } from '@/components/ad-slot';
 import { StorefrontHouseAd } from '@/components/storefront-house-ad';
 import { BusinessActionTracker } from '@/components/business-action-tracker';
@@ -26,7 +27,7 @@ import { RailwayDetails } from './railway-details';
 import { BookmarkBusiness } from './bookmark-business';
 import { PUBLIC_SERVICE_SCHEMA_TYPES, isPublicServiceSlug } from '@/lib/public-services';
 
-interface BusinessHour {
+export interface BusinessHour {
   dayOfWeek: number;
   opensAt: string;
   closesAt: string;
@@ -46,7 +47,7 @@ interface SimilarBusiness {
   publicBrandKey?: string | null;
 }
 
-interface BusinessDetail {
+export interface BusinessDetail {
   id: string;
   name: string;
   slug: string;
@@ -259,8 +260,6 @@ function postalAddress(b: {
   const line = parts.join(', ');
   return b.pincode ? `${line} — ${b.pincode}` : line;
 }
-
-const DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 
 // The locale is part of the cache key on purpose: the same business rendered at /te and at
 // /en is two different documents, and caching one under the other's key would serve Telugu
@@ -624,118 +623,11 @@ export default async function BusinessPage({ params }: { params: Promise<{ slug:
       : null,
   ].filter((item): item is { q: string; a: string } => item !== null);
 
-  const jsonLdSameAs = [business.website, ...(business.socialLinks ?? [])].filter(
-    (url): url is string => Boolean(url),
-  );
-
-  const publicSchemaType = isPublicServiceSlug(business.categorySlug)
-    ? PUBLIC_SERVICE_SCHEMA_TYPES[business.categorySlug]
-    : null;
-  const jsonLd = {
-    '@context': 'https://schema.org',
-    '@type':
-      publicSchemaType ??
-      (business.railway
-        ? 'TrainStation'
-        : business.postOffice
-          ? 'PostOffice'
-          : business.banking
-            ? 'BankOrCreditUnion'
-            : schemaTypeFor(business.categoryName, business.parentCategoryName)),
-    '@id': `${SITE_URL}/b/${business.slug}#entity`,
-    name: business.name,
-    image: profileLogo ? new URL(profileLogo, SITE_URL).toString() : undefined,
-    description: business.description ?? undefined,
-    url: `${SITE_URL}/b/${business.slug}`,
-    telephone: business.primaryPhone ?? undefined,
-    email: business.email ?? undefined,
-    sameAs: jsonLdSameAs.length ? jsonLdSameAs : undefined,
-    identifier: business.loczId ?? undefined,
-    knowsAbout: business.keywords.length ? business.keywords : undefined,
-    address: {
-      '@type': 'PostalAddress',
-      streetAddress: business.addressLine ?? undefined,
-      addressLocality: business.localityName ?? business.cityName,
-      addressRegion: business.stateName ?? undefined,
-      postalCode: business.pincode ?? undefined,
-      addressCountry: 'IN',
-    },
-    ...(business.latitude !== null && business.longitude !== null
-      ? {
-          geo: {
-            '@type': 'GeoCoordinates',
-            latitude: business.latitude,
-            longitude: business.longitude,
-          },
-        }
-      : {}),
-    openingHoursSpecification: business.hours
-      .filter((hour) => !hour.isClosed)
-      .map((hour) => ({
-        '@type': 'OpeningHoursSpecification',
-        dayOfWeek: `https://schema.org/${DAYS[hour.dayOfWeek]}`,
-        opens: hour.opensAt,
-        closes: hour.closesAt,
-      })),
-  };
-
-  // Breadcrumb trail (Home › category › city › business) — mirrors the visible nav and earns
-  // breadcrumb rich results / sitelinks in search.
-  const breadcrumbLd = {
-    '@context': 'https://schema.org',
-    '@type': 'BreadcrumbList',
-    itemListElement: [
-      // Both middle links used to point at /search, which robots.txt disallows -
-      // so the only internal links in the breadcrumb were ones Google is told not
-      // to follow, and the trail led nowhere. They now use the hub pages that
-      // already exist, in the order the directory is actually organised:
-      //
-      //   LocZ > Hyderabad > Dental clinics in Hyderabad > Finedent Dental Clinics
-      //
-      // The state is not a level because there is no state page to link to, and a
-      // breadcrumb item without a URL is a dead rung on the ladder.
-      { '@type': 'ListItem', position: 1, name: 'LocZ', item: SITE_URL },
-      {
-        '@type': 'ListItem',
-        position: 2,
-        name: business.cityName,
-        item: `${SITE_URL}/in/${business.citySlug}`,
-      },
-      {
-        '@type': 'ListItem',
-        position: 3,
-        name: `${business.categoryName} in ${business.cityName}`,
-        item: `${SITE_URL}/in/${business.citySlug}/${business.categorySlug}`,
-      },
-      { '@type': 'ListItem', position: 4, name: business.name },
-    ],
-  };
-  // FAQPage — the answers a person types for this specific place, eligible for FAQ rich results.
-  const faqLd = faqs.length
-    ? {
-        '@context': 'https://schema.org',
-        '@type': 'FAQPage',
-        mainEntity: faqs.map((item) => ({
-          '@type': 'Question',
-          name: item.q,
-          acceptedAnswer: { '@type': 'Answer', text: item.a },
-        })),
-      }
-    : null;
-
-  // ItemList of the nearby similar businesses — declares the internal links as a curated set.
-  const similarLd = similar.length
-    ? {
-        '@context': 'https://schema.org',
-        '@type': 'ItemList',
-        itemListElement: similar.map((b, index) => ({
-          '@type': 'ListItem',
-          position: index + 1,
-          url: `${SITE_URL}/b/${b.slug}`,
-          name: b.name,
-        })),
-      }
-    : null;
+  const { jsonLd, breadcrumbLd, faqLd, similarLd } = buildStorefrontJsonLd(business, {
+    profileLogo,
+    faqs,
+    similar,
+  });
   // Falls back to the parent category's artwork.
   //
   // The catalogue is keyed by the original 45 category names. Businesses now sit on one of
