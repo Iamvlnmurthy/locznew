@@ -5,7 +5,7 @@ import { Fragment } from 'react';
 import { Icon } from '@/components/icons';
 import { AdSlot } from '@/components/ad-slot';
 import { apiSafe } from '@/lib/api';
-import { getLocale, getSelectedCity } from '@/lib/session';
+import { getLocale, getSelectedCity, localizedAlternates } from '@/lib/session';
 import { getMessageGroup } from '@/i18n';
 import { relativeTime } from '@/lib/relative-time';
 import { NewsFilters } from './news-filters';
@@ -14,7 +14,8 @@ export const dynamic = 'force-dynamic';
 
 export async function generateMetadata(): Promise<Metadata> {
   const n = getMessageGroup(await getLocale(), 'newsUi');
-  return { title: n.metadataTitle, description: n.metadataDescription };
+  const alternates = await localizedAlternates('/news');
+  return { title: n.metadataTitle, description: n.metadataDescription, alternates };
 }
 
 interface StoryCard {
