@@ -57,8 +57,7 @@ export function StorefrontHouseAd({
   }, [businessId, businessName, category, city]);
 
   return (
-    <aside ref={bannerRef} className="storefront-house-ad" aria-label="Sponsored learning program">
-      <span className="storefront-house-ad__label">Sponsored · Onrol</span>
+    <aside ref={bannerRef} className="storefront-house-ad" aria-label="Onrol learning program">
       <a
         href={ONROL_PROGRAM_URL}
         target="_blank"

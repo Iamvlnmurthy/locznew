@@ -1053,6 +1053,13 @@ export default async function BusinessPage({ params }: { params: Promise<{ slug:
           {/* The reader has the identity, primary actions and business story by now. */}
           <AdSlot placement="BUSINESS_AFTER_ABOUT" contentScore={adContentScore} />
 
+          <StorefrontHouseAd
+            businessId={business.id}
+            businessName={business.name}
+            city={business.cityName}
+            category={business.categoryName}
+          />
+
           {!business.isPublicService ? (
             <aside className="business-profile-post-cta" aria-labelledby="storefront-post-title">
               <span className="business-profile-post-cta__icon" aria-hidden="true">
@@ -1216,13 +1223,6 @@ export default async function BusinessPage({ params }: { params: Promise<{ slug:
                 The "Hours not listed" chip in the hero already tells a reader they do not
                 know when this place is open, once, in three words. */}
           </section>
-
-          <StorefrontHouseAd
-            businessId={business.id}
-            businessName={business.name}
-            city={business.cityName}
-            category={business.categoryName}
-          />
 
           {faqs.length > 0 ? (
             <section className="business-profile-section business-profile-faq" id="faq">
