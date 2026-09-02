@@ -257,6 +257,7 @@ export function NearbyBusinesses({
                       Directions button below sits above it (z-index) as a separate action. */}
                   <Link
                     href={`/b/${business.slug}`}
+                    prefetch={false}
                     className="search-business-card__link"
                     aria-label={business.name}
                   />

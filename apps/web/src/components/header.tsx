@@ -81,6 +81,7 @@ export async function Header({ locale }: { locale: Locale }) {
                 <Link
                   key={item.href}
                   href={item.href}
+                  prefetch={false}
                   className={isActive ? 'is-active' : undefined}
                   aria-current={isActive ? 'page' : undefined}
                 >
