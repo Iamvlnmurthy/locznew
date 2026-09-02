@@ -1444,6 +1444,72 @@ tbody tr:hover {
     box-shadow: 8px 0 14px rgb(20 48 39 / 5%);
   }
 
+  /* Card layout for LOW-column tables (system, data-health): opt in with .table-wrap--cards.
+   * Dense 13-column tables keep the sticky-scroll above; at 5-6 fields a stacked card reads far
+   * better than a swipe. Each row becomes a card; each cell shows its column via data-label. */
+  .table-wrap--cards {
+    max-width: none;
+    overflow: visible;
+    border: 0;
+    background: transparent;
+    box-shadow: none;
+    scroll-snap-type: none;
+  }
+  .table-wrap--cards::before {
+    display: none;
+  }
+  .table-wrap--cards table {
+    min-width: 0;
+  }
+  .table-wrap--cards thead {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+  }
+  .table-wrap--cards table,
+  .table-wrap--cards tbody,
+  .table-wrap--cards tr,
+  .table-wrap--cards td {
+    display: block;
+    width: auto;
+  }
+  .table-wrap--cards tr {
+    margin-bottom: 12px;
+    padding: 6px 14px;
+    border: 1px solid var(--locz-border);
+    border-radius: 14px;
+    background: var(--locz-surface);
+    box-shadow: 0 8px 22px rgb(20 48 39 / 6%);
+  }
+  .table-wrap--cards td {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 7px 0;
+    text-align: right;
+    border: 0;
+    border-bottom: 1px solid var(--locz-border);
+  }
+  .table-wrap--cards tr td:last-child {
+    border-bottom: 0;
+  }
+  .table-wrap--cards td::before {
+    content: attr(data-label);
+    flex: 0 0 auto;
+    color: var(--locz-text-secondary);
+    font-weight: 650;
+    text-align: left;
+  }
+  .table-wrap--cards th:first-child,
+  .table-wrap--cards td:first-child {
+    position: static;
+    box-shadow: none;
+  }
+
   .main {
     padding-top: 24px;
   }

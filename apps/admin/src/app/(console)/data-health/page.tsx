@@ -105,7 +105,7 @@ export default async function DataHealthPage() {
 
       <section style={card}>
         <h2 style={{ marginTop: 0, fontSize: 16 }}>Data sources</h2>
-        <div className="table-wrap">
+        <div className="table-wrap table-wrap--cards">
           <table style={{ width: '100%', borderCollapse: 'collapse' }}>
             <thead>
               <tr>
@@ -119,11 +119,21 @@ export default async function DataHealthPage() {
             <tbody>
               {data.sources.map((s) => (
                 <tr key={s.id}>
-                  <td style={td}>{s.name}</td>
-                  <td style={{ ...td, textAlign: 'right' }}>{s.recordsCreated.toLocaleString()}</td>
-                  <td style={td}>{s.health}</td>
-                  <td style={td}>{s.runnable ? 'Yes' : 'No'}</td>
-                  <td style={td}>{s.attributionRequired ? 'Required' : '—'}</td>
+                  <td style={td} data-label="Source">
+                    {s.name}
+                  </td>
+                  <td style={{ ...td, textAlign: 'right' }} data-label="Records">
+                    {s.recordsCreated.toLocaleString()}
+                  </td>
+                  <td style={td} data-label="Health">
+                    {s.health}
+                  </td>
+                  <td style={td} data-label="Runnable">
+                    {s.runnable ? 'Yes' : 'No'}
+                  </td>
+                  <td style={td} data-label="Attribution">
+                    {s.attributionRequired ? 'Required' : '—'}
+                  </td>
                 </tr>
               ))}
             </tbody>

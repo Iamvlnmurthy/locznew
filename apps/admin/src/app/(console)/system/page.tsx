@@ -83,7 +83,7 @@ export default async function SystemPage() {
 
       <section className="card" style={{ marginBottom: 16 }}>
         <h2 style={{ marginTop: 0, fontSize: '1rem' }}>Background queues</h2>
-        <div className="table-wrap">
+        <div className="table-wrap table-wrap--cards">
           <table>
             <thead>
               <tr>
@@ -104,11 +104,18 @@ export default async function SystemPage() {
               ) : (
                 queues.map((queue) => (
                   <tr key={queue.name}>
-                    <td>{queue.name}</td>
-                    <td style={{ textAlign: 'right' }}>{queue.available ? queue.waiting : '—'}</td>
-                    <td style={{ textAlign: 'right' }}>{queue.available ? queue.active : '—'}</td>
-                    <td style={{ textAlign: 'right' }}>{queue.available ? queue.delayed : '—'}</td>
+                    <td data-label="Queue">{queue.name}</td>
+                    <td data-label="Waiting" style={{ textAlign: 'right' }}>
+                      {queue.available ? queue.waiting : '—'}
+                    </td>
+                    <td data-label="Active" style={{ textAlign: 'right' }}>
+                      {queue.available ? queue.active : '—'}
+                    </td>
+                    <td data-label="Delayed" style={{ textAlign: 'right' }}>
+                      {queue.available ? queue.delayed : '—'}
+                    </td>
                     <td
+                      data-label="Failed"
                       style={{
                         textAlign: 'right',
                         color: queue.failed > 0 ? 'var(--locz-danger)' : undefined,
