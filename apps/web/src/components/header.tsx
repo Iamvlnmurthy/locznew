@@ -153,7 +153,13 @@ export async function Header({ locale }: { locale: Locale }) {
           </div>
         </div>
       </header>
-      <MobileSectionNav links={primaryLinks} pathname={pathname} label={t('nav.primary')} />
+      {/* The home hero already exposes every discovery section as illustrated tiles. Repeating
+          the same six destinations in a clipped horizontal strip made the phone header feel like
+          two competing navigation systems. Keep the section strip for inner pages only; the
+          five-action dock remains the stable mobile navigation everywhere. */}
+      {pathname !== '/' ? (
+        <MobileSectionNav links={primaryLinks} pathname={pathname} label={t('nav.primary')} />
+      ) : null}
       <nav className="mobile-dock" aria-label={t('nav.primary')}>
         <Link href="/" className={activeClass(pathname === '/')}>
           <Icon name="home" />
