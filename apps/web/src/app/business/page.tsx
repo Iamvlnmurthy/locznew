@@ -182,6 +182,7 @@ export default async function BusinessDirectoryPage({
                 key={category.id}
                 href={directoryHref(params, { categoryId: category.id, page: undefined })}
                 className={category.id === params.categoryId ? 'is-active' : ''}
+                prefetch={false}
               >
                 <span className={`business-directory-start__icon is-tone-${(index % 4) + 1}`}>
                   <Image
@@ -340,7 +341,10 @@ export default async function BusinessDirectoryPage({
                 aria-label={t('businessDirectory.paginationAria')}
               >
                 {result.meta.page > 1 ? (
-                  <Link href={directoryHref(params, { page: String(result.meta.page - 1) })}>
+                  <Link
+                    href={directoryHref(params, { page: String(result.meta.page - 1) })}
+                    prefetch={false}
+                  >
                     <Icon name="chevronLeft" /> {t('businessDirectory.previous')}
                   </Link>
                 ) : (
@@ -353,7 +357,10 @@ export default async function BusinessDirectoryPage({
                   })}
                 </span>
                 {result.meta.hasNextPage ? (
-                  <Link href={directoryHref(params, { page: String(result.meta.page + 1) })}>
+                  <Link
+                    href={directoryHref(params, { page: String(result.meta.page + 1) })}
+                    prefetch={false}
+                  >
                     {t('businessDirectory.next')} <Icon name="chevronRight" />
                   </Link>
                 ) : (

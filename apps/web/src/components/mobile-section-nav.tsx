@@ -30,6 +30,7 @@ export function MobileSectionNav({
               href={item.href}
               className={active ? styles.active : undefined}
               aria-current={active ? 'page' : undefined}
+              prefetch={false}
             >
               {item.label}
             </Link>
