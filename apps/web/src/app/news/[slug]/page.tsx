@@ -7,6 +7,7 @@ import { getTranslator } from '@/i18n';
 import { apiSafe, SITE_URL } from '@/lib/api';
 import { getLocale, localizedAlternates } from '@/lib/session';
 import { AdSlot } from '@/components/ad-slot';
+import { StorefrontHouseAd } from '@/components/storefront-house-ad';
 import { TrackView } from './track-view';
 
 // LocZ-regenerated news event. Content is OUR OWN rewrite (no redirect to the source publisher);
@@ -203,6 +204,13 @@ export default async function NewsEventPage({
             ))}
           </div>
         ) : null}
+
+        <StorefrontHouseAd
+          businessId={event.slug}
+          businessName={event.title}
+          city="News"
+          category={event.categories?.[0] ?? 'news'}
+        />
 
         <p className="news-article__byline">{'LocZ News'}</p>
 
