@@ -1,12 +1,13 @@
-"""Upgrade EXISTING prod news_stories to topic-matched images as the topic library fills.
+"""Authoritatively (re)assign EVERY prod news_stories image from the shared news_image_map.
 
-Only rows whose headline maps to a topic that HAS images are changed -- every other row keeps its
-current (publish-order-rotated) category image, so this never re-introduces the side-by-side dups
-and is a clean no-op until topics exist. Uses the shared news_image_map so it matches engine.py
-exactly. Idempotent: safe to re-run after every refresh.
+Recomputes each story's image = topic image if the headline matches a topic that has a pool, else a
+deterministic category image. Because it is authoritative, narrowing a keyword (e.g. dropping
+"celebrat" from festival) correctly RESETS a wrongly-matched story back to its category image, and
+adding a keyword upgrades a previously-missed story -- in one pass. Matches engine.py exactly
+(both call nim.image_for). Only rows whose image actually changes are written.
 
 Run:  python backfill_news_images.py            # apply
-      python backfill_news_images.py --dry       # show counts only
+      python backfill_news_images.py --dry       # show what would change
 """
 import os, sys, json, subprocess
 import news_image_map as nim
@@ -15,26 +16,24 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 POOL = nim.load_pool(os.path.join(HERE, "news-images"))
 DRY = "--dry" in sys.argv
 
-# Pull id, title, category from prod as JSON (tab separators don't survive ssh/docker quoting).
+# Pull id, title, category, current image from prod as JSON (tab separators don't survive ssh quoting).
 import json as _json
-q = ("SELECT coalesce(json_agg(json_build_object('id',id,'t',coalesce(title_en,''),'c',category)),'[]') "
-     "FROM news_stories;")
+q = ("SELECT coalesce(json_agg(json_build_object('id',id,'t',coalesce(title_en,''),"
+     "'c',category,'u',image_url)),'[]') FROM news_stories;")
 raw = subprocess.run(["ssh", "onrol", "docker exec -i locz-postgres psql -U locz -d locz -t -A"],
                      input=q.encode("utf-8"), capture_output=True, timeout=120).stdout.decode("utf-8", "replace")
 
 rows = []
 for r in _json.loads(raw.strip() or "[]"):
-    sid, title, cat = r["id"], r["t"] or "", r["c"] or ""
-    topic = nim.topic_of(title)
-    if not topic or not POOL.get(f"t-{topic}"):
-        continue                                   # no topic image -> leave the category rotation as-is
+    sid, title, cat, cur = r["id"], r["t"] or "", r["c"] or "", r.get("u") or ""
     url = nim.image_for(POOL, title, cat, key=sid.replace("-", ""))
-    if url.startswith(f"/news-images/t-{topic}-"):  # only when it actually resolved to the topic image
+    if url != cur:                                   # only write real changes
+        topic = nim.topic_of(title) or cat
         rows.append((sid, url, topic))
 
-print(f"{len(rows)} stories match a topic that has images", end="")
+print(f"{len(rows)} stories will change image", end="")
 if not rows:
-    print(" -- nothing to upgrade yet (build topic pools first with refresh_news_images.py).")
+    print(" -- everything already correct.")
     sys.exit(0)
 by_topic = {}
 for _, _, t in rows:

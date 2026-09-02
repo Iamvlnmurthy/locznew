@@ -84,11 +84,30 @@ export async function generateMetadata({
   const description = event.summary?.slice(0, 160) ?? event.title;
   const canonical = `${SITE_URL}/news/${event.slug}`;
   const alternates = await localizedAlternates(`/news/${event.slug}`);
+  // Absolute, ≥1200px image so Google Discover / social cards can render a large preview. Our
+  // news images are baked 1200×750 webp; relative paths must be absolutised for og:image.
+  const ogImage = event.imageUrl
+    ? { url: `${SITE_URL}${event.imageUrl}`, width: 1200, height: 750, alt: event.title }
+    : undefined;
   return {
     title: `${event.title} | LocZ News`,
     description,
     alternates,
-    openGraph: { title: event.title, description, url: canonical, type: 'article' },
+    // Discover / rich-image crawlers only surface a page with a large preview when the site opts in.
+    robots: { index: true, follow: true, 'max-image-preview': 'large', 'max-snippet': -1 },
+    openGraph: {
+      title: event.title,
+      description,
+      url: canonical,
+      type: 'article',
+      ...(ogImage ? { images: [ogImage] } : {}),
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title: event.title,
+      description,
+      ...(ogImage ? { images: [ogImage.url] } : {}),
+    },
   };
 }
 

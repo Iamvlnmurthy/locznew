@@ -5,7 +5,7 @@ drift. Images live in <img_dir> as <cat>-<i>.webp and t-<topic>-<i>.webp; manife
 counts. A story maps to a topic by keyword; if that topic has images we serve one, else we fall
 back to the category pool -- so topics only ever IMPROVE relevance, never break rendering.
 """
-import os, json, random
+import os, json, random, re
 
 DEFAULT_CATS = ("local", "tech", "state", "entertainment", "crime",
                 "politics", "business", "weather", "sports", "civic")
@@ -18,7 +18,7 @@ TOPIC_MAP = [
     ("rain", ["rain", "monsoon", "downpour", "cloudburst", "showers"]),
     ("heat", ["heatwave", "heat wave", "temperature soar", "scorching"]),
     ("tax", ["gst", " tax", "revenue", "budget", "fiscal", "excise"]),
-    ("stockmarket", ["sensex", "nifty", "stock market", "shares", "ipo", "bourse"]),
+    ("stockmarket", ["sensex", "nifty", "stock market", "stock exchange", "nse", "bse", "share market", "shareholder", "ipo", "bourse"]),
     ("startup", ["startup", "start-up", "funding round", "venture", "unicorn"]),
     ("assault", ["rape", "molest", "assault", "harassment", "abuse", "eve teasing", "stalk"]),
     ("drugs", ["ganja", "narcotic", "cannabis", "peddler", "brown sugar", "kg of", "drugs", "seized kg"]),
@@ -26,17 +26,17 @@ TOPIC_MAP = [
     ("theft", ["theft", "stolen", "robbery", "burglary", "loot", "heist"]),
     ("marathon", ["marathon", "runners", "10k run", "5k run", "fun run", "walkathon"]),
     ("arrest", ["arrest", "detain", "custody", "nabbed", "held by police"]),
-    ("murder", ["murder", "killed", "stabb", "shot dead", "homicide", "body found"]),
+    ("murder", ["murder", "killed", "stabb", "shot dead", "homicide", "body found", "slashed to death", "hacked to death", "beaten to death", "slain", "lynched"]),
     ("fraud", ["fraud", "scam", "cheat", "ponzi", "forgery", "bribe", "corruption"]),
     ("accident", ["accident", "crash", "collision", "mishap", "overturn", "derail"]),
     ("fire", ["fire", "blaze", "gutted", "flames", "explosion", "blast"]),
-    ("election", ["election", "poll", "vote", "campaign", "constituency", "ballot", " mla", " mp seat"]),
+    ("election", ["election", "polling", "polls", "vote", "campaign", "by-election", "constituency", "ballot", "mla", "mp seat"]),
     ("protest", ["protest", "strike", "agitation", "dharna", "rally", "bandh", "demonstrat"]),
     ("temple", ["temple", "mandir", "devotee", "darshan", "pooja", "deity", "shrine"]),
-    ("festival", ["festival", "bonalu", "bathukamma", "ganesh", "diwali", "dussehra", "utsav", "celebrat"]),
+    ("festival", ["festival", "bonalu", "bathukamma", "ganesh", "diwali", "dussehra", "utsav", "navratri"]),
     ("cricket", ["cricket", " ipl", "batsman", "bowler", "wicket", "test match", " odi", " t20"]),
     ("farmer", ["farmer", "crop", "paddy", "harvest", "agricultur", "irrigation", "rythu", "kisan"]),
-    ("metro", ["metro", "railway", " train", " orr", "flyover", "highway", "road widening"]),
+    ("metro", ["metro", "railway", " train ", "mmts", "local train"]),
     ("hospital", ["hospital", "health", "dengue", "fever", "medic", "patient", "vaccine", "disease"]),
     ("school", ["school", "student", " exam", "college", "university", "education", "eamcet", " ssc "]),
     ("water", ["drinking water", "water supply", " tap ", "borewell", "pipeline"]),
@@ -136,10 +136,13 @@ def load_pool(img_dir):
 
 
 def topic_of(title):
-    t = " " + (title or "").lower() + " "
+    # Match each keyword at a WORD START (prefix ok: "stabb"->"stabbed", "demonstrat"->"demonstration")
+    # but never mid-word -- so "rain" no longer matches "Ukraine", "poll" not "pollution", etc.
+    t = (title or "").lower()
     for topic, kws in TOPIC_MAP:
-        if any(k in t for k in kws):
-            return topic
+        for k in kws:
+            if re.search(r"\b" + re.escape(k.strip()), t):
+                return topic
     return None
 
 
