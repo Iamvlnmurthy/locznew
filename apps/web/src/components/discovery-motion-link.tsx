@@ -39,6 +39,7 @@ export function DiscoveryMotionLink({
   return (
     <Link
       href={href}
+      prefetch={false}
       className={`${className}${launching ? ' is-launching' : ''}`}
       aria-current={launching ? 'page' : undefined}
       onClick={navigate}

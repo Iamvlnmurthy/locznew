@@ -510,6 +510,7 @@ export default async function HomePage({
               <Link
                 key={category.slug}
                 href={`/in/${homeCity.slug}/${category.slug}`}
+                prefetch={false}
                 className="home-popular-card"
               >
                 <span className="home-popular-card__art" aria-hidden="true">
@@ -570,6 +571,7 @@ export default async function HomePage({
               <Link
                 key={category.slug}
                 href={`/c/${category.slug}`}
+                prefetch={false}
                 className="home-public-services-compact__link"
               >
                 <strong>{category.label}</strong>
@@ -648,7 +650,12 @@ export default async function HomePage({
                   const when = relativeTime(item.publishedAt, locale);
                   if (index === 0 && item.imageUrl) {
                     return (
-                      <Link key={item.slug} href={`/news/${item.slug}`} className="local-news-hero">
+                      <Link
+                        key={item.slug}
+                        href={`/news/${item.slug}`}
+                        prefetch={false}
+                        className="local-news-hero"
+                      >
                         <div className="local-news-hero__img">
                           <Image
                             src={item.imageUrl}
@@ -671,7 +678,12 @@ export default async function HomePage({
                     );
                   }
                   return (
-                    <Link key={item.slug} href={`/news/${item.slug}`} className="local-news-row">
+                    <Link
+                      key={item.slug}
+                      href={`/news/${item.slug}`}
+                      prefetch={false}
+                      className="local-news-row"
+                    >
                       <div className="local-news-row__body">
                         <div className="local-news-meta">
                           <span className="local-news-tag">{item.category || 'Local'}</span>
@@ -845,7 +857,12 @@ export default async function HomePage({
                     text: t('home.intentHelpBody'),
                   },
                 ].map((intent) => (
-                  <Link key={intent.title} href={intent.href} className="home-intent">
+                  <Link
+                    key={intent.title}
+                    href={intent.href}
+                    prefetch={false}
+                    className="home-intent"
+                  >
                     <span>
                       <Icon name={intent.icon} />
                     </span>

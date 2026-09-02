@@ -30,6 +30,7 @@ export function ListingCard({
   return (
     <Link
       href={`/ad/${listing.slug}`}
+      prefetch={false}
       className={`listing-card${variant === 'wide' ? ' listing-card--wide' : ''}`}
     >
       <div className="listing-card__media">
