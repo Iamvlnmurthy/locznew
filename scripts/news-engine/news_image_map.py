@@ -58,6 +58,8 @@ TOPIC_TERMS = {
     "farmer": "indian farmer paddy field agriculture", "metro": "hyderabad metro train station india",
     "hospital": "indian hospital doctor patient healthcare", "school": "indian students classroom school",
     "water": "drinking water supply tap india", "power": "electricity power lines transformer india",
+    "assault": "police patrol car night city street", "drugs": "police seized narcotics table",
+    "marathon": "marathon runners city race crowd",
 }
 
 

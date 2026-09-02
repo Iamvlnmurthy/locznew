@@ -142,7 +142,9 @@
     "t-accident-4.webp"
   ],
   "t-arrest": ["t-arrest-1.webp", "t-arrest-2.webp", "t-arrest-3.webp", "t-arrest-4.webp"],
+  "t-assault": ["t-assault-1.webp", "t-assault-2.webp", "t-assault-3.webp", "t-assault-4.webp"],
   "t-cricket": ["t-cricket-1.webp", "t-cricket-2.webp", "t-cricket-3.webp", "t-cricket-4.webp"],
+  "t-drugs": ["t-drugs-1.webp", "t-drugs-2.webp", "t-drugs-3.webp", "t-drugs-4.webp"],
   "t-election": [
     "t-election-1.webp",
     "t-election-2.webp",
@@ -167,6 +169,12 @@
     "t-hospital-4.webp"
   ],
   "t-lake": ["t-lake-1.webp", "t-lake-2.webp", "t-lake-3.webp", "t-lake-4.webp"],
+  "t-marathon": [
+    "t-marathon-1.webp",
+    "t-marathon-2.webp",
+    "t-marathon-3.webp",
+    "t-marathon-4.webp"
+  ],
   "t-metro": ["t-metro-1.webp", "t-metro-2.webp", "t-metro-3.webp", "t-metro-4.webp"],
   "t-murder": ["t-murder-1.webp", "t-murder-2.webp", "t-murder-3.webp", "t-murder-4.webp"],
   "t-power": ["t-power-1.webp", "t-power-2.webp", "t-power-3.webp", "t-power-4.webp"],
