@@ -1,0 +1,36 @@
+{
+  "business": [
+    "business-1.webp",
+    "business-2.webp",
+    "business-3.webp",
+    "business-4.webp",
+    "business-5.webp"
+  ],
+  "civic": ["civic-1.webp", "civic-2.webp", "civic-3.webp", "civic-4.webp", "civic-5.webp"],
+  "crime": ["crime-1.webp", "crime-2.webp", "crime-3.webp", "crime-4.webp", "crime-5.webp"],
+  "entertainment": [
+    "entertainment-1.webp",
+    "entertainment-2.webp",
+    "entertainment-3.webp",
+    "entertainment-4.webp",
+    "entertainment-5.webp"
+  ],
+  "local": ["local-1.webp", "local-2.webp", "local-3.webp", "local-4.webp", "local-5.webp"],
+  "politics": [
+    "politics-1.webp",
+    "politics-2.webp",
+    "politics-3.webp",
+    "politics-4.webp",
+    "politics-5.webp"
+  ],
+  "sports": ["sports-1.webp", "sports-2.webp", "sports-3.webp", "sports-4.webp", "sports-5.webp"],
+  "state": ["state-1.webp", "state-2.webp", "state-3.webp", "state-4.webp", "state-5.webp"],
+  "tech": ["tech-1.webp", "tech-2.webp", "tech-3.webp", "tech-4.webp", "tech-5.webp"],
+  "weather": [
+    "weather-1.webp",
+    "weather-2.webp",
+    "weather-3.webp",
+    "weather-4.webp",
+    "weather-5.webp"
+  ]
+}

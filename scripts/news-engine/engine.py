@@ -59,6 +59,18 @@ LANG_TRIPLE = {"te": "tel_Telu", "hi": "hin_Deva", "ta": "tam_Taml", "kn": "kan_
                "mr": "mar_Deva", "bn": "ben_Beng", "ml": "mal_Mlym", "gu": "guj_Gujr",
                "or": "ory_Orya", "pa": "pan_Guru", "as": "asm_Beng"}
 
+# Own, compressed, premium-licensed category photos served from the web app's public/news-images/
+# (webp, ~1400px). Replaces the old source og:image (copyright risk + e-paper scans blocked Discover).
+# One of 5 per category, picked at random for variety; unknown category -> a safe local/state photo.
+NEWS_IMG_CATS = {"local", "tech", "state", "entertainment", "crime", "politics",
+                 "business", "weather", "sports", "civic"}
+
+
+def news_image(category):
+    c = category if category in NEWS_IMG_CATS else "state"
+    return f"/news-images/{c}-{random.randint(1, 5)}.webp"
+
+
 FEEDS_JSON = os.path.join(HERE, "feeds.json")
 SEEN_FILE = os.path.join(HERE, "seen.txt")
 MAX_PER_FEED = int(os.environ.get("MAX_PER_FEED", "4"))       # new stories per feed per cycle
@@ -480,7 +492,7 @@ def cycle(limit=None):
                 title_hi=title_hi, body_hi=body_hi, title_te=title_te, body_te=body_te,
                 dek_hi=dek_hi, dek_te=dek_te, dek_sl=dek_sl,
                 state_lang=tgt, title_sl=title_sl, body_sl=body_sl,
-                image_url=img, image_credit=(it.get("source") or "") if img else None,
+                image_url=news_image(feed["category"]), image_credit=None,
                 city=feed["city"], state=feed["state"], latitude=feed["lat"], longitude=feed["lng"],
                 src_url=src, src_publisher=it.get("source") or "", src_lang="en",
                 published_at=it.get("published"), status="PUBLISHED"))
