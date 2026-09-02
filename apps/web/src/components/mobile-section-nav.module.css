@@ -1,0 +1,62 @@
+/* Mobile-only horizontal section strip. Restores reach to Businesses / News / Jobs / Services /
+ * Public Services on phones, where .header__primary is display:none. Scoped via CSS module so it
+ * never collides with the global sheet. Shown <=760px, hidden on desktop. */
+.strip {
+  display: none;
+}
+
+@media (max-width: 760px) {
+  .strip {
+    display: block;
+    position: sticky;
+    top: 0;
+    z-index: 40;
+    background: var(--locz-surface, #fff);
+    border-bottom: 1px solid var(--locz-border, #e5e7eb);
+  }
+  .track {
+    display: flex;
+    gap: 8px;
+    overflow-x: auto;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+    padding: 8px 16px;
+    scroll-snap-type: x proximity;
+  }
+  .track::-webkit-scrollbar {
+    display: none;
+  }
+  .track a {
+    scroll-snap-align: start;
+    flex: 0 0 auto;
+    min-height: 40px;
+    display: inline-flex;
+    align-items: center;
+    padding: 0 14px;
+    border-radius: 999px;
+    border: 1px solid var(--locz-border, #e5e7eb);
+    background: var(--locz-surface-subtle, #f7f7f5);
+    color: var(--locz-text, #1a1a1a);
+    font-size: 0.85rem;
+    font-weight: 600;
+    line-height: 1;
+    white-space: nowrap;
+    text-decoration: none;
+    transition: background 180ms ease, border-color 180ms ease, color 180ms ease;
+  }
+  .track a.active {
+    background: var(--locz-primary, #0f6b4f);
+    border-color: var(--locz-primary, #0f6b4f);
+    color: var(--locz-on-primary, #fff);
+  }
+  .track a:focus-visible {
+    outline: 2px solid var(--locz-coral, #e2583e);
+    outline-offset: 2px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .track a {
+    transition: none;
+  }
+}

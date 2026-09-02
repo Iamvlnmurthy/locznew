@@ -10,6 +10,7 @@ import { LocaleSwitcher } from './locale-switcher';
 import { Icon } from './icons';
 import { AccountMenu } from './account-menu';
 import { ThemeToggle } from './theme-toggle';
+import { MobileSectionNav } from './mobile-section-nav';
 
 /**
  * Site header. Search and location are the two controls that matter on a location-first
@@ -151,6 +152,7 @@ export async function Header({ locale }: { locale: Locale }) {
           </div>
         </div>
       </header>
+      <MobileSectionNav links={primaryLinks} pathname={pathname} label={t('nav.primary')} />
       <nav className="mobile-dock" aria-label={t('nav.primary')}>
         <Link href="/" className={activeClass(pathname === '/')}>
           <Icon name="home" />
