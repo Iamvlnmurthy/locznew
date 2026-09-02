@@ -157,13 +157,19 @@ export default async function NewsEventPage({
     dateModified: event.publishedAt ?? undefined,
     inLanguage: lang,
     articleSection: event.categories[0],
-    image: event.imageUrl ? [event.imageUrl] : undefined,
+    // Absolute URL — schema image must be crawlable, not a site-relative path.
+    image: event.imageUrl ? [`${SITE_URL}${event.imageUrl}`] : undefined,
     mainEntityOfPage: { '@type': 'WebPage', '@id': `${SITE_URL}/news/${event.slug}` },
     author: { '@type': 'Organization', name: 'LocZ', url: SITE_URL },
     publisher: {
       '@type': 'Organization',
       name: 'LocZ',
       logo: { '@type': 'ImageObject', url: `${SITE_URL}/brand/locz-logo.webp` },
+    },
+    // Speakable — the headline + standfirst are the voice/AI-readable summary (AEO signal).
+    speakable: {
+      '@type': 'SpeakableSpecification',
+      cssSelector: ['.news-article__title', '.news-article__dek'],
     },
   };
 
