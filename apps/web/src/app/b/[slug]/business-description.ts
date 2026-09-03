@@ -23,17 +23,25 @@
 import categoryText from '@/data/category-text.json';
 import { matrixFor, selectNeighbours } from './content-matrix';
 
+/**
+ * Every field is optional. Passages asserting things that are true or false of one business
+ * rather than of the trade -- "round-the-clock care", "lower prices", "clean premises" -- were
+ * removed from the data, which leaves 161 categories holding only some of the four. A category
+ * with nothing safe left is absent entirely and its pages fall back to measured facts.
+ */
 export interface CategoryCopy {
-  overview: string;
-  services: string[];
-  choosing: string;
-  practical: string;
+  overview?: string;
+  services?: string[];
+  choosing?: string;
+  practical?: string;
 }
 
 const CATEGORY_COPY = categoryText as Record<string, CategoryCopy>;
 
 export interface DescribeInput {
   name: string;
+  /** The page's language, so a tag in another script is not dropped into its prose. */
+  locale: string;
   categorySlug: string;
   categoryName: string;
   /** Overture's own tags for this business — real, and finer-grained than the category. */
@@ -48,6 +56,28 @@ export interface DescribeInput {
   radiusKm: number;
   seed: string;
   units: { m: string; km: string };
+}
+
+/**
+ * Tags that belong in this page's sentences.
+ *
+ * The keyword data is mixed-script, so an English page produced "Jambu Bakers appears under
+ * केक, bun and puff, at Jammu" -- Devanagari for "cake" inside an English clause. It reads as a
+ * fault to a person and is a mixed-language signal to a search engine. Keep only the tags written
+ * in the script the surrounding sentence is written in; a page with none left simply says where
+ * the business is instead.
+ */
+const TELUGU = /[\u0C00-\u0C7F]/;
+const DEVANAGARI = /[\u0900-\u097F]/;
+/** Past Latin Extended-A, a tag is written in some other script. */
+const NON_LATIN = /[^\u0000-\u024F]/;
+
+function inScript(tags: string[], locale: string): string[] {
+  const script = locale === 'te' ? TELUGU : locale === 'hi' ? DEVANAGARI : null;
+  return tags.filter((tag) => {
+    const foreign = NON_LATIN.test(tag);
+    return script ? script.test(tag) || !foreign : !foreign;
+  });
 }
 
 function hash(value: string): number {
@@ -110,7 +140,9 @@ export function describeBusiness(input: DescribeInput): string[] {
   // 1. What this kind of place does, then what this one is listed as.
   const opening: string[] = [];
   if (copy?.overview && useOverview) opening.push(copy.overview);
-  const tags = (input.keywords ?? []).filter(Boolean).slice(0, 3).map(inSentence);
+  const tags = inScript((input.keywords ?? []).filter(Boolean), input.locale)
+    .slice(0, 3)
+    .map(inSentence);
   opening.push(
     tags.length > 0
       ? choose(
@@ -236,11 +268,10 @@ export function describeBusiness(input: DescribeInput): string[] {
   if (copy?.services?.length && useServices) {
     // Rotating the slice keeps two shops of the same trade from reciting an identical list,
     // while every item stays true of the trade.
-    const start = hash(`${seed}#5`) % copy.services.length;
+    const svc = copy.services;
+    const start = hash(`${seed}#5`) % svc.length;
     const picked = Array.from(
-      new Set(
-        [0, 1, 2, 3].map((i) => inSentence(copy.services[(start + i) % copy.services.length])),
-      ),
+      new Set([0, 1, 2, 3].map((i) => inSentence(svc[(start + i) % svc.length]))),
     );
     practical.push(
       choose(

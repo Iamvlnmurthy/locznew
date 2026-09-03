@@ -51,7 +51,6 @@
     ]
   },
   "addiction-treatment-centres": {
-    "choosing": "Good centres allow unannounced family visits on Sundays and keep certified psychiatrists on-site daily rather than on call. Shady operations lock patients in dorms without medical supervision and push extra billing for basic liver function tests.",
     "overview": "Daily routines start at 6 AM with yoga or light walks, followed by closed-group sharing sessions where patients talk through withdrawal triggers. Mornings and afternoons are packed with psychiatry check-ins, medication dispensing for DT symptoms, and mandatory family counseling blocks behind closed doors.",
     "practical": "Pack at least three weeks of loose cotton kurtas without drawstrings and stash extra cash for canteen purchases since outside snacks are strictly confiscated at the iron gate. Make sure the discharge paper lists ongoing prescription refills clearly so local chemists do not panic.",
     "services": [
@@ -83,7 +82,6 @@
       "agricultural cooperative membership processing",
       "b2b agriculture service for bulk crop inputs",
       "subsidized urea and potash distribution",
-      "certified seed bag allocation",
       "seasonal crop loan paperwork assistance"
     ]
   },
@@ -103,7 +101,6 @@
   "agriculture-suppliers": {
     "choosing": "A good supplier will have a wide selection of products and be willing to provide advice on the best options for your crops. They should also offer delivery services to save you time and effort.",
     "overview": "These places are hubs for farmers to find essential supplies like seeds, fertilizers, and pesticides. They also offer parts for tractors and machinery, crucial for maintaining agricultural operations.",
-    "practical": "Always check if they carry the generic versions of products; they can be significantly cheaper. Also, ask about their delivery options, as they can save you a lot of travel time.",
     "services": [
       "sell seeds and fertilizers",
       "provide pesticide and crop protection products",
@@ -126,7 +123,6 @@
     ]
   },
   "airports": {
-    "choosing": "Clean washrooms and functional air conditioning separate a tolerable terminal from an exhausting one. Efficient baggage belt management and working aerobridges prevent the dreaded hour-long wait inside a jammed tarmac bus.",
     "overview": "Daily operations revolve around continuous baggage screening, endless security queues, and boarding gate announcements echoing across crowded terminals. Passengers rush between check-in counters and security holds while dealing with flight delays and endless ground traffic outside the arrival gates.",
     "practical": "Keep boarding passes and photo IDs permanently in hand because security staff check them at every single turnstile. Prepaid taxi booths just past the arrival exit save travelers from getting scammed by aggressive auto drivers outside.",
     "services": [
@@ -150,7 +146,6 @@
     ]
   },
   "amusement-parks": {
-    "choosing": "Working wave machines and strictly enforced queue discipline separate the top properties from rusted grounds with broken rides. Clean changing rooms and functional filtration systems prevent the skin rashes common in poorly maintained pools.",
     "overview": "Gates open by ten in the morning to heavy family crowds carrying plastic bags of homemade parathas and water bottles. Maintenance teams test the rollercoasters and wave pools before ticket windows open to long queues under tin sheds.",
     "practical": "Buy tickets online beforehand to skip the morning rush at the main counter. Carry extra clothes and slip-on footwear because lockers run out fast by noon.",
     "services": [
@@ -186,7 +181,6 @@
     ]
   },
   "apparel-manufacturers": {
-    "choosing": "Reliable units deliver the exact GSM and color shade promised without missing buttons or sloppy side seams. Shoddy operators miss delivery dates right before the festive season and substitute cheaper low-grade thread to save a few rupees.",
     "overview": "These units cut, stitch, and bulk-pack garments based on client samples, running endless rows of Juki lockstitch machines from cramped industrial sheds. Floor managers hustle to meet tight dispatch deadlines for export houses or local wholesale markets like Gandhi Nagar.",
     "practical": "Always check a finalized sample piece before giving the full advance, because fixing a bad fit after bulk cutting is nearly impossible. Bargain hard on the per-piece stitching rate, but keep cash ready for the yarn and fabric purchase advance.",
     "services": [
@@ -205,7 +199,6 @@
       "sell a variety of clothing items including western and ethnic wear",
       "offer custom tailoring for a personalized fit",
       "provide measurements for accurate sizing",
-      "stock popular fashion brands for the latest trends",
       "sell ready-to-wear garments for everyday use",
       "offer discounts and deals during festivals and sales"
     ]
@@ -352,12 +345,7 @@
     "choosing": "Reliable booths keep spare printer roll paper stocked so transaction slips do not blank out mid-print. Power backup via UPS matters immensely during sudden grid failures common in summer months.",
     "overview": "These kiosks dispense cash around the clock, though shutters often stay half-down late at night for security in busy markets. Security guards usually sit inside, and AC units run constantly to keep the currency counters cool.",
     "practical": "Carry exact denomination expectations if the machine only spits out two-thousand or five-hundred note cassettes. Check the card slot with a fingernail first to ensure no skimming attachments are glued over the reader.",
-    "services": [
-      "24 hour atm",
-      "cash machine",
-      "atm card swipe and pin change",
-      "nearest atm cash withdrawal"
-    ]
+    "services": ["cash machine", "atm card swipe and pin change", "nearest atm cash withdrawal"]
   },
   "audio-visual-shops": {
     "choosing": "A dependable dealer lets you test the microphone or mixer with your own USB drive before handing over cash. Shadier shops push old inventory with mismatched impedance ratings that blow your tweeters by the second gig.",
@@ -421,7 +409,6 @@
     ]
   },
   "auto-dealers": {
-    "choosing": "A good auto dealer will have a wide selection of cars, including popular models and newer entries. They should also offer competitive prices and clear terms on financing and insurance.",
     "overview": "Auto dealers in India typically manage showrooms where customers can view and test drive new and used cars, along with two-wheelers. They also handle paperwork and negotiations to finalize a purchase.",
     "practical": "Before visiting, check online reviews to see what other customers are saying about the dealer. Also, ask about any discounts or offers they might be running, especially if you're buying a used car.",
     "services": [
@@ -435,7 +422,6 @@
   },
   "auto-detailers": {
     "choosing": "A good auto detailer will have a variety of products to choose from, including those that are eco-friendly and safe for your car. They should also be able to offer a detailed estimate before starting the work, ensuring you get exactly what you need.",
-    "overview": "An auto detailer is where you take your car to get it cleaned and polished both inside and out, ensuring it looks like new. They offer services like exterior polish, interior detailing, and vehicle cleaning, making sure your car’s paint and upholstery are spotless.",
     "practical": "Always check if they offer same-day service, as this can be crucial if you need your car back quickly. Also, ask about their warranty on their work; a reliable detailer will stand behind their service with a solid guarantee.",
     "services": [
       "exterior polish",
@@ -484,7 +470,6 @@
     ]
   },
   "automobile-services": {
-    "choosing": "A good place will have a wider selection of parts and quicker service times. Always ask if they offer competitive prices and have a loyalty program for repeat customers.",
     "overview": "Provides car maintenance, repairs, and spare parts, with some offering mobile services for convenience. Most run as a single counter with one or two staff, busiest between 6pm and 9pm.",
     "practical": "Check if they have the part you need in stock before going. If not, ask about their delivery options. Also, inquire about their service packages for regular maintenance to save money in the long run.",
     "services": ["car maintenance", "car repair", "car servicing", "car spare parts", "bike store"]
@@ -516,9 +501,7 @@
     ]
   },
   "b2b-energy-services": {
-    "choosing": "A good provider will offer competitive rates and quick response times, while a bad one might overcharge and have frequent outages. Always check if they offer flexible payment options and have a reliable track record.",
     "overview": "Provides bulk power supply, commercial electricity, and industrial power to businesses, ensuring reliable energy solutions for day-to-day operations.",
-    "practical": "Before choosing, ask about their service hours and if they offer 24/7 support. Also, inquire about the types of contracts they provide, as some might be more flexible for small businesses.",
     "services": [
       "bulk power supply",
       "commercial electricity",
@@ -541,7 +524,6 @@
     ]
   },
   "b2b-oil-and-gas": {
-    "choosing": "Reliable operators deliver certified purity and exact metered quantities without short-filling the drums. Shady yards often mix recycled waste oil into industrial batches, which ruins expensive factory valves within weeks.",
     "overview": "Tankers arrive at factory gates at dawn to pump bulk diesel and industrial fuel straight into storage vaults. Orders are dispatched through local transport syndicates to keep boilers, generators, and heavy machinery running without sudden shutdowns.",
     "practical": "Always cross-check the hydrometer reading of the fuel on delivery before signing the challan. Keep payment terms locked in advance because sudden spot-price fluctuations in crude will catch local procurement off guard.",
     "services": [
@@ -579,7 +561,6 @@
     ]
   },
   "b2b-trade-services": {
-    "choosing": "Choose a service provider with strong local and international networks for reliable delivery and competitive rates. Look for one that offers flexible payment options and quick turnaround times.",
     "overview": "Handles daily transactions for importing, exporting, and supplying goods between businesses, both domestically and internationally, often managing bulk orders and wholesale deals.",
     "practical": "Ensure the service provider is easily accessible, especially if you're based in a remote area. Always ask about the cost differences between branded and generic products before placing an order.",
     "services": [
@@ -616,7 +597,6 @@
     ]
   },
   "bakeries-and-sweets": {
-    "choosing": "A good bakery or sweet shop will have a wide selection of traditional and modern treats, and they should be willing to take custom orders for special occasions. Look for one that sources fresh ingredients and has a clean, well-organized workspace.",
     "overview": "Bakeries and sweet shops in India are bustling with activity, especially during festivals and celebrations. They specialize in crafting a variety of breads, cakes, and sweets, often staying open late into the evening to meet the demand for last-minute orders.",
     "practical": "Before you go, call to check if they have the specific item you need, like a jalebi or kaju katli. Also, ask about their opening hours, as they can be quite busy around 6-9 pm. Prices can vary, so it's good to know if they offer any discounts for bulk purchases or regular customers.",
     "services": [
@@ -629,7 +609,6 @@
     ]
   },
   "bakeries-sweet-shops": {
-    "choosing": "A good bakery is one that bakes fresh every day and uses quality ingredients. Look for places that have a good mix of popular and unique items to choose from.",
     "overview": "These places are known for baking fresh bread, cakes, and rusks, often operating from small counters with limited seating. They are busiest during evening hours when people gather for casual snacks and sweet treats.",
     "practical": "Before you go, ask if they have any seasonal or local specialties. They often have unique items that are not available elsewhere in the city. Also, check if they offer delivery options for last-minute treats.",
     "services": [
@@ -653,11 +632,8 @@
     ]
   },
   "banks-atms": {
-    "choosing": "A good bank or ATM is one that has a user-friendly interface and quick service. Look for locations that are clean and well-maintained, with minimal queues during peak hours.",
-    "overview": "Banks and ATMs in India operate 24/7, providing cash withdrawals, deposits, and other financial services. Many ATMs dispense rupees in denominations of 200, 500, and 2000, while banks offer a range of account types including savings, current, and fixed deposits.",
     "practical": "Always check if the ATM has sufficient cash and avoid using it if it's not functioning properly. For banks, inquire about their branch hours and whether they offer online services for convenience.",
     "services": [
-      "24 hour ATM access",
       "ATM card issuance",
       "cash withdrawal",
       "nearby ATM locations",
@@ -692,9 +668,7 @@
     ]
   },
   "barber-shops": {
-    "choosing": "A good barber shop will have a clean environment and skilled barbers who use proper tools. Look for places with positive reviews from regulars who appreciate the traditional techniques.",
     "overview": "A barber shop is where men go for classic cuts and grooming, often after work or on weekends. They offer beard trimming, men's haircuts, and shaving services, with some providing classic barbering techniques.",
-    "practical": "Always check if they offer the classic cut you prefer, as not all do. Also, inquire about their prices as they can vary significantly, sometimes with the generic version being much cheaper.",
     "services": [
       "classic barber",
       "men's haircut",
@@ -704,8 +678,6 @@
     ]
   },
   "bars-and-pubs": {
-    "choosing": "A good bar or pub will have a wide selection of drinks and be clean and well-maintained. The staff should be friendly and attentive, making sure customers have a pleasant experience. On the other hand, a bad one might have limited options and a messy environment, leading to a disappointing visit.",
-    "overview": "Bars and pubs in India are bustling hubs where people gather to enjoy a drink, often with friends or colleagues. They offer a variety of alcoholic beverages, snacks, and sometimes meals, making them a popular spot for socializing and unwinding after work.",
     "practical": "Always check if they have your favorite drink on the menu. Also, ask about their happy hour deals; they often offer great discounts on drinks and food during this time. Lastly, make sure they have a good lighting setup, as it can really set the mood for a night out.",
     "services": [
       "alcoholic beverage venue",
@@ -720,7 +692,6 @@
     "overview": "Shutter doors stay half-open past midnight because vehicle breakdowns never wait for morning. Stacks of heavy lead-acid boxes line the walls while mechanics test terminals with a simple multimeter.",
     "practical": "Always hand over the old scrap battery to knock at least five hundred rupees off the bill. Make sure they stamp the warranty card properly with the shop seal, or local service centres will reject claims later.",
     "services": [
-      "24 hour battery store",
       "battery change at doorstep",
       "exide battery and tubular inverter setups",
       "car battery price negotiation",
@@ -728,7 +699,6 @@
     ]
   },
   "beauty-and-wellness": {
-    "choosing": "A good center will have experienced practitioners and a clean, comfortable environment. Look for a gym with modern equipment and a friendly, non-judgmental atmosphere.",
     "overview": "Ayurvedic centers offer a holistic approach to wellness, combining massage, herbal remedies, and meditation. Gyms provide a range of fitness classes and equipment to help members stay in shape.",
     "practical": "Always check if the ayurvedic center offers personalized consultations. For gyms, ask about group class schedules and membership fees in rupees.",
     "services": [
@@ -754,7 +724,6 @@
     ]
   },
   "beauty-salons": {
-    "choosing": "A good salon will have experienced staff who can offer personalized advice, while a bad one might just focus on upselling services. Always check if they offer same-day appointments as they can be hard to come by.",
     "overview": "Beauty salons in India offer a range of treatments from haircuts and styling to facials and manicures, catering to daily grooming needs and special occasions alike.",
     "practical": "If you're looking for a quick touch-up, call ahead to see if they're open now, as salons can get busy, especially after work hours. Also, ask about their prices for generic products versus branded ones, as the difference can be significant.",
     "services": ["haircut", "facial", "manicure", "pedicure", "makeup", "hair styling"]
@@ -762,7 +731,6 @@
   "beauty-supply-shops": {
     "choosing": "A good beauty supply shop will have a wide selection of items, including both branded and generic versions, and be open during evening hours. Look for one that stocks both local and international brands to ensure variety.",
     "overview": "Beauty supply shops in India are small, often family-run enterprises where you can find everything from hair oils to nail polishes. They are busiest during evenings when people stock up for the next day’s needs.",
-    "practical": "Before you go, ask if they have the generic versions of products, as they can be significantly cheaper. Also, check if they offer home delivery for regular customers.",
     "services": [
       "stock a variety of hair oils and shampoos",
       "sell nail care products and tools",
@@ -872,12 +840,10 @@
     ]
   },
   "bottled-water-companies": {
-    "choosing": "A good bottled water company in India will offer a reliable delivery service, often available 24/7, and will be able to customize order sizes to fit specific needs. They should also provide regular maintenance and cleaning services for water coolers to ensure hygiene.",
     "overview": "Bottled water companies in India typically serve offices and businesses, providing a steady supply of water to ensure hydration for employees. They often operate as a single counter with one or two staff members, with the busiest periods usually between 6pm and 9pm, as many offices have late-night functions or meetings.",
     "practical": "Before you go, ask about their delivery hours and whether they stock the generic version, as the price difference can be quite large. Also, ensure they offer a custom order size to fit your office's specific needs.",
     "services": [
       "Water delivery service",
-      "24/7 delivery availability",
       "Custom order sizes",
       "Water cooler installation",
       "Regular maintenance and cleaning",
@@ -897,7 +863,6 @@
     ]
   },
   "breakfast-and-brunch-restaurants": {
-    "choosing": "A good place will have regulars, a decent variety of dishes, and quick service without compromising on quality. Staff should be knowledgeable about the menu and willing to make recommendations.",
     "overview": "They offer a range of all-day breakfast and brunch items, catering to locals who prefer a hearty start to their day, with many places staying open until late afternoon.",
     "practical": "Look for a place with good reviews from locals and check if they offer a choice between generic and local breakfast staples. The latter often tastes better and is worth the extra rupees.",
     "services": [
@@ -935,7 +900,6 @@
     ]
   },
   "buddhist-temples": {
-    "choosing": "A well-run vihara maintains a peaceful, clean meditation space without loud disruptions from nearby construction or traffic. Knowledgeable monks or caretakers who patiently explain dhamma teachings make a huge difference compared to places that just keep locked doors.",
     "overview": "Monks and resident volunteers open the main shrine early for morning chanting, followed by quiet meditation sessions and offering of simple alms. Afternoon hours usually stay quiet before locals drop by after work for evening prayers or to light incense at the buddha mandir.",
     "practical": "Take off shoes near the entrance and dress modestly in clothes that cover shoulders and knees. Small cash donations for incense or temple upkeep are customary, though no one will force payment.",
     "services": [
@@ -948,11 +912,8 @@
     ]
   },
   "budget-lodges": {
-    "choosing": "A good budget lodge has clean rooms and reliable staff who can assist with travel advice. Bad ones might have dirty or poorly maintained facilities, leading to a less comfortable stay.",
-    "overview": "Budget lodges are small, often family-run places that offer basic accommodation and services to travelers. They typically stay open 24/7, with a few staff members handling check-ins and check-outs during peak hours.",
     "practical": "Always check if the lodge stocks branded toiletries; they often don't. Also, ask about the local transport options nearby, as it can be a hassle to move around without a car.",
     "services": [
-      "24/7 availability",
       "Basic accommodation",
       "Simple meals",
       "Laundry facilities",
@@ -1011,7 +972,6 @@
     ]
   },
   "bus-stations": {
-    "choosing": "Reliable complexes maintain clean waiting halls and functioning electronic display boards instead of broken public announcements. Honest ticket counters charge exact government fares without slipping in hidden platform fees or luggage insurance scams.",
     "overview": "Daily business here revolves around platform ticket windows, parcel booking desks, and endless inquiries about delayed buses from roadways and private operators. Hundreds of commuters rush past the tea stalls and cloakrooms every single hour from dawn till late night.",
     "practical": "Keep exact change ready for ticket counters to avoid arguments during peak rush hours, and ignore the touts outside pushing overpriced hotels. Official inquiry numbers painted on the main wall save hours of standing in queue when departures get rescheduled.",
     "services": ["bus depot", "best travel company", "best travel services", "books", "binding"]
@@ -1043,7 +1003,6 @@
   "camera-and-photo-studios": {
     "choosing": "A good store will have knowledgeable staff who can help choose the right equipment for your needs, while a bad one might just sell any old stuff without giving proper advice. Look for places that offer repair services and have a good selection of accessories.",
     "overview": "Camera and photography stores, often located in bustling areas, offer a variety of lenses, cameras, and accessories, catering to both amateur and professional photographers. These places are also key for those looking to buy memory cards, tripods, and other essential photo equipment.",
-    "practical": "Before you go, make sure to call and ask if they have the model you want in stock, especially if it's a popular brand. Also, check if they offer any discounts on bulk purchases or if they have any sales coming up.",
     "services": [
       "sell cameras",
       "provide lenses",
@@ -1054,7 +1013,6 @@
     ]
   },
   "camping-grounds": {
-    "choosing": "A good camping ground stands out by offering clear and easy booking options and being well-maintained with clean facilities. Look for places that have positive reviews from previous campers.",
     "overview": "Camping grounds in India offer a range of facilities for those looking to escape the city and enjoy nature. They provide spaces for tents, family camping, and glamping, often with basic amenities like washrooms and sometimes electricity.",
     "practical": "Always check if the place has a good signal for mobile data, as you might want to book or update your plans. Also, ask about the nearest grocery store or market for essentials, as not all camps have shops on-site.",
     "services": [
@@ -1090,7 +1048,6 @@
     ]
   },
   "car-rental-services": {
-    "choosing": "A good car rental service will have a wide selection of vehicles and be available 24/7, even during peak hours. Make sure they offer competitive rates and have a reliable fleet.",
     "overview": "Car rental services in India offer a variety of vehicles for short-term hire, from economy cars to luxury sedans, catering to both local and outstation needs. Most run as a single counter with one or two staff, busiest between 6pm and 9pm.",
     "practical": "Always check if they offer GPS and insurance included in the rental price. Also, ask about their policy on fuel and whether they charge extra for outstation trips.",
     "services": ["Self drive car rental", "Outstation cab", "Car booking", "Vehicle rental service"]
@@ -1128,14 +1085,7 @@
   },
   "car-wash-services": {
     "choosing": "A good car wash service stands out by providing quality products and ensuring the car is thoroughly cleaned, not just having a long queue.",
-    "overview": "Car wash services in India typically offer quick and efficient cleaning for busy customers, with some places extending their hours to 24/7 to meet demand.",
-    "practical": "Always check if they offer a choice between regular and premium washes, as the latter can be worth the extra cost for a truly clean car. Most places are busiest in the evenings, so plan accordingly.",
-    "services": [
-      "24 hour car wash",
-      "car detailing",
-      "car wash near me",
-      "vehicle cleaning service"
-    ]
+    "services": ["car detailing", "car wash near me", "vehicle cleaning service"]
   },
   "cardiology-clinics": {
     "choosing": "A dependable clinic has a technician who actually knows how to attach lead wires properly on the first try instead of guessing. Look for a cardiologist who listens to your old bypass files without rushing you out for an expensive angiogram immediately.",
@@ -1225,12 +1175,10 @@
   "cement-suppliers": {
     "choosing": "Look for a supplier with consistent stock availability and clear pricing. A good supplier will be knowledgeable and offer advice based on your project needs.",
     "overview": "Cement suppliers in India primarily focus on sourcing and distributing cement and related construction materials. They are essential for any building or infrastructure project, often operating small counters with limited staff.",
-    "practical": "Ask about their stock of popular brands before you need them, as availability can be hit or miss. Prices often vary, so compare before making a purchase.",
     "services": [
       "supply different types of cement",
       "offer delivery services",
       "provide technical advice on cement usage",
-      "keep stock of popular brands",
       "offer competitive pricing"
     ]
   },
@@ -1250,7 +1198,6 @@
   "chemical-plants": {
     "choosing": "A good chemical plant will have a reliable stock of commonly used chemicals and quick delivery times, whereas a bad one may run out of stock or take too long to deliver orders.",
     "overview": "Chemical plants here handle bulk chemicals and industrial supplies, often serving local industries and manufacturing units with a wide array of products like acids, bases, and solvents.",
-    "practical": "Always check if they have the specific chemicals you need, as availability can vary. Also, ask about their pricing for bulk purchases, as it can be significantly cheaper.",
     "services": [
       "chemical distributor",
       "chemical manufacturer",
@@ -1262,7 +1209,6 @@
   "chicken-restaurants": {
     "choosing": "A good chicken restaurant stands out by offering fresh, flavorful dishes and a quick turnaround, while a bad one might serve stale or overcooked chicken, leading to a disappointing meal experience.",
     "overview": "Chicken restaurants in this category are known for serving up quick, satisfying meals, often with a focus on tandoori chicken and chicken biryani, making them a go-to for those craving non-vegetarian options late into the night or for a casual dinner.",
-    "practical": "Before heading out, check if the place is open 24 hours, as some might close after midnight. Also, ask if they have the popular tandoori chicken; it often comes at a higher price but is worth it for the taste.",
     "services": [
       "24-hour service",
       "specialty chicken dishes like tandoori and biryani",
@@ -1273,7 +1219,6 @@
     ]
   },
   "children-playgrounds": {
-    "choosing": "Clean foam mats and regular sanitisation separate the safe zones from the ones that leave kids sneezing with dust allergies. Staff who actively stop older kids from trampling toddlers make a massive difference to the safety of the setup.",
     "overview": "These indoor and outdoor spaces keep toddlers and school children busy climbing, sliding, and running around while parents sit on plastic chairs sipping tea. Evening hours between 5 PM and 8:30 PM see the maximum rush, especially on weekends when birthday parties take over half the floor.",
     "practical": "Always carry extra socks for both kids and adults because nobody is allowed on the mats barefoot. Weekday afternoons offer the quietest time if you want your toddler to actually use the slides without waiting in a queue.",
     "services": [
@@ -1287,7 +1232,6 @@
   "children-s-clinics": {
     "choosing": "A good clinic will have a dedicated pediatrician who is experienced in handling young children, and they'll offer flexible appointment times to accommodate busy parents.",
     "overview": "Baby doctors and clinics offer specialized care for infants and young children, focusing on routine health checks and addressing common childhood illnesses.",
-    "practical": "Before going, call to confirm if they stock the generic versions of medicines, as they can be significantly cheaper than branded ones, and ask about their opening hours, as they can vary widely depending on the clinic's location and clientele.",
     "services": [
       "baby health checkups",
       "vaccinations",
@@ -1336,11 +1280,8 @@
     ]
   },
   "cleaning-services": {
-    "choosing": "Look for a place that has been around for a while and is well-known in the area. Staff should be friendly and knowledgeable about their services, especially regarding the quality of cleaning agents they use.",
-    "overview": "These places offer everything from quick car washes to deep cleaning of homes, often operating 24/7. Some even handle dry cleaning and community center maintenance, making them a staple in neighborhoods.",
     "practical": "Always check if they offer flexible payment options, as some might have better deals for regular customers. Also, ask about their pricing for home cleaning services near you - rates can vary widely.",
     "services": [
-      "24 hour cleaning service",
       "car cleaning",
       "home cleaning",
       "deep cleaning",
@@ -1389,8 +1330,6 @@
   },
   "coffee-shops": {
     "choosing": "A good coffee shop will have a consistent taste in their filter coffee and a wide selection of chai flavors. The quality of the snacks and light meals also plays a big role in customer satisfaction.",
-    "overview": "Most coffee shops in India are small, family-run establishments that focus on serving filter coffee and chai, with a few also offering western-style coffee and snacks. They are popular spots for locals to grab a quick bite or meet friends for a chat.",
-    "practical": "Always check if they serve the generic version of coffee; it can be significantly cheaper. Also, note that the busiest times are usually between 6pm and 9pm, so plan accordingly to avoid long waits.",
     "services": [
       "filter coffee",
       "chai",
@@ -1465,7 +1404,6 @@
     ]
   },
   "community-centers": {
-    "choosing": "A good community centre has reliable staff who are familiar with local issues and can provide accurate information. Look for one that is well-maintained and has a regular schedule of events and services.",
     "overview": "Community centres in India often serve as hubs for local governance and social activities, hosting meetings, events, and providing basic services to residents.",
     "practical": "Call ahead to check if they have the specific service you need, as availability can vary. Also, ask if they have any ongoing events or meetings that might affect your visit.",
     "services": [
@@ -1504,11 +1442,9 @@
   },
   "computer-coaching-classes": {
     "choosing": "A good coaching class will have experienced instructors who have industry experience, and they'll offer flexible timings to fit around students' schedules. Look for places that provide a supportive environment where you can ask questions freely without feeling judged.",
-    "overview": "Computer coaching classes offer tailored training sessions for students to master coding languages and software tools, often focusing on popular frameworks and applications relevant to today's tech industry.",
     "practical": "Before you sign up, find out if they offer flexible payment plans. Also, check if they have a good track record of successful placements and alumni networks. These can make a big difference in your learning journey.",
     "services": [
       "Personalized tutoring",
-      "Workshops on popular coding languages",
       "Practice sessions with real-world projects",
       "Mock interviews and career guidance",
       "Access to online resources and materials",
@@ -1518,7 +1454,6 @@
   "computer-shops": {
     "choosing": "A good computer shop will have knowledgeable staff who can provide advice on the best products for your needs. They should also offer competitive prices and a quick turnaround on repairs.",
     "overview": "A computer shop in the Indian context is a small to medium-sized store that primarily sells computers, laptops, and related accessories. They also provide services like software installation, hardware repairs, and sometimes offer internet services or Wi-Fi for browsing.",
-    "practical": "Before you go, check if they have the specific model you need in stock. Many shops keep popular models but may not have the latest ones. Also, ask about their return and warranty policies.",
     "services": [
       "sell desktops and laptops",
       "provide software installation",
@@ -1535,7 +1470,6 @@
     "services": [
       "Provide bulk computer and laptop supplies for retailers",
       "Offer a wide array of computer accessories including monitors, keyboards, and mice",
-      "Maintain a stock of popular PC parts for quick delivery",
       "Handle wholesale orders for both desktops and laptops",
       "Negotiate competitive prices with manufacturers for bulk purchases"
     ]
@@ -1556,7 +1490,6 @@
   "convenience-stores": {
     "choosing": "A good convenience store usually has a wide selection of branded and generic products, with clear pricing. The staff should be friendly and prompt in serving customers, especially during peak hours.",
     "overview": "A convenience store in India is a small retail outlet that primarily stocks everyday essentials like snacks, beverages, and basic groceries. They also serve as a quick stop for last-minute purchases, especially during late evenings and early mornings.",
-    "practical": "Before heading to a convenience store, check if they stock the generic versions of products, as they can be significantly cheaper. Also, note that these stores are busiest around 6-9 pm, so plan your visit accordingly.",
     "services": [
       "grocery items",
       "snacks and beverages",
@@ -1652,7 +1585,6 @@
     ]
   },
   "courier-and-delivery-services": {
-    "choosing": "A good courier service is reliable and punctual, with clear tracking options; a bad one may lose your package or deliver it late. Make sure the service you choose offers 24/7 support and can handle rush orders if needed.",
     "overview": "Courier and delivery services handle the packaging, shipping, and delivery of parcels and documents, often within the city or across the country, ensuring that important items reach their destinations on time.",
     "practical": "Look for a local courier that operates frequently and has no issues with deliveries, as it saves time and money. Ask about their pricing for regular shipments and compare with nearby services to find the best deal.",
     "services": [
@@ -1691,15 +1623,13 @@
     ]
   },
   "courts-tribunals": {
-    "choosing": "A dependable munshi or advocate keeps paper bundles neatly tied with red ribbon and tracks the judge office schedule without charging extra for every minor query. Unreliable ones misplace certified copies and leave litigants stranded outside the wrong courtroom when the matter is called.",
     "overview": "Long queues form outside the civil court and district court from early morning just to get token numbers for filing plaints and affidavits. Typists with manual typewriters sit under tin sheds outside the kachahari gate, drafting petitions while litigants wait anxiously for their legal hearing place.",
     "practical": "Leave mobile phones and plastic bags at the security gate because the guards will confiscate them before entry. Carry exact change for photocopy stalls and stamp vendors since UPI scanners rarely work inside the premises.",
     "services": [
       "District court and civil court case filing",
       "High court writ and appeal processing",
       "Daily cause list verification",
-      "Affidavit attestation and notary services",
-      "Certified copy issuance for court orders"
+      "Affidavit attestation and notary services"
     ]
   },
   "coworking-spaces": {
@@ -1715,7 +1645,6 @@
     ]
   },
   "craft-breweries": {
-    "choosing": "Consistent carbonation and clean lines separate a reliable taproom from one that serves yeasty, flat pours that cause headaches by midnight. Good batches rotate fast enough that IPAs actually taste tropical instead of metallic and oxidized.",
     "overview": "These spots brew their own batches on stainless steel tanks visible from the seating area and pour fresh pints directly for weekend crowds. Staff usually juggle crowd control, tapping kegs, and explaining experimental IPA profiles to curious tables.",
     "practical": "Table reservations are mandatory on Friday nights unless waiting an hour at the standing bar sounds fun. Most places slap a steep service charge on the bill, so check the final total before paying by UPI.",
     "services": [
@@ -1752,7 +1681,6 @@
     ]
   },
   "cupcake-shops": {
-    "choosing": "A decent counter keeps sponges moist and frosting buttery rather than sugary-sweet, unlike cheaper joints that use cheap hydrogenated fats. Freshness shows in whether the crumb falls apart gently or feels like stale sponge cake.",
     "overview": "Bakers spend mornings turning out fresh batches of red velvet and chocolate buttercreams to display in glass chilled counters. Evenings bring college students and families packing in for a quick box of six after dinner.",
     "practical": "Expect to pay around 80 to 150 rupees per piece depending on the neighborhood. Sunday evenings mean long queues, so grabbing takeaways by late afternoon saves time.",
     "services": [
@@ -1801,7 +1729,6 @@
     ]
   },
   "day-care-preschools": {
-    "choosing": "A good balwadi or day care preschool ensures a clean and safe environment, with well-trained and experienced staff who are attentive to the children's needs. Parents should also check if the center has a clear emergency protocol in place.",
     "overview": "Balwadis and day care preschools provide a safe and nurturing environment for young children, offering structured play and learning activities from 8am to 6pm, with some centers extending their hours to 7pm to accommodate working parents.",
     "practical": "Before choosing a balwadi or day care preschool, ask about their policies on snacks and meals, as prices can vary. Also, inquire about their daily routine and whether they follow a structured schedule for activities and playtime.",
     "services": [
@@ -1814,7 +1741,6 @@
     ]
   },
   "day-spas": {
-    "choosing": "A good day spa should have a range of affordable packages, and their cleanliness and ambiance are key indicators of quality. Couples often prefer places that offer private rooms for intimacy.",
     "overview": "Day spas offer a variety of treatments and services aimed at relaxation and rejuvenation, from massages to facials, often tailored for couples or solo visits.",
     "practical": "Always check if they offer same-day bookings, especially on weekends. Ask about special offers for first-time visitors, as they can be quite appealing.",
     "services": ["massages", "facials", "manicures", "pedicures", "body wraps", "skin treatments"]
@@ -1822,7 +1748,6 @@
   "dental-clinics": {
     "choosing": "A good 24-hour dental clinic will have a dedicated emergency line, ensuring quick response to urgent cases. For regular visits, look for one that offers a comfortable waiting area and clear communication about treatment options.",
     "overview": "A 24-hour dental clinic operates around the clock, ensuring emergencies are handled quickly, while a general dentist offers routine check-ups and cleanings. Tooth extraction and other dental treatments are also provided to maintain oral health.",
-    "practical": "Before going to a dentist, ask if they offer same-day appointments for emergencies. Also, inquire about the cost of generic medications used during treatment, as they can be significantly cheaper than branded ones.",
     "services": [
       "24-hour emergency dental care",
       "general dentistry",
@@ -1834,7 +1759,6 @@
   "dental-clinics-tooth-care-centres": {
     "choosing": "A good clinic will have a friendly and experienced dentist who can explain procedures clearly. They should also offer flexible hours to fit around your busy schedule.",
     "overview": "A dental clinic or tooth care centre is where you go for regular checkups and treatments to keep your teeth healthy. They offer services like fillings, extractions, and root canal treatments.",
-    "practical": "Always book an appointment in advance to avoid waiting times. And remember, generic medications can be cheaper, but always ask if they stock them.",
     "services": [
       "dental checkup",
       "root canal treatment",
@@ -1844,7 +1768,6 @@
     ]
   },
   "dermatology-clinics": {
-    "choosing": "A good clinic will have a dermatologist with years of experience and a clean, well-equipped clinic. Look for positive reviews from patients who have seen real improvements in their skin conditions.",
     "overview": "Dermatology clinics diagnose and treat skin conditions, offering specialized care for a range of issues like acne, psoriasis, and skin cancer. They also provide medical skin care services such as chemical peels and laser treatments.",
     "practical": "Always ask if they offer consultation before treatments. A proper consultation can save you money and time. Also, inquire about the cost of generic versus branded medications, as the price difference can be significant.",
     "services": [
@@ -1887,7 +1810,6 @@
   },
   "diagnostic-labs-imaging": {
     "choosing": "A good diagnostic lab has quick and accurate results, while a bad one might take days or give incorrect readings. Always check if they offer online booking to save time.",
-    "overview": "A diagnostic lab or imaging centre conducts blood tests, MRIs, and other medical examinations to help doctors diagnose and monitor health issues. They also offer health check-ups and pathology services, often open 24 hours for emergencies and convenience.",
     "practical": "Look for a lab that stocks the generic version of tests; it can save you money. Also, ensure they have a reliable 24-hour service for emergencies.",
     "services": [
       "24-hour emergency services",
@@ -1912,11 +1834,8 @@
     ]
   },
   "discount-stores": {
-    "choosing": "A good discount store is one where you can find genuine deals and not just empty discounts. The quality of the products should match the price, and the store should be clean and organized, making it easy to browse and shop. Staff should be friendly and knowledgeable about the products, but often, there's just one or two people managing a counter, so expect long queues during peak hours.",
-    "overview": "Discount stores are the go-to places for everyday items and small household essentials, offering products that are much cheaper than those found in regular shops. People flock here for the best deals and clearance sales, making them the perfect spot for budget-conscious shoppers looking to save money.",
     "practical": "Always check if the store has a loyalty program. It can save you a lot in the long run. Also, ask if they offer home delivery services, especially for bulky items. This can save you time and effort, making your shopping trip more convenient.",
     "services": [
-      "stock up on daily necessities at lower prices",
       "find discounted electronics and appliances",
       "take advantage of clearance sales on seasonal goods",
       "purchase clothing and footwear at reduced rates",
@@ -1951,15 +1870,8 @@
   },
   "dry-cleaners": {
     "choosing": "A good dry cleaner is known for quick turnaround and clear pricing, while a bad one might overcharge or damage your clothes. Look for places that offer home pickup and have positive reviews from other customers.",
-    "overview": "Dry cleaners handle everything from shirts to suits, using solvents to clean clothes without water. They also offer home pickup and 24-hour laundry services for busy individuals.",
     "practical": "Always check if they provide home pickup; it saves time. Also, ask about their pricing policy for common items like shirts and pants before you drop off your laundry.",
-    "services": [
-      "24 hour laundry",
-      "shirt ironing",
-      "dry cleaning",
-      "fabric care",
-      "home pickup laundry"
-    ]
+    "services": ["shirt ironing", "dry cleaning", "fabric care", "home pickup laundry"]
   },
   "e-commerce-services": {
     "choosing": "A good platform will have a user-friendly interface and strong customer support, whereas a bad one might crash frequently or be difficult to navigate. Make sure the agency has experience in your niche and positive reviews from other businesses.",
@@ -2025,7 +1937,6 @@
     ]
   },
   "educational-supply-stores": {
-    "choosing": "A dependable shop keeps the exact notebook rulings required by nearby schools rather than substituting cheaper alternatives that teachers reject. Good owners know the curriculum syllabus by heart and pull all required workbooks within minutes without checking lists.",
     "overview": "Metal shelves hold stacks of school notebooks sorted by page count and binding, while plastic bins overflow with geometry boxes and scale sets. Shop owners spend mornings packing complete textbook sets for local convent and matriculation schools before the afternoon rush of students buying chart paper and poster colours.",
     "practical": "Carry cash because card machines often fail during monsoon power cuts, and always check the total on the manual calculator. Keep receipts safely since exchanged geometry sets or unused notebooks are only accepted within three days with the shop stamp.",
     "services": [
@@ -2040,7 +1951,6 @@
   "electric-utility-providers": {
     "choosing": "A good electric utility provider offers quick resolution to power outages and maintains a fair billing system. A bad one might have long wait times and frequent billing disputes.",
     "overview": "Electric utility providers handle the distribution and maintenance of power to homes and businesses, ensuring a steady supply of electricity 24x7. They also process bills and handle customer queries related to billing and power issues.",
-    "practical": "Always ensure the provider has a clear and accessible billing system, and check if they offer online payment options for convenience. Generic versions of appliances can be much cheaper, so ask about their availability.",
     "services": [
       "24x7 power supply",
       "billing and payment processing",
@@ -2164,7 +2074,6 @@
     ]
   },
   "engine-repair-workshops": {
-    "choosing": "A good workshop will have a clear understanding of the specific make and model of your car, while a bad one might not know the quirks of your vehicle. Always ask about the parts they use; some might save costs by using cheaper alternatives.",
     "overview": "An engine repair workshop focuses on diagnosing and fixing engine problems to keep cars running smoothly. They offer services like engine rebuilding and overhauling, with prices that can vary widely.",
     "practical": "Locals recommend going to a workshop that’s open late, as issues often arise after work hours. Also, inquire about their policy on parts; some might offer a warranty, which can save you money in the long run.",
     "services": [
@@ -2189,7 +2098,6 @@
     ]
   },
   "ent-specialists": {
-    "choosing": "Good specialists clean ear wax carefully using suction rather than painful metal scoops and actually explain the camera feed of the nasal passages. Skip doctors who push expensive branded nasal sprays on the first visit without trying cheaper local alternatives first.",
     "overview": "ENT clinics handle persistent sinus infections, sudden hearing drops, and severe throat pain on a walk-in or token basis. Patients usually wait on plastic chairs outside the consultation room while the doctor examines ears and nasal passages with a head mirror and scope.",
     "practical": "Take a token early since evening queues get chaotic fast and keep previous prescription slips handy. Parking near these clinics is usually tight, so taking an auto is much less stressful.",
     "services": [
@@ -2214,7 +2122,6 @@
     ]
   },
   "ev-charging-stations": {
-    "choosing": "A good charging station usually has quicker service and better maintenance of their equipment, ensuring you can charge your vehicle faster and with peace of mind. Look for one that's open longer and can handle a higher number of vehicles at once.",
     "overview": "An EV charging station provides battery and car charging services, mostly using DC fast chargers or Type 2 chargers, catering to electric vehicles and electric scooters. Some places might offer CCS2 chargers for specific models.",
     "practical": "Always check the price before starting your charge session, as rates can vary. Also, ask if they offer any discounts for regular customers or long-term chargers.",
     "services": [
@@ -2315,7 +2222,6 @@
   "fabric-shops": {
     "choosing": "A good shop will have regular updates on new fabrics and offer competitive pricing; bad ones might just be selling old stock with no new arrivals in months.",
     "overview": "These fabric shops primarily sell a variety of materials used for arts and crafts, along with clothing and home decor, catering to both wholesale and retail customers.",
-    "practical": "Always check if they have the specific material you need; many places tend to run out of popular items quickly. Also, ask about discounts for bulk purchases if you're looking to buy wholesale.",
     "services": [
       "Sells arts and crafts supplies",
       "Provides wholesale options",
@@ -2325,7 +2231,6 @@
     ]
   },
   "family-practice-clinics": {
-    "choosing": "A good family medicine doctor actually remembers your medical history without flipping through old files every single time. Avoid the ones who push expensive branded antibiotics on the first visit when cheaper generics work just as well.",
     "overview": "Queues build up fast here during the evening slot as people drop by after work for routine coughs, fevers, and blood pressure checks. The doctor usually manages everything from writing prescriptions to giving quick injections in a small back room.",
     "practical": "Carry exact change for the consultation fee because compounders rarely have loose currency for big notes. Keep your old prescriptions in a plastic folder so the doctor can track how your dosage changed over the last six months.",
     "services": [
@@ -2398,8 +2303,6 @@
     ]
   },
   "fast-food-quick-bite-restaurants": {
-    "choosing": "A good one offers fresh ingredients and a variety of options, while a bad one might use frozen or generic items. Look for places with a good mix of popular and unique items to keep your meal interesting.",
-    "overview": "These places are known for their quick service and affordable prices, perfect for a casual meal or a quick bite. Most run as a single counter with one or two staff, busiest between 6pm and 9pm.",
     "practical": "Always check if they offer online ordering or delivery. It saves time, especially during peak hours. Also, ask whether they stock the generic version - the price difference is often large.",
     "services": [
       "best fast food",
@@ -2498,7 +2401,6 @@
     ]
   },
   "fitness-gyms": {
-    "choosing": "A good gym has a clean and well-maintained environment, with regular hours that fit your schedule. The staff should be friendly and knowledgeable, able to guide you on the right equipment and routines.",
     "overview": "A gym is a place where people go to exercise and maintain their fitness, offering a variety of equipment and classes. A sport facility, on the other hand, is more geared towards training for specific sports and may have specialized equipment.",
     "practical": "Always check if they offer flexible membership options and if they have a loyalty program. Also, ask about their availability during peak hours, as it can get crowded.",
     "services": [
@@ -2561,7 +2463,6 @@
   "food-distributors": {
     "choosing": "A good distributor is reliable and has a wide network of suppliers, ensuring a steady stock of goods. They also offer competitive pricing and flexible delivery options, making them a preferred choice for regular businesses.",
     "overview": "Food distributors manage the procurement and distribution of food products, often in bulk, to retail stores, restaurants, and other businesses. They ensure a steady supply of goods, negotiate prices, and manage logistics to keep operations running smoothly.",
-    "practical": "Always check if they stock the local brands first, as they are often more affordable. Also, ask about their delivery timings as they can vary based on the volume of orders and local traffic conditions.",
     "services": [
       "procure and supply food products",
       "negotiate bulk purchase deals",
@@ -2574,18 +2475,9 @@
   "food-stalls-eateries": {
     "choosing": "A good stall stands out for its consistent quality and the freshness of ingredients. The best ones are known for their regulars who come back for the same dish every day.",
     "overview": "Food stalls and eateries in this category are bustling with activity, especially during lunch and dinner hours. They offer a variety of chaat, snacks, and local delicacies, often serving customers within minutes of their order.",
-    "practical": "Always check if they offer tiffin service for office workers. The portions are usually generous, and the prices are reasonable. Also, ask about their most popular items; they often have a reason for being so popular.",
-    "services": [
-      "chaat",
-      "snacks",
-      "local delicacies",
-      "fast service",
-      "tiffin service",
-      "street food"
-    ]
+    "services": ["chaat", "snacks", "local delicacies", "tiffin service", "street food"]
   },
   "food-stores": {
-    "choosing": "A good 24-hour food shop or kirana shop will have a good selection of snacks and drinks, and they typically stock popular brands. The quality of the stock and the freshness of the produce are key factors to look for.",
     "overview": "A 24-hour food shop or kirana shop is a small local store that caters to daily needs, offering a wide selection of packaged food, snacks, and drinks. These stores are the go-to places for quick grocery shopping or late-night snacks.",
     "practical": "Always check if they have your favorite snacks and drinks in stock. Also, ask about their delivery options if you need groceries delivered to your doorstep.",
     "services": [
@@ -2631,7 +2523,6 @@
   "furniture-home-decor-shops": {
     "choosing": "A good shop will have a wide selection of styles and materials, making it easier to find something that fits your taste and budget. Look for those who offer a hassle-free return policy in case you change your mind.",
     "overview": "These shops are your go-to for all things furniture and home decor, from beds and sofas to wooden furniture and hardware. You'll find them bustling with activity, especially after office hours, as people rush to find the perfect piece for their home.",
-    "practical": "Before you go, check if they have the specific style or material you're looking for. Many only stock a few popular models, so it's better to confirm first. Also, ask about their delivery and installation services, as they can make a big difference in the overall experience.",
     "services": [
       "bed shop",
       "furniture store",
@@ -2680,7 +2571,6 @@
   "gas-suppliers": {
     "choosing": "A good gas supplier will have a reliable stock of cylinders and quick delivery times, especially during peak hours. They should also offer competitive pricing and clear terms for cylinder exchanges and maintenance.",
     "overview": "Gas suppliers handle the distribution and supply of gas cylinders and connections to homes and businesses, ensuring that customers have a steady and reliable source of gas for cooking and heating.",
-    "practical": "Always check if they offer 24/7 emergency services, as gas leaks can be dangerous. Also, inquire about their pricing for cylinder exchanges, as some may charge more than others for the same service.",
     "services": [
       "Provide gas cylinders for both domestic and commercial use",
       "Install and connect gas pipelines for new customers",
@@ -2729,7 +2619,6 @@
   "glass-and-mirror-shops": {
     "choosing": "Good local cutters use a diamond tip that leaves smooth edges and brings proper silicon sealant for bathroom fittings instead of cheap putty. Bad ones chip the corners during transit and charge extra for transport after quoting a low per-square-foot rate on the phone.",
     "overview": "These shops spend mornings cutting float glass and 4mm to 12mm mirrors on large wooden tables right on the footpath. Afternoon hours usually involve sending two boys out on a TVS XL to take exact window measurements and fit toughened glass or sliding wardrobe panels in local apartments.",
-    "practical": "Always bargain on the polishing charges per running foot and insist they bring the silicone gun for bathroom mirrors so it doesn't rust from the back. Check the glass thickness with a measuring scale before the boy applies the adhesive, as cheaper 3mm sheets get palmed off for 5mm rates.",
     "services": [
       "glass and mirror sales service",
       "home service for wardrobe mirror fixing",
@@ -2739,7 +2628,6 @@
     ]
   },
   "glass-manufacturers": {
-    "choosing": "A reliable factory keeps standard 4mm to 12mm stock dry and unblemished, whereas substandard yards store plates flat outdoors where rainwater ruins the interlayer. Precision in furnace tempering separates clean, distortion-free panels from wavy glass that bends reflections.",
     "overview": "Operators spend mornings offloading truckloads of raw soda-ash plates from Saint-Gobain or Modi Guard, then spend afternoons cutting sheets to exact millimetre specs on heavy wooden tables. Sparks fly constantly near the edge-grinding wheels while workers stack tempered glass panels destined for shopfronts and interior partitions.",
     "practical": "Always inspect the edges for microscopic chips before loading them onto the tempo, because transport bumps will turn minor flaws into long cracks. Negotiate prices per square foot directly with the master cutter rather than the billing desk to save a decent chunk of rupees.",
     "services": [
@@ -2752,10 +2640,7 @@
   },
   "government-hospitals": {
     "choosing": "A good government hospital usually has a faster response time in emergencies and is equipped with basic diagnostic facilities, whereas a bad one might struggle with long wait times and outdated equipment.",
-    "overview": "Government hospitals handle a wide array of medical needs, from routine check-ups to critical emergencies, operating 24/7 with dedicated emergency departments.",
-    "practical": "For a regular customer, it's practical to know that government hospitals often have longer queues during peak hours, so plan your visit accordingly. Also, inquire about the availability of generic medicines, as they are usually more affordable.",
     "services": [
-      "24 hour hospital",
       "best doctor near me",
       "blood test",
       "emergency",
@@ -2764,7 +2649,6 @@
     ]
   },
   "government-offices": {
-    "choosing": "A good block office is usually well-staffed and responsive to queries, with clear and helpful service. Look for one that has a clean, organized counter and a friendly, knowledgeable staff.",
     "overview": "Block offices handle a wide array of civic duties, from issuing ration cards and voter IDs to managing local governance and resolving citizen complaints. They also oversee welfare schemes and provide a platform for public engagement.",
     "practical": "Always bring all required documents; missing even a single piece can delay your application. Also, check if they have online services available to save time.",
     "services": [
@@ -2814,7 +2698,6 @@
     ]
   },
   "grocery-and-kirana": {
-    "choosing": "A good kirana store will have a wide selection of daily needs and be open late into the evening. Look for one that stocks both branded and generic products, as the latter can often be much cheaper.",
     "overview": "At a kirana store, you'll find a variety of daily essentials like atta, dal, and biscuits, along with more general grocery items. These stores are the heart of the community, often bustling with locals buying their weekly needs.",
     "practical": "Always ask if they have the generic version of items; the price difference can be significant. Visit during off-peak hours to avoid the rush, especially around 6-9 pm.",
     "services": [
@@ -2827,7 +2710,6 @@
     ]
   },
   "grocery-stores": {
-    "choosing": "A good kirana shop will keep its shelves well-stocked, especially of popular items, and have a friendly, approachable staff. Ration shops are typically reliable for their subsidized items but might have limited variety compared to other stores.",
     "overview": "Grocery stores in India, often referred to as kirana shops, are the backbone of local communities, providing a wide array of daily essentials from spices and oils to fresh vegetables and fruits. Ration shops, known for their government-issued supplies, are also crucial for those who need specific items like sugar, rice, and oil at subsidized rates.",
     "practical": "Always check if the shop keeps its stock of daily essentials like rice and sugar in good supply. For a ration shop, ask about the specific items you need and ensure they are available. For kirana shops, inquire about their prices for branded versus generic products, as the difference can be significant.",
     "services": [
@@ -2840,11 +2722,9 @@
     ]
   },
   "guest-houses": {
-    "choosing": "A decent place keeps the water pump running and clean white bedsheets without damp corners. Shady spots try to charge extra for electricity or refuse entry to local couples carrying valid Aadhaar cards.",
     "overview": "Most run from a ground-floor desk where the manager handles cash, identity proofs, and late-night arrivals simultaneously. Rooms get turned over quickly each morning while families and travelling salesmen sort out their baggage in the corridors.",
     "practical": "Always inspect the room switchboard and tap water pressure before handing over cash at the desk. Keep local auto-rickshaw numbers handy because finding transport past midnight down these lanes is pure luck.",
     "services": [
-      "24 hour guest house check-in",
       "budget stay with basic AC and hot water buckets",
       "hotel with kitchen access for long-term guests",
       "family stay arrangements with extra mattresses",
@@ -2854,7 +2734,6 @@
   "gynecology-clinics": {
     "choosing": "A good clinic will have a dedicated waiting area with comfortable seating and privacy screens, ensuring patients feel at ease. They should also offer evening hours to accommodate working women.",
     "overview": "A gynecology clinic deals with women's health, from routine check-ups to more complex procedures, and focuses on reproductive and perinatal care, offering services like prenatal consultations and delivery support.",
-    "practical": "Before visiting, call to confirm they stock generic versions of medications, as they can be significantly cheaper. Also, ask about their availability for evening appointments, as they can be hard to come by.",
     "services": [
       "Routine check-ups",
       "Prenatal consultations",
@@ -2876,7 +2755,6 @@
     ]
   },
   "hair-salons": {
-    "choosing": "A hygienic shop washes the plastic cape between every single customer and keeps fresh blades in the wrapper. Avoid the ones where the floor is piled high with hair and the towel smells damp from yesterday's laundry.",
     "overview": "These neighbourhood spots handle quick monthly trims, emergency shavers before a wedding, and standard oil massages on sweaty afternoons. Shutters usually stay half-open past 10 PM while the floor gets swept of loose hair and talcum powder.",
     "practical": "Carry exact change because UPI scanners often fail right when the cape comes off. Sundays are packed solid, so expect to wait forty minutes on the plastic bench unless you walk in by 9 AM.",
     "services": [
@@ -2888,7 +2766,6 @@
     ]
   },
   "hair-stylists": {
-    "choosing": "A decent stylist actually listens before taking the scissors to your sideburns instead of giving the exact same high fade to every single college student. Good ones keep their cape clips clean and sanitize the cut-throat razor blade right in front of you.",
     "overview": "Chairs fill up fast on Saturday mornings with regular customers waiting for their fortnightly trim and temple shave. Floor space stays tight, usually packed with two swivel chairs, a faded Bollywood film magazine pile, and a dusty ring light.",
     "practical": "Carry exact cash because the UPI scanner always seems to act up right when the towel comes off. Steer clear of Sunday afternoons unless you want to spend an hour staring at the back of someone else's head while waiting your turn.",
     "services": [
@@ -2912,7 +2789,6 @@
     ]
   },
   "hardware-building-material-shops": {
-    "choosing": "A good shop will have a wide selection of quality products and be willing to offer advice. Look for one that stocks the generic versions of items; they can be significantly cheaper without compromising on quality.",
     "overview": "These shops are the go-to places for all your building and hardware needs, from cement and paint to plumbing materials and more. They stock a variety of items essential for home and garden projects, often operating as small, family-run businesses.",
     "practical": "Always check if they have what you need in stock, as some smaller shops might not carry every item. Also, ask about their delivery options if you need to pick up large quantities.",
     "services": ["cement", "paint", "plumbing material", "garden tools", "electrical wiring"]
@@ -2972,16 +2848,9 @@
     "choosing": "A good clinic is one that has a doctor who is known for their quick and effective treatment, and where you feel comfortable. Bad ones might have long wait times and unresponsive staff, making your visit unpleasant.",
     "overview": "Health care centres and clinics in this category are usually small but essential, providing basic medical services and treatments. They operate with limited staff, often just one doctor or nurse, and are frequented mostly during evenings and weekends.",
     "practical": "Always check if they have a walk-in service or need an appointment. And ask about their hours, as they might be closed on certain days or during specific times. Knowing this can save you a lot of time and hassle.",
-    "services": [
-      "24 hour hospital",
-      "best doctor near me",
-      "clinic doctor",
-      "general hospital",
-      "health care near me"
-    ]
+    "services": ["best doctor near me", "clinic doctor", "general hospital", "health care near me"]
   },
   "health-food-stores": {
-    "choosing": "Stock authenticity separates trusted outlets from pop-up shops, especially with sealed imported supplements where QR codes must verify against original distributor bills. Reliable owners also keep stock moving so cold-pressed seed oils and whole grain flours never sit long enough to go rancid.",
     "overview": "Daily business revolves around unboxing WhatsApp bulk orders for cold-pressed oils, weighing out brown rice, and stacking jars of peanut butter and millet cookies. Customers drop by after evening walks to pick up whey protein tubs, sugar-free khakhras, or specific gluten-free flours recommended by their nutritionists.",
     "practical": "Always check the manufacturing date on ragi chips and organic jaggery since slower-moving items tend to lose crunch or gather moisture in humid weather. Carrying a shopping bag saves extra charges, and paying via UPI usually gets a quiet five percent off on larger grocery bills.",
     "services": [
@@ -2993,7 +2862,6 @@
     ]
   },
   "health-spas": {
-    "choosing": "Hygiene separates the decent places from the ones to skip, especially checking if they change the table sheets between clients and use fresh towels. Good therapists apply consistent pressure without rushing, while cheaper joints often cut corners on oil quality and session duration.",
     "overview": "These spots run back-to-back massage sessions and herbal oil treatments from small commercial spaces, busiest on weekend evenings when walk-ins peak. Therapists handle everything from quick foot rubs to full-body potli massages using heavy sesame or coconut bases.",
     "practical": "Always ask for a steam room session after the massage to wash off the excess oil before getting back into auto rickshaws or cars. Carry cash because UPI scanners near the front desk act up during peak hours, and keep a spare set of loose clothes since you will leave greased up.",
     "services": [
@@ -3007,7 +2875,6 @@
   },
   "hearing-aid-centres": {
     "choosing": "Good dealers let the patient take the ear machine home for a trial week in actual street noise instead of just testing it in a silent AC room. Shadier shops push high-margin imported brands without mentioning that replacement button cell batteries cost a fortune locally.",
-    "overview": "These shops test hearing, program digital hearing aids, and adjust ear machines on the spot while families wait outside on plastic chairs. Audiologists here deal daily with elderly parents who lost their previous devices or need a cheaper replacement than what the big ENT hospital quoted.",
     "practical": "Take an auto straight there during off-peak hours so the audiologist actually spends time on the pure tone audiometry test instead of rushing you. Always ask for the final price including GST and the exact warranty card stamped by the authorized distributor.",
     "services": [
       "best hearing aid trials",
@@ -3043,7 +2910,6 @@
     ]
   },
   "historic-places": {
-    "choosing": "A good historic place will have knowledgeable staff who can provide detailed information about the site's history. The place should also maintain cleanliness and have a well-maintained visitor center.",
     "overview": "Historic places in India are bustling with activity, often open daily with guided tours and ticket sales. They host a variety of events like cultural shows and educational workshops, drawing in both locals and tourists.",
     "practical": "Always check if the historic place offers guided tours, as they provide a deeper understanding of the site. Also, inquire about opening hours, as they can vary, especially during holidays and seasons.",
     "services": [
@@ -3056,7 +2922,6 @@
     ]
   },
   "holiday-rental-homes": {
-    "choosing": "A good holiday rental home stands out by offering quick and easy check-ins, clear communication with the host, and a clean and well-maintained property. Bad ones can be messy, poorly maintained, and lack clear communication, leading to a frustrating stay.",
     "overview": "Holiday rental homes provide a private lodging option for travelers, often offering a home away from home experience with basic amenities like Wi-Fi, kitchenettes, and living spaces.",
     "practical": "Make sure to read reviews and ask for recommendations from locals for reliable holiday rental homes. Always check the availability of basic amenities like cooking utensils and toiletries, as they might not be provided.",
     "services": [
@@ -3072,13 +2937,7 @@
     "choosing": "A good home cleaner will provide consistent quality and be available when you need them, unlike others who might be closed or unresponsive. Look for those who offer ghar safai services as they often have the necessary cleaning agents and tools.",
     "overview": "Local home cleaners typically offer deep cleaning, post-construction cleaning, and sofa cleaning. They often operate from small counters and are busiest in the evening hours.",
     "practical": "Always ask about their availability for late-night cleaning as many places close early. Also, inquire about their pricing for ghar safai services, as it can vary significantly.",
-    "services": [
-      "24 hour cleaning",
-      "deep cleaning",
-      "post construction cleaning",
-      "sofa cleaning",
-      "ghar safai"
-    ]
+    "services": ["deep cleaning", "post construction cleaning", "sofa cleaning", "ghar safai"]
   },
   "home-decor-stores": {
     "choosing": "Good shops keep open rolls of fabric so you can actually feel the weight of the cotton instead of trusting small swatch cards. Honest counter staff will discourage you from buying delicate decor items if your apartment faces direct road dust.",
@@ -3106,7 +2965,6 @@
     ]
   },
   "home-goods-shops": {
-    "choosing": "A good shop will have a wide selection of items, including both popular brands and local artisans, ensuring you find unique pieces. The staff should be knowledgeable about the products, helping you make informed decisions.",
     "overview": "These shops are the go-to places for all your home decor and furniture needs, offering a wide array of items from cushions and rugs to beds and tables. They also stock hardware items like paint and tools, making them perfect for both interior and exterior home improvements.",
     "practical": "Always check if they have the item you need in stock before going. If not, ask about their delivery options. Also, inquire about their return policy in case you need to exchange something later.",
     "services": [
@@ -3120,7 +2978,6 @@
   },
   "home-health-care": {
     "choosing": "A good home health care service has a reliable schedule and is always prompt, whereas a bad one may show up late or be unresponsive. Make sure the service has a clear communication protocol and can be contacted easily during emergencies.",
-    "overview": "A 24-hour nurse or home health care service provides round-the-clock assistance to patients, ensuring their needs are met at home. These services include home physiotherapy and medical care, often keeping a patient’s condition stable and comfortable between doctor visits.",
     "practical": "Before choosing a home health care service, ask if they offer generic medications instead of branded ones, as the cost difference can be significant. Also, check if they offer flexible scheduling, as timing can be crucial for patients with fluctuating conditions.",
     "services": [
       "24-hour nurse service",
@@ -3133,7 +2990,6 @@
   },
   "home-security-services": {
     "choosing": "A dependable local security agency actually sends someone over to survey blind spots in the staircase and boundary walls before quoting a final rate. Fly-by-night operators push cheap Chinese dome cameras that fail within months and leave the client stranded without service backups.",
-    "overview": "These local shops and agencies supply wired or wireless security systems, negotiate CCTV camera price quotes, and send technicians out for doorstep cctv installation across residential colonies. Most days involve handling urgent distress calls for a 24 hour security guard or fixing glitchy motion sensors on sliding gates.",
     "practical": "Always demand local contact numbers for the technician who did the wiring because remote call centers take days to dispatch help. Double-check if the DVR hard disk has at least a one-year replacement warranty directly from the distributor.",
     "services": [
       "cctv installation",
@@ -3147,13 +3003,7 @@
     "choosing": "A good service provider will offer flexible timings and quick response, unlike those who only work during office hours. Always check if they provide the generic version of products, as the price difference can be significant.",
     "overview": "Home service providers in this category handle everything from deep cleaning and housekeeping to major repairs like AC and appliance servicing. Most run as a single counter with one or two staff, busiest between 6pm and 9pm.",
     "practical": "For regular maintenance, it's better to have a local painter who can offer touch-ups without a full repaint. Ensure they offer same-day visits for urgent AC issues.",
-    "services": [
-      "24 hour home help",
-      "ac repair service",
-      "appliance repair",
-      "house painting",
-      "false ceiling"
-    ]
+    "services": ["ac repair service", "appliance repair", "house painting", "false ceiling"]
   },
   "homeopathy-clinics": {
     "choosing": "A good practitioner spends at least forty minutes on the first visit asking about childhood illnesses, sleep patterns, and temperament rather than just looking at lab reports. Avoid clinics that hand out identical stock bottles of combination tablets without asking detailed lifestyle questions first.",
@@ -3180,11 +3030,8 @@
     ]
   },
   "hospitals-and-clinics": {
-    "choosing": "A good hospital or clinic has a reputation for quick and efficient service, with minimal wait times and a clean, well-organized environment. The staff should be friendly and approachable, making patients feel at ease.",
-    "overview": "Hospitals and clinics are the backbone of healthcare in cities and towns, offering round-the-clock care and a range of medical services from routine check-ups to emergency interventions.",
     "practical": "Before visiting, find out if the clinic or hospital has a dedicated emergency room and if they offer same-day appointments for non-emergencies. Also, check if they accept your insurance or local health schemes, as this can significantly impact your out-of-pocket expenses.",
     "services": [
-      "24 hour hospital",
       "best hospital",
       "blood test",
       "complementary and alternative medicine",
@@ -3196,23 +3043,19 @@
     "choosing": "A decent property keeps the backup generator running instantly when the local transformer trips during heavy coastal humidity. Poor management shows up quickly in damp bedsheets and broken bathroom latches that nobody bothers to fix.",
     "overview": "Most of these properties operate with a front desk manager who handles walk-ins and late-night check-ins by hand registers. Housekeeping usually knocks around noon to change linen and clear out empty tea glasses.",
     "practical": "Always bargain for extra bottled water and check the geyser switch before unpacking the bags. Night arrival requires a prior phone call because security gates often get locked by midnight.",
-    "services": ["24 hour hotel", "beach stay packages", "hotel with ac", "dormitory", "cottage"]
+    "services": ["beach stay packages", "hotel with ac", "dormitory", "cottage"]
   },
   "ice-cream-parlours": {
-    "choosing": "A good ice cream parlour stands out by offering unique flavors and a welcoming atmosphere, while a bad one might just serve the same old, unremarkable ice cream. Look for places that are clean and have a friendly vibe.",
-    "overview": "Ice cream parlours serve a variety of frozen desserts, from the classic ice cream to the regional favorite kulfi, making them a go-to spot for a sweet treat. They often operate as small, local businesses with a few staff members, offering a casual and quick service experience.",
     "practical": "Before you go, ask if they have any special flavors or deals. Many parlours have unique offerings that aren't found everywhere. Also, check their timings; they tend to be busiest in the evenings.",
     "services": [
       "serves ice cream",
       "sells kulfi",
       "offers gelato",
       "provides dessert options",
-      "delivers quick service",
       "stocks seasonal flavors"
     ]
   },
   "immigration-law-firms": {
-    "choosing": "A good firm will have a clear understanding of the latest immigration policies and be able to provide quick service during peak hours, while a bad one might make you wait for months without much progress on your case.",
     "overview": "Every day, they handle passport renewals, visa applications, and immigration filings for clients from all over the city, with many preferring to visit in the mornings or early evenings when they're less crowded.",
     "practical": "Always ask if they have experience with your specific type of visa or immigration case, and check how quickly they can process your application. They should also be transparent about their fees and the timeline for your paperwork.",
     "services": [
@@ -3225,9 +3068,7 @@
     ]
   },
   "indian-grocery-shops": {
-    "choosing": "A good kirana shop keeps a steady stock of popular items and offers competitive prices; a bad one might run out of stock or charge more for the same products.",
     "overview": "These shops are the heart of the community, offering a wide array of daily essentials like atta, dal, and masala, making them a go-to for quick grocery runs.",
-    "practical": "Always check if they have the brands you prefer, as generic versions can be cheaper but might not be as tasty; most shops are busiest in the evening, so plan your visit accordingly.",
     "services": [
       "atta and dal",
       "masala store",
@@ -3238,7 +3079,6 @@
   },
   "indian-restaurants": {
     "choosing": "A good Indian restaurant stands out by offering authentic flavors and a consistent taste, while a bad one might serve overly spicy or bland food. The key is to find one that caters to your specific regional preferences, like north or south Indian cuisine.",
-    "overview": "Most Indian restaurants are known for their quick service and casual ambiance, with many operating as small counters where the food is prepared and served right on the spot. They often see a surge in customers during dinner hours, especially from 6pm to 9pm.",
     "practical": "Always ask if they have any regional specialties, as the difference in taste can be significant. Also, inquire about their stock of fresh ingredients, as it directly impacts the quality of the food.",
     "services": [
       "offer a variety of dishes from different regions",
@@ -3281,7 +3121,6 @@
     "services": ["budget stay", "dharamshala", "inn food", "roadside inn", "cheap stay"]
   },
   "insurance-agents": {
-    "choosing": "A good insurance agent is responsive and knowledgeable, offering clear explanations and quick service. Look for someone who has a good track record of helping clients with their specific needs.",
     "overview": "Insurance agents help clients find the right policies and negotiate the best deals, often working from small counters in local areas where they can provide quick, personal service.",
     "practical": "Always ask about the different policy options available, including the generic versions, as they can sometimes offer significant savings. Also, check if they offer comprehensive coverage for all your needs, including car, health, and life insurance.",
     "services": [
@@ -3383,7 +3222,6 @@
   "jewellery-makers": {
     "choosing": "A good jeweller will have a clear understanding of the materials and techniques, offering transparent pricing and quick turnaround times. They should also be able to provide references or past work to showcase their craftsmanship.",
     "overview": "Jewellery makers in this category focus on crafting bespoke pieces and repairing watches, often working with gold and diamonds. They source materials and create custom designs for clients, ensuring each piece is unique and tailored to personal preferences.",
-    "practical": "Always ask about the authenticity of the gold or diamonds and the process of setting. A reputable jeweller will be upfront about their methods and offer a detailed estimate before starting any work. Be wary of overly aggressive sales tactics and opt for a place with a good reputation among locals.",
     "services": [
       "custom jewellery",
       "diamond setting",
@@ -3394,7 +3232,6 @@
     ]
   },
   "jewellery-stores": {
-    "choosing": "A good jeweller will have a good reputation for fair pricing and quick service, especially for gold loans. Look for someone who stocks a variety of items, even if it's limited, to match your specific needs.",
     "overview": "Jewellery stores in India typically focus on selling bangles, earrings, and gold items, with some offering bridal jewellery and diamond accessories. They often operate as small shops with limited stock, busiest during evening hours.",
     "practical": "Before visiting, check if they have the specific type of jewellery you need, as not all stores carry the same items. Also, inquire about their return policy, as it can vary widely.",
     "services": [
@@ -3431,9 +3268,7 @@
     ]
   },
   "lab-testing-centres": {
-    "choosing": "A good lab testing centre has a quick turnaround for results and keeps a clean, hygienic environment. They should also be open late for those who need urgent care.",
     "overview": "A lab testing centre is where you go for blood tests, urine samples, and other diagnostic procedures to check your health. They also offer imaging services like X-rays and ultrasounds.",
-    "practical": "Always check if they offer same-day appointments and if they stock the generic version of medications, as it can be cheaper. Also, ask about their hours, as they can be quite busy between 6 and 9 pm.",
     "services": [
       "24-hour service for urgent tests",
       "blood test lab for routine and specialized tests",
@@ -3482,11 +3317,8 @@
     ]
   },
   "law-firms-advocates": {
-    "choosing": "A good law firm or advocate will have a proven track record of successful cases and be readily available for consultations. They should also offer competitive rates and clear communication about their services.",
-    "overview": "Law firms and advocates handle legal matters ranging from civil disputes to criminal cases, often operating from a single counter with limited staff. They provide round-the-clock services, though the busiest times are from 6pm to 9pm.",
     "practical": "Always check if they offer same-day appointments for urgent matters. Also, ask about their experience in handling cases similar to yours, as it can significantly impact the outcome.",
     "services": [
-      "24 hour lawyer",
       "civil lawyer",
       "criminal lawyer",
       "legal advice",
@@ -3522,7 +3354,6 @@
   "linen-stores": {
     "choosing": "Good shops let customers feel the actual thread count and weight of the fabric instead of keeping everything sealed in plastic packaging. Honest shopkeepers will tell you straight if a printed bedsheet will bleed color during the first machine wash.",
     "overview": "Stacks of unstitched bedsheets, cotton dhurries, and plastic buckets fill every corner of a tight shop floor, with the owner pulling heavy bundles down from overhead lofts with a long iron hook. Busiest around festival season like Diwali or during the peak wedding months when families buy bulk household furnishings.",
-    "practical": "Bargaining is expected here, especially when buying multiple sets of bedsheets or furnishing a whole room. Always check the stitching along the pillowcase borders before leaving the counter, as loose threads are common in cheaper stock.",
     "services": [
       "hardware home and garden store",
       "linen store",
@@ -3534,7 +3365,6 @@
   "lingerie-shops": {
     "choosing": "A good lingerie shop will have a variety of brands and styles to choose from, especially if they offer online options. It’s also a plus if they can provide fittings to ensure the right fit.",
     "overview": "Lingerie shops are primarily focused on offering a selection of innerwear and lingerie, with some places also catering to nightwear and shapewear. They typically run as a single counter with one or two staff, busiest between 6pm and 9pm.",
-    "practical": "Make sure to check if they have your preferred brand in stock. The generic version might be much cheaper, so ask about it. If you're shopping in the evenings, be prepared for a bit of a wait.",
     "services": [
       "Sells a range of bras and panties from different brands",
       "Some provide fittings to ensure the lingerie fits well",
@@ -3550,14 +3380,12 @@
     "services": [
       "wine shop counter sales",
       "alcohol shop home delivery through local runners",
-      "24 hour liquor shop late-night windows",
       "best liquor store rare malt stocking",
       "toddy shop fresh palm brew bottles",
       "food and beverage store snack pairings"
     ]
   },
   "loan-providers": {
-    "choosing": "A good provider will have a quick and efficient process, often with same-day approvals, while a bad one might take weeks. Look for places that offer competitive rates and flexible terms.",
     "overview": "Loan providers in this category mostly operate from single counters with limited staff, handling a variety of loan applications, from personal loans to property loans, with the busiest times being late afternoons and early evenings.",
     "practical": "Always check if the loan provider offers flexible EMI options, as this can make a big difference in managing monthly payments. Also, ask about any hidden fees or charges that might come with the loan.",
     "services": [
@@ -3585,7 +3413,6 @@
   "local-manufacturers-producers": {
     "choosing": "A good local manufacturer will have a wide selection of items and be able to offer customization, while a bad one might have limited options and poor quality control. Always check their stock and the condition of the items before making a purchase.",
     "overview": "Local manufacturers and producers create custom items and products made in the local area, often catering to small scale industries and individual customers looking for personalized goods.",
-    "practical": "Visit during off-peak hours to avoid long queues and get a better understanding of the products. Always ask about the availability of generic versions of items, as they might be cheaper and just as good.",
     "services": [
       "Custom manufacturing",
       "Factory outlet sales",
@@ -3598,17 +3425,9 @@
     "choosing": "A decent property ensures the backup generator kicks in within seconds of a local power cut during peak summer. Unwashed corridor carpets and broken bathroom latch locks instantly give away a poorly run place.",
     "overview": "Most of these establishments keep a nocturnal front desk handing over room keys while boiling strong cutting chai on a small stove. Housekeeping staff usually change the bedsheets right after the morning checkout rush at eleven.",
     "practical": "Always inspect the mattress springs and geyser switch before paying the advance cash at the counter. Bargaining works best if staying for multiple days, especially during off-season months.",
-    "services": [
-      "24 hour hotel",
-      "budget hotel",
-      "family hotel",
-      "guest house",
-      "homestay",
-      "lodging near me"
-    ]
+    "services": ["budget hotel", "family hotel", "guest house", "homestay", "lodging near me"]
   },
   "lounges": {
-    "choosing": "A good lounge usually has a good selection of drinks and snacks, and is clean and well-maintained. The atmosphere and ambiance are key, as they can make or break the experience.",
     "overview": "These places are primarily known for offering alcoholic beverages and a relaxed seating area, often with some form of entertainment or music. They also serve food, usually a mix of bar snacks and light meals, and many now offer free Wi-Fi.",
     "practical": "Always check if they have your preferred drinks in stock, as prices can vary. And don't forget to ask about their happy hour deals, they can be a real bargain.",
     "services": [
@@ -3646,9 +3465,7 @@
     ]
   },
   "malls-department-stores": {
-    "choosing": "A good mall or department store has ample parking, a wide selection of shops, and a food court with diverse options, making it a convenient destination for the whole family. Look for cleanliness and well-maintained facilities, as these are key indicators of a good establishment.",
     "overview": "Malls and department stores are bustling hubs where shoppers can find everything from clothing and electronics to dining options and entertainment, all under one roof.",
-    "practical": "Always check if the mall has a parking lot with enough spaces, especially on weekends. Also, ask about the timings of the food court as it can get crowded and may close early if not popular.",
     "services": ["food court", "mall shops", "multiplex mall", "mall parking", "one stop shop"]
   },
   "marketing-agencies": {
@@ -3703,7 +3520,6 @@
     ]
   },
   "massage-therapy-centres": {
-    "choosing": "A good centre stands out through its friendly and experienced staff, who provide personalized treatment, and its clean, comfortable environment. Look for places that offer multiple massage options to suit different needs.",
     "overview": "Massage therapy centres in India offer a variety of treatments ranging from full body massages to spa massages, often frequented after work for relaxation and stress relief.",
     "practical": "Before visiting, find out if they use the generic or branded oil; the latter can cost twice as much. Also, check their opening hours, as they tend to be busiest in the evenings.",
     "services": [
@@ -3753,7 +3569,6 @@
     ]
   },
   "meat-shops": {
-    "choosing": "Hygiene separates the good counters from the rest, especially how clean the chopping block stays through the day. A reliable butcher weighs the meat without excess bone or fat scraps padding the scale.",
     "overview": "These neighbourhood stalls chop fresh broiler chicken and local goat meat on heavy wooden blocks right in front of customers. Morning hours see the heaviest rush for fresh stock, while evening buyers drop by for quick curry cuts.",
     "practical": "Carry cash because UPI servers often fail inside crowded wet markets. Always specify whether you want bone-in pieces for a gravy or boneless chunks before the cleaver starts swinging.",
     "services": ["chicken shop", "mutton shop", "fresh meat", "halal meat", "meat cutting"]
@@ -3966,7 +3781,6 @@
   "motorsport-vehicle-dealers": {
     "choosing": "Reliable dealers keep hard-to-find spares like forged pistons and sequential gearboxes in stock rather than making clients wait months for overseas shipping. Shady operators flip salvaged track wrecks as fresh imports without disclosing past chassis cracks.",
     "overview": "These showrooms import track-ready machinery, set up suspension geometry, and manage custom homologation paperwork for buyers across major metros. Mechanics spend mornings tuning engines on dynos and swapping slicks before clients arrive for track day test drives.",
-    "practical": "Take a trusted mechanic who knows telemetry data along to check the engine hours before paying any token advance. Bargain hard on spare alloy wheels and slick tires because dealers usually pad those margins heavily.",
     "services": [
       "Race car sales and import coordination",
       "Motorsport vehicle dealer consultations",
@@ -4065,7 +3879,6 @@
   },
   "naturopathy-centres": {
     "choosing": "A good naturopathy centre stands out by offering personalized treatment plans and using locally sourced herbs, while a bad one might just stick to a one-size-fits-all approach and rely on imported supplements.",
-    "overview": "Naturopathy centres offer a range of holistic treatments focusing on natural healing methods like ayurvedic treatments and herbal therapies, making them a popular choice for those seeking alternative medicine solutions.",
     "practical": "Before you visit, ask if they offer group sessions for discounted rates, as these can be a more cost-effective option. Also, check if they have any ongoing promotions or discounts for first-time visitors.",
     "services": [
       "Ayurvedic consultations and treatments",
@@ -4125,7 +3938,6 @@
     ]
   },
   "nursing-homes": {
-    "choosing": "A good nursing home has trained caregivers who can respond to emergencies quickly and has a clean, comfortable environment for residents. Look for positive reviews from other families about the care received.",
     "overview": "A 24-hour nursing home offers continuous care for the elderly, ensuring they receive medical attention and daily support as needed. Rehabilitation centers within these homes help residents recover from injuries or illnesses and improve their quality of life.",
     "practical": "Before choosing, visit the home during different times of the day to see how busy it is, especially in the evenings. Also, ask about their meal plans and if they offer options suitable for dietary restrictions, as this can affect your loved one's health.",
     "services": [
@@ -4189,7 +4001,6 @@
   "orthopedic-clinics": {
     "choosing": "A good orthopedic clinic will have a reputation for quick and accurate diagnosis, with a focus on personalized treatment plans that suit individual needs. They should also offer timely appointment availability, especially for urgent cases like fractures.",
     "overview": "Orthopedic clinics in India offer specialized care for musculoskeletal issues, ranging from joint pain treatment to spine specialist services, with some focusing on fracture care and bone specialist consultations.",
-    "practical": "Before visiting, make sure to check if they offer evening hours, as many clinics are busiest between 6pm and 9pm. Also, inquire about their consultation fees and whether they offer generic medications, which can often be cheaper than branded ones.",
     "services": [
       "joint pain treatment",
       "bone doctor",
@@ -4200,7 +4011,6 @@
     ]
   },
   "other-local-businesses": {
-    "choosing": "A good community center is usually well-known in the area and has a variety of activities, while a reputable NGO will have clear goals and transparent funding. For a shopping mall, look for one with a mix of local and national brands.",
     "overview": "Local community centers and NGOs often host events, classes, and workshops for the community, while shopping malls offer a variety of stores and entertainment options.",
     "practical": "For a community center, check if they have classes that interest you, like dance or language. At an internet cafe, ask about their speed and availability during peak hours. In a mall, see if they have a good mix of stores and food options.",
     "services": [
@@ -4215,7 +4025,6 @@
   "outlet-stores": {
     "choosing": "A decent floor keeps changing stock weekly and clearly labels whether a piece has a factory defect or is just last season's unsold inventory. Shady setups mix in fake knock-offs among genuine surplus, so checking inner tags and stitching quality saves money.",
     "overview": "These sprawling warehouses and high-street shops clear end-of-season stock, export surplus, and slightly flawed pieces directly from manufacturers. Floor staff spend the day untangling massive piles of jeans and resetting racks as bargain hunters tear through fresh boxes.",
-    "practical": "Check the garment thoroughly for missing buttons or oil marks near the trial rooms before paying cash or using UPI. Always go during weekday mornings to avoid the weekend rush when popular sizes vanish within minutes.",
     "services": [
       "Scouting factory outlet locations for fresh stock drops",
       "Offering deep discounts on branded apparel and footwear",
@@ -4227,7 +4036,6 @@
   "outpatient-clinics": {
     "choosing": "A good outpatient clinic has a reputation for quick and efficient service, especially during peak hours. Staff should be knowledgeable and approachable, making patients feel at ease.",
     "overview": "Outpatient clinics are bustling with patients seeking immediate medical attention for minor illnesses and injuries. They offer quick consultations and treatments that don’t require hospitalization.",
-    "practical": "Always check if the clinic stocks generic medications; it can save you money without compromising on quality. Also, inquire about their hours of operation, as some may have extended hours or even 24/7 services.",
     "services": [
       "24-hour emergency services",
       "fever clinics",
@@ -4287,7 +4095,6 @@
     ]
   },
   "passport-services": {
-    "choosing": "Look for places with positive reviews and quick service, as they usually handle a lot of applicants in a day. Ensure they have the latest forms and documents.",
     "overview": "Handles passport applications, renewals, and visa services, often with limited hours and a few staff members. Many also offer online services for convenience.",
     "practical": "Always check if they accept online forms and if they have a mobile number for updates. Be prepared to wait during peak hours, especially after 6pm.",
     "services": [
@@ -4324,7 +4131,6 @@
     ]
   },
   "pest-control-services": {
-    "choosing": "Good operators use odourless gel for kitchens so utensils do not need to be packed away, whereas cheaper ones use harsh kerosene-based sprays that leave the house smelling for days. Always ask if they give a written service warranty for termite jobs instead of making verbal promises.",
     "overview": "These guys arrive with spray tanks and gel tubes to clear out the German cockroaches behind modular kitchen cabinets and bedbugs breeding in wooden box beds. Most bookings happen over WhatsApp or phone calls to local guys who finish a standard 2BHK treatment in under an hour.",
     "practical": "Hide all food items and milk packets inside the fridge before the spray guy enters the flat. Keep the floor mopping off for at least a day after the treatment so the medicine stays active in the corners.",
     "services": [
@@ -4380,7 +4186,6 @@
     ]
   },
   "petrol-pumps": {
-    "choosing": "A good petrol pump usually has lower prices and a quicker service, making the experience more pleasant. The cleanliness of the premises and the friendliness of the staff also play a significant role in customer satisfaction.",
     "overview": "Petrol pumps in India are bustling 24-hour operations where vehicles queue up to fill up their tanks. The staff handle a steady stream of customers, often dealing with diesel and petrol, and sometimes even CNG and LPG, depending on the location.",
     "practical": "Always check if the pump has the type of fuel you need, as not all pumps stock both petrol and diesel. Also, inquire about their payment methods; some may not accept cards, so having cash on hand is advisable.",
     "services": [
@@ -4392,7 +4197,6 @@
     ]
   },
   "petrol-stations": {
-    "choosing": "A good petrol station will have reliable and quick service, especially during peak hours. The quality of fuel is also crucial, as using substandard fuel can damage your vehicle over time.",
     "overview": "Petrol stations in India are the go-to places for fueling vehicles, with services ranging from diesel to petrol, catering to both private and commercial vehicles. They also offer CNG and other fuels, making them essential for daily commuting and transportation needs.",
     "practical": "Always check if the station offers discounts on bulk purchases, as it can save you money in the long run. Also, inquire about their payment methods, as some may not accept cash, which can be inconvenient if you're not expecting it.",
     "services": ["fueling station", "petrol bunk", "pump", "diesel", "petrol"]
@@ -4410,7 +4214,6 @@
     ]
   },
   "pharmaceutical-companies": {
-    "choosing": "A good pharmacy stocks a variety of medications, including generics, and has knowledgeable staff who can offer advice. They also maintain a clean and organized store, making it easy to find what you need.",
     "overview": "Pharmacies handle a wide array of medications and health products, from common colds to prescription drugs, and often offer basic health advice and services like blood pressure checks.",
     "practical": "Look for a pharmacy that operates till late evenings as they are often the only option for urgent needs. Also, check if they offer home delivery services for regular customers.",
     "services": [
@@ -4449,10 +4252,8 @@
   },
   "pizza-restaurants": {
     "choosing": "A good pizza place stands out by offering fresh ingredients and a wide choice of toppings. The quality of the pizza and the friendliness of the staff are key factors.",
-    "overview": "Pizza restaurants in the Indian context often serve up quick, tasty meals, especially popular among families and students. They offer a variety of pizzas, from classic margherita to more innovative toppings like paneer and chicken tikka.",
     "practical": "Always check if they have a good online ordering system. Also, ask about their delivery times and charges. They can vary quite a bit, so it's worth comparing.",
     "services": [
-      "Quick service",
       "Delivery options",
       "Online ordering",
       "Specialized pizza types",
@@ -4460,7 +4261,6 @@
     ]
   },
   "places-of-worship": {
-    "choosing": "A good place of worship is one that is active in the community, organizing regular events and services, and maintaining a warm and welcoming atmosphere. Look for one that has been around for a while and is well-known among locals.",
     "overview": "Places of worship in this category are often small, with limited facilities, primarily serving the local community with religious services and events. They typically offer langar halls for community meals, especially during festivals and special occasions.",
     "practical": "Always check if the langar hall offers vegetarian meals, as this is a common practice. Also, inquire about the timings of the next service; they usually vary depending on the day of the week.",
     "services": [
@@ -4573,7 +4373,6 @@
   },
   "post-offices-courier-counters": {
     "choosing": "Efficient counters manage the morning rush without losing patience and keep pre-printed speed post consignment forms ready on the desk. Cluttered offices with broken weighing scales and unhelpful staff usually mean delayed dispatches and lost registry slips.",
-    "overview": "Daily routines involve sorting heavy bundles of registered mail, weighing parcels on old brass scales, and managing endless lines for speed post. Staff spend hours updating passbooks for recurring deposit holders while simultaneously handling cash transactions for money orders.",
     "practical": "Carry exact change because staff rarely have loose coins for hundred-rupee notes, and finish all parcel taping before standing in the main queue. Reaching before noon avoids the heavy post-lunch rush when the server connection often drops.",
     "services": [
       "india post parcel booking",
@@ -4596,11 +4395,9 @@
     ]
   },
   "power-companies": {
-    "choosing": "Choose a company that is easily accessible, with clear and prompt service. Make sure they offer payment options that suit your convenience, like online or mobile payment.",
     "overview": "Power companies handle the distribution and supply of electricity to residential and commercial areas, ensuring that homes and businesses receive uninterrupted power. Most operate with a single counter and a few staff members, with peak times usually between 6 pm and 9 pm.",
     "practical": "Always ask if they accept online payments, as it can save time. Also, inquire about the prices of different electricity plans and compare them before making a choice.",
     "services": [
-      "24 hour electricity",
       "electricity bill payment",
       "electricity company near me",
       "energy company list",
@@ -4739,7 +4536,6 @@
     ]
   },
   "psychiatry-clinics": {
-    "choosing": "A good manasik swasthya expert listens past the immediate panic without rushing to write a heavy prescription in the first ten minutes. Avoid the clinics where the consultation lasts precisely three minutes just to push another brand of sleeping pill.",
     "overview": "Doctors here sit behind heavy wooden doors listening to panic attacks, job stress, and broken sleep cycles all evening. Compound pharmacies downstairs usually hand over the strips of antidepressants and anti-anxiety meds once the prescription is written.",
     "practical": "Take someone along because the waiting room gets suffocatingly crowded after 7 PM and the first session usually drains emotional energy. Keep cash handy since many older practitioners still do not take UPI or cards for consultation fees.",
     "services": [
@@ -4775,13 +4571,11 @@
     ]
   },
   "public-libraries": {
-    "choosing": "A good library has a wide selection of books and is well-maintained, with regular updates to the collection. It also offers free Wi-Fi and comfortable study areas, making it a go-to spot for students and professionals alike.",
     "overview": "Public libraries in India are bustling with activity, hosting book clubs, study groups, and often offering free Wi-Fi and reading spaces for students and locals alike.",
     "practical": "Regulars recommend calling ahead to confirm they have the books you're looking for, as stock can vary. Also, inquire about membership options and any associated costs.",
     "services": ["books", "Wi-Fi", "study spaces", "reading rooms", "library membership"]
   },
   "public-parks": {
-    "choosing": "A good park will have well-maintained playgrounds and sports facilities, while a bad one might be littered and have broken equipment. Timings and opening days are crucial, so always check before you go.",
     "overview": "Public parks in the area are bustling with activity, hosting picnics, sports games, and children playing, making them a vital part of the community's daily life.",
     "practical": "Always bring your own snacks and water, as most parks don't provide food services. Also, check the timings online to avoid the crowds during peak hours.",
     "services": [
@@ -4848,7 +4642,6 @@
     "services": ["ct scan", "mri scan", "ultrasound centre", "x-ray lab", "lab service"]
   },
   "railway-stations": {
-    "choosing": "A good railway station usually has clean and well-maintained facilities, with efficient ticket counters and information desks. The food and beverage outlets are usually the best choice for a quick meal or snack, especially during peak travel times.",
     "overview": "Railway stations are bustling hubs where travelers gather to catch trains or wait for their departure. They often offer a range of amenities to make the wait more comfortable, from food and beverage outlets to restrooms and waiting areas.",
     "practical": "Always check the timings of your train and arrive early. The food and beverage outlets can get quite crowded, so it’s best to grab a snack before the rush. Also, look for stations with better amenities and cleanliness; they often have better facilities overall.",
     "services": [
@@ -4926,7 +4719,6 @@
   "repair-services": {
     "choosing": "A good repair service is one where the staff is quick to diagnose issues and transparent about the cost. They should also be willing to explain why they recommend a particular part or repair method, not just charging without clear communication.",
     "overview": "Local repair services often handle daily appliance and electronic issues, ranging from washing machines and fridges to mobile phones and TVs. Most of these places operate from small counters, with some staff who are skilled in multiple areas, fixing whatever comes their way.",
-    "practical": "Before heading to a repair place, check if they have the parts in stock. Often, they might ask if you want the generic version, which is cheaper but works just as well. Also, ask about their warranty policies, as it can save you money if something breaks again soon.",
     "services": [
       "fridge repair",
       "mobile phone repair",
@@ -4998,7 +4790,6 @@
     ]
   },
   "salons-and-spas": {
-    "choosing": "A clean floor and fresh towel sets separate the hygienic ones from shops that reuse strips and leave hair all over the chairs. Check if the wax heater is actually plugged in and hot before sitting down for waxing.",
     "overview": "Daily business revolves around thread work, quick hair cutting, and urgent threading before a party, with weekends packed for bridal makeup and facial bookings. Most shops operate out of small rented commercial spaces with two styling chairs, a shampoo bowl, and a curtained corner for waxing and massage.",
     "practical": "Call ahead on Saturdays or expect to wait an hour on a plastic stool while three other people get a haircut. Take cash because card machines often fail or incur a hidden merchant fee.",
     "services": ["bridal makeup", "facial", "haircut", "massage", "threading", "waxing"]
@@ -5008,7 +4799,6 @@
     "overview": "These counters grill butter-laden bread on small gas stoves, packing them with sliced potatoes, onions, and fiery green chutney. Late-night crowds and college students keep the tawas hot past midnight for a quick bite under Rs 150.",
     "practical": "Always ask them to go easy on the red garlic powder if spice hurts the stomach. Carry loose cash because most vendors operate solely on small change or local QR codes that can fail during peak hours.",
     "services": [
-      "24 hour sandwich",
       "best sandwich",
       "cheese sandwich",
       "grilled sandwich",
@@ -5104,7 +4894,6 @@
     ]
   },
   "shipping-centres": {
-    "choosing": "A good shipping center keeps accurate records and provides clear tracking information, ensuring peace of mind. They should also offer competitive rates and flexible pickup options, especially for time-sensitive deliveries.",
     "overview": "Shipping centers handle the daily task of moving packages and documents from one location to another, often dealing with local deliveries as well as international shipping needs. They manage everything from small parcels to large freight shipments, ensuring they are safely packed and dispatched on time.",
     "practical": "Before visiting, check if the shipping center has extended hours on weekends. Also, ask about their policies on handling fragile items to avoid damage during transit.",
     "services": [
@@ -5130,7 +4919,6 @@
     ]
   },
   "shopping-malls": {
-    "choosing": "A good mall has ample parking, clean and well-maintained premises, and a variety of shops and eateries. The food court should offer a mix of local and international cuisines, and the multiplex should have comfortable seats and good sound systems.",
     "overview": "Shopping malls are bustling hubs where people shop, dine, and enjoy entertainment. They offer a wide array of retail stores, eateries, and movie theaters under one roof, making them a go-to destination for families and friends.",
     "practical": "Always check the mall's website for parking guidance, as some can be tricky to navigate. Also, ask about any ongoing discounts or promotions before you go, as they can save you a lot. And don't forget to visit during off-peak hours to avoid the crowds.",
     "services": ["retail mall", "food court", "multiplex mall", "mall parking", "mall shops"]
@@ -5173,7 +4961,6 @@
     ]
   },
   "smoothie-juice-bars": {
-    "choosing": "Look for a place that uses fresh, locally sourced ingredients and has a good mix of options, from classic to unique flavors. A good juice bar will also have a clean, hygienic environment and friendly, knowledgeable staff.",
     "overview": "A smoothie juice bar typically offers freshly squeezed juices and smoothies using local fruits and vegetables, often in a casual setting where customers can grab a quick healthy drink or snack.",
     "practical": "Most run as a single counter with one or two staff, busiest between 6pm and 9pm. Ask whether they stock the generic version - the price difference is often large. Also, check if they offer any discounts for regulars or bulk purchases.",
     "services": [
@@ -5290,7 +5077,6 @@
     ]
   },
   "sports-clothing-shops": {
-    "choosing": "Local shops with loose inventory usually offer better bargains on bulk sports clothing than air-conditioned mall outlets. Check the stitching around the armpits and collar before paying because cheaper batches often tear during heavy cricket or football matches.",
     "overview": "Metal shutter stores stacked floor-to-ceiling with gym wear boxes and cricket gear smell strongly of fresh rubber and sweat-wicking polyester. Shopkeepers pull down heavy cartons from top shelves while customers haggle over bulk rates for school sports t-shirts and team uniforms.",
     "practical": "Carry cash if asking for a heavy discount on sports shoes because card payments invite extra GST charges. Evening visits between 7 PM and 9 PM mean dealing with cramped aisles while school kids try on spikes and shin guards.",
     "services": [
@@ -5305,7 +5091,6 @@
   "sports-facilities": {
     "choosing": "The best ones have a dedicated staff for each service, ensuring safety and quality, and offer flexible membership plans so you can choose what fits your budget and schedule.",
     "overview": "A sports facility like a gym or fitness center offers classes and personal training sessions, while a sports club provides a place to play indoor games or join a sport team, with some also hosting events and tournaments.",
-    "practical": "Always check if they have a good mix of equipment and classes, and if they offer early bird or weekend deals. Also, see if they have a clean and well-maintained space.",
     "services": [
       "personal training sessions",
       "group fitness classes",
@@ -5318,7 +5103,6 @@
   "stadium-arenas": {
     "choosing": "A good stadium arena will have a clear understanding of the events it hosts and the needs of the teams or performers. It should also offer flexible booking options and a reliable infrastructure to ensure smooth operations.",
     "overview": "A stadium arena is a multipurpose venue where sports events, concerts, and other large gatherings take place. It offers facilities for teams to practice and host matches, making it a hub for local sports enthusiasts and event organizers.",
-    "practical": "Always check the venue's availability well in advance, especially for popular events. Also, ask about the parking facilities and nearby accommodation options, as they can significantly impact the experience.",
     "services": [
       "Sports events",
       "Indoor stadium",
@@ -5379,17 +5163,8 @@
     ]
   },
   "student-hostels": {
-    "choosing": "A good student hostel will have a clean and safe environment, with regular maintenance and a responsive management team. It's also important to check if they offer all the necessary amenities like Wi-Fi and meal plans.",
-    "overview": "Student hostels provide affordable accommodation for students, typically offering shared rooms and common spaces for study and relaxation. They often cater specifically to students, with facilities like Wi-Fi, laundry services, and sometimes meal plans.",
     "practical": "Always ask about the availability of Wi-Fi and meal plans before signing up. Also, inquire about the location and proximity to your college or workplace to save on travel time and costs.",
-    "services": [
-      "Affordable stay",
-      "Boys hostel",
-      "Dormitory",
-      "Girls hostel",
-      "Hostel for working",
-      "Hostel near me"
-    ]
+    "services": ["Boys hostel", "Dormitory", "Girls hostel", "Hostel for working", "Hostel near me"]
   },
   "student-unions": {
     "choosing": "A functional student union actually pushes files through the admin block without taking three weeks. Weak groups just organize two DJ nights a year and disappear when hostel timings get slashed.",
@@ -5404,7 +5179,6 @@
     ]
   },
   "surgery-centres": {
-    "choosing": "Look for a place with clean, well-equipped operation theatres and experienced surgeons. Read reviews from previous patients as word-of-mouth matters a lot here.",
     "overview": "A surgery centre here mainly provides day care surgery, minor surgery clinics, and specialized medical facilities. They offer services like operation theatres and can handle everything from simple procedures to complex operations, but not everything like a full hospital.",
     "practical": "Always double-check the timings and confirm if they have same-day appointments. In India, it's common for these places to get booked up quickly, especially on weekdays.",
     "services": [
@@ -5416,7 +5190,6 @@
     ]
   },
   "surgery-hospitals": {
-    "choosing": "A good surgery hospital has a clean and well-equipped operation theater, and the doctors are experienced and reliable. Look for positive reviews from previous patients who had a good experience.",
     "overview": "A surgery hospital focuses on providing specialized medical care for both minor and major surgeries, ensuring patients receive the necessary treatment in a safe and efficient manner.",
     "practical": "Before going for surgery, ask about the hospital's success rates and patient testimonials. Also, inquire about the post-operative care and follow-up options available, as they can make a significant difference in recovery.",
     "services": [
@@ -5478,7 +5251,6 @@
     ]
   },
   "tailors-and-alterations": {
-    "choosing": "A good tailor delivers garments on time and understands your design vision, while a bad one often misses deadlines or misinterprets instructions. Look for precise stitching and clean finishing, rather than just the cheapest quote.",
     "overview": "Tailors spend their day taking measurements for new garments, then cutting and stitching fabrics into finished clothes. Many also handle minor repairs, adjustments, and alterations for ready-made outfits, keeping their machines busy from morning till late evening.",
     "practical": "Always confirm the delivery date and exact cost upfront, especially for complex designs or if you need home service. Take a sample garment if you want an exact copy; it often saves multiple trips for adjustments.",
     "services": [
@@ -5516,7 +5288,6 @@
     ]
   },
   "tea-rooms": {
-    "choosing": "A good tea room usually has a reliable supply of chamcha and biscuits, and is clean and well-ventilated, unlike those that are dusty and run out of stock quickly.",
     "overview": "Tea rooms in India are bustling spots, especially in the evening, where locals gather to enjoy a steaming cup of chai and some light snacks, often with friends or colleagues.",
     "practical": "Always ask if they have chamcha; it can be twice as expensive as the generic version, so it’s worth checking. Also, see if they offer free wifi, as it’s a perk many regulars look for.",
     "services": ["chamcha", "biscuits", "non-alcoholic beverages", "wifi", "snacks"]
@@ -5535,7 +5306,6 @@
     ]
   },
   "telecom-services": {
-    "choosing": "A good telecom service is one that stocks the latest network options and has quick service. Look for a place with a good reputation among locals, as they tend to have more reliable service and support.",
     "overview": "A telecom service provider typically handles recharges, sim card sales, and broadband connections. They also offer network services and are often the go-to for local internet providers.",
     "practical": "Always ask if they have the latest sim cards or broadband deals. Prices can vary, so it's worth checking around. Also, note that service can be slower during peak hours, usually between 6pm and 9pm, so plan accordingly.",
     "services": [
@@ -5547,7 +5317,6 @@
     ]
   },
   "temple-forts": {
-    "choosing": "A good temple fort stands out through its well-maintained premises and knowledgeable staff who can offer insights into the historical and religious significance. It also ensures that visitors have a comfortable and enriching experience, whether it’s through organized tours or engaging cultural events.",
     "overview": "Temple forts are more than just historical structures; they are living entities that offer spiritual and recreational experiences to visitors. Each day, they see a mix of locals and tourists who come to explore the ancient architecture and learn about the rich history enshrined within their walls.",
     "practical": "Always check if the temple fort has guided tours; it adds so much to the visit. And don’t forget to try the local snacks, they are a big part of the experience and often a delightful surprise.",
     "services": [
@@ -5560,7 +5329,6 @@
     ]
   },
   "temple-fountains": {
-    "choosing": "A good holy fountain typically has a steady supply of clean water and is well-maintained, making the darshan experience more pleasant. Staff are usually helpful and respectful, adding to the experience.",
     "overview": "Holy fountains are a common feature in many temples, offering devotees a sacred spot for darshan and offering. They are usually maintained as a public facility, ensuring cleanliness and water supply for all visitors.",
     "practical": "Always check if the fountain has a steady water supply, especially during peak hours. Also, inquire about the availability of basic cleaning materials for darshan.",
     "services": [
@@ -5636,7 +5404,6 @@
     ]
   },
   "tire-shops": {
-    "choosing": "A good tyre shop will offer quick service, even during peak hours, and use genuine tyres rather than cheaper alternatives. Make sure they use the right type of tyre for your vehicle to avoid issues down the line.",
     "overview": "Tyre shops in India handle everything from regular checks on tyre pressure to replacing worn-out tyres, ensuring your vehicle is always in top condition.",
     "practical": "Before going, find out if they offer same-day service, especially if you need urgent tyre replacements. Also, ask about the cost of generic versus branded tyres, as the price difference can be significant.",
     "services": [
@@ -5655,8 +5422,7 @@
       "tobacco shop",
       "food and beverage store",
       "reload prepaid mobile data packs",
-      "sell cold bottled water and aerated drinks",
-      "stock popular brands of chewing tobacco"
+      "sell cold bottled water and aerated drinks"
     ]
   },
   "tour-operators": {
@@ -5673,7 +5439,6 @@
     ]
   },
   "town-halls": {
-    "choosing": "A good town hall is well-maintained with clear signage, has reliable office hours, and offers prompt service. It should be clean and safe, with a friendly and approachable staff.",
     "overview": "Town halls in India handle civic affairs and public meetings, managing local governance and community events. They are the heart of community activity, often hosting elections, public hearings, and civic engagement sessions.",
     "practical": "Always check if they have a website with updated information. If they don’t, expect longer queues. Also, bring your ID for any official transactions to avoid delays.",
     "services": [
@@ -5736,7 +5501,6 @@
   "travel-agents": {
     "choosing": "A good travel agent is one who has a good network of suppliers and can offer competitive prices. They should also be responsive and willing to customize packages based on your needs.",
     "overview": "Travel agents help plan and book trips, from local day trips to international vacations, ensuring your travel experience is smooth and hassle-free.",
-    "practical": "Always check if the travel agent offers 24/7 support and what their cancellation policies are. For car rentals, ask about the condition of the vehicles and the insurance coverage included in the deal.",
     "services": [
       "holiday packages",
       "car rental near me",
@@ -5761,7 +5525,6 @@
   "trusts-and-ngos": {
     "choosing": "A good trust or NGO typically has transparent financial records and actively engages with the community it serves. Regular updates on their projects and impact are crucial for assessing their effectiveness.",
     "overview": "Trusts and NGOs in this category often focus on community welfare, offering support in areas like education, healthcare, and social development. They manage resources and funds to carry out their philanthropic activities, ensuring that the money reaches the right people and projects.",
-    "practical": "Make sure to check if the NGO or trust you're considering is well-known and trusted in the local area. Also, inquire about their specific projects and how they benefit the community directly.",
     "services": [
       "processes NGO registration",
       "manages charity funds",
@@ -5835,9 +5598,7 @@
     ]
   },
   "tyre-and-battery-stores": {
-    "choosing": "A good tyre and battery store will have a wide selection of tyres from different auto companies and stock both branded and generic batteries, ensuring you find what you need. They should also offer quick service, especially during peak hours like 6pm to 9pm.",
     "overview": "Tyre and battery stores in India are typically small, local businesses that offer quick and efficient services for car and motorcycle tyres and batteries, often operating as a single counter with limited staff.",
-    "practical": "Before going, ask if they have the specific tyre or battery you need, as availability can vary. Also, inquire about pricing; generic versions can be significantly cheaper than branded ones, sometimes by 20-30%.",
     "services": [
       "sell and fit tyres",
       "replace car batteries",
@@ -5922,7 +5683,6 @@
   },
   "valuation-services": {
     "choosing": "A reliable service will have a history of accuracy and will be able to provide clear, detailed reports. Look for someone who can offer a thorough understanding of the current market conditions.",
-    "overview": "They provide expert financial assessments and valuations for properties, businesses, and assets, often using specialized software and industry knowledge to give accurate appraisals.",
     "practical": "Always check if they offer same-day appraisals for urgent cases, and ask about their fees - sometimes the service is free if the property sells within a certain period. Also, inquire about their payment terms as they can vary widely.",
     "services": [
       "conduct property valuations",
@@ -5935,7 +5695,6 @@
   "vegetable-vendors": {
     "choosing": "A good vegetable vendor is known for the freshness of their stock and the regularity of their supplies, while a bad one might run out of stock or have wilted vegetables. Look for a place with a steady flow of customers during peak hours, as it indicates good quality and popularity.",
     "overview": "Vegetable vendors are the heart of daily shopping in many Indian localities, offering fresh produce right from the morning markets to the evening counters, with a focus on affordability and freshness.",
-    "practical": "Always check if they have the vegetables you need, especially if it's a specialty item. Also, ask about their prices; often, the generic versions are cheaper by a significant margin.",
     "services": [
       "offer daily vegetables",
       "provide fresh vegetables",
@@ -5958,7 +5717,6 @@
     ]
   },
   "veterinary-clinics": {
-    "choosing": "A good veterinary clinic will have a clean and well-ventilated space, with a friendly and knowledgeable staff. They should also offer flexible hours, especially for busy pet owners.",
     "overview": "Veterinary clinics in India offer essential care for pets and livestock, from routine check-ups to emergency treatment. They handle everything from minor cuts and scrapes to complex surgeries, making sure your animal friends stay healthy and happy.",
     "practical": "Before you visit, call to check if they stock common medications. Some places might not have them, leading to longer wait times. Also, ask about any discounts they offer for repeat customers.",
     "services": [
@@ -6035,7 +5793,6 @@
   "water-utility-providers": {
     "choosing": "A good water utility provider ensures reliable service, quick response to emergencies, and offers transparent billing. Look for one that provides water quality test reports to ensure the safety of your drinking water.",
     "overview": "Water utility providers in India manage the distribution and supply of drinking water to residential and commercial areas, often operating through a single counter with limited staff who handle queries and payments during peak hours.",
-    "practical": "Before choosing, ask about the service hours and availability of water tankers. The prices for water and tanker services can vary significantly, so it’s worth comparing before making a decision. Often, the generic brands are cheaper but still effective for daily use.",
     "services": [
       "Supply of drinking water",
       "Water tanker services",
@@ -6071,7 +5828,6 @@
     ]
   },
   "wedding-planners": {
-    "choosing": "A good wedding planner will have a strong network of trusted vendors and a clear understanding of local customs and traditions. They should also be able to handle unexpected issues calmly and efficiently.",
     "overview": "Wedding planners handle the logistics and coordination of your special day, ensuring everything from venue bookings to vendor management runs smoothly.",
     "practical": "Always check if they offer a package that includes everything or if you'll need to source additional services separately. Ask about their experience with last-minute changes, as these can often arise on your big day.",
     "services": [

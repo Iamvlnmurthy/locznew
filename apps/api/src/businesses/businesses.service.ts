@@ -777,6 +777,28 @@ export class BusinessesService {
     }
 
     const detail = this.toDetail(business, viewerId, lang);
+    /*
+     * Is this one of several identically-named outlets in the same pincode?
+     *
+     * 679,346 businesses share their exact name with another in the same city -- 19,773
+     * "Hindustan Petroleum Corporation Limited", 15,271 "HDFC Bank ATM", largest cluster 1,853.
+     * Two branches of one chain measured 83.2% identical text over a 372-word verbatim run, which
+     * no amount of generated prose separates: they are the same result at two addresses.
+     *
+     * `business_outlet_rank` holds one row per outlet that is NOT the pick for its (name,
+     * pincode), ranked by view count with id as a stable tie-break so the choice never flips
+     * between crawls. Rank 1 is absent from the table and stays indexable.
+     *
+     * A separate table rather than a column: a mass UPDATE across 4.3M rows blocks the viewCount
+     * writes above and spikes autovacuum on a table that is serving traffic. Rebuild it with
+     * scripts/sql/build-outlet-rank.sql. Best-effort -- a missing table must not break a profile.
+     */
+    const outlet = await this.prisma.$queryRaw<Array<{ rnk: number; siblings: number }>>`
+        SELECT rnk, siblings FROM business_outlet_rank WHERE id = ${business.id}::uuid LIMIT 1`.catch(
+      () => [],
+    );
+    detail.outletRank = outlet[0]?.rnk ?? 1;
+    detail.outletSiblings = outlet[0]?.siblings ?? 1;
     // Bank/ATM pages are rebuilt from authoritative RBI IFSC data (best-effort — a lookup failure
     // must never break the profile). Non-bank businesses get null and render exactly as before.
     detail.banking = await this.bankBranches
@@ -1273,6 +1295,10 @@ export class BusinessesService {
       // it, and the day somebody claims the shop their words simply replace it.
       description: described.text,
       descriptionIsGenerated: described.generated,
+      // Overwritten by the caller that has the id to look up; 1 means "this name is its own here",
+      // which is the safe default when the rank table is unavailable.
+      outletRank: 1,
+      outletSiblings: 1,
       attribution: attributionFor(business),
       scale: business.scale,
       offering: business.offering,

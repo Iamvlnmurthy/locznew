@@ -90,6 +90,10 @@ export interface BusinessDetail {
   createdAt: string;
   /** True when the API composed the description from the record rather than the owner writing it. */
   descriptionIsGenerated: boolean;
+  /** Position among identically-named businesses in this pincode; 1 is the one that represents it. */
+  outletRank: number;
+  /** How many share this exact name in this pincode. 1 means the name is its own. */
+  outletSiblings: number;
   /** Required under the source licence for an imported record. Null for anything a person made. */
   attribution: string | null;
   claimStatus: string;
@@ -414,8 +418,31 @@ export async function generateMetadata({
     nm.length < 3 ||
     /https?:|www\.|\.com/i.test(nm) ||
     /^[0-9]{6}$/.test(nm);
+  /*
+   * One outlet per name per pincode.
+   *
+   * The gate below admits any record with a phone number, which is most of the imported corpus.
+   * That is right for a business with its own name and wrong for the 223,580 pages that are
+   * another branch of a chain in the same pincode: two "HDFC Bank ATM" entries a street apart
+   * describe the same result at two addresses, and asking a search engine to keep both is asking
+   * it to do something it will decline anyway.
+   *
+   * `outletRank` comes from business_outlet_rank (scripts/sql/build-outlet-rank.sql): rank 1 is
+   * the pick for that name in that pincode and is absent from the table, so an unavailable table
+   * degrades to indexing everything, which is the previous behaviour. `follow` stays on -- these
+   * pages remain crawlable and still pass their links onward, they simply stop competing with
+   * their own siblings.
+   *
+   * A claimed or verified listing is never demoted: the rank query orders by view count, and the
+   * build script asserts the claimed count among flagged rows is zero.
+   */
+  const isDuplicateOutlet =
+    business.outletRank > 1 &&
+    business.claimStatus !== 'CLAIMED' &&
+    business.verificationStatus !== 'VERIFIED';
   const isIndexable =
     !isJunkName &&
+    !isDuplicateOutlet &&
     (business.claimStatus === 'CLAIMED' ||
       business.verificationStatus === 'VERIFIED' ||
       Boolean(business.primaryPhone) ||
@@ -432,8 +459,12 @@ export async function generateMetadata({
     ...(!isIndexable ? { robots: { index: false, follow: true } } : {}),
     alternates: await localizedAlternates(`/b/${business.slug}`),
     openGraph: {
-      title,
-      description,
+      // The final pair, not the generic one computed earlier. Bank, post-office and railway
+      // pages rewrite their title and description from authoritative data (IFSC, India Post,
+      // station codes); Open Graph was still reading the pre-rewrite values, so a shared link
+      // showed a different, vaguer page than the one it opened.
+      title: finalTitle,
+      description: finalDescription,
       type: 'website',
       url: `${SITE_URL}/b/${business.slug}`,
       ...(brandLogo ? { images: [{ url: new URL(brandLogo, SITE_URL).toString() }] } : {}),
@@ -545,9 +576,13 @@ export default async function BusinessPage({ params }: { params: Promise<{ slug:
    * particular one is, and refer to it plainly afterwards. A reader is better served too: "Dr Lal
    * PathLabs Patient Service Centre" tells them nothing about which of the forty is meant.
    */
-  // Read the full pool, not the trimmed list: same-name neighbours are ordered last now, so a
-  // chain with more than 24 differently-named neighbours would drop them and look unique.
-  const isChainOutlet = similarPool.some((b) => b.name.trim().toLowerCase() === ownName);
+  // From the database, not from the neighbours.
+  //
+  // This used to ask whether any nearby business shared the name, but that list is capped at 25,
+  // so a chain in a dense category could push every same-name sibling past the cut and read as a
+  // unique business -- exactly the pages that need the treatment most. `outletSiblings` counts
+  // the whole (name, pincode) group.
+  const isChainOutlet = business.outletSiblings > 1;
   const placeQualifier = business.localityName || business.pincode || business.cityName;
   // Qualified once, for the first mention. Not used as the page's <h1>: the heading is the
   // business's own name, and renaming a listing is not ours to do.
@@ -575,6 +610,7 @@ export default async function BusinessPage({ params }: { params: Promise<{ slug:
       ? []
       : describeBusiness({
           name: qualifiedName,
+          locale,
           categorySlug: business.categorySlug,
           categoryName: business.categoryName,
           keywords: business.keywords,
@@ -612,7 +648,13 @@ export default async function BusinessPage({ params }: { params: Promise<{ slug:
     .filter((profile): profile is { url: string; label: string } => profile.label !== null)
     .slice(0, 4);
 
-  const rawWa = business.whatsappNumber || business.primaryPhone;
+  // Only a number the business actually gave as WhatsApp.
+  //
+  // Falling back to the landline put a WhatsApp button and "Yes, you can connect directly on
+  // WhatsApp" on records where LocZ holds nothing but a telephone number -- a claim about a real
+  // business that it never made, and one a customer discovers is false only after messaging into
+  // nowhere. An absent channel is better than an invented one.
+  const rawWa = business.whatsappNumber;
   const digitsOnly = rawWa?.replace(/[^0-9]/g, '');
   const waNumber = digitsOnly ? (digitsOnly.length === 10 ? `91${digitsOnly}` : digitsOnly) : null;
   const businessUrl = `https://locz.in/b/${business.slug}`;
@@ -622,7 +664,18 @@ export default async function BusinessPage({ params }: { params: Promise<{ slug:
     : null;
 
   // Rich, fact-driven conditional FAQs based on data density
-  const nearestNeighbour = similar.find((b) => typeof b.distanceMeters === 'number');
+  // The genuinely closest, from the distance-sorted pool -- not the first entry of `similar`,
+  // which is re-ranked to push same-chain outlets down. Reading the re-ranked list made an HPCL
+  // page answer "the closest other one is IndianOil at 8.7 km" while listing three HPCL branches
+  // at 3.2, 5.0 and 5.8 km directly above it. The sentence claims proximity, so it has to come
+  // from proximity order.
+  const nearestNeighbour = similarPool
+    .filter((b) => typeof b.distanceMeters === 'number')
+    .reduce<(typeof similarPool)[number] | undefined>(
+      (best, b) =>
+        !best || (b.distanceMeters as number) < (best.distanceMeters as number) ? b : best,
+      undefined,
+    );
   const faqs: Array<{ q: string; a: string }> = [
     // Every storefront carried the same four questions with only the name swapped, which is a
     // large part of why same-category pages measured ~43% identical phrasing. This one is
@@ -968,14 +1021,26 @@ export default async function BusinessPage({ params }: { params: Promise<{ slug:
             </h2>
             <div className="business-profile-about-grid">
               <div>
+                {/* The description belongs here, in About.
+ 
+                    It was being suppressed here and rendered further down under its own heading,
+                    so a page with a full description still opened with "This local business is
+                    still adding its story" -- the section a reader looks at first said there was
+                    nothing, while the text sat below the fold. The composed paragraphs are the
+                    business's description; only a page with genuinely nothing to say falls back
+                    to the empty note.
+ 
+                    The "written from public listing data" note that used to sit under every
+                    paragraph is gone: the unclaimed panel below already says nobody has confirmed
+                    these details, and the licence attribution at the foot names the source. */}
                 {storefrontDescription ? (
-                  // The "written from public listing data" note used to sit here, under every
-                  // one of three and a half million descriptions. It is gone because the page
-                  // already says it, better and once: the unclaimed panel below states that
-                  // nobody has confirmed these details, and the licence attribution at the
-                  // foot names the source. Saying it a third time under every paragraph read
-                  // as a disclaimer on the shop itself.
                   <p className="business-profile-about">{storefrontDescription}</p>
+                ) : localContext.length > 0 ? (
+                  localContext.map((paragraph) => (
+                    <p className="business-profile-about" key={paragraph.slice(0, 48)}>
+                      {paragraph}
+                    </p>
+                  ))
                 ) : (
                   <p className="business-profile-about is-empty">{p.noStory}</p>
                 )}
@@ -1207,18 +1272,6 @@ export default async function BusinessPage({ params }: { params: Promise<{ slug:
                 The "Hours not listed" chip in the hero already tells a reader they do not
                 know when this place is open, once, in three words. */}
           </section>
-
-          {localContext.length > 0 ? (
-            <section className="business-profile-section business-profile-local" id="around">
-              <span className="section-kicker">{business.categoryName}</span>
-              <h2>{getMessageGroup(locale, 'businessLocal').heading}</h2>
-              {localContext.map((paragraph) => (
-                <p className="business-profile-local__body" key={paragraph.slice(0, 48)}>
-                  {paragraph}
-                </p>
-              ))}
-            </section>
-          ) : null}
 
           {faqs.length > 0 ? (
             <section className="business-profile-section business-profile-faq" id="faq">

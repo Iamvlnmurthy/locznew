@@ -430,6 +430,20 @@ export class BusinessDetailDto extends BusinessSummaryDto {
   })
   descriptionIsGenerated!: boolean;
 
+  @ApiProperty({
+    description:
+      'Position among identically-named businesses in the same pincode, ranked by view count. ' +
+      '1 means this is the one that represents that name here; anything higher is another ' +
+      'outlet of the same chain and describes the same result at a different address.',
+  })
+  outletRank!: number;
+
+  @ApiProperty({
+    description:
+      'How many businesses share this exact name in this pincode. 1 means the name is its own.',
+  })
+  outletSiblings!: number;
+
   @ApiPropertyOptional({
     description:
       'Required under the source licence for imported records — ODbL and CDLA both make ' +
