@@ -513,9 +513,23 @@ export default async function BusinessPage({ params }: { params: Promise<{ slug:
   // Console holds ~1.95M URLs as discovered but never fetched. Tripling the fan-out is only safe
   // because the cards below are prefetch={false} -- left prefetching, 24 viewport-triggered RSC
   // renders per page would rebuild the request storm that saturated the server.
-  const similar = (similarResponse?.items ?? [])
-    .filter((b) => b.slug !== business.slug)
-    .slice(0, 24);
+  const similarPool = (similarResponse?.items ?? []).filter((b) => b.slug !== business.slug);
+  /*
+   * Prefer neighbours that are not another outlet of the same chain.
+   *
+   * On a chain page every neighbour carries the same name, so the grid printed "Dr Lal PathLabs
+   * Patient Service Centre" twenty-four times -- the bulk of the twenty-one repetitions two
+   * branches shared, and no help at all to a reader deciding which one to visit. Order
+   * differently-named businesses first and keep the same-name ones only to fill the remainder,
+   * so a cluster still links onward but stops reprinting one string down the page.
+   *
+   * Distance order is preserved within each half; this re-ranks, it does not hide anything.
+   */
+  const ownName = business.name.trim().toLowerCase();
+  const similar = [
+    ...similarPool.filter((b) => b.name.trim().toLowerCase() !== ownName),
+    ...similarPool.filter((b) => b.name.trim().toLowerCase() === ownName),
+  ].slice(0, 24);
   /*
    * Chain outlets, and the name that repeats twenty-one times.
    *
@@ -531,9 +545,9 @@ export default async function BusinessPage({ params }: { params: Promise<{ slug:
    * particular one is, and refer to it plainly afterwards. A reader is better served too: "Dr Lal
    * PathLabs Patient Service Centre" tells them nothing about which of the forty is meant.
    */
-  const isChainOutlet = similar.some(
-    (b) => b.name.trim().toLowerCase() === business.name.trim().toLowerCase(),
-  );
+  // Read the full pool, not the trimmed list: same-name neighbours are ordered last now, so a
+  // chain with more than 24 differently-named neighbours would drop them and look unique.
+  const isChainOutlet = similarPool.some((b) => b.name.trim().toLowerCase() === ownName);
   const placeQualifier = business.localityName || business.pincode || business.cityName;
   // Qualified once, for the first mention. Not used as the page's <h1>: the heading is the
   // business's own name, and renaming a listing is not ours to do.
