@@ -796,6 +796,12 @@
 }
 
 .locz-route-frame {
+  /* Streaming SSR flushes the layout shell (header + footer) before the page content finishes
+     arriving, so the footer painted ~811px up — above the fold — and was then shoved down
+     ~3,600px as content streamed in. That single move was the page's entire CLS (0.137).
+     Reserving a viewport of height here keeps the footer below the fold from the first paint,
+     so it never shifts while visible. */
+  min-height: 100vh;
   animation: locz-route-enter var(--locz-motion-panel) var(--locz-ease-out) both;
 }
 

@@ -438,13 +438,7 @@ export default async function HomePage({
                 {t('feed.seeAll')} <Icon name="arrow" />
               </Link>
             </div>
-            {/* Reserve the bento grid's settled height inline (SSR, applied before any CSS chunk)
-                so the cards can't reflow 97->210px on load and shove the footer — the sole CLS
-                culprit. clamp covers desktop (~306px) and mobile (~333px). */}
-            <div
-              className="home-discovery__grid home-discovery__grid--bento"
-              style={{ minHeight: 320 }}
-            >
+            <div className="home-discovery__grid home-discovery__grid--bento">
               {heroAreas.map(({ area, count }) => (
                 <DiscoveryMotionLink
                   key={area}
