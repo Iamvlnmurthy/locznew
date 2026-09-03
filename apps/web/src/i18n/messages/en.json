@@ -992,7 +992,9 @@
     "onrolAlt": "Onrol AI Execution School — build your AI career with the AI Generalist Program",
     "channelPhone": "a phone number",
     "channelWebsite": "a website",
-    "channelHours": "published opening hours"
+    "channelHours": "published opening hours",
+    "claimThisBusiness": "Is this your business? Claim it free",
+    "suggestEdit": "Suggest an edit"
   },
   "dashboardUi": {
     "aboutYou": "About you",

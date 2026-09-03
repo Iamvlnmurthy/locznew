@@ -960,7 +960,9 @@
     "onrolAlt": "Onrol AI Execution School — AI Generalist कार्यक्रम के साथ अपना AI करियर बनाएँ",
     "channelPhone": "फ़ोन नंबर",
     "channelWebsite": "वेबसाइट",
-    "channelHours": "खुलने का समय"
+    "channelHours": "खुलने का समय",
+    "claimThisBusiness": "क्या यह आपका व्यवसाय है? मुफ़्त में क्लेम करें",
+    "suggestEdit": "सुधार सुझाएँ"
   },
   "dashboardUi": {
     "aboutYou": "आपके बारे में",

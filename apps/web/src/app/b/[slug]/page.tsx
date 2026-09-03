@@ -1406,6 +1406,20 @@ export default async function BusinessPage({ params }: { params: Promise<{ slug:
           {business.attribution ? (
             <p className="business-profile-attribution">{business.attribution}</p>
           ) : null}
+          {/* Provenance, and the one place on the page that asks for a claim.
+ 
+              This block used to lead with three negatives under a large heading -- "Not claimed
+              by the business", "Not independently verified", and a "Profile updated" date that
+              was really the import timestamp. A reader's first structured impression of the page
+              was that nobody vouches for it, and there was nothing to do about it but read on.
+ 
+              The disclosure is unchanged: an unclaimed listing still says so, an unverified one
+              still says so, and the source is still named. What changes is that the unclaimed
+              case now asks the owner to fix it. Claims are the only route to content nobody can
+              generate, and this was the only spot on the page positioned to ask.
+ 
+              The import date is gone. It described when the row was written, not when anything
+              about the business changed, which is a claim of freshness the record cannot support. */}
           <section className="business-profile-provenance" aria-labelledby="listing-information">
             <div>
               <span className="section-kicker">{p.listingInformation}</span>
@@ -1417,14 +1431,6 @@ export default async function BusinessPage({ params }: { params: Promise<{ slug:
                 <dd>{business.sourceName ?? p.loczSource}</dd>
               </div>
               <div>
-                <dt>{p.profileUpdated}</dt>
-                <dd>
-                  {business.updatedAt
-                    ? formatProfileDate(business.updatedAt, locale)
-                    : p.notAvailable}
-                </dd>
-              </div>
-              <div>
                 <dt>{business.isPublicService ? p.publicRecordStatus : p.claimStatus}</dt>
                 <dd>
                   {business.isPublicService
@@ -1434,27 +1440,36 @@ export default async function BusinessPage({ params }: { params: Promise<{ slug:
                       : p.statusClaimed}
                 </dd>
               </div>
-              <div>
-                <dt>{p.informationStatus}</dt>
-                <dd>
-                  {business.verificationStatus === 'VERIFIED'
-                    ? business.verifiedAt
+              {/* Verification only stated where it means something. A page carrying RBI IFSC data
+                  or an India Post record is verified against an authority, and a blanket "not
+                  independently verified" underneath contradicted it. */}
+              {business.verificationStatus === 'VERIFIED' ? (
+                <div>
+                  <dt>{p.informationStatus}</dt>
+                  <dd>
+                    {business.verifiedAt
                       ? p.statusVerifiedOn.replace(
                           '{date}',
                           formatProfileDate(business.verifiedAt, locale),
                         )
-                      : p.statusVerified
-                    : p.statusUnverified}
-                </dd>
-              </div>
+                      : p.statusVerified}
+                  </dd>
+                </div>
+              ) : null}
             </dl>
             <div className="business-profile-provenance__actions">
+              {business.isClaimable && business.claimStatus === 'UNCLAIMED' ? (
+                <Link href={`/b/${business.slug}/claim`} className="btn btn--primary btn--sm">
+                  <Icon name="shield" />
+                  {p.claimThisBusiness}
+                </Link>
+              ) : null}
               <Link
                 href={`/report?type=BUSINESS&id=${business.id}&reason=CORRECTION`}
                 className="btn btn--ghost btn--sm"
               >
                 <Icon name="pencil" />
-                {business.isPublicService ? p.suggestCorrection : 'Suggest an edit'}
+                {business.isPublicService ? p.suggestCorrection : p.suggestEdit}
               </Link>
             </div>
           </section>

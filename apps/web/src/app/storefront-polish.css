@@ -3213,10 +3213,16 @@
 }
 
 /* Provenance actions */
+/* Two actions now, not one: the claim prompt leads and the correction link follows. Right-aligned
+   with a single child, the claim button ended up in the corner where a footnote lives -- it is the
+   only place on the page that asks an owner for anything, so it starts at the reading edge. Wraps
+   rather than shrinks on a phone, where two buttons do not fit on one line. */
 .business-profile-provenance__actions {
   margin-top: 14px;
   display: flex;
-  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
 }
 
 /* Sticky Action Bar for Mobile */
