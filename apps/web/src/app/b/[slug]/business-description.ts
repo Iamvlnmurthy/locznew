@@ -96,9 +96,28 @@ export function describeBusiness(input: DescribeInput): string[] {
   const { seed, units, neighbours } = input;
   const paragraphs: string[] = [];
 
+  /*
+   * Exactly one of the four category passages, chosen by the slug.
+   *
+   * Using all four was measurably worse than using none. Category copy is identical for every
+   * business in the category by definition, so putting ~150 shared words on both pages pushed two
+   * same-category storefronts from 27.7% to 41.1% identical five-word phrasing -- adding shared
+   * text to pages whose problem was shared text. Cross-category pairs barely moved, which is the
+   * same mechanism seen from the other side.
+   *
+   * One passage per page cuts the shared surface about fourfold and two pages only collide when
+   * the hash gives them the same slot. The real answer is several variants of each passage so
+   * they rarely collide at all; this keeps the page readable until those exist.
+   */
+  const slot = copy ? hash(`${seed}#cat`) % 4 : -1;
+  const useOverview = slot === 0;
+  const useServices = slot === 1;
+  const usePractical = slot === 2;
+  const useChoosing = slot === 3;
+
   // 1. What this kind of place does, then what this one is listed as.
   const opening: string[] = [];
-  if (copy?.overview) opening.push(copy.overview);
+  if (copy?.overview && useOverview) opening.push(copy.overview);
   const tags = (input.keywords ?? []).filter(Boolean).slice(0, 3).map(inSentence);
   opening.push(
     tags.length > 0
@@ -192,7 +211,7 @@ export function describeBusiness(input: DescribeInput): string[] {
 
   // 3. What this trade typically provides, and how to reach this one.
   const practical: string[] = [];
-  if (copy?.services?.length) {
+  if (copy?.services?.length && useServices) {
     // Rotating the slice keeps two shops of the same trade from reciting an identical list,
     // while every item stays true of the trade.
     const start = hash(`${seed}#5`) % copy.services.length;
@@ -217,12 +236,13 @@ export function describeBusiness(input: DescribeInput): string[] {
   if (input.hasWebsite) channels.push('a website');
   if (input.hasHours) channels.push('published opening hours');
   if (channels.length) practical.push(`This listing carries ${series(channels)}.`);
-  if (copy?.practical) practical.push(copy.practical);
+  if (copy?.practical && usePractical) practical.push(copy.practical);
   if (practical.length) paragraphs.push(practical.join(' '));
 
   // 4. Choosing between them — only worth saying when there is a choice to make.
-  if (copy?.choosing && measured.length > 0) {
-    const closing = [copy.choosing];
+  if (input.pincode || (copy?.choosing && useChoosing && measured.length > 0)) {
+    const closing: string[] = [];
+    if (copy?.choosing && useChoosing && measured.length > 0) closing.push(copy.choosing);
     if (input.pincode) {
       closing.push(
         choose(
