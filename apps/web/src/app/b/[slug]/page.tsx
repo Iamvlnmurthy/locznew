@@ -1227,19 +1227,30 @@ export default async function BusinessPage({ params }: { params: Promise<{ slug:
                             />
                           </span>
                           <span className="business-profile-similar__body">
-                            <span>{b.categoryName}</span>
+                            {/* Only what differs from the heading above.
+ 
+                                Every card used to repeat the category, "Public service" and the
+                                city -- but this grid is one category in one city by construction,
+                                so those three were identical on all 24 cards and told a reader
+                                nothing the section heading had not already said. Across two banks
+                                in the same city it was also the largest block of text the two
+                                pages shared: a 44-word run of "public service hyderabad banks amp
+                                atms" repeating card after card, which is what tripling this grid
+                                from 8 to 24 multiplied. Print a label only where it actually
+                                varies. */}
+                            {b.categoryName !== business.categoryName ? (
+                              <span>{b.categoryName}</span>
+                            ) : null}
                             <strong>{b.name}</strong>
                             <small>
-                              {business.isPublicService ? (
-                                <>
-                                  <Icon name="government" /> {p.publicService} ·{' '}
-                                </>
-                              ) : b.verificationStatus === 'VERIFIED' ? (
+                              {!business.isPublicService && b.verificationStatus === 'VERIFIED' ? (
                                 <>
                                   <Icon name="shield" /> {p.verifiedBusiness} ·{' '}
                                 </>
                               ) : null}
-                              {[b.cityName, b.pincode].filter(Boolean).join(' · ')}
+                              {[b.cityName === business.cityName ? null : b.cityName, b.pincode]
+                                .filter(Boolean)
+                                .join(' · ')}
                               {typeof b.distanceMeters === 'number'
                                 ? ` · ${formatDistance(b.distanceMeters, t)}`
                                 : ''}
