@@ -80,6 +80,34 @@ sleep 5
 
 CODE=$(curl -s -o /dev/null -w '%{http_code}' -m 30 https://locz.in/in/hyderabad)
 if [ "$CODE" = "200" ]; then
+  # Purge the edge cache.
+  #
+  # Cloudflare caches this site's HTML despite the origin sending
+  # "Cache-Control: private, no-cache, no-store, must-revalidate" -- a Cache Everything rule
+  # overrides origin headers -- and nothing was invalidating it on deploy. Googlebot fetches the
+  # bare URL, so it kept receiving the pre-deploy copy: a 20,000-page before/after measurement
+  # came back with 18,720 of 18,721 pages byte-identical, five hours after the change went live,
+  # while the same pages fetched with a cache-busting parameter differed on 20 of 20. A deploy
+  # that the crawler cannot see is not a deploy.
+  #
+  # Credentials sit in this box's .env (already sourced above), never in the repo. The token is
+  # scoped to Zone > Cache Purge on this zone alone, so the worst it can do is make the site
+  # briefly slower. Failure here is reported but does not fail the deploy -- the code is live
+  # either way, and the cache expires on its own.
+  if [ -n "${CLOUDFLARE_PURGE_TOKEN:-}" ] && [ -n "${CLOUDFLARE_ZONE_ID:-}" ]; then
+    echo ">> purge Cloudflare cache"
+    PURGE=$(curl -s -m 30 -X POST       "https://api.cloudflare.com/client/v4/zones/${CLOUDFLARE_ZONE_ID}/purge_cache"       -H "Authorization: Bearer ${CLOUDFLARE_PURGE_TOKEN}"       -H "Content-Type: application/json"       --data '{"purge_everything":true}' || true)
+    # `|| true` because `set -e` is active here and the site is already serving: a network blip
+    # reaching Cloudflare must not abort a deploy that has otherwise succeeded.
+    case "$PURGE" in
+      *'"success":true'*) echo "   cache purged" ;;
+      *) echo "!! cache purge FAILED - visitors and crawlers will see the old pages until it expires"
+         echo "   $PURGE" ;;
+    esac
+  else
+    echo "!! CLOUDFLARE_PURGE_TOKEN/ZONE_ID not set - skipping purge, crawlers keep the old copy"
+  fi
+
   echo ">> OK: site returns 200. Deploy complete."
   rm -rf apps/web/.next.bak
 else
