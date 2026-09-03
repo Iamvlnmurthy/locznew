@@ -2069,6 +2069,8 @@
     "browseCity": "{city} చూడండి",
     "seeAll": "మొత్తం {count} చూడండి",
     "otherCategories": "{city} లో ఇతర కేటగిరీలు",
-    "inOtherCities": "{category} ఇతర చోట్ల"
+    "inOtherCities": "{category} ఇతర చోట్ల",
+    "pagination": "వ్యాపార జాబితా పేజీలు",
+    "pageWord": "పేజీ"
   }
 }

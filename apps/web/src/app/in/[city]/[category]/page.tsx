@@ -66,10 +66,13 @@ export const revalidate = 3600;
 
 export async function generateMetadata({
   params,
+  searchParams,
 }: {
   params: Promise<{ city: string; category: string }>;
+  searchParams: Promise<{ page?: string }>;
 }): Promise<Metadata> {
   const { city: citySlug, category: categorySlug } = await params;
+  const page = pageParam((await searchParams).page);
   const [city, category, locale] = await Promise.all([
     loadCity(citySlug).catch(() => null),
     loadCategory(categorySlug).catch(() => null),
@@ -89,13 +92,39 @@ export async function generateMetadata({
     // a name that did not come from English is how a proper noun ends up looking wrong.
     .replace('{category}', locale === 'en' ? categoryName.toLowerCase() : categoryName)
     .replace('{city}', cityName);
+  // Each page of the list is its own URL with its own businesses, so it gets its own title and
+  // its own canonical. Pointing page 2+ back at page 1 would tell Google the deeper pages are
+  // duplicates and it would stop fetching them -- which is exactly the crawl path we need.
+  const pagedTitle = page > 1 ? `${title} — ${h.pageWord} ${page}` : title;
+  const path = `/in/${city.slug}/${category.slug}`;
+
+  // 96 cities x ~1,588 categories is ~152k hub URLs, and a sample of 1,800 of those pairs found
+  // 62% with no businesses at all. Those answered 200 with an empty list, so Google spent crawl
+  // budget on ~94k pages that had nothing to index and could only be read as thin or soft-404.
+  // Keep them crawlable (`follow`, so the sibling city/category links still carry) but out of the
+  // index. `limit=1` is only for the total, and shares the page's 900s cache window.
+  const count = await apiSafe<{ meta: { total: number } }>(
+    `/businesses?cityId=${city.id}&categoryId=${category.id}&limit=1`,
+    { revalidate: 900 },
+  );
+  const isEmpty = (count?.meta?.total ?? 0) === 0;
+
   return {
-    title,
+    title: pagedTitle,
     description,
-    alternates: await localizedAlternates(`/in/${city.slug}/${category.slug}`),
-    openGraph: { title, description, type: 'website', locale: `${locale}_IN` },
+    ...(isEmpty ? { robots: { index: false, follow: true } } : {}),
+    alternates: await localizedAlternates(page > 1 ? `${path}?page=${page}` : path),
+    openGraph: { title: pagedTitle, description, type: 'website', locale: `${locale}_IN` },
   };
 }
+
+/** `?page=` as a 1-based page number, ignoring junk. Shared by the metadata and the page. */
+function pageParam(raw: string | undefined): number {
+  return Math.max(1, Number(raw ?? '1') || 1);
+}
+
+/** Businesses shown per hub page. Matches the category page so the two crawl at the same rate. */
+const HUB_PAGE_SIZE = 30;
 
 /**
  * City × category hub — "Restaurants & food in Hyderabad". Captures the "{category} in {area}"
@@ -104,10 +133,13 @@ export async function generateMetadata({
  */
 export default async function CityCategoryPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ city: string; category: string }>;
+  searchParams: Promise<{ page?: string }>;
 }) {
   const { city: citySlug, category: categorySlug } = await params;
+  const page = pageParam((await searchParams).page);
   const [locale, city, category] = await Promise.all([
     getLocale(),
     loadCity(citySlug),
@@ -120,7 +152,7 @@ export default async function CityCategoryPage({
 
   const [result, categories, cities] = await Promise.all([
     apiSafe<{ items: HubBusiness[]; meta: { total: number } }>(
-      `/businesses?cityId=${city.id}&categoryId=${category.id}&limit=30&sort=recommended`,
+      `/businesses?cityId=${city.id}&categoryId=${category.id}&page=${page}&limit=${HUB_PAGE_SIZE}&sort=recommended`,
       { revalidate: 900 },
     ),
     loadCategories(),
@@ -128,6 +160,11 @@ export default async function CityCategoryPage({
   ]);
   const businesses = result?.items ?? [];
   const total = result?.meta?.total ?? 0;
+  // Without this the hub showed its first 30 businesses and dead-ended. Across ~152k city x
+  // category hubs that left the overwhelming majority of businesses reachable only from the
+  // sitemap, which is how ~1.95M URLs ended up "Discovered - currently not indexed": Google
+  // knew the URL but had no link to follow to it.
+  const hasMore = total > page * HUB_PAGE_SIZE;
   const categoryName = localizedName(category, locale);
   const cityName = localizedName(city, locale);
   const placeLabel = `${categoryName} ${h.inWord} ${cityName}`;
@@ -267,6 +304,31 @@ export default async function CityCategoryPage({
               </Link>
             </div>
           )}
+
+          {page > 1 || hasMore ? (
+            <nav className="news-pagination" aria-label={h.pagination}>
+              {page > 1 ? (
+                <Link
+                  className="news-pagination__link news-pagination__link--prev"
+                  href={page - 1 === 1 ? '?' : `?page=${page - 1}`}
+                >
+                  <Icon name="arrow" /> {t('publicServices.previous')}
+                </Link>
+              ) : (
+                <span />
+              )}
+              <span className="news-pagination__page">
+                {h.pageWord} {page}
+              </span>
+              {hasMore ? (
+                <Link className="news-pagination__link" href={`?page=${page + 1}`}>
+                  {t('publicServices.more')} <Icon name="arrow" />
+                </Link>
+              ) : (
+                <span />
+              )}
+            </nav>
+          ) : null}
 
           {total > businesses.length ? (
             <Link

@@ -2069,6 +2069,8 @@
     "browseCity": "{city} देखें",
     "seeAll": "सभी {count} देखें",
     "otherCategories": "{city} में अन्य श्रेणियाँ",
-    "inOtherCities": "{category} अन्य शहरों में"
+    "inOtherCities": "{category} अन्य शहरों में",
+    "pagination": "व्यवसाय सूची पेज",
+    "pageWord": "पेज"
   }
 }

@@ -2069,6 +2069,8 @@
     "browseCity": "Browse {city}",
     "seeAll": "See all {count}",
     "otherCategories": "Other categories in {city}",
-    "inOtherCities": "{category} elsewhere"
+    "inOtherCities": "{category} elsewhere",
+    "pagination": "Business list pages",
+    "pageWord": "Page"
   }
 }
