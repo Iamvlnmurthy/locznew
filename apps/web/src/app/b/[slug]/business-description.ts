@@ -21,6 +21,7 @@
  * An owner's own description replaces all of it, which is the point of claiming a listing.
  */
 import categoryText from '@/data/category-text.json';
+import { matrixFor, selectNeighbours } from './content-matrix';
 
 export interface CategoryCopy {
   overview: string;
@@ -96,24 +97,15 @@ export function describeBusiness(input: DescribeInput): string[] {
   const { seed, units, neighbours } = input;
   const paragraphs: string[] = [];
 
-  /*
-   * Exactly one of the four category passages, chosen by the slug.
-   *
-   * Using all four was measurably worse than using none. Category copy is identical for every
-   * business in the category by definition, so putting ~150 shared words on both pages pushed two
-   * same-category storefronts from 27.7% to 41.1% identical five-word phrasing -- adding shared
-   * text to pages whose problem was shared text. Cross-category pairs barely moved, which is the
-   * same mechanism seen from the other side.
-   *
-   * One passage per page cuts the shared surface about fourfold and two pages only collide when
-   * the hash gives them the same slot. The real answer is several variants of each passage so
-   * they rarely collide at all; this keeps the page readable until those exist.
-   */
-  const slot = copy ? hash(`${seed}#cat`) % 4 : -1;
-  const useOverview = slot === 0;
-  const useServices = slot === 1;
-  const usePractical = slot === 2;
-  const useChoosing = slot === 3;
+  // Which version of this page this business gets -- see content-matrix.ts. The axes that matter
+  // choose what the page says (which neighbours it names, which radii it counts, which optional
+  // lines it carries), not only how it words it, because two businesses in one cluster are handed
+  // the same neighbours and would otherwise state the same facts however they were phrased.
+  const m = matrixFor(seed, copy ? 4 : 0);
+  const useOverview = m.categorySlot === 0;
+  const useServices = m.categorySlot === 1 && m.services;
+  const usePractical = m.categorySlot === 2;
+  const useChoosing = m.categorySlot === 3;
 
   // 1. What this kind of place does, then what this one is listed as.
   const opening: string[] = [];
@@ -173,18 +165,19 @@ export function describeBusiness(input: DescribeInput): string[] {
     ];
     // Only claimed when both rings hold something and they differ. Announcing "0 within 500 m"
     // is true but reads as a fault, and repeats verbatim across every sparsely-covered page.
-    const near = measured.filter((n) => (n.distanceMeters as number) <= 500).length;
-    const mid = measured.filter((n) => (n.distanceMeters as number) <= 1000).length;
+    const [innerRing, outerRing] = m.rings;
+    const near = measured.filter((n) => (n.distanceMeters as number) <= innerRing).length;
+    const mid = measured.filter((n) => (n.distanceMeters as number) <= outerRing).length;
     if (near > 0 && mid > near) {
       around.push(
         choose(
           [
-            `${near} fall within ${distance(500, units)}, ${mid} within ${distance(1000, units)}.`,
-            `Inside ${distance(500, units)} there are ${near}; by ${distance(1000, units)} the count is ${mid}.`,
-            `${near} of them sit inside ${distance(500, units)}, rising to ${mid} at ${distance(1000, units)}.`,
-            `Walk ${distance(500, units)} and you pass ${near}; stretch to ${distance(1000, units)} and it is ${mid}.`,
-            `Close in, ${near} are within ${distance(500, units)}; ${mid} within ${distance(1000, units)}.`,
-            `The nearest ${distance(500, units)} holds ${near}, and ${distance(1000, units)} holds ${mid}.`,
+            `${near} fall within ${distance(innerRing, units)}, ${mid} within ${distance(outerRing, units)}.`,
+            `Inside ${distance(innerRing, units)} there are ${near}; by ${distance(outerRing, units)} the count is ${mid}.`,
+            `${near} of them sit inside ${distance(innerRing, units)}, rising to ${mid} at ${distance(outerRing, units)}.`,
+            `Walk ${distance(innerRing, units)} and you pass ${near}; stretch to ${distance(outerRing, units)} and it is ${mid}.`,
+            `Close in, ${near} are within ${distance(innerRing, units)}; ${mid} within ${distance(outerRing, units)}.`,
+            `The nearest ${distance(innerRing, units)} holds ${near}, and ${distance(outerRing, units)} holds ${mid}.`,
           ],
           seed,
           3,
@@ -197,39 +190,39 @@ export function describeBusiness(input: DescribeInput): string[] {
         mid === 1
           ? choose(
               [
-                `One of them is within ${distance(1000, units)}.`,
-                `Just one sits inside ${distance(1000, units)}.`,
-                `Only one other is inside ${distance(1000, units)}.`,
-                `A single one falls within ${distance(1000, units)}.`,
-                `Within ${distance(1000, units)} there is one other.`,
+                `One of them is within ${distance(outerRing, units)}.`,
+                `Just one sits inside ${distance(outerRing, units)}.`,
+                `Only one other is inside ${distance(outerRing, units)}.`,
+                `A single one falls within ${distance(outerRing, units)}.`,
+                `Within ${distance(outerRing, units)} there is one other.`,
               ],
               seed,
               3,
             )
           : choose(
               [
-                `${mid} of them are within ${distance(1000, units)}.`,
-                `Within ${distance(1000, units)} there are ${mid}.`,
-                `${mid} sit inside ${distance(1000, units)} of here.`,
-                `That count is ${mid} within ${distance(1000, units)}.`,
-                `Inside ${distance(1000, units)} the number is ${mid}.`,
+                `${mid} of them are within ${distance(outerRing, units)}.`,
+                `Within ${distance(outerRing, units)} there are ${mid}.`,
+                `${mid} sit inside ${distance(outerRing, units)} of here.`,
+                `That count is ${mid} within ${distance(outerRing, units)}.`,
+                `Inside ${distance(outerRing, units)} the number is ${mid}.`,
               ],
               seed,
               3,
             ),
       );
     }
-    const closest = measured.slice(0, 3);
+    const closest = selectNeighbours(measured, m.pick, 3);
     around.push(
       choose(
         [
-          `The nearest are ${series(closest.map((n) => `${n.name} (${distance(n.distanceMeters as number, units)})`))}.`,
-          `Closest by distance: ${series(closest.map((n) => `${n.name} at ${distance(n.distanceMeters as number, units)}`))}.`,
+          `${m.pick === 'nearest' ? 'The nearest are' : 'Among them are'} ${series(closest.map((n) => `${n.name} (${distance(n.distanceMeters as number, units)})`))}.`,
+          `${m.pick === 'nearest' ? 'Closest by distance' : 'Also in range'}: ${series(closest.map((n) => `${n.name} at ${distance(n.distanceMeters as number, units)}`))}.`,
           `Nearby, in order: ${series(closest.map((n) => `${n.name} at ${distance(n.distanceMeters as number, units)}`))}.`,
-          `The closest few are ${series(closest.map((n) => `${n.name} (${distance(n.distanceMeters as number, units)})`))}.`,
+          `A few of them: ${series(closest.map((n) => `${n.name} (${distance(n.distanceMeters as number, units)})`))}.`,
           `Working outwards, ${series(closest.map((n) => `${n.name} at ${distance(n.distanceMeters as number, units)}`))}.`,
-          `${series(closest.map((n) => `${n.name} (${distance(n.distanceMeters as number, units)})`))} are the nearest of them.`,
-          `Immediate neighbours: ${series(closest.map((n) => `${n.name} (${distance(n.distanceMeters as number, units)})`))}.`,
+          `${series(closest.map((n) => `${n.name} (${distance(n.distanceMeters as number, units)})`))} are among them.`,
+          `In the surrounding streets: ${series(closest.map((n) => `${n.name} (${distance(n.distanceMeters as number, units)})`))}.`,
         ],
         seed,
         4,
@@ -268,15 +261,15 @@ export function describeBusiness(input: DescribeInput): string[] {
   if (input.hasPhone) channels.push('a phone number');
   if (input.hasWebsite) channels.push('a website');
   if (input.hasHours) channels.push('published opening hours');
-  if (channels.length) practical.push(`This listing carries ${series(channels)}.`);
+  if (channels.length && m.channels) practical.push(`This listing carries ${series(channels)}.`);
   if (copy?.practical && usePractical) practical.push(copy.practical);
   if (practical.length) paragraphs.push(practical.join(' '));
 
   // 4. Choosing between them — only worth saying when there is a choice to make.
-  if (input.pincode || (copy?.choosing && useChoosing && measured.length > 0)) {
+  if ((input.pincode && m.pincode) || (copy?.choosing && useChoosing && measured.length > 0)) {
     const closing: string[] = [];
     if (copy?.choosing && useChoosing && measured.length > 0) closing.push(copy.choosing);
-    if (input.pincode) {
+    if (input.pincode && m.pincode) {
       closing.push(
         choose(
           [
@@ -294,5 +287,9 @@ export function describeBusiness(input: DescribeInput): string[] {
     paragraphs.push(closing.join(' '));
   }
 
-  return paragraphs.filter((p) => p.trim().length > 0);
+  const kept = paragraphs.filter((p) => p.trim().length > 0);
+  // Some pages open on the neighbourhood instead of the listing line. Two pages that share their
+  // opening sentence read as the same page even when the rest differs.
+  if (!m.neighbourhoodFirst || kept.length < 2) return kept;
+  return [kept[1], kept[0], ...kept.slice(2)];
 }
