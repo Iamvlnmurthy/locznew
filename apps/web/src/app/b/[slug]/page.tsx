@@ -522,24 +522,30 @@ export default async function BusinessPage({ params }: { params: Promise<{ slug:
   // claim buys them.
   const localArea =
     business.localityName || business.addressLine || business.mandal || business.cityName;
-  const localContext = business.description
-    ? []
-    : describeBusiness({
-        name: business.name,
-        categorySlug: business.categorySlug,
-        categoryName: business.categoryName,
-        keywords: business.keywords,
-        area: localArea,
-        cityName: business.cityName,
-        pincode: business.pincode,
-        hasPhone: Boolean(business.primaryPhone),
-        hasWebsite: Boolean(business.website),
-        hasHours: business.hours.length > 0,
-        neighbours: similar.map((b) => ({ name: b.name, distanceMeters: b.distanceMeters })),
-        radiusKm: 10,
-        seed: business.slug,
-        units: { m: t('common.m'), km: t('common.km') },
-      });
+  //
+  // Gate on who wrote it, not on whether it exists. The API composes a description for every
+  // imported record (see apps/api/src/businesses/business-description.ts), so `description` is
+  // truthy on all 4.3M pages and this block rendered on none of them. `descriptionIsGenerated`
+  // is the flag that separates an owner's words from ours.
+  const localContext =
+    business.description && !business.descriptionIsGenerated
+      ? []
+      : describeBusiness({
+          name: business.name,
+          categorySlug: business.categorySlug,
+          categoryName: business.categoryName,
+          keywords: business.keywords,
+          area: localArea,
+          cityName: business.cityName,
+          pincode: business.pincode,
+          hasPhone: Boolean(business.primaryPhone),
+          hasWebsite: Boolean(business.website),
+          hasHours: business.hours.length > 0,
+          neighbours: similar.map((b) => ({ name: b.name, distanceMeters: b.distanceMeters })),
+          radiusKm: 10,
+          seed: business.slug,
+          units: { m: t('common.m'), km: t('common.km') },
+        });
 
   const openState = currentOpenState(business.hours, p);
   const mapUrl =
@@ -688,10 +694,16 @@ export default async function BusinessPage({ params }: { params: Promise<{ slug:
     premiumCategoryArtwork({
       name: storefrontArtworkCategory(business.name, business.parentCategoryName ?? ''),
     });
-  const storefrontDescription =
-    business.descriptionIsGenerated && displayCategory !== business.categoryName
-      ? business.description?.replace(business.categoryName, displayCategory)
-      : business.description;
+  // The composed block below says all of this and more, so showing the API's generated line as
+  // well would repeat the same facts twice on the page -- and repeated facts across 4.3M pages
+  // is the problem being fixed. An owner's own description always shows.
+  const storefrontDescription = business.descriptionIsGenerated
+    ? localContext.length > 0
+      ? null
+      : displayCategory !== business.categoryName
+        ? (business.description?.replace(business.categoryName, displayCategory) ?? null)
+        : business.description
+    : business.description;
 
   return (
     <div
