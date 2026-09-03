@@ -554,9 +554,10 @@ export default async function BusinessPage({ params }: { params: Promise<{ slug:
   const qualifiedName = isChainOutlet ? `${business.name} (${placeQualifier})` : business.name;
   // Everything after the first mention. A chain page stops repeating the shared name; a place
   // with its own name keeps using it, because there it is the thing people search for.
-  const shortName = isChainOutlet
-    ? `this ${business.categoryName.toLowerCase().replace(/s$/, '')}`
-    : business.name;
+  // "this branch", not "this diagnostic labs & imaging". Category names are plural noun phrases
+  // and read as a typo in a possessive ("this diagnostic labs & imaging's phone number"); the
+  // word that fits every case where this applies is the one for an outlet of a chain.
+  const shortName = isChainOutlet ? 'this branch' : business.name;
 
   // The written body of the page. Category copy (true of the trade, written once) joined to
   // measured facts about this place (counts, neighbour names, real distances) -- see
@@ -668,48 +669,48 @@ export default async function BusinessPage({ params }: { params: Promise<{ slug:
       ? {
           q: p.faqPhoneQ.replace('{name}', shortName),
           a: p.faqPhoneA
-            .replace('{name}', business.name)
+            .replace('{name}', shortName)
             .replace('{phone}', formatPhone(business.primaryPhone)),
         }
       : null,
     {
       q: p.faqWhereQ.replace('{name}', shortName),
-      a: p.faqWhereA.replace('{name}', business.name).replace('{place}', postalAddress(business)),
+      a: p.faqWhereA.replace('{name}', shortName).replace('{place}', postalAddress(business)),
     },
     business.landmark
       ? {
-          q: `What landmark is ${business.name} located near?`,
-          a: `${business.name} is situated in close proximity to ${business.landmark} in ${placeLabel}.`,
+          q: `What landmark is ${shortName} located near?`,
+          a: `${shortName} is situated in close proximity to ${business.landmark} in ${placeLabel}.`,
         }
       : null,
     business.pincode
       ? {
-          q: `What is the postal PIN code for ${business.name}?`,
-          a: `The postal PIN code for ${business.name} in ${business.cityName} is ${business.pincode}.`,
+          q: `What is the postal PIN code for ${shortName}?`,
+          a: `The postal PIN code for ${shortName} in ${business.cityName} is ${business.pincode}.`,
         }
       : null,
     business.hours.length
       ? {
           q: p.faqHoursQ.replace('{name}', shortName),
-          a: `${business.name} is currently ${openState.label.toLowerCase()}. Check the detailed weekly schedule on this page for exact operating hours.`,
+          a: `${shortName} is currently ${openState.label.toLowerCase()}. Check the detailed weekly schedule on this page for exact operating hours.`,
         }
       : null,
     !business.isPublicService && waNumber
       ? {
           q: p.faqWhatsappQ.replace('{name}', shortName),
-          a: `Yes, you can connect directly with ${business.name} on WhatsApp for quick messages, pricing, and service queries.`,
+          a: `Yes, you can connect directly with ${shortName} on WhatsApp for quick messages, pricing, and service queries.`,
         }
       : null,
     !business.isPublicService && business.keywords.length > 0
       ? {
-          q: `What services or products are available at ${business.name}?`,
-          a: `${business.name} in ${placeLabel} specializes in ${business.categoryName.toLowerCase()}, covering ${business.keywords.slice(0, 5).join(', ')}.`,
+          q: `What services or products are available at ${shortName}?`,
+          a: `${shortName} in ${placeLabel} specializes in ${business.categoryName.toLowerCase()}, covering ${business.keywords.slice(0, 5).join(', ')}.`,
         }
       : null,
     directionsUrl
       ? {
-          q: `How can I get directions to ${business.name}?`,
-          a: `You can use the Get Directions button on this page to navigate to ${business.name} via Google Maps or GPS.`,
+          q: `How can I get directions to ${shortName}?`,
+          a: `You can use the Get Directions button on this page to navigate to ${shortName} via Google Maps or GPS.`,
         }
       : null,
   ].filter((item): item is { q: string; a: string } => item !== null);
@@ -1222,7 +1223,7 @@ export default async function BusinessPage({ params }: { params: Promise<{ slug:
           {faqs.length > 0 ? (
             <section className="business-profile-section business-profile-faq" id="faq">
               <span className="section-kicker">{p.goodToKnow}</span>
-              <h2>{p.faqHeading.replace('{name}', business.name)}</h2>
+              <h2>{p.faqHeading.replace('{name}', shortName)}</h2>
               <dl className="business-profile-faq__list">
                 {faqs.map((item) => (
                   <div key={item.q}>
