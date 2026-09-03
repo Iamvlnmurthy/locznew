@@ -473,7 +473,7 @@ export default async function BusinessPage({ params }: { params: Promise<{ slug:
   // rather than in a header.
   const similarQuery = new URLSearchParams({
     categoryId: business.categoryId,
-    limit: '9',
+    limit: '25',
     lang: locale,
   });
   if (business.latitude !== null && business.longitude !== null) {
@@ -507,9 +507,14 @@ export default async function BusinessPage({ params }: { params: Promise<{ slug:
     business.hours.length > 0,
     Boolean(business.website),
   ].filter(Boolean).length;
+  // 24 rather than 8. This is the crawl frontier: a storefront is where a crawler arrives, and
+  // eight outbound links made 4.2M pages a near-dead end, which is a large part of why Search
+  // Console holds ~1.95M URLs as discovered but never fetched. Tripling the fan-out is only safe
+  // because the cards below are prefetch={false} -- left prefetching, 24 viewport-triggered RSC
+  // renders per page would rebuild the request storm that saturated the server.
   const similar = (similarResponse?.items ?? [])
     .filter((b) => b.slug !== business.slug)
-    .slice(0, 8);
+    .slice(0, 24);
   const openState = currentOpenState(business.hours, p);
   const mapUrl =
     business.latitude !== null && business.longitude !== null
@@ -1145,7 +1150,7 @@ export default async function BusinessPage({ params }: { params: Promise<{ slug:
                     const nearbyLogo = b.logoUrl ?? publicBrandLogo(b.name, b.publicBrandKey);
                     return (
                       <li key={b.id}>
-                        <Link href={`/b/${b.slug}`}>
+                        <Link href={`/b/${b.slug}`} prefetch={false}>
                           <span
                             className={`business-profile-similar__logo${nearbyLogo ? ' has-logo' : ''}`}
                             aria-hidden="true"
