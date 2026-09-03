@@ -15,7 +15,7 @@ import { premiumCategoryArtwork } from '@/lib/premium-icon-catalog';
 import { BusinessEnquiry } from './business-enquiry';
 import { ShareBusiness } from './share-business';
 import { BusinessBackButton } from './back-button';
-import { buildLocalContext } from './local-context';
+import { describeBusiness } from './business-description';
 import { buildStorefrontJsonLd } from './storefront-jsonld';
 import { AdSlot } from '@/components/ad-slot';
 import { StorefrontHouseAd } from '@/components/storefront-house-ad';
@@ -516,24 +516,30 @@ export default async function BusinessPage({ params }: { params: Promise<{ slug:
   const similar = (similarResponse?.items ?? [])
     .filter((b) => b.slug !== business.slug)
     .slice(0, 24);
-  // The one genuinely per-place paragraph on the page. Built from the neighbours already
-  // fetched above, so it adds no query -- see local-context.ts for why it exists at all.
+  // The written body of the page. Category copy (true of the trade, written once) joined to
+  // measured facts about this place (counts, neighbour names, real distances) -- see
+  // business-description.ts. An owner's own description replaces all of it, which is what a
+  // claim buys them.
   const localArea =
     business.localityName || business.addressLine || business.mandal || business.cityName;
-  const localContext = buildLocalContext(
-    {
-      name: business.name,
-      categoryName: business.categoryName,
-      area: localArea,
-      pincode: business.pincode,
-      neighbours: similar.map((b) => ({ name: b.name, distanceMeters: b.distanceMeters })),
-      radiusKm: 10,
-      seed: business.slug,
-      units: { m: t('common.m'), km: t('common.km') },
-    },
-    getMessageGroup(locale, 'businessLocal'),
-    locale,
-  );
+  const localContext = business.description
+    ? []
+    : describeBusiness({
+        name: business.name,
+        categorySlug: business.categorySlug,
+        categoryName: business.categoryName,
+        keywords: business.keywords,
+        area: localArea,
+        cityName: business.cityName,
+        pincode: business.pincode,
+        hasPhone: Boolean(business.primaryPhone),
+        hasWebsite: Boolean(business.website),
+        hasHours: business.hours.length > 0,
+        neighbours: similar.map((b) => ({ name: b.name, distanceMeters: b.distanceMeters })),
+        radiusKm: 10,
+        seed: business.slug,
+        units: { m: t('common.m'), km: t('common.km') },
+      });
 
   const openState = currentOpenState(business.hours, p);
   const mapUrl =
@@ -1151,7 +1157,11 @@ export default async function BusinessPage({ params }: { params: Promise<{ slug:
             <section className="business-profile-section business-profile-local" id="around">
               <span className="section-kicker">{business.categoryName}</span>
               <h2>{getMessageGroup(locale, 'businessLocal').heading}</h2>
-              <p className="business-profile-local__body">{localContext.join(' ')}</p>
+              {localContext.map((paragraph) => (
+                <p className="business-profile-local__body" key={paragraph.slice(0, 48)}>
+                  {paragraph}
+                </p>
+              ))}
             </section>
           ) : null}
 

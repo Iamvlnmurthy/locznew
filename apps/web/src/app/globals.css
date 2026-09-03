@@ -9334,13 +9334,19 @@ textarea {
 
 /* "Around this place" — the measured-neighbourhood paragraph. Reads as prose, not a data
    readout, because its job is to be the one part of the page written about THIS place. */
+/* Written as one paragraph, now several — the block grew from the neighbourhood sentence into
+   the full description. 6px between paragraphs read as a wrapped line rather than a break. */
 .business-profile-local__body {
-  margin: 6px 0 0;
+  margin: 0;
   font-size: 0.72rem;
   line-height: 1.72;
   color: var(--locz-text-secondary);
   max-width: 68ch;
   text-wrap: pretty;
+}
+
+.business-profile-local__body + .business-profile-local__body {
+  margin-top: 0.85em;
 }
 
 /* Similar businesses nearby — the internal-link mesh into deep pages. */
