@@ -9332,6 +9332,17 @@ textarea {
   color: var(--locz-text-secondary);
 }
 
+/* "Around this place" — the measured-neighbourhood paragraph. Reads as prose, not a data
+   readout, because its job is to be the one part of the page written about THIS place. */
+.business-profile-local__body {
+  margin: 6px 0 0;
+  font-size: 0.72rem;
+  line-height: 1.72;
+  color: var(--locz-text-secondary);
+  max-width: 68ch;
+  text-wrap: pretty;
+}
+
 /* Similar businesses nearby — the internal-link mesh into deep pages. */
 .business-profile-similar__grid {
   display: grid;

@@ -2072,5 +2072,22 @@
     "inOtherCities": "{category} अन्य शहरों में",
     "pagination": "व्यवसाय सूची पेज",
     "pageWord": "पेज"
+  },
+  "businessLocal": {
+    "heading": "इस जगह के आसपास",
+    "lead1": "{name} उन {total} {category} में से एक है जिन्हें LocZ ने {area} के {radius} के भीतर दर्ज किया है।",
+    "lead2": "LocZ ने {area} के आसपास {total} {category} दर्ज किए हैं; {name} उनमें से एक है।",
+    "lead3": "{area} के पास दर्ज {total} {category} में से यह {name} है।",
+    "lead4": "{name} {area} और उसके आसपास सूचीबद्ध {total} {category} में शामिल है।",
+    "density1": "इनमें से {near} {nearRadius} के भीतर हैं और {mid} {midRadius} के भीतर।",
+    "density2": "बाहर की ओर गिनें तो {near} {nearRadius} के भीतर और {mid} {midRadius} के भीतर हैं।",
+    "density3": "{nearRadius} के भीतर {near} हैं; {midRadius} पर यह संख्या {mid} हो जाती है।",
+    "densityAlone1": "बाकी और दूर फैले हुए हैं।",
+    "nearest1": "सबसे नज़दीक हैं {list}।",
+    "nearest2": "दूरी के अनुसार निकटतम: {list}।",
+    "nearest3": "{list} इनमें सबसे नज़दीक हैं।",
+    "pin1": "यह पता पिनकोड {pincode} के अंतर्गत आता है।",
+    "pin2": "इस क्षेत्र का डाक कोड {pincode} है।",
+    "onlyOne": "LocZ ने {area} के पास अभी तक कोई दूसरा {category} दर्ज नहीं किया है।"
   }
 }

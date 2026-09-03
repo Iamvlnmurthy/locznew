@@ -2072,5 +2072,22 @@
     "inOtherCities": "{category} ఇతర చోట్ల",
     "pagination": "వ్యాపార జాబితా పేజీలు",
     "pageWord": "పేజీ"
+  },
+  "businessLocal": {
+    "heading": "ఈ ప్రాంతం చుట్టూ",
+    "lead1": "{area} నుండి {radius} లోపల LocZ నమోదు చేసిన {total} {category}లో {name} ఒకటి.",
+    "lead2": "{area} చుట్టూ LocZ {total} {category} నమోదు చేసింది; వాటిలో {name} ఒకటి.",
+    "lead3": "{area} సమీపంలో నమోదైన {total} {category}లో ఇది {name}.",
+    "lead4": "{area} మరియు దాని పరిసరాల్లో జాబితా అయిన {total} {category}లో {name} ఉంది.",
+    "density1": "వీటిలో {near} {nearRadius} లోపల, {mid} {midRadius} లోపల ఉన్నాయి.",
+    "density2": "బయటికి లెక్కిస్తే {nearRadius} లోపల {near}, {midRadius} లోపల {mid} ఉన్నాయి.",
+    "density3": "{nearRadius} లోపల {near} ఉన్నాయి; {midRadius} వద్ద ఈ సంఖ్య {mid}కి చేరుతుంది.",
+    "densityAlone1": "మిగిలినవి మరింత దూరంగా విస్తరించి ఉన్నాయి.",
+    "nearest1": "అత్యంత సమీపంలో ఉన్నవి {list}.",
+    "nearest2": "దూరం ప్రకారం సమీపమైనవి: {list}.",
+    "nearest3": "వీటిలో {list} అత్యంత సమీపమైనవి.",
+    "pin1": "ఈ చిరునామా పిన్‌కోడ్ {pincode} పరిధిలోకి వస్తుంది.",
+    "pin2": "ఈ ప్రాంత పోస్టల్ కోడ్ {pincode}.",
+    "onlyOne": "{area} సమీపంలో LocZ ఇంకా మరో {category} నమోదు చేయలేదు."
   }
 }

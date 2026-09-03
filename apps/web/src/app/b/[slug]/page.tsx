@@ -15,6 +15,7 @@ import { premiumCategoryArtwork } from '@/lib/premium-icon-catalog';
 import { BusinessEnquiry } from './business-enquiry';
 import { ShareBusiness } from './share-business';
 import { BusinessBackButton } from './back-button';
+import { buildLocalContext } from './local-context';
 import { buildStorefrontJsonLd } from './storefront-jsonld';
 import { AdSlot } from '@/components/ad-slot';
 import { StorefrontHouseAd } from '@/components/storefront-house-ad';
@@ -515,6 +516,25 @@ export default async function BusinessPage({ params }: { params: Promise<{ slug:
   const similar = (similarResponse?.items ?? [])
     .filter((b) => b.slug !== business.slug)
     .slice(0, 24);
+  // The one genuinely per-place paragraph on the page. Built from the neighbours already
+  // fetched above, so it adds no query -- see local-context.ts for why it exists at all.
+  const localArea =
+    business.localityName || business.addressLine || business.mandal || business.cityName;
+  const localContext = buildLocalContext(
+    {
+      name: business.name,
+      categoryName: business.categoryName,
+      area: localArea,
+      pincode: business.pincode,
+      neighbours: similar.map((b) => ({ name: b.name, distanceMeters: b.distanceMeters })),
+      radiusKm: 10,
+      seed: business.slug,
+      units: { m: t('common.m'), km: t('common.km') },
+    },
+    getMessageGroup(locale, 'businessLocal'),
+    locale,
+  );
+
   const openState = currentOpenState(business.hours, p);
   const mapUrl =
     business.latitude !== null && business.longitude !== null
@@ -547,7 +567,21 @@ export default async function BusinessPage({ params }: { params: Promise<{ slug:
     : null;
 
   // Rich, fact-driven conditional FAQs based on data density
+  const nearestNeighbour = similar.find((b) => typeof b.distanceMeters === 'number');
   const faqs: Array<{ q: string; a: string }> = [
+    // Every storefront carried the same four questions with only the name swapped, which is a
+    // large part of why same-category pages measured ~43% identical phrasing. This one is
+    // answered from the neighbour rows, so its numbers and names differ on every page.
+    similar.length > 0
+      ? {
+          q: `How many ${business.categoryName.toLowerCase()} are near ${business.name}?`,
+          a: `LocZ maps ${similar.length + 1} ${business.categoryName.toLowerCase()} within 10 km of ${localArea}${
+            nearestNeighbour
+              ? `. The closest other one is ${nearestNeighbour.name}, about ${formatDistance(nearestNeighbour.distanceMeters as number, t)} away`
+              : ''
+          }.`,
+        }
+      : null,
     business.railway
       ? {
           q: `What is the station code of ${business.railway.stationName} railway station?`,
@@ -1112,6 +1146,14 @@ export default async function BusinessPage({ params }: { params: Promise<{ slug:
                 The "Hours not listed" chip in the hero already tells a reader they do not
                 know when this place is open, once, in three words. */}
           </section>
+
+          {localContext.length > 0 ? (
+            <section className="business-profile-section business-profile-local" id="around">
+              <span className="section-kicker">{business.categoryName}</span>
+              <h2>{getMessageGroup(locale, 'businessLocal').heading}</h2>
+              <p className="business-profile-local__body">{localContext.join(' ')}</p>
+            </section>
+          ) : null}
 
           {faqs.length > 0 ? (
             <section className="business-profile-section business-profile-faq" id="faq">

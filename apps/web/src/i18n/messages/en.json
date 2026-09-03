@@ -2072,5 +2072,22 @@
     "inOtherCities": "{category} elsewhere",
     "pagination": "Business list pages",
     "pageWord": "Page"
+  },
+  "businessLocal": {
+    "heading": "Around this place",
+    "lead1": "{name} is one of {total} {category} LocZ maps within {radius} of {area}.",
+    "lead2": "LocZ records {total} {category} around {area}; {name} is one of them.",
+    "lead3": "Of the {total} {category} mapped near {area}, this is {name}.",
+    "lead4": "{name} sits among {total} {category} listed in and around {area}.",
+    "density1": "{near} of them fall within {nearRadius}, and {mid} within {midRadius}.",
+    "density2": "Counting outwards, {near} are inside {nearRadius} and {mid} inside {midRadius}.",
+    "density3": "{near} stand within {nearRadius}; at {midRadius} the count reaches {mid}.",
+    "densityAlone1": "The rest are spread further out.",
+    "nearest1": "The closest are {list}.",
+    "nearest2": "Nearest by distance: {list}.",
+    "nearest3": "{list} are the nearest of them.",
+    "pin1": "The address falls under pincode {pincode}.",
+    "pin2": "Postal code for this area is {pincode}.",
+    "onlyOne": "LocZ has not mapped another {category} close to {area} yet."
   }
 }
