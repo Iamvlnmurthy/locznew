@@ -347,8 +347,20 @@ export async function generateMetadata({
       );
     } else {
       const areaBank = bk.areaLabel ?? business.cityName;
-      finalTitle = `${bk.bankName} IFSC Codes in ${areaBank} — Branches, MICR`;
-      finalDescription = `Find IFSC and MICR codes for ${bk.bankName} branches in ${areaBank}, from the official RBI directory. Copy the code for your branch to make NEFT, RTGS, IMPS or UPI transfers.`;
+      /*
+       * No exact RBI branch for this record, so the page keeps its own title.
+       *
+       * It used to become "<Bank> IFSC Codes in <City> — Branches, MICR", which turned every
+       * unmatched outlet into a citywide bank directory: hundreds of "HDFC Bank ATM" pages in
+       * Bangalore all carrying that one title above an h1 reading "HDFC Bank ATM". Identical
+       * titles across hundreds of pages is the duplication this codebase spent a day removing,
+       * and an ATM has no IFSC of its own to justify the claim.
+       *
+       * The branch list below still renders -- someone on an ATM page may well want a nearby
+       * branch's code -- but it is supporting material, not what the page is. A citywide IFSC
+       * title belongs on a bank/city hub, which is a page that does not exist yet.
+       */
+      finalDescription = `${business.name} in ${place}. IFSC and MICR codes for nearby ${bk.bankName} branches, from the official RBI directory.`;
       bankKeywords.push(
         `${bk.bankName} IFSC code ${areaBank}`,
         `${bk.bankName} ${areaBank} IFSC code`,
