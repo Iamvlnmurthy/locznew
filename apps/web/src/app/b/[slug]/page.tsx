@@ -704,12 +704,25 @@ export default async function BusinessPage({ params }: { params: Promise<{ slug:
     // answered from the neighbour rows, so its numbers and names differ on every page.
     similar.length > 0
       ? {
-          q: `How many ${business.categoryName.toLowerCase()} are near ${qualifiedName}?`,
-          a: `LocZ maps ${similar.length + 1} ${business.categoryName.toLowerCase()} within 10 km of ${localArea}${
-            nearestNeighbour
-              ? `. The closest other one is ${nearestNeighbour.name}, about ${formatDistance(nearestNeighbour.distanceMeters as number, t)} away`
-              : ''
-          }.`,
+          // From the message files, like every other sentence on the page. Written inline in
+          // English, this one answered a Hindi page's question in English underneath Hindi
+          // chrome -- the exact fault the frame work was meant to end.
+          q: p.faqNearbyQ
+            .replace('{category}', business.categoryName.toLowerCase())
+            .replace('{name}', qualifiedName),
+          a:
+            p.faqNearbyA
+              .replace('{count}', String(similar.length + 1))
+              .replace('{category}', business.categoryName.toLowerCase())
+              .replace('{area}', localArea) +
+            (nearestNeighbour
+              ? p.faqNearbyClosest
+                  .replace('{nearest}', nearestNeighbour.name)
+                  .replace(
+                    '{distance}',
+                    formatDistance(nearestNeighbour.distanceMeters as number, t),
+                  )
+              : ''),
         }
       : null,
     business.railway
@@ -756,38 +769,52 @@ export default async function BusinessPage({ params }: { params: Promise<{ slug:
     },
     business.landmark
       ? {
-          q: `What landmark is ${shortName} located near?`,
-          a: `${shortNameSentence} is situated in close proximity to ${business.landmark} in ${placeLabel}.`,
+          q: p.faqLandmarkQ.replace('{name}', shortName),
+          a: p.faqLandmarkA
+            .replace('{Name}', shortNameSentence)
+            .replace('{landmark}', business.landmark)
+            .replace('{place}', placeLabel),
         }
       : null,
     business.pincode
       ? {
-          q: `What is the postal PIN code for ${shortName}?`,
-          a: `The postal PIN code for ${shortName} in ${business.cityName} is ${business.pincode}.`,
+          q: p.faqPinQ.replace('{name}', shortName),
+          a: p.faqPinA
+            .replace('{name}', shortName)
+            .replace('{city}', business.cityName)
+            .replace('{pincode}', business.pincode),
         }
       : null,
     business.hours.length
       ? {
           q: p.faqHoursQ.replace('{name}', shortName),
-          a: `${shortNameSentence} is currently ${openState.label.toLowerCase()}. Check the detailed weekly schedule on this page for exact operating hours.`,
+          a: p.faqHoursA
+            .replace('{Name}', shortNameSentence)
+            .replace('{state}', openState.label.toLowerCase()),
         }
       : null,
     !business.isPublicService && waNumber
       ? {
           q: p.faqWhatsappQ.replace('{name}', shortName),
-          a: `Yes, you can connect directly with ${shortName} on WhatsApp for quick messages, pricing, and service queries.`,
+          a: p.faqWhatsappA.replace('{name}', shortName),
         }
       : null,
     !business.isPublicService && business.keywords.length > 0
       ? {
-          q: `What services or products are available at ${shortName}?`,
-          a: `${shortNameSentence} in ${placeLabel} specializes in ${business.categoryName.toLowerCase()}, covering ${business.keywords.slice(0, 5).join(', ')}.`,
+          q: p.faqServicesQ.replace('{name}', shortName),
+          a: p.faqServicesA
+            .replace('{Name}', shortNameSentence)
+            .replace('{place}', placeLabel)
+            .replace('{category}', business.categoryName.toLowerCase())
+            // The displayable set, not the raw list: "best school in my area" is a search phrase,
+            // not a service, and reads as keyword stuffing inside an answer.
+            .replace('{keywords}', displayableTags(business.keywords).slice(0, 5).join(', ')),
         }
       : null,
     directionsUrl
       ? {
-          q: `How can I get directions to ${shortName}?`,
-          a: `You can use the Get Directions button on this page to navigate to ${shortName} via Google Maps or GPS.`,
+          q: p.faqDirectionsQ.replace('{name}', shortName),
+          a: p.faqDirectionsA.replace('{name}', shortName),
         }
       : null,
   ].filter((item): item is { q: string; a: string } => item !== null);
