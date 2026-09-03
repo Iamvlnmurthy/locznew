@@ -42,17 +42,37 @@ export class RedisService implements OnModuleDestroy {
     return this.client.ttl(key);
   }
 
+  /**
+   * Cache read. Returns null when Redis is unreachable rather than throwing.
+   *
+   * A cache is an optimisation, so a blip in it must not become a 500 for the caller. It did:
+   * when the connection dropped, ioredis rejected every command with "Connection is closed."
+   * and that propagated straight out of `/local-now/jobs` and `/local-now/alerts` as a server
+   * error. Callers already treat null as "not cached" and recompute, which is the correct
+   * behaviour here too. Rate limiting deliberately does NOT get this treatment -- see
+   * `incrementWithWindow`, which must fail closed.
+   */
   async getJson<T>(key: string): Promise<T | null> {
-    const raw = await this.client.get(key);
-    return raw ? (JSON.parse(raw) as T) : null;
+    try {
+      const raw = await this.client.get(key);
+      return raw ? (JSON.parse(raw) as T) : null;
+    } catch (error) {
+      this.logger.warn(`Redis read failed for ${key}, treating as a miss: ${String(error)}`);
+      return null;
+    }
   }
 
+  /** Cache write. Failing to populate a cache is not a reason to fail the request. */
   async setJson(key: string, value: unknown, ttlSeconds?: number): Promise<void> {
     const payload = JSON.stringify(value);
-    if (ttlSeconds) {
-      await this.client.set(key, payload, 'EX', ttlSeconds);
-    } else {
-      await this.client.set(key, payload);
+    try {
+      if (ttlSeconds) {
+        await this.client.set(key, payload, 'EX', ttlSeconds);
+      } else {
+        await this.client.set(key, payload);
+      }
+    } catch (error) {
+      this.logger.warn(`Redis write failed for ${key}: ${String(error)}`);
     }
   }
 
