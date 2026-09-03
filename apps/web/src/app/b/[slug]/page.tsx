@@ -516,6 +516,34 @@ export default async function BusinessPage({ params }: { params: Promise<{ slug:
   const similar = (similarResponse?.items ?? [])
     .filter((b) => b.slug !== business.slug)
     .slice(0, 24);
+  /*
+   * Chain outlets, and the name that repeats twenty-one times.
+   *
+   * 679,346 businesses share their exact name with another business in the same city -- 19,773
+   * called "Hindustan Petroleum Corporation Limited", 15,271 "HDFC Bank ATM", 1,853 in the largest
+   * single group. On those pages the name is the page: it appears in the heading, in every FAQ
+   * question and answer, in the description, and again in a nearby list made up of other outlets
+   * with the identical name. Two branches of one chain in one city measured 83.2% identical
+   * phrasing with a 372-word verbatim run, which no amount of generated prose can separate.
+   *
+   * Detect it from the neighbours already fetched -- if one of them carries this exact name, this
+   * is an outlet rather than a place -- and then say the name once, qualified by where this
+   * particular one is, and refer to it plainly afterwards. A reader is better served too: "Dr Lal
+   * PathLabs Patient Service Centre" tells them nothing about which of the forty is meant.
+   */
+  const isChainOutlet = similar.some(
+    (b) => b.name.trim().toLowerCase() === business.name.trim().toLowerCase(),
+  );
+  const placeQualifier = business.localityName || business.pincode || business.cityName;
+  // Qualified once, for the first mention. Not used as the page's <h1>: the heading is the
+  // business's own name, and renaming a listing is not ours to do.
+  const qualifiedName = isChainOutlet ? `${business.name} (${placeQualifier})` : business.name;
+  // Everything after the first mention. A chain page stops repeating the shared name; a place
+  // with its own name keeps using it, because there it is the thing people search for.
+  const shortName = isChainOutlet
+    ? `this ${business.categoryName.toLowerCase().replace(/s$/, '')}`
+    : business.name;
+
   // The written body of the page. Category copy (true of the trade, written once) joined to
   // measured facts about this place (counts, neighbour names, real distances) -- see
   // business-description.ts. An owner's own description replaces all of it, which is what a
@@ -531,7 +559,7 @@ export default async function BusinessPage({ params }: { params: Promise<{ slug:
     business.description && !business.descriptionIsGenerated
       ? []
       : describeBusiness({
-          name: business.name,
+          name: qualifiedName,
           categorySlug: business.categorySlug,
           categoryName: business.categoryName,
           keywords: business.keywords,
@@ -586,7 +614,7 @@ export default async function BusinessPage({ params }: { params: Promise<{ slug:
     // answered from the neighbour rows, so its numbers and names differ on every page.
     similar.length > 0
       ? {
-          q: `How many ${business.categoryName.toLowerCase()} are near ${business.name}?`,
+          q: `How many ${business.categoryName.toLowerCase()} are near ${qualifiedName}?`,
           a: `LocZ maps ${similar.length + 1} ${business.categoryName.toLowerCase()} within 10 km of ${localArea}${
             nearestNeighbour
               ? `. The closest other one is ${nearestNeighbour.name}, about ${formatDistance(nearestNeighbour.distanceMeters as number, t)} away`
@@ -624,14 +652,14 @@ export default async function BusinessPage({ params }: { params: Promise<{ slug:
         : null,
     business.primaryPhone
       ? {
-          q: p.faqPhoneQ.replace('{name}', business.name),
+          q: p.faqPhoneQ.replace('{name}', shortName),
           a: p.faqPhoneA
             .replace('{name}', business.name)
             .replace('{phone}', formatPhone(business.primaryPhone)),
         }
       : null,
     {
-      q: p.faqWhereQ.replace('{name}', business.name),
+      q: p.faqWhereQ.replace('{name}', shortName),
       a: p.faqWhereA.replace('{name}', business.name).replace('{place}', postalAddress(business)),
     },
     business.landmark
@@ -648,13 +676,13 @@ export default async function BusinessPage({ params }: { params: Promise<{ slug:
       : null,
     business.hours.length
       ? {
-          q: p.faqHoursQ.replace('{name}', business.name),
+          q: p.faqHoursQ.replace('{name}', shortName),
           a: `${business.name} is currently ${openState.label.toLowerCase()}. Check the detailed weekly schedule on this page for exact operating hours.`,
         }
       : null,
     !business.isPublicService && waNumber
       ? {
-          q: p.faqWhatsappQ.replace('{name}', business.name),
+          q: p.faqWhatsappQ.replace('{name}', shortName),
           a: `Yes, you can connect directly with ${business.name} on WhatsApp for quick messages, pricing, and service queries.`,
         }
       : null,
