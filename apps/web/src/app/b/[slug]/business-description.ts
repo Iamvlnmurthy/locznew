@@ -56,6 +56,17 @@ export interface DescribeInput {
   radiusKm: number;
   seed: string;
   units: { m: string; km: string };
+  /** "a phone number", "a website", "published opening hours" -- in the page's language. */
+  channelNames: { phone: string; website: string; hours: string };
+  /**
+   * The `businessDesc` message group for this page's language.
+   *
+   * Every sentence used to be an English template literal in this file, so a Hindi page rendered
+   * Hindi chrome around English prose -- "LocZ maps 25 अस्पताल और क्लिनिक within 10.0 किमी" --
+   * which reads as broken to a person and as mixed-language to a search engine. The frames live
+   * in the message files now, numbered per family, and this is whichever set matches the page.
+   */
+  frames: Record<string, string>;
 }
 
 /**
@@ -89,9 +100,38 @@ function hash(value: string): number {
   return Math.abs(h);
 }
 
-/** Deterministic pick, so a page's wording is identical on every crawl. */
-function choose<T>(options: readonly T[], seed: string, salt: number): T {
-  return options[hash(`${seed}#${salt}`) % options.length];
+/**
+ * Every `family1`, `family2`... in the message group, in order.
+ *
+ * Numbered keys rather than an array because getMessageGroup keeps only string values. English
+ * carries more variants than Hindi and Telugu, which is deliberate -- a translated variant nobody
+ * checked is worse than one fewer wording.
+ */
+function frameSet(frames: Record<string, string>, family: string): string[] {
+  const out: string[] = [];
+  for (let i = 1; ; i += 1) {
+    const value = frames[`${family}${i}`];
+    if (!value) break;
+    out.push(value);
+  }
+  return out;
+}
+
+/** One frame from a family, chosen by the slug so the page reads the same on every crawl. */
+function frame(
+  frames: Record<string, string>,
+  family: string,
+  seed: string,
+  salt: number,
+  values: Record<string, string>,
+): string {
+  const options = frameSet(frames, family);
+  if (options.length === 0) return '';
+  const template = options[hash(`${seed}#${salt}#${family}`) % options.length];
+  return Object.entries(values).reduce(
+    (text, [key, value]) => text.split(`{${key}}`).join(value),
+    template,
+  );
 }
 
 function distance(meters: number, units: { m: string; km: string }): string {
@@ -110,6 +150,22 @@ function series(parts: string[]): string {
  * dropped into the middle of a sentence. Lower-case the first letter unless the word is a proper
  * noun already capitalised further in (ATM, WhatsApp, Aadhaar).
  */
+/**
+ * A service as a noun phrase.
+ *
+ * The category copy returns some items as verb phrases ("provides delivery", "sells biriyani"),
+ * which is fine in a list and wrong once dropped into "Most of them deal in ...". Strip the
+ * leading verb; what remains is the thing itself, which is what the sentence wants.
+ */
+function asNoun(item: string): string {
+  return item
+    .trim()
+    .replace(
+      /^(provides?|offers?|sells?|serves?|handles?|does|do|has|have|hosts?|supplies|stocks?|carries|deals? in)\s+/i,
+      '',
+    );
+}
+
 function inSentence(fragment: string): string {
   const trimmed = fragment.trim();
   if (!trimmed) return trimmed;
@@ -124,7 +180,7 @@ function inSentence(fragment: string): string {
  */
 export function describeBusiness(input: DescribeInput): string[] {
   const copy = CATEGORY_COPY[input.categorySlug];
-  const { seed, units, neighbours } = input;
+  const { seed, units, neighbours, frames } = input;
   const paragraphs: string[] = [];
 
   // Which version of this page this business gets -- see content-matrix.ts. The axes that matter
@@ -145,122 +201,61 @@ export function describeBusiness(input: DescribeInput): string[] {
     .map(inSentence);
   opening.push(
     tags.length > 0
-      ? choose(
-          [
-            `${input.name} is listed in ${input.area} under ${series(tags)}.`,
-            `On LocZ, ${input.name} is recorded at ${input.area} as ${series(tags)}.`,
-            `${input.name} appears under ${series(tags)}, at ${input.area}.`,
-            `At ${input.area}, ${input.name} is catalogued as ${series(tags)}.`,
-            `${input.name} carries the tags ${series(tags)} and is placed at ${input.area}.`,
-            `The record for ${input.name} sits at ${input.area}, filed under ${series(tags)}.`,
-            `Filed under ${series(tags)}, ${input.name} is located at ${input.area}.`,
-            `${input.name}, at ${input.area}, is indexed as ${series(tags)}.`,
-          ],
-          seed,
-          1,
-        )
-      : choose(
-          [
-            `${input.name} is listed at ${input.area}, ${input.cityName}.`,
-            `${input.name} sits at ${input.area} in ${input.cityName}.`,
-            `The address on record for ${input.name} is ${input.area}, ${input.cityName}.`,
-            `In ${input.cityName}, ${input.name} is placed at ${input.area}.`,
-            `${input.name} is recorded at ${input.area}, ${input.cityName}.`,
-            `LocZ holds ${input.name} at ${input.area} in ${input.cityName}.`,
-          ],
-          seed,
-          1,
-        ),
+      ? frame(frames, 'listed', seed, 1, {
+          name: input.name,
+          area: input.area,
+          tags: series(tags),
+        })
+      : frame(frames, 'listedPlain', seed, 1, {
+          name: input.name,
+          area: input.area,
+          city: input.cityName,
+        }),
   );
-  paragraphs.push(opening.join(' '));
+  paragraphs.push(opening.join(' ').trim());
 
-  // 2. The neighbourhood — measured, and different on every page.
+  // 2. The neighbourhood -- measured, and different on every page.
   const measured = neighbours.filter(
     (n) => typeof n.distanceMeters === 'number' && (n.distanceMeters as number) > 0,
   );
   if (measured.length > 0) {
+    const [innerRing, outerRing] = m.rings;
     const around: string[] = [
-      choose(
-        [
-          `LocZ maps ${measured.length + 1} ${input.categoryName.toLowerCase()} within ${distance(input.radiusKm * 1000, units)} of here.`,
-          `Counting this one, ${measured.length + 1} ${input.categoryName.toLowerCase()} are recorded within ${distance(input.radiusKm * 1000, units)}.`,
-          `There are ${measured.length + 1} ${input.categoryName.toLowerCase()} on LocZ inside ${distance(input.radiusKm * 1000, units)} of this address.`,
-          `Within ${distance(input.radiusKm * 1000, units)} of this spot LocZ lists ${measured.length + 1} ${input.categoryName.toLowerCase()}.`,
-          `${measured.length + 1} ${input.categoryName.toLowerCase()} appear on LocZ inside a ${distance(input.radiusKm * 1000, units)} radius.`,
-          `Search ${distance(input.radiusKm * 1000, units)} around this address and LocZ shows ${measured.length + 1} ${input.categoryName.toLowerCase()}.`,
-          `This is one of ${measured.length + 1} ${input.categoryName.toLowerCase()} LocZ holds within ${distance(input.radiusKm * 1000, units)}.`,
-          `LocZ has ${measured.length + 1} ${input.categoryName.toLowerCase()} on record inside ${distance(input.radiusKm * 1000, units)} of here.`,
-        ],
-        seed,
-        2,
-      ),
+      frame(frames, 'count', seed, 2, {
+        total: String(measured.length + 1),
+        category: input.categoryName.toLowerCase(),
+        radius: distance(input.radiusKm * 1000, units),
+      }),
     ];
     // Only claimed when both rings hold something and they differ. Announcing "0 within 500 m"
     // is true but reads as a fault, and repeats verbatim across every sparsely-covered page.
-    const [innerRing, outerRing] = m.rings;
     const near = measured.filter((n) => (n.distanceMeters as number) <= innerRing).length;
     const mid = measured.filter((n) => (n.distanceMeters as number) <= outerRing).length;
+    const rings = {
+      near: String(near),
+      mid: String(mid),
+      nearRadius: distance(innerRing, units),
+      midRadius: distance(outerRing, units),
+    };
     if (near > 0 && mid > near) {
-      around.push(
-        choose(
-          [
-            `${near} fall within ${distance(innerRing, units)}, ${mid} within ${distance(outerRing, units)}.`,
-            `Inside ${distance(innerRing, units)} there are ${near}; by ${distance(outerRing, units)} the count is ${mid}.`,
-            `${near} of them sit inside ${distance(innerRing, units)}, rising to ${mid} at ${distance(outerRing, units)}.`,
-            `Walk ${distance(innerRing, units)} and you pass ${near}; stretch to ${distance(outerRing, units)} and it is ${mid}.`,
-            `Close in, ${near} are within ${distance(innerRing, units)}; ${mid} within ${distance(outerRing, units)}.`,
-            `The nearest ${distance(innerRing, units)} holds ${near}, and ${distance(outerRing, units)} holds ${mid}.`,
-          ],
-          seed,
-          3,
-        ),
-      );
+      around.push(frame(frames, 'density', seed, 3, rings));
+    } else if (mid === 1) {
+      // "Within 1 km there are 1" is the kind of seam that tells a reader a machine wrote this.
+      around.push(frame(frames, 'densityOne', seed, 3, rings));
     } else if (mid > 0) {
-      // "Within 1 km there are 1" is the kind of seam that tells a reader a machine wrote this,
-      // and one business inside the ring is common enough to be worth the agreement.
-      around.push(
-        mid === 1
-          ? choose(
-              [
-                `One of them is within ${distance(outerRing, units)}.`,
-                `Just one sits inside ${distance(outerRing, units)}.`,
-                `Only one other is inside ${distance(outerRing, units)}.`,
-                `A single one falls within ${distance(outerRing, units)}.`,
-                `Within ${distance(outerRing, units)} there is one other.`,
-              ],
-              seed,
-              3,
-            )
-          : choose(
-              [
-                `${mid} of them are within ${distance(outerRing, units)}.`,
-                `Within ${distance(outerRing, units)} there are ${mid}.`,
-                `${mid} sit inside ${distance(outerRing, units)} of here.`,
-                `That count is ${mid} within ${distance(outerRing, units)}.`,
-                `Inside ${distance(outerRing, units)} the number is ${mid}.`,
-              ],
-              seed,
-              3,
-            ),
-      );
+      around.push(frame(frames, 'densityMany', seed, 3, rings));
     }
     const closest = selectNeighbours(measured, m.pick, 3);
+    // "The nearest are" is only true when the nearest are what was selected; every other window
+    // says so plainly instead.
     around.push(
-      choose(
-        [
-          `${m.pick === 'nearest' ? 'The nearest are' : 'Among them are'} ${series(closest.map((n) => `${n.name} (${distance(n.distanceMeters as number, units)})`))}.`,
-          `${m.pick === 'nearest' ? 'Closest by distance' : 'Also in range'}: ${series(closest.map((n) => `${n.name} at ${distance(n.distanceMeters as number, units)}`))}.`,
-          `Nearby, in order: ${series(closest.map((n) => `${n.name} at ${distance(n.distanceMeters as number, units)}`))}.`,
-          `A few of them: ${series(closest.map((n) => `${n.name} (${distance(n.distanceMeters as number, units)})`))}.`,
-          `Working outwards, ${series(closest.map((n) => `${n.name} at ${distance(n.distanceMeters as number, units)}`))}.`,
-          `${series(closest.map((n) => `${n.name} (${distance(n.distanceMeters as number, units)})`))} are among them.`,
-          `In the surrounding streets: ${series(closest.map((n) => `${n.name} (${distance(n.distanceMeters as number, units)})`))}.`,
-        ],
-        seed,
-        4,
-      ),
+      frame(frames, m.pick === 'nearest' ? 'nearest' : 'among', seed, 4, {
+        list: series(
+          closest.map((n) => `${n.name} (${distance(n.distanceMeters as number, units)})`),
+        ),
+      }),
     );
-    paragraphs.push(around.join(' '));
+    paragraphs.push(around.filter(Boolean).join(' '));
   }
 
   // 3. What this trade typically provides, and how to reach this one.
@@ -271,52 +266,27 @@ export function describeBusiness(input: DescribeInput): string[] {
     const svc = copy.services;
     const start = hash(`${seed}#5`) % svc.length;
     const picked = Array.from(
-      new Set([0, 1, 2, 3].map((i) => inSentence(svc[(start + i) % svc.length]))),
+      new Set([0, 1, 2, 3].map((i) => inSentence(asNoun(svc[(start + i) % svc.length])))),
     );
-    practical.push(
-      choose(
-        [
-          `Places of this kind usually handle ${series(picked)}.`,
-          `Expect ${series(picked)} from this kind of establishment.`,
-          `Typically on offer here: ${series(picked)}.`,
-          `A place like this generally covers ${series(picked)}.`,
-          `Most of them deal in ${series(picked)}.`,
-          `The usual list runs to ${series(picked)}.`,
-        ],
-        seed,
-        6,
-      ),
-    );
+    practical.push(frame(frames, 'services', seed, 6, { picked: series(picked) }));
   }
   const channels: string[] = [];
-  if (input.hasPhone) channels.push('a phone number');
-  if (input.hasWebsite) channels.push('a website');
-  if (input.hasHours) channels.push('published opening hours');
-  if (channels.length && m.channels) practical.push(`This listing carries ${series(channels)}.`);
-  if (copy?.practical && usePractical) practical.push(copy.practical);
-  if (practical.length) paragraphs.push(practical.join(' '));
-
-  // 4. Choosing between them — only worth saying when there is a choice to make.
-  if ((input.pincode && m.pincode) || (copy?.choosing && useChoosing && measured.length > 0)) {
-    const closing: string[] = [];
-    if (copy?.choosing && useChoosing && measured.length > 0) closing.push(copy.choosing);
-    if (input.pincode && m.pincode) {
-      closing.push(
-        choose(
-          [
-            `The address falls under pincode ${input.pincode}.`,
-            `Postal code here is ${input.pincode}.`,
-            `This block comes under pincode ${input.pincode}.`,
-            `Post reaches this address on ${input.pincode}.`,
-            `The pincode for the area is ${input.pincode}.`,
-          ],
-          seed,
-          8,
-        ),
-      );
-    }
-    paragraphs.push(closing.join(' '));
+  if (input.hasPhone) channels.push(input.channelNames.phone);
+  if (input.hasWebsite) channels.push(input.channelNames.website);
+  if (input.hasHours) channels.push(input.channelNames.hours);
+  if (channels.length && m.channels) {
+    practical.push(frame(frames, 'channels', seed, 7, { channels: series(channels) }));
   }
+  if (copy?.practical && usePractical) practical.push(copy.practical);
+  if (practical.length) paragraphs.push(practical.filter(Boolean).join(' '));
+
+  // 4. Choosing between them -- only worth saying when there is a choice to make.
+  const closing: string[] = [];
+  if (copy?.choosing && useChoosing && measured.length > 0) closing.push(copy.choosing);
+  if (input.pincode && m.pincode) {
+    closing.push(frame(frames, 'pincode', seed, 8, { pincode: input.pincode }));
+  }
+  if (closing.length) paragraphs.push(closing.filter(Boolean).join(' '));
 
   const kept = paragraphs.filter((p) => p.trim().length > 0);
   // Some pages open on the neighbourhood instead of the listing line. Two pages that share their

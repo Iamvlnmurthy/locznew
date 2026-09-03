@@ -957,7 +957,10 @@
     "quickContactActions": "त्वरित संपर्क विकल्प",
     "onrolProgram": "Onrol शिक्षण कार्यक्रम",
     "onrolOpen": "Onrol AI Generalist कार्यक्रम देखें (नए टैब में खुलेगा)",
-    "onrolAlt": "Onrol AI Execution School — AI Generalist कार्यक्रम के साथ अपना AI करियर बनाएँ"
+    "onrolAlt": "Onrol AI Execution School — AI Generalist कार्यक्रम के साथ अपना AI करियर बनाएँ",
+    "channelPhone": "फ़ोन नंबर",
+    "channelWebsite": "वेबसाइट",
+    "channelHours": "खुलने का समय"
   },
   "dashboardUi": {
     "aboutYou": "आपके बारे में",
@@ -2089,5 +2092,41 @@
     "pin1": "यह पता पिनकोड {pincode} के अंतर्गत आता है।",
     "pin2": "इस क्षेत्र का डाक कोड {pincode} है।",
     "onlyOne": "LocZ ने {area} के पास अभी तक कोई दूसरा {category} दर्ज नहीं किया है।"
+  },
+  "businessDesc": {
+    "listed1": "{name} {area} में {tags} के अंतर्गत दर्ज है।",
+    "listed2": "LocZ पर {name} को {area} में {tags} के रूप में दर्ज किया गया है।",
+    "listed3": "{tags} के अंतर्गत {name}, {area} में स्थित है।",
+    "listed4": "{area} में {name} की श्रेणी {tags} है।",
+    "listedPlain1": "{name} {area}, {city} में दर्ज है।",
+    "listedPlain2": "{name} {city} के {area} में स्थित है।",
+    "listedPlain3": "LocZ में {name} का पता {area}, {city} है।",
+    "count1": "यहाँ से {radius} के भीतर LocZ पर {total} {category} दर्ज हैं।",
+    "count2": "इसे मिलाकर {radius} के भीतर {total} {category} दर्ज हैं।",
+    "count3": "इस पते से {radius} के दायरे में LocZ {total} {category} दिखाता है।",
+    "count4": "{radius} के भीतर LocZ के पास {total} {category} का रिकॉर्ड है।",
+    "density1": "इनमें से {near} {nearRadius} के भीतर हैं और {mid} {midRadius} के भीतर।",
+    "density2": "{nearRadius} के भीतर {near} हैं; {midRadius} तक यह संख्या {mid} हो जाती है।",
+    "density3": "पास में {near} {nearRadius} के भीतर, और {mid} {midRadius} के भीतर हैं।",
+    "densityOne1": "इनमें से एक {midRadius} के भीतर है।",
+    "densityOne2": "{midRadius} के भीतर सिर्फ़ एक और है।",
+    "densityOne3": "केवल एक ही {midRadius} के भीतर पड़ता है।",
+    "densityMany1": "इनमें से {mid} {midRadius} के भीतर हैं।",
+    "densityMany2": "{midRadius} के भीतर {mid} हैं।",
+    "densityMany3": "यहाँ से {midRadius} के भीतर {mid} स्थित हैं।",
+    "nearest1": "सबसे नज़दीक हैं {list}।",
+    "nearest2": "दूरी के अनुसार निकटतम: {list}।",
+    "nearest3": "{list} इनमें सबसे नज़दीक हैं।",
+    "nearest4": "आसपास, क्रम में: {list}।",
+    "among1": "इनमें {list} शामिल हैं।",
+    "among2": "दायरे में और भी: {list}।",
+    "among3": "आसपास की गलियों में: {list}।",
+    "services1": "इस तरह की जगहें आम तौर पर {picked} संभालती हैं।",
+    "services2": "ऐसी जगह से {picked} की उम्मीद रहती है।",
+    "services3": "यहाँ आम तौर पर {picked} मिलता है।",
+    "channels1": "इस लिस्टिंग में {channels} दर्ज है।",
+    "pincode1": "यह पता पिनकोड {pincode} के अंतर्गत आता है।",
+    "pincode2": "इस क्षेत्र का डाक कोड {pincode} है।",
+    "pincode3": "यह इलाका पिनकोड {pincode} में पड़ता है।"
   }
 }

@@ -20,8 +20,26 @@
     overflow-x: auto;
     scrollbar-width: none;
     -webkit-overflow-scrolling: touch;
-    padding: 8px 16px;
+    /* Extra right padding so the last chip clears the fade rather than sitting under it. */
+    padding: 8px 24px 8px 16px;
     scroll-snap-type: x proximity;
+
+    /* A shadow at whichever edge has more content behind it.
+     *
+     * The scrollbar is hidden, so at 390px the strip simply cut "Public Services" off and there
+     * was nothing to say it scrolled -- a clipped word reads as a layout bug, not as an
+     * affordance. The two `local` covers scroll with the content and sit over the `scroll`
+     * shadows at each extreme, so the hint appears only while there is something to scroll to,
+     * and disappears at both ends. No JavaScript, and it costs nothing when the chips fit. */
+    background:
+      linear-gradient(to right, var(--locz-surface, #fff) 30%, rgba(255, 255, 255, 0)) left center /
+        28px 100% no-repeat local,
+      linear-gradient(to left, var(--locz-surface, #fff) 30%, rgba(255, 255, 255, 0)) right center /
+        28px 100% no-repeat local,
+      radial-gradient(farthest-side at 0 50%, rgba(0, 0, 0, 0.16), rgba(0, 0, 0, 0)) left center /
+        14px 100% no-repeat scroll,
+      radial-gradient(farthest-side at 100% 50%, rgba(0, 0, 0, 0.16), rgba(0, 0, 0, 0)) right center /
+        14px 100% no-repeat scroll;
   }
   .track::-webkit-scrollbar {
     display: none;

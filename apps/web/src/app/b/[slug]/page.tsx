@@ -472,6 +472,19 @@ export async function generateMetadata({
   };
 }
 
+/**
+ * Tags fit to show a reader as specialties.
+ *
+ * Overture's keyword list mixes real service tags with the search phrases people type -- "best
+ * school in my area", "top schools near me", "24 hour hospital near me". Printed under
+ * "Specialties & Services" those read as keyword stuffing, which is what they look like to a
+ * search engine too. Keep the ones that name a thing the business does.
+ */
+function displayableTags(tags: string[]): string[] {
+  const query = /(near me|in my area|best |top rated|top \d|cheap|nearby|open now|24 ?hour.*near)/i;
+  return tags.filter((tag) => !query.test(tag));
+}
+
 export default async function BusinessPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
   const locale = await getLocale();
@@ -593,6 +606,9 @@ export default async function BusinessPage({ params }: { params: Promise<{ slug:
   // and read as a typo in a possessive ("this diagnostic labs & imaging's phone number"); the
   // word that fits every case where this applies is the one for an outlet of a chain.
   const shortName = isChainOutlet ? 'this branch' : business.name;
+  // Capitalised for the answers that open with it: "{name} is in X." became "this branch is in
+  // X." with a lowercase sentence start, which reads as a typo.
+  const shortNameSentence = isChainOutlet ? 'This branch' : business.name;
 
   // The written body of the page. Category copy (true of the trade, written once) joined to
   // measured facts about this place (counts, neighbour names, real distances) -- see
@@ -624,6 +640,12 @@ export default async function BusinessPage({ params }: { params: Promise<{ slug:
           radiusKm: 10,
           seed: business.slug,
           units: { m: t('common.m'), km: t('common.km') },
+          channelNames: {
+            phone: t('businessProfile.channelPhone'),
+            website: t('businessProfile.channelWebsite'),
+            hours: t('businessProfile.channelHours'),
+          },
+          frames: getMessageGroup(locale, 'businessDesc'),
         });
 
   const openState = currentOpenState(business.hours, p);
@@ -728,12 +750,14 @@ export default async function BusinessPage({ params }: { params: Promise<{ slug:
       : null,
     {
       q: p.faqWhereQ.replace('{name}', shortName),
-      a: p.faqWhereA.replace('{name}', shortName).replace('{place}', postalAddress(business)),
+      a: p.faqWhereA
+        .replace('{name}', shortNameSentence)
+        .replace('{place}', postalAddress(business)),
     },
     business.landmark
       ? {
           q: `What landmark is ${shortName} located near?`,
-          a: `${shortName} is situated in close proximity to ${business.landmark} in ${placeLabel}.`,
+          a: `${shortNameSentence} is situated in close proximity to ${business.landmark} in ${placeLabel}.`,
         }
       : null,
     business.pincode
@@ -745,7 +769,7 @@ export default async function BusinessPage({ params }: { params: Promise<{ slug:
     business.hours.length
       ? {
           q: p.faqHoursQ.replace('{name}', shortName),
-          a: `${shortName} is currently ${openState.label.toLowerCase()}. Check the detailed weekly schedule on this page for exact operating hours.`,
+          a: `${shortNameSentence} is currently ${openState.label.toLowerCase()}. Check the detailed weekly schedule on this page for exact operating hours.`,
         }
       : null,
     !business.isPublicService && waNumber
@@ -757,7 +781,7 @@ export default async function BusinessPage({ params }: { params: Promise<{ slug:
     !business.isPublicService && business.keywords.length > 0
       ? {
           q: `What services or products are available at ${shortName}?`,
-          a: `${shortName} in ${placeLabel} specializes in ${business.categoryName.toLowerCase()}, covering ${business.keywords.slice(0, 5).join(', ')}.`,
+          a: `${shortNameSentence} in ${placeLabel} specializes in ${business.categoryName.toLowerCase()}, covering ${business.keywords.slice(0, 5).join(', ')}.`,
         }
       : null,
     directionsUrl
@@ -1051,11 +1075,13 @@ export default async function BusinessPage({ params }: { params: Promise<{ slug:
                       {business.isPublicService ? p.publicFacilities : 'Specialties & Services:'}
                     </span>
                     <div className="business-profile-specialties__tags">
-                      {business.keywords.slice(0, 8).map((kw) => (
-                        <span key={kw} className="badge-pill">
-                          {kw}
-                        </span>
-                      ))}
+                      {displayableTags(business.keywords)
+                        .slice(0, 8)
+                        .map((kw) => (
+                          <span key={kw} className="badge-pill">
+                            {kw}
+                          </span>
+                        ))}
                     </div>
                   </div>
                 ) : null}

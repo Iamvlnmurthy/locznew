@@ -957,7 +957,10 @@
     "quickContactActions": "త్వరిత సంప్రదింపు ఎంపికలు",
     "onrolProgram": "Onrol అభ్యాస కార్యక్రమం",
     "onrolOpen": "Onrol AI Generalist కార్యక్రమాన్ని చూడండి (కొత్త ట్యాబ్‌లో తెరుచుకుంటుంది)",
-    "onrolAlt": "Onrol AI Execution School — AI Generalist కార్యక్రమంతో మీ AI వృత్తిని నిర్మించుకోండి"
+    "onrolAlt": "Onrol AI Execution School — AI Generalist కార్యక్రమంతో మీ AI వృత్తిని నిర్మించుకోండి",
+    "channelPhone": "ఫోన్ నంబర్",
+    "channelWebsite": "వెబ్‌సైట్",
+    "channelHours": "తెరిచే సమయాలు"
   },
   "dashboardUi": {
     "aboutYou": "మీ గురించి",
@@ -2089,5 +2092,41 @@
     "pin1": "ఈ చిరునామా పిన్‌కోడ్ {pincode} పరిధిలోకి వస్తుంది.",
     "pin2": "ఈ ప్రాంత పోస్టల్ కోడ్ {pincode}.",
     "onlyOne": "{area} సమీపంలో LocZ ఇంకా మరో {category} నమోదు చేయలేదు."
+  },
+  "businessDesc": {
+    "listed1": "{name} {area}లో {tags} కింద నమోదైంది.",
+    "listed2": "LocZలో {name} {area} వద్ద {tags}గా నమోదు చేయబడింది.",
+    "listed3": "{tags} కింద ఉన్న {name} {area}లో ఉంది.",
+    "listed4": "{area}లో {name} వర్గం {tags}.",
+    "listedPlain1": "{name} {area}, {city}లో నమోదైంది.",
+    "listedPlain2": "{name} {city}లోని {area}లో ఉంది.",
+    "listedPlain3": "LocZలో {name} చిరునామా {area}, {city}.",
+    "count1": "ఇక్కడి నుండి {radius} లోపల LocZలో {total} {category} నమోదై ఉన్నాయి.",
+    "count2": "దీనితో కలిపి {radius} లోపల {total} {category} నమోదై ఉన్నాయి.",
+    "count3": "ఈ చిరునామా నుండి {radius} పరిధిలో LocZ {total} {category} చూపుతుంది.",
+    "count4": "{radius} లోపల LocZ వద్ద {total} {category} రికార్డు ఉంది.",
+    "density1": "వీటిలో {near} {nearRadius} లోపల, {mid} {midRadius} లోపల ఉన్నాయి.",
+    "density2": "{nearRadius} లోపల {near} ఉన్నాయి; {midRadius} వద్ద ఈ సంఖ్య {mid}కి చేరుతుంది.",
+    "density3": "దగ్గరలో {near} {nearRadius} లోపల, {mid} {midRadius} లోపల ఉన్నాయి.",
+    "densityOne1": "వీటిలో ఒకటి {midRadius} లోపల ఉంది.",
+    "densityOne2": "{midRadius} లోపల మరొకటి మాత్రమే ఉంది.",
+    "densityOne3": "ఒక్కటి మాత్రమే {midRadius} లోపల ఉంది.",
+    "densityMany1": "వీటిలో {mid} {midRadius} లోపల ఉన్నాయి.",
+    "densityMany2": "{midRadius} లోపల {mid} ఉన్నాయి.",
+    "densityMany3": "ఇక్కడి నుండి {midRadius} లోపల {mid} ఉన్నాయి.",
+    "nearest1": "అత్యంత సమీపంలో ఉన్నవి {list}.",
+    "nearest2": "దూరం ప్రకారం సమీపమైనవి: {list}.",
+    "nearest3": "వీటిలో {list} అత్యంత సమీపమైనవి.",
+    "nearest4": "చుట్టుపక్కల, వరుసలో: {list}.",
+    "among1": "వీటిలో {list} ఉన్నాయి.",
+    "among2": "పరిధిలో మరికొన్ని: {list}.",
+    "among3": "చుట్టుపక్కల వీధుల్లో: {list}.",
+    "services1": "ఇలాంటి ప్రదేశాలు సాధారణంగా {picked} నిర్వహిస్తాయి.",
+    "services2": "ఇలాంటి చోట {picked} ఆశించవచ్చు.",
+    "services3": "ఇక్కడ సాధారణంగా {picked} లభిస్తుంది.",
+    "channels1": "ఈ లిస్టింగ్‌లో {channels} ఉంది.",
+    "pincode1": "ఈ చిరునామా పిన్‌కోడ్ {pincode} పరిధిలోకి వస్తుంది.",
+    "pincode2": "ఈ ప్రాంత పోస్టల్ కోడ్ {pincode}.",
+    "pincode3": "ఈ ప్రాంతం పిన్‌కోడ్ {pincode}లో ఉంది."
   }
 }
