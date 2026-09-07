@@ -1,6 +1,17 @@
 import type { MetadataRoute } from 'next';
 import { SITE_URL } from '@/lib/api';
 
+// Force this route to be evaluated at runtime, not baked in once at build time.
+//
+// This route has no dynamic API usage (no cookies/headers/live fetch), which made Next treat it
+// as fully static and, at least once, reuse a stale compiled output across a later rebuild — the
+// live site served "Host: http://localhost:3000" and every "Sitemap:" line pointing at
+// localhost, verified straight from origin (bypassing Cloudflare), even though SITE_URL was
+// correctly set and sitemap.xml — which fetches live data and is therefore dynamic — was
+// correct in the exact same build. Sitemap: lines that 404 make Google stop trusting this file
+// as a sitemap source, which is likely why GSC flagged robots.txt with a critical error.
+export const dynamic = 'force-dynamic';
+
 // Personal and transactional paths have no business in an index, and crawling them wastes crawl
 // budget that belongs to listing and city pages.
 const DISALLOW = ['/dashboard', '/chats', '/signin', '/post', '/search', '/api/', '/location'];
