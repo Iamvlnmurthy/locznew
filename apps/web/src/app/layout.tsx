@@ -200,6 +200,10 @@ export default async function RootLayout({ children }: { children: React.ReactNo
               sameAs: [
                 'https://www.instagram.com/loczapp/',
                 'https://www.linkedin.com/company/locz/',
+                // Google Business Profile — cross-links the site to the verified GBP entity so
+                // Google can confirm they're the same business, which is the actual mechanism
+                // behind GBP helping brand-search trust (not the listing existing on its own).
+                'https://share.google/xanYi3krshvfdITLD',
               ],
             }).replace(/</g, '\\u003c'),
           }}
