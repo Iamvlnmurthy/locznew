@@ -63,6 +63,11 @@ describe('a business whose URL has changed', () => {
       business,
       businessSlugAlias: { findUnique: jest.fn().mockResolvedValue(alias) },
       savedBusiness: { findMany: jest.fn().mockResolvedValue([]) },
+      // getBySlug looks up business_outlet_rank via a raw query (see the selective-indexing
+      // work in businesses.service.ts). Real code treats a lookup failure as "not an outlet"
+      // via .catch(() => []), but a mock missing the method entirely throws synchronously on
+      // the tagged-template call itself, before that .catch ever runs.
+      $queryRaw: jest.fn().mockResolvedValue([]),
     };
     const service = new BusinessesService(
       prisma as never,
