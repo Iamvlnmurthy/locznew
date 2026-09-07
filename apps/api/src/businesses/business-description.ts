@@ -264,36 +264,36 @@ export function describeBusiness(
     const street = business.addressLine?.trim();
     if (street && place && landmark) {
       const patterns = [
-        `${name} is a ${business.categoryName.toLowerCase()} located on ${street} in ${place}, situated near ${landmark}.`,
-        `Situated on ${street} in ${place} near ${landmark}, ${name} operates as a ${business.categoryName.toLowerCase()}.`,
-        `Operating from ${street} in ${place}, ${name} is a local ${business.categoryName.toLowerCase()} in the vicinity of ${landmark}.`,
+        `${name} is listed under ${business.categoryName.toLowerCase()}, located on ${street} in ${place}, situated near ${landmark}.`,
+        `Situated on ${street} in ${place} near ${landmark}, ${name} is listed under ${business.categoryName.toLowerCase()}.`,
+        `Operating from ${street} in ${place}, ${name} is a local listing under ${business.categoryName.toLowerCase()}, in the vicinity of ${landmark}.`,
       ];
       sentences.push(patterns[h % patterns.length]!);
     } else if (street && place) {
       const patterns = [
-        `${name} is a ${business.categoryName.toLowerCase()} situated on ${street} in ${place}.`,
-        `Located on ${street} in ${place}, ${name} provides ${business.categoryName.toLowerCase()} services.`,
-        `Operating from ${street} in ${place}, ${name} serves the local area as a ${business.categoryName.toLowerCase()}.`,
+        `${name} is listed under ${business.categoryName.toLowerCase()}, situated on ${street} in ${place}.`,
+        `Located on ${street} in ${place}, ${name} is listed under ${business.categoryName.toLowerCase()}.`,
+        `Operating from ${street} in ${place}, ${name} serves the local area, listed under ${business.categoryName.toLowerCase()}.`,
       ];
       sentences.push(patterns[h % patterns.length]!);
     } else if (place && landmark) {
       const patterns = [
-        `${name} is a ${business.categoryName.toLowerCase()} in ${place}, located in the vicinity of ${landmark}.`,
-        `Located near ${landmark} in ${place}, ${name} operates as a ${business.categoryName.toLowerCase()}.`,
-        `Situated close to ${landmark} in ${place}, ${name} serves patrons as a ${business.categoryName.toLowerCase()}.`,
-        `Based in ${place} near ${landmark}, ${name} provides dedicated ${business.categoryName.toLowerCase()} solutions.`,
+        `${name} is listed under ${business.categoryName.toLowerCase()} in ${place}, located in the vicinity of ${landmark}.`,
+        `Located near ${landmark} in ${place}, ${name} is listed under ${business.categoryName.toLowerCase()}.`,
+        `Situated close to ${landmark} in ${place}, ${name} serves patrons, listed under ${business.categoryName.toLowerCase()}.`,
+        `Based in ${place} near ${landmark}, ${name} is listed under ${business.categoryName.toLowerCase()}.`,
       ];
       sentences.push(patterns[h % patterns.length]!);
     } else if (place) {
       const patterns = [
-        `${name} is a ${business.categoryName.toLowerCase()} based in ${place}.`,
-        `Operating in ${place}, ${name} provides ${business.categoryName.toLowerCase()} services.`,
-        `Serving the ${place} community, ${name} is an established ${business.categoryName.toLowerCase()}.`,
-        `Based out of ${place}, ${name} offers ${business.categoryName.toLowerCase()} solutions to local clients.`,
+        `${name} is listed under ${business.categoryName.toLowerCase()}, based in ${place}.`,
+        `Operating in ${place}, ${name} is listed under ${business.categoryName.toLowerCase()}.`,
+        `Serving the ${place} community, ${name} is an established local listing under ${business.categoryName.toLowerCase()}.`,
+        `Based out of ${place}, ${name} is listed under ${business.categoryName.toLowerCase()}, serving local clients.`,
       ];
       sentences.push(patterns[h % patterns.length]!);
     } else {
-      sentences.push(`${name} is a ${business.categoryName.toLowerCase()}.`);
+      sentences.push(`${name} is listed under ${business.categoryName.toLowerCase()}.`);
     }
   } else {
     if (place) {

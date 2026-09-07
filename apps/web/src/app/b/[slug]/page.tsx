@@ -310,7 +310,7 @@ export async function generateMetadata({
   const title = `${business.name} — ${placed}`;
   const description =
     business.description?.replace(/\s+/g, ' ').slice(0, 155) ??
-    `${business.name} is listed as a ${catLower} in ${place}. Find available contact details, address, directions and opening hours on LocZ.`;
+    `${business.name} is listed under ${catLower} in ${place}. Find available contact details, address, directions and opening hours on LocZ.`;
   const brandLogo = business.logoUrl ?? publicBrandLogo(business.name, business.publicBrandKey);
 
   // Factual entity and place phrases only. LocZ has no genuine ratings system yet, so metadata
