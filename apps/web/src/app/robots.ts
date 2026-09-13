@@ -16,10 +16,24 @@ export const dynamic = 'force-dynamic';
 // budget that belongs to listing and city pages.
 const DISALLOW = ['/dashboard', '/chats', '/signin', '/post', '/search', '/api/', '/location'];
 
-// LocZ is a public local directory: being cited as the local source of truth by answer/generative
-// engines is a goal, not a threat. The major AI crawlers are explicitly welcomed on the same public
-// surface as search engines (they honour `*` already; naming them documents the intent and keeps
-// the private-route rules applied to them too).
+// LocZ is a public local directory: being cited as the local source of truth by answer and
+// generative engines is a goal, not a threat. But it stopped being free.
+//
+// On 13 September the box sat at 99% CPU across four cores with the disk at 81%, and the bot
+// log explained both:
+//
+//     GPTBot     236        Googlebot    19
+//     Amazonbot  126        bingbot       2
+//     ClaudeBot  104
+//
+// AI crawlers were roughly 95% of bot traffic — twelve times Googlebot. Every request renders a
+// page, calls the API, queries Postgres and writes a cache entry, which is also how
+// .next/cache/fetch-cache reached 30 GB.
+//
+// So the welcome is now selective, on one test: can this crawler send a person back?
+//
+// These can. Their engines cite sources and carry a link, which is the only route LocZ has into
+// an AI answer. They stay, with a crawl delay — the cost is latency for them, not capacity for us.
 const AI_CRAWLERS = [
   'GPTBot',
   'OAI-SearchBot',
@@ -29,14 +43,23 @@ const AI_CRAWLERS = [
   'Claude-Web',
   'Google-Extended',
   'Applebot-Extended',
-  'CCBot',
 ];
+
+// These cannot. Amazonbot was the second-heaviest crawler on the site and fronts no product that
+// cites a source; CCBot builds training corpora that no reader ever traverses. Declining them
+// costs LocZ no reach at all.
+const NO_RETURN_CRAWLERS = ['Amazonbot', 'CCBot'];
+
+// Seconds between requests for the crawlers we keep. Honoured by most, ignored by Googlebot —
+// which is fine, because Googlebot is 19 requests and the one that sends visitors.
+const AI_CRAWL_DELAY = 5;
 
 export default function robots(): MetadataRoute.Robots {
   return {
     rules: [
       { userAgent: '*', allow: '/', disallow: DISALLOW },
-      { userAgent: AI_CRAWLERS, allow: '/', disallow: DISALLOW },
+      { userAgent: AI_CRAWLERS, allow: '/', disallow: DISALLOW, crawlDelay: AI_CRAWL_DELAY },
+      { userAgent: NO_RETURN_CRAWLERS, disallow: '/' },
     ],
     sitemap: [
       `${SITE_URL}/sitemap.xml`,
