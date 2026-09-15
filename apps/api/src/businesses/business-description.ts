@@ -78,6 +78,8 @@ export type CategoryArchetype =
   | 'BOOKS_STATIONERY'
   | 'HOSPITALITY_HOTEL'
   | 'PROFESSIONAL_SERVICES'
+  | 'RELIGIOUS_HERITAGE'
+  | 'BANKING_FINANCE'
   | 'GENERAL_COMMERCE';
 
 export function detectCategoryArchetype(category: string): CategoryArchetype {
@@ -185,6 +187,24 @@ export function detectCategoryArchetype(category: string): CategoryArchetype {
     cat.includes('chartered')
   ) {
     return 'PROFESSIONAL_SERVICES';
+  }
+  if (
+    cat.includes('temple') ||
+    cat.includes('mandir') ||
+    cat.includes('shrine') ||
+    cat.includes('church') ||
+    cat.includes('mosque') ||
+    cat.includes('gurudwara') ||
+    cat.includes('historic') ||
+    cat.includes('heritage') ||
+    cat.includes('monument') ||
+    cat.includes('fort') ||
+    cat.includes('palace')
+  ) {
+    return 'RELIGIOUS_HERITAGE';
+  }
+  if (cat.includes('bank') || cat.includes('atm') || cat.includes('credit society')) {
+    return 'BANKING_FINANCE';
   }
   return 'GENERAL_COMMERCE';
 }
@@ -385,10 +405,41 @@ export function describeBusiness(
         `Providing trusted local products, supplies, and services specializing in ${termsList}.`,
         `People look here for ${termsList}.`,
       ],
+      RELIGIOUS_HERITAGE: [
+        `Listed as a local point of interest, associated with ${termsList}.`,
+        `Included in the area's religious and heritage listings, known locally for ${termsList}.`,
+        `Recorded here for visitors researching ${termsList} in the area.`,
+      ],
+      BANKING_FINANCE: [
+        `Part of the area's banking and financial infrastructure, covering ${termsList}.`,
+        `Listed among local banking access points, associated with ${termsList}.`,
+        `Included here for residents locating ${termsList} nearby.`,
+      ],
     };
 
     const pool = servicePhrases[archetype] || servicePhrases.GENERAL_COMMERCE;
     sentences.push(pool[(h >> 2) % pool.length]!);
+  } else if (archetype === 'RELIGIOUS_HERITAGE' || archetype === 'BANKING_FINANCE') {
+    // These two archetypes rarely carry search keywords, so without a Slot 2 fallback they
+    // fell through to nothing — every temple, historic site or bank branch in the same city
+    // differed only by which of Slot 1's ~4 hash-picked sentences it happened to land on.
+    // A directory-listing fact (not a claim about the specific place) gives each page a second
+    // point of difference without inventing anything about the business.
+    const fallback: Record<'RELIGIOUS_HERITAGE' | 'BANKING_FINANCE', string[]> = {
+      RELIGIOUS_HERITAGE: [
+        "Included in LocZ's local directory of religious and heritage sites, for visitors planning a trip.",
+        'Listed here as a place of local significance, alongside other nearby sites of interest.',
+        'One of the religious and heritage locations catalogued for this area on LocZ.',
+        'Recorded here to help visitors find directions and nearby facilities.',
+      ],
+      BANKING_FINANCE: [
+        "Listed as part of LocZ's local directory of banking and financial access points.",
+        'One of the banking and financial listings catalogued for this area on LocZ.',
+        'Included here to help residents locate nearby banking services and ATMs.',
+        'Recorded as a local financial services point, alongside other nearby branches.',
+      ],
+    };
+    sentences.push(fallback[archetype][(h >> 2) % fallback[archetype].length]!);
   }
 
   return { text: sentences.join(' '), generated: true };
