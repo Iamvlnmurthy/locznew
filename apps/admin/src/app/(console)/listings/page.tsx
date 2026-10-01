@@ -123,7 +123,9 @@ export default async function ListingsPage({
               {result.items.map((listing) => (
                 <tr key={listing.id}>
                   <td style={{ maxWidth: 320, overflowWrap: 'anywhere' }}>
-                    {listing.title}
+                    <a href={`https://locz.in/ad/${listing.slug}`} target="_blank" rel="noreferrer">
+                      {listing.title}
+                    </a>
                     {listing.isFeatured ? (
                       <span className="badge" style={{ marginLeft: 8 }}>
                         Featured
