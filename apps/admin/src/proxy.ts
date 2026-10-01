@@ -17,7 +17,15 @@ const DEDUPLICATE = ['origin', 'x-forwarded-host', 'x-forwarded-proto'];
 const ACCESS_COOKIE = 'locz_admin_access';
 const REFRESH_COOKIE = 'locz_admin_refresh';
 const USER_COOKIE = 'locz_admin_user';
-const API_BASE = process.env.NEXT_PUBLIC_ADMIN_API_BASE_URL ?? 'http://localhost:4000/api/v1';
+// This middleware runs server-side on every request (see `config.matcher` below), so — same as
+// lib/api.ts — it should never leave the box. The public NEXT_PUBLIC_ADMIN_API_BASE_URL sends it
+// out through Cloudflare, where Node's fetch hangs ~49s before succeeding; since the access token
+// expires every 15 minutes, this refresh path fires often enough that it read as "the sidebar is
+// slow" rather than "sign-in is slow" (the same underlying bug, just hit from a different call site).
+const API_BASE =
+  process.env.INTERNAL_API_BASE_URL ??
+  process.env.NEXT_PUBLIC_ADMIN_API_BASE_URL ??
+  'http://localhost:4000/api/v1';
 
 function repairHeaders(request: NextRequest): { headers: Headers; repaired: boolean } {
   const headers = new Headers(request.headers);
