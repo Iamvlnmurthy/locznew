@@ -3,7 +3,17 @@ import { LoczApiError, LoczClient } from '@locz/api-client';
 import type { ApiResponse } from '@locz/shared-types';
 import { getAccessToken } from './session';
 
-const API_BASE = process.env.NEXT_PUBLIC_ADMIN_API_BASE_URL ?? 'http://localhost:4000/api/v1';
+// Every call in this file runs server-side (the file is `server-only`), so it should never leave
+// the box: `ecosystem.config.cjs` already provisions INTERNAL_API_BASE_URL as a loopback URL for
+// exactly this. Falling through to the public NEXT_PUBLIC_ADMIN_API_BASE_URL sent every admin
+// request out through Cloudflare's dual-stack (IPv4+IPv6) edge, which Node's own `fetch` hangs
+// against for ~49s before succeeding (confirmed directly; `curl` on the same box doesn't hit the
+// same hang) -- long enough that sign-in looked permanently stuck, both for the Google button and
+// email/password, since both paths share this helper.
+const API_BASE =
+  process.env.INTERNAL_API_BASE_URL ??
+  process.env.NEXT_PUBLIC_ADMIN_API_BASE_URL ??
+  'http://localhost:4000/api/v1';
 
 /**
  * The shared SDK, configured for the console.
