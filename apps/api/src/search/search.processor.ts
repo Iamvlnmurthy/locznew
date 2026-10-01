@@ -9,6 +9,7 @@ import {
   QUEUE_SEARCH,
   RemoveListingJob,
 } from '../queue/queue.constants';
+import { SitemapNotifyService } from '../seo/sitemap-notify.service';
 import { SearchService } from './search.service';
 
 /**
@@ -20,7 +21,10 @@ import { SearchService } from './search.service';
 export class SearchProcessor extends WorkerHost {
   private readonly logger = new Logger(SearchProcessor.name);
 
-  constructor(private readonly search: SearchService) {
+  constructor(
+    private readonly search: SearchService,
+    private readonly sitemapNotify: SitemapNotifyService,
+  ) {
     super();
   }
 
@@ -29,6 +33,10 @@ export class SearchProcessor extends WorkerHost {
       case JOB_INDEX_LISTING: {
         const { listingId } = job.data as IndexListingJob;
         const outcome = await this.search.indexListing(listingId);
+        // 'removed' also happens for a listing that was never public (draft, pending review),
+        // not only a takedown -- only a genuine publish should nudge Google to re-read the
+        // ad sitemap sooner.
+        if (outcome === 'indexed') this.sitemapNotify.notify('sitemap-listings.xml');
         return { listingId, outcome };
       }
 

@@ -38,12 +38,14 @@ import { PermissionsGuard } from './rbac/permissions.guard';
 import { RbacModule } from './rbac/rbac.module';
 import { RedisModule } from './redis/redis.module';
 import { UsersModule } from './users/users.module';
+import { SeoModule } from './seo/seo.module';
 
 @Module({
   imports: [
     AppConfigModule,
     PrismaModule,
     RedisModule,
+    SeoModule,
     AuditModule,
     RbacModule,
     AuthModule,

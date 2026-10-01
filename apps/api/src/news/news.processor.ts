@@ -2,6 +2,7 @@ import { Processor, WorkerHost } from '@nestjs/bullmq';
 import { Logger } from '@nestjs/common';
 import { Job } from 'bullmq';
 import { JOB_NEWS_INGEST, JOB_NEWS_RETENTION, QUEUE_NEWS } from '../queue/queue.constants';
+import { SitemapNotifyService } from '../seo/sitemap-notify.service';
 import { NewsIngestService } from './ingest/news-ingest.service';
 import { NewsRetentionService } from './retention/news-retention.service';
 import { NewsSourceService } from './sources/news-source.service';
@@ -19,6 +20,7 @@ export class NewsProcessor extends WorkerHost {
     private readonly sources: NewsSourceService,
     private readonly ingest: NewsIngestService,
     private readonly retention: NewsRetentionService,
+    private readonly sitemapNotify: SitemapNotifyService,
   ) {
     super();
   }
@@ -38,6 +40,7 @@ export class NewsProcessor extends WorkerHost {
       created += r.created;
     }
     this.logger.log(`News ingest tick: ${feeds.length} feeds, ${created} new events`);
+    if (created > 0) this.sitemapNotify.notify('news-sitemap.xml');
     return { feeds: feeds.length, created };
   }
 }

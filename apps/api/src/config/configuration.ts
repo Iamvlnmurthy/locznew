@@ -50,6 +50,11 @@ export const envSchema = z.object({
   GROQ_API_KEY: z.string().optional(),
   CEREBRAS_API_KEY: z.string().optional(),
   NEWS_OLLAMA_URL: z.string().optional(), // local Ollama (dev machine only), e.g. http://localhost:11434
+
+  // Optional: a Search Console service-account key (the JSON file's contents, as one line),
+  // used only to ask Google to re-read a sitemap sooner after new content publishes. With this
+  // unset, that ping is a no-op and the site relies on Google's own schedule, same as before.
+  GOOGLE_SEARCH_CONSOLE_KEY: z.string().optional(),
   // News older than this is deleted daily so the tables don't grow forever. Wider than the feed's
   // 7-day window on purpose, for margin (late viewers, crawled slugs).
   NEWS_RETENTION_DAYS: z.coerce.number().int().positive().max(365).default(14),
