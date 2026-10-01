@@ -23,6 +23,7 @@ export function NavLink({
       href={href}
       className={`sidebar__link${isActive ? ' sidebar__link--active' : ''}`}
       aria-current={isActive ? 'page' : undefined}
+      onClick={(event) => event.currentTarget.closest('details')?.removeAttribute('open')}
     >
       <span className="sidebar__link-content">
         <ConsoleIcon name={icon} />

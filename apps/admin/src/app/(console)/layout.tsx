@@ -4,6 +4,7 @@ import { logoutAction } from '../login/actions';
 import { getAdminQueueCopy } from '@/lib/queue-copy';
 import { NavLink } from './nav-link';
 import type { ConsoleIconName } from './console-icon';
+import { WorkspaceHeader } from './workspace-header';
 
 const NAV: Array<{
   href: string;
@@ -65,14 +66,31 @@ export default async function ConsoleLayout({ children }: { children: React.Reac
 
   const navigation = (label: string) => (
     <nav className="sidebar__nav" aria-label={label}>
-      {visibleNav.map((item) => (
-        <NavLink
-          key={item.href}
-          href={item.href}
-          label={item.href === '/businesses/claims' ? queueCopy.claimsNav : item.label}
-          icon={item.icon}
-        />
-      ))}
+      {[
+        { label: 'Workspace', paths: ['/'] },
+        { label: 'Trust & safety', paths: ['/moderation', '/reports', '/safety'] },
+        {
+          label: 'Directory',
+          paths: ['/listings', '/users', '/businesses', '/businesses/claims', '/categories'],
+        },
+        { label: 'Platform', paths: ['/data-health', '/audit', '/system'] },
+      ].map((group) => {
+        const items = visibleNav.filter((item) => group.paths.includes(item.href));
+        if (!items.length) return null;
+        return (
+          <div className="sidebar__group" key={group.label}>
+            <span className="sidebar__group-label">{group.label}</span>
+            {items.map((item) => (
+              <NavLink
+                key={item.href}
+                href={item.href}
+                label={item.href === '/businesses/claims' ? queueCopy.claimsNav : item.label}
+                icon={item.icon}
+              />
+            ))}
+          </div>
+        );
+      })}
     </nav>
   );
 
@@ -123,9 +141,7 @@ export default async function ConsoleLayout({ children }: { children: React.Reac
             </span>
             <span>
               <strong>LocZ operations</strong>
-              <small>
-                <i className="status-dot" /> Platform operational
-              </small>
+              <small>Staff workspace</small>
             </span>
           </div>
           <details className="sidebar__mobile-menu">
@@ -141,19 +157,12 @@ export default async function ConsoleLayout({ children }: { children: React.Reac
       </aside>
 
       <div className="workspace">
-        <header className="workspace__bar">
-          <div className="workspace__status">
-            <span className="status-dot" aria-hidden="true" />
-            Platform operational
-          </div>
-          <span className="workspace__date">
-            {new Intl.DateTimeFormat('en-IN', {
-              weekday: 'short',
-              day: 'numeric',
-              month: 'short',
-            }).format(new Date())}
-          </span>
-        </header>
+        <WorkspaceHeader
+          sections={visibleNav.map((item) => ({
+            href: item.href,
+            label: item.href === '/businesses/claims' ? queueCopy.claimsNav : item.label,
+          }))}
+        />
         <main className="main" id="admin-main">
           {children}
         </main>

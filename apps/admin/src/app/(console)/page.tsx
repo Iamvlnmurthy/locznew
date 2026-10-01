@@ -110,7 +110,7 @@ export default async function OverviewPage() {
         <div className="page-header">
           <div>
             <span className="eyebrow">Operations</span>
-            <h1>Good to see you.</h1>
+            <h1>Operations overview</h1>
           </div>
         </div>
         <div className="alert alert--error" role="alert">
@@ -138,7 +138,7 @@ export default async function OverviewPage() {
       <div className="page-header page-header--hero">
         <div>
           <span className="eyebrow">{todayLabel}</span>
-          <h1>Good morning, operations.</h1>
+          <h1>Operations overview</h1>
           <p>
             {needsAttention === 0
               ? 'Everything is calm. No urgent work is waiting.'
