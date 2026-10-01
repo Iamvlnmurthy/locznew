@@ -23,6 +23,7 @@ TOPIC_MAP = [
     ("assault", ["rape", "molest", "assault", "harassment", "abuse", "eve teasing", "stalk"]),
     ("drugs", ["ganja", "narcotic", "cannabis", "peddler", "brown sugar", "kg of", "drugs", "seized kg"]),
     ("weapon", ["weapon", "rifle", "pistol", " arms", "ammunition", "firearm"]),
+    ("raid", ["raid", "seiz", "unauthoris", "unauthoriz", "counterfeit", "smuggl", "contraband", "spurious"]),
     ("theft", ["theft", "stolen", "robbery", "burglary", "loot", "heist"]),
     ("marathon", ["marathon", "runners", "10k run", "5k run", "fun run", "walkathon"]),
     ("arrest", ["arrest", "detain", "custody", "nabbed", "held by police"]),
@@ -62,6 +63,7 @@ TOPIC_TERMS = {
     "water": "drinking water supply tap india", "power": "electricity power lines transformer india",
     "assault": "police patrol car night city street", "drugs": "police seized narcotics table",
     "marathon": "marathon runners city race crowd",
+    "raid": "indian customs task force seized counterfeit goods table",
 }
 
 
@@ -84,6 +86,7 @@ TOPIC_PROMPT = {
     "startup": "a young Indian startup team working at laptops in a modern office",
     "assault": "an Indian police patrol vehicle on a city street at night with blue lights",
     "drugs": "seized packets of narcotics and cash laid out on a table with Indian police",
+    "raid": "an Indian task force displaying seized counterfeit and unauthorised goods on a table",
     "marathon": "a large crowd of runners taking part in a city marathon in India",
     "weapon": "an array of seized firearms and rifles laid out on a table",
     "theft": "an Indian police officer inspecting a burgled shop, crime scene",

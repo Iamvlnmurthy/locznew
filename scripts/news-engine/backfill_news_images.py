@@ -13,7 +13,17 @@ import os, sys, json, subprocess
 import news_image_map as nim
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-POOL = nim.load_pool(os.path.join(HERE, "news-images"))
+# The real pool lives with the web app that serves it, not next to this script. A silent
+# wrong-path here is dangerous: load_pool() swallows the error and returns {}, which makes
+# EVERY topic/category lookup fail and every row collapse onto the one hardcoded fallback
+# image -- this happened once (2 Oct 2026) before the path was corrected to point here.
+POOL = nim.load_pool(os.path.join(HERE, "..", "..", "apps", "web", "public", "news-images"))
+if not POOL:
+    sys.exit(
+        "news-images pool is empty -- refusing to run. This almost always means the path above "
+        "is wrong, not that the pool is genuinely empty: fix the path before re-running, never "
+        "work around this by creating a local news-images/manifest.json copy."
+    )
 DRY = "--dry" in sys.argv
 
 # Pull id, title, category, current image from prod as JSON (tab separators don't survive ssh quoting).

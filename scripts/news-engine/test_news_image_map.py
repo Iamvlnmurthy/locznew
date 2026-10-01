@@ -13,6 +13,25 @@ def test_health_research_headline_matches_hospital_topic():
     assert nim.topic_of("Vitamin D Deficiency Linked to Heart Stress in New Study") == "hospital"
 
 
+def test_raid_seizure_headlines_match_raid_topic():
+    # Was falling through to a generic "local" street-market photo -- the wrong genre of image
+    # for a customs/task-force enforcement story, not just a non-ideal one.
+    cases = [
+        "Task Force Seizes Rs 7 Lakh Worth of Unauthorised Cosmetics in Raids",
+        "Cosmetics Raid Seizes Millions in Unauthorised Imports",
+        "Task Force Raids Nampally Shops for Unlicensed and Illegally Labeled Cosmetics",
+    ]
+    for title in cases:
+        assert nim.topic_of(title) == "raid", title
+
+
+def test_narcotics_and_weapon_headlines_still_win_over_the_generic_raid_topic():
+    # "raid" sits after drugs/weapon in TOPIC_MAP precisely so a specific match isn't swallowed
+    # by the generic one -- these must still resolve to their own, more specific topic.
+    assert nim.topic_of("Police raid seizes ganja worth Rs 2 lakh") == "drugs"
+    assert nim.topic_of("Raid recovers seized firearms cache near border") == "weapon"
+
+
 def test_previously_correct_matches_still_hold():
     cases = [
         ("Police Step Up Efforts to Curb Harassment in Hyderabad", "assault"),
