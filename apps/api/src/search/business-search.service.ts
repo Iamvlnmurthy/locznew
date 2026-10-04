@@ -57,6 +57,7 @@ const RANKING_CANDIDATE_CAP = 5_000;
 
 @Injectable()
 export class BusinessSearchService {
+  private static readonly FUZZY_CANDIDATE_CAP = 500;
   private readonly logger = new Logger(BusinessSearchService.name);
 
   constructor(private readonly prisma: PrismaService) {}
@@ -231,12 +232,20 @@ export class BusinessSearchService {
         : Prisma.sql`TRUE`,
     ];
 
+    // Common words match thousands of names on trigrams alone, and scoring all of them on every
+    // keystroke is what kept the database busy. Only the first FUZZY_CANDIDATE_CAP matches are
+    // scored, so the cost is bounded no matter how common the word is.
     const rows = await this.prisma.$queryRaw<Array<{ id: string; total: bigint }>>(
       Prisma.sql`
-        WITH matched AS (
-          SELECT b.id, similarity(b."name", ${query}) AS score
+        WITH candidates AS (
+          SELECT b.id, b."name"
           FROM "businesses" b
           WHERE ${Prisma.join(where, ' AND ')}
+          LIMIT ${BusinessSearchService.FUZZY_CANDIDATE_CAP}
+        ),
+        matched AS (
+          SELECT c.id, similarity(c."name", ${query}) AS score
+          FROM candidates c
         )
         SELECT id, count(*) OVER () AS total
         FROM matched
