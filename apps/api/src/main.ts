@@ -1,3 +1,4 @@
+import type { Server } from 'node:http';
 import { Logger, ValidationPipe, VersioningType } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
@@ -65,6 +66,13 @@ async function bootstrap(): Promise<void> {
 
   const port = config.get('API_PORT');
   await app.listen(port, '0.0.0.0');
+  // The web server reuses keep-alive connections to this API. Node's 5s default closes idle ones
+  // while the web server is still sending on them, which surfaces as "other side closed" and
+  // restarts the web app. The keep-alive must outlive the client's idle window; headers must
+  // outlive keep-alive (Node requires it).
+  const httpServer = app.getHttpServer() as Server;
+  httpServer.keepAliveTimeout = 65_000;
+  httpServer.headersTimeout = 66_000;
 
   logger.log(`LocZ API listening on port ${port}`);
   logger.log(`OTP provider: ${config.get('OTP_PROVIDER')}`);
